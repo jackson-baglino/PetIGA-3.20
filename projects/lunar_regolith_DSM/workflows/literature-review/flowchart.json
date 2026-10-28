@@ -2,7 +2,7 @@
  "title": "literature-review",
  "summary": [
   "A reusable literature-review workflow built around a library with branches (numerical methods, sublimation physics, sintering, planetary setting, properties), each seeded with papers the user chooses. Seeds steer discovery (citation chaining), screening (a scripted baseline ranks candidates by similarity to the seeds) and calibration. Scripts search Crossref, OpenAlex, Semantic Scholar and arXiv and resolve every candidate; two Haiku screeners judge abstracts, combined by a fixed rule (any include is kept) and measured against the baseline; an on-demand scout challenges novelty claims and memo gaps using search terms the user approves.",
-  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images, and its own corrections are checked again; Codex, isolated as a separate user, reads important values blind. The user reads core papers and audits 60 random claims. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions; the sandbox fails closed; a private archive in the course folder keeps everything a recheck needs."
+  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images, and its own corrections are checked again; Codex, isolated as a separate user, reads important values blind. The user reads core papers and audits 60 random claims. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions; the sandbox fails closed; a private archive in the course folder keeps everything a recheck needs. Every shortlisted paper is also added to the user's Zotero with its PDF."
  ],
  "status": "Revision 7, for review, 2026-10-27 (critique round 3 applied; revision 5 was approved 2026-10-23). Build-time tests (WORKFLOW.md §12) come first.",
  "lanes": [
@@ -322,7 +322,7 @@
    "row": 13,
    "kind": "record",
    "title": "library/",
-   "job": "Cards, claims, symbols and tables as versioned JSON; branches.yaml and vocab.yaml; events log; catalog rebuilt from the files.",
+   "job": "Cards, claims, symbols and tables as versioned JSON; branches.yaml and a fixed tag vocabulary; events log; catalog rebuilt from files.",
    "details": [
     "views/: one Markdown page per tag and review"
    ]
@@ -410,14 +410,6 @@
     "Title or authors differ: user decides at U2",
     "Published version later: claims rechecked"
    ]
-  },
-  {
-   "id": "T1",
-   "lane": "script",
-   "row": 17,
-   "kind": "script",
-   "title": "T1 tag_report.py (after every wave)",
-   "job": "Counts tag use and proposes merges for tags whose names or claim sets are more similar than a threshold; the user decides at U4."
   },
   {
    "id": "U3b",
@@ -532,6 +524,18 @@
    "details": [
     "Separate macOS user; web search off; exec log audited",
     "Disagreement goes to the user"
+   ]
+  },
+  {
+   "id": "Z1",
+   "lane": "script",
+   "row": 6.8,
+   "kind": "script",
+   "title": "Z1 zotero_add.py",
+   "job": "Adds every shortlisted paper to the user's Zotero, in a collection per branch, with its PDF when acquired.",
+   "details": [
+    "Searches by DOI first: never duplicates or edits an item",
+    "Asks each run: writes to an outside account"
    ]
   }
  ],
@@ -688,16 +692,6 @@
    "label": "recheck"
   },
   {
-   "from": "A2",
-   "to": "P1",
-   "kind": "flow"
-  },
-  {
-   "from": "Y3",
-   "to": "T1",
-   "kind": "flow"
-  },
-  {
    "from": "U3a",
    "to": "U3b",
    "kind": "flow"
@@ -787,15 +781,25 @@
    "label": "disagree"
   },
   {
-   "from": "T1",
-   "to": "U4",
-   "kind": "flow"
-  },
-  {
    "from": "RI",
    "to": "Y3",
    "kind": "flow",
    "label": "passage search"
+  },
+  {
+   "from": "A2",
+   "to": "Z1",
+   "kind": "flow"
+  },
+  {
+   "from": "Z1",
+   "to": "P1",
+   "kind": "flow"
+  },
+  {
+   "from": "Y3",
+   "to": "U4",
+   "kind": "flow"
   }
  ]
 }

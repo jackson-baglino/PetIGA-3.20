@@ -2,7 +2,8 @@
 
 Status: **revision 7, for review** (2026-10-27). Revision 5 was approved for
 building on 2026-10-23. Revision 7 applies the triage of critique round 3
-(§11). Revision 6 added:
+(§11), and the user's decisions of 2026-10-27 on branches, tags, Zotero and
+Codex (§9). Revision 6 added:
 - library branches seeded with papers the user chooses (§2);
 - a full-text passage index with keyword plus embedding search (P2);
 - structured tables (P1);
@@ -137,6 +138,7 @@ In tier S, U1 is still shown (it is short), A2 runs, and E2 does not.
 | A1 | Acquire | `acquire.py` | shortlist | PDFs, and LaTeX or JATS XML source where openly available, each in a new folder under `Literature/incoming/<review>/`; `acquired.json` (path, sha256, source, copy kind) | DOI or title on page 1 matches; a new copy of a known work is linked to it | no match → logged, not acquired; a newer version of a read paper → its claims rechecked (E3, E4) |
 | A2 | Check the copy (any copy that is not the publisher's version) | `check_copy.py` | copy, published metadata | copy kind; title, author and abstract comparison | match; differences listed on the card | title or authors differ → U2 |
 | U2 | Supply missing papers | user | `fetch_list.md`; A2 differences | copies the user has, or "unavailable"; accept or reject flagged copies | A1, A2 rerun | — |
+| Z1 | Add to Zotero | `zotero_add.py` | approved shortlist, `acquired.json` | per paper: a Zotero item (Crossref metadata) in the collection `lunar_regolith_DSM/<branch>`, tagged with the review; the PDF attached when acquired, tag *needs PDF* when not; `zotero_map.json` (paper → Zotero key) | the library is searched by DOI (by title without one) first; an existing item is never duplicated or edited, only added to the collection; the uploaded file's hash matches `acquired.json` | API error or storage full → item added without its file, logged, shown at U4 |
 | P1 | Prepare | `prepare.py` | acquired files | page images (300 dpi); tiles (300 dpi, below); Marker pages; text from the best source (below); tables (below); figure crops with captions; a map from PDF page to printed page; source disagreements; hashes | every page has an image, tiles and text; every tile within the image limits; tiles cover the text area | a failed page is logged and cannot be cited |
 | P2 | Index | `build_index.py` | P1 output | passage chunks with metadata, keyword index and embeddings, in `index/` (§6) | a rebuild from the same inputs gives the same canonical dump (§8, T-det) | — |
 | E1 | Read | `morty-reader`, fresh per paper (per section above ~40 pages; sections from Marker's headings) | brief questions (`Q2@v1`), tag vocabulary, the paper's text, page images, tables, source disagreements; tiles and crops in its folder, read on demand for every equation, number and symbol it transcribes | `reads/<paper>.A.json`: claims (§7), each condition with its page; a symbol list (symbol, meaning, unit as printed, page); a section map | schema; one output per paper or section; the transcript audit lists the tiles read | failure rules below |
@@ -154,9 +156,8 @@ In tier S, U1 is still shown (it is short), A2 runs, and E2 does not.
 | Y2 | Check citations | `check_citations.py` | memo, library | per sentence: cites ≥ 1 current verified claim; every number, with its unit, matches a cited claim's parameter field or quote (§5) | script | failure → Y1 |
 | Y3 | Check memo | `beth-memo-checker`; for model-critical questions also `summer-memo-checker` (Codex) | memo; the same claim set; claims and passages a broader search found outside it | per statement supported / overstated / unsupported; numbers on the right quantity; inference follows; omitted or contradicting claims and passages; gaps | schema; for model-critical questions the two checkers' verdicts compared by script | not supported, or the checkers disagree → Y1 revises once, rest to U4; a relevant passage with no claim → its page goes to E1 (task page), then E3–E4, before any memo may cite it |
 | D2g | Check the gaps | D1 queries, P2 search, then `morty-scout` (task challenge, as D2c) | each gap the memo lists | the queries run and their counts; citations that may fill it | as D2c | a memo states a gap only as "not found by queries …", listing them |
-| T1 | Tag report and proposals | `tag_report.py` | library, `vocab.yaml` | per tag: counts, unused tags; proposed merges for tags whose names or claim sets are more similar than a set threshold | script | proposals decided at U4 |
 | R1 | Retag for a new question | `retag_candidates.py`, then `morty-reader` (task retag), then `beth-checker` | the new question; the claims a script prefilters by tags, aliases and search score (top N), plus the claims on the pages a passage search returns | proposed `questions[]` additions and pages to read | E4 confirms | before Y1 for that question |
-| U4 | Decide | user | memos, Y3 report, gaps with their queries and challenges, tag proposals, refusals, screening baseline agreement | close, or expand / narrow (new brief version); accept or mark each unsupported memo statement; accept or reject tag changes | accepted tag changes written by `curator.py` (new `vocab.yaml` version, alias map) | — |
+| U4 | Decide | user | memos, Y3 report, gaps with their queries and challenges, refusals, Zotero failures, screening baseline agreement | close, or expand / narrow (new brief version); accept or mark each unsupported memo statement; add or rename tags | tag changes written by `curator.py` (new `vocab.yaml` version, alias map) | — |
 
 **Page tiles (P1).** The models scale a full page down to at most 2,576 px on
 the long edge (Claude docs, "Vision", read 2026-10-23), about 199 dpi for a
@@ -319,6 +320,7 @@ does not train on inputs (§9).
 | `acquire.py` | open-access hosts named by OpenAlex, not known in advance. Runs outside the sandbox network list, so it asks once per wave. Downloads are never opened by anything but the parsers, and only after the identity check | `Literature/incoming/` |
 | `prepare.py`, `build_index.py`, every `check_*` and `compare_*` script | none, through `run_offline.sh`. All model weights (Marker, Surya, the table extractor, the embedding model) are downloaded once at build into a pinned local cache and used offline | its run folder; `index/` |
 | `library_query.py` | none | its query log |
+| `zotero_add.py` | api.zotero.org; key read from the Keychain (`zotero-api-key`) | the user's Zotero library: adds items, files and collection membership; never edits an item's fields or deletes anything. It writes to an outside account, so it asks each time it runs |
 | `curator.py` | none | `library/` and the archive only. The only writer; it runs outside the sandbox (`excludedCommands`) and asks |
 
 **Main session.** It may read the project and run the scripts. Writes to
@@ -338,7 +340,7 @@ beth, Haiku → jerry. A Codex agent is `summer-*` (proposed; §9).
 
 Everything else is a script or a rule. Round 3 replaced three agent steps:
 - screening adjudication became a rule in SC2;
-- tag proposals became rules in T1;
+- tag proposals were dropped with the tag growth process (fixed vocabulary, §6);
 - the reference desk became a skill. Finding and downloading papers is a script
 because it is deterministic. Keeping it apart from reading puts an identity
 check between them, keeps the reader off the web, and wastes no reading
@@ -621,13 +623,14 @@ index/                      passage index (outside library/, rebuilt, hash in th
 
   It never feeds a memo directly. A passage becomes citable only as a claim,
   through E1 to E4.
-- **Tags.** Facets in `vocab.yaml`: branch, method, phase handling, physics,
-  boundary condition, numerics, material and setting.
-  - **New tags:** a reader may propose one; it is *provisional* until the
-    user accepts it at U4.
-  - **Changes:** an accepted change is a new `vocab.yaml` version with an
-    alias map. Records are never rewritten for a tag change, and searches go
-    through the aliases.
+- **Tags.** A small, fixed vocabulary in `vocab.yaml`: the branch, plus three
+  facets (method family; material and setting; physics). Tags exist for exact
+  filters, such as a memo's claim set or a view by branch. Finding related
+  material by meaning is the passage index's job (user decision 2026-10-27).
+  - **Assigning:** the reader tags from the vocabulary, and E4 confirms.
+  - **Changing:** only the user adds or renames a tag, at U4, as a new
+    `vocab.yaml` version. A renamed tag keeps its old name as an alias, so
+    old records still match. Records are never rewritten.
 - **Search.** `library_query.py` is the one search script:
   - subcommands `claims` (filters: branch, tag, paper, question, kind,
     basis, status), `passages` (hybrid search) and `chunk` (one chunk with
@@ -655,6 +658,9 @@ index/                      passage index (outside library/, rebuilt, hash in th
     checks it.
   - **Never in git:** it holds paper text.
   - **Size:** a few GB over about 100 papers.
+- **Zotero** (Z1) is a copy for the user's own reading and citing. The
+  library files stay the truth, and the pipeline never reads Zotero back,
+  except for PDFs the user supplies at U2.
 - **What is committed.**
   - Committed: `branches.yaml`, `vocab.yaml`, briefs, `references.bib`, the
     event log, run manifests, search snapshots (bibliographic metadata) and
@@ -675,7 +681,7 @@ in its run folder.
   value, unit_printed, uncertainty?}, table_cell?: {table, row, column},
   figure?, questions[], tags[], basis, conditions: [{text, page_pdf}]}],
   symbols: [{symbol, meaning, unit_printed, page_pdf, nondimensional?}],
-  nothing_relevant_pages[], proposed_tags[], flags[]}`.
+  nothing_relevant_pages[], flags[]}`.
 - **Claim verdict:** `{claim_id, text: supported|overstated|unsupported|
   not_on_cited_page, corrected_text?, quote_on_page, image_quote?, equation:
   matches|corrected|none, corrected_latex?, parameter: match|corrected|none,
@@ -772,22 +778,35 @@ From the user, 2026-10-27 (revision 6):
       - Codex runs as a separate macOS user (F5);
       - calibration plants are split into tuning and held-out sets (F10);
       - the user rules on 30 practice-library claims (F25).
-    - **The other 21 findings** are applied as recommended, for the user's
-      review.
+    - **The other 21 findings** were applied as recommended and approved by
+      the user.
+20. **Branches:** B1 to B5 as in §2, approved; work starts with B1.
+21. **Tags:** a fixed vocabulary; no tagging agent and no tag growth
+    process (§6).
+22. **Zotero:** every shortlisted paper is added to the user's Zotero (Z1),
+    with its PDF when acquired.
+23. **Codex data:** the user set their OpenAI account not to train on their
+    data (2026-10-27).
 
 Open:
-20. **Branches:** the list in §2, and 3 to 5 seeds per branch (user).
-21. **Codex:**
+24. **Seeds:** 3 to 5 per branch, B1 first (user).
+25. **Codex setup:**
     - agent prefix (`summer-*` proposed);
     - pinned model;
-    - confirmation that the user's plan does not train on inputs. Until then
-      nothing goes to OpenAI, and C0 core starts with the user's and the
-      script-made plants.
-22. **Embedding model:** two open candidates compared by T-ret at build; the
+    - a pinned standalone CLI. The only copy now is the alpha bundled with
+      the VS Code extension (0.164.0-alpha.11.1), which changes whenever the
+      extension updates;
+    - the separate macOS user.
+26. **Zotero setup:**
+    - a write-enabled API key, stored by the user in the Keychain as
+      `zotero-api-key`;
+    - whether the Zotero storage quota holds the PDFs (each upload counts
+      against it).
+27. **Embedding model:** two open candidates compared by T-ret at build; the
     better one pinned.
-23. **Second table extractor:** chosen by T-table.
-24. **First brief** for B1 (U0).
-25. **Calibration material:**
+28. **Second table extractor:** chosen by T-table.
+29. **First brief** for B1 (U0).
+30. **Calibration material:**
     - core: the user's 10 or more planted errors, and the T-res pages;
     - B1: gold statements and planted errors on its seeds.
 
@@ -830,7 +849,7 @@ Open:
 | Library changed by mistake | deny rules, read-only files, sandbox, hashes, audit |
 | Publish interrupted | staging; event last; `recover` |
 | Tool update changes results | versions and weights pinned; recalibration triggers |
-| Tag sprawl or drift | provisional tags; T1 proposals; user accepts; aliases |
+| Tag sprawl or drift | fixed vocabulary; only the user changes it; aliases |
 | Scope creep | tiers, wave limits, staged waves, U4 |
 | Search not reproducible | raw responses saved and hashed |
 | API key leaked | Keychain only; removed from URLs |
@@ -876,3 +895,4 @@ build log with the date.
 | T-key | the Keychain key is read in a headless run; a failed read stops D1 | as stated |
 | T-sandbox | sandbox on: Bash writes to `library/` refused; `curator.py` runs; discovery hosts reachable; with the sandbox made unavailable, Claude Code exits instead of running unsandboxed | all four |
 | T-backup | snapshot and archive written, downloaded and hash-checked | match |
+| T-zotero | on a test collection: one new paper with its PDF, one already in the library, one without a PDF; then a rerun | new item and file added (hash matches); the existing item is not duplicated or edited; *needs PDF* tagged; the rerun adds nothing |
