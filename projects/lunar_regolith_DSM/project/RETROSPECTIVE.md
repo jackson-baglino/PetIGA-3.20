@@ -12,6 +12,33 @@ our own mistake.
 
 ## Pivots and redos
 
+### 2026-10-28 — Codex dropped; permissions moved from prose to settings files
+- **What happened:**
+  - **Codex:** it was the cross-vendor reader, so that its misreadings would
+    not line up with Claude's. Making it safe needed a separate macOS user,
+    a shared binary and a sudoers rule. A configuration check also found
+    that the user's own interactive Codex held all three trifecta legs:
+    browser and computer-use plugins, web search on, and home-folder
+    access. Its benefit had never been measured, and its usage limits could
+    stall a wave.
+  - **Permissions:** they were described in tables and prose in
+    WORKFLOW.md, enforced only where a matching setting happened to exist.
+    A proposed YAML file would have enforced nothing by itself.
+  - **Caltech Library downloads:** the daily limit is unknown, so scripted
+    downloads were deferred.
+- **Pivot:**
+  - **Independence without Codex:** X1 uses a fresh Claude blind read plus a
+    math OCR model, with author sources as the reference.
+  - **Permissions:** written as the `settings.json` files Claude Code
+    enforces, with a script that checks them for the trifecta and writes
+    the tables.
+  - **Zotero:** taken up again, with the user's own saves pulled back in.
+- **Lesson:**
+  - Weigh an unmeasured safeguard against its setup risk.
+  - A permission counts only if a file the tool enforces says so.
+  - Check the configuration of every tool, not only its documentation.
+- **Evidence:** WORKFLOW.md revision 9, §4 and §9 items 34 to 39.
+
 ### 2026-10-28 — Fourth critique: our statistics and our security had holes
 - **What happened:** round 4 found 19 major findings, among them:
   - **Calibration:** the branch calibration could never pass (10 of 10

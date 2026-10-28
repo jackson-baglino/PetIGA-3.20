@@ -2,9 +2,9 @@
  "title": "literature-review",
  "summary": [
   "A reusable literature-review workflow built around a library with branches (numerical methods, sublimation physics, sintering, planetary setting, properties), each seeded with papers the user chooses. Seeds steer discovery (citation chaining), screening (a scripted baseline ranks candidates by similarity to the seeds) and calibration. Scripts search Crossref, OpenAlex, Semantic Scholar and arXiv and resolve every candidate; two Haiku screeners judge abstracts, combined by a fixed rule (any include is kept) and measured against the baseline; an on-demand scout challenges novelty claims and memo gaps using search terms the user approves.",
-  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images, and its own corrections are checked again; the checker transcribes values blind first; Codex, isolated as a separate user, reads the values memos rely on blind. The user reads core papers and audits the claims memos rely on plus 60 random others. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions; whenever it works with library files, the main session runs in a review mode with no way out and reads only an allow-list; the sandbox fails closed; a content-addressed archive in the course folder keeps everything a recheck needs."
+  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images, and its own corrections are checked again; the checker transcribes values blind first; a fresh Sonnet call and a math OCR model read the values memos rely on blind. The user reads core papers and audits the claims memos rely on plus 60 random others. A script is the only library writer. Agents write nothing and hold permissions written in enforced settings files, checked by script; whenever it works with library files, the main session runs in a review mode with no way out and reads only an allow-list; the sandbox fails closed; a content-addressed archive in the course folder keeps everything a recheck needs. Papers go to the user's Zotero, and papers the user saves there come back in."
  ],
- "status": "Revision 7, for review, 2026-10-27 (critique round 3 applied; revision 5 was approved 2026-10-23). Build-time tests (WORKFLOW.md §12) come first.",
+ "status": "Revision 9, approved for building 2026-10-28 (user). Codex dropped; permissions in enforced settings files; Zotero in; B1 seeds chosen.",
  "lanes": [
   {
    "id": "user",
@@ -110,7 +110,7 @@
    "row": 3,
    "kind": "script",
    "title": "C0 calibrate.py (core once; light per branch)",
-   "job": "Core: planted errors (user's 10+, Codex drafts the user approves, script-made) and controls. Branch: gold statements and field-dependent plants.",
+   "job": "Core: planted errors (user's 10+, Opus drafts the user approves, script-made) and controls. Branch: gold statements and field-dependent plants.",
    "details": [
     "Gates SC1 and E1: no real wave until it passes",
     "Every fake quote, wrong page, sign error caught; 3 of 4 of each other kind; 90 % overall",
@@ -187,9 +187,10 @@
    "row": 6.5,
    "kind": "user",
    "title": "U2 Supply missing papers",
-   "job": "Supplies any listed paper they already have, or marks it unavailable; accepts or rejects copies A2 flagged.",
+   "job": "Saves each paper on the fetch list they can get into Zotero with the Connector, or marks it unavailable; rules on copies A2 flagged.",
    "details": [
-    "A1 and A2 rerun on what the user adds"
+    "zotero_pull.py copies the saved PDFs in (local API, read-only)",
+    "A1 and A2 rerun on them"
    ]
   },
   {
@@ -375,7 +376,7 @@
    "lane": "agent",
    "row": 16,
    "kind": "agent",
-   "title": "Y3 beth-memo-checker (+ Codex, model-critical)",
+   "title": "Y3 beth-memo-checker (+ beth-skeptic, model-critical)",
    "model": "claude-opus-5-5",
    "tools": [],
    "job": "Call 1 judges support on the cited claims only; call 2 lists omitted or contradicting claims and passages.",
@@ -520,16 +521,27 @@
    "lane": "agent",
    "row": 10.5,
    "kind": "agent",
-   "title": "X1 summer-reader (Codex; claims memos rely on)",
-   "model": "Codex, pinned at build",
+   "title": "X1 morty-blind-reader + ocr_math.py",
+   "model": "claude-sonnet-5-5; math OCR model",
    "tools": [
-    "none; tiles attached with -i"
+    "Read (tiles only)"
    ],
-   "job": "Given a tile and a quantity or equation name, never the value, transcribes it; a script compares reader, blind checker and X1.",
+   "job": "Given a tile and a quantity name, never the value, each transcribes it; a script compares reader, blind checker, blind reader and OCR.",
    "details": [
     "Scope: memo-cited, model-critical, random 20 % of other important claims",
-    "Separate macOS user; web search off; no shell commands",
+    "Author LaTeX or XML is the reference when it exists",
     "Content disagreement to the user; formatting only to E4"
+   ]
+  },
+  {
+   "id": "Z1",
+   "lane": "user",
+   "row": 7.5,
+   "kind": "script",
+   "title": "Z1 zotero_add.py",
+   "job": "Adds each acquired paper with its PDF to the user's Zotero collection for its branch; never duplicates or edits an item.",
+   "details": [
+    "Writes to an outside account, so it asks each time"
    ]
   }
  ],
@@ -789,6 +801,11 @@
    "from": "A2",
    "to": "P1",
    "kind": "flow"
+  },
+  {
+   "from": "A2",
+   "to": "Z1",
+   "kind": "data"
   }
  ]
 }

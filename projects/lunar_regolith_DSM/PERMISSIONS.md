@@ -39,9 +39,24 @@ work on branches.
 
 ## 5. Workflow agents and scripts
 
-Each workflow's agents and scripts have their own permission table, with the
-flag or setting that enforces each rule, in its `WORKFLOW.md` (literature
-review: §4).
+Each workflow's permissions are written as files that Claude Code or the
+operating system enforces, in `.claude/permissions/<workflow>/`:
+- one `settings.json` file per agent;
+- one per main-session mode (for the literature review, `review-mode.json`);
+- the launcher's list of allowed scripts and its macOS sandbox profiles.
+
+The main session's normal profile is the project's `.claude/settings.json`.
+Its rules are listed in sections 1 to 3.
+
+`scripts/literature_review/check_permissions.py` reads these files. It fails
+if any agent or session could hold private data, untrusted text and a way to
+send data out at once (the "lethal trifecta"). It also writes the tables
+below. The reasons for each rule stay here and in the workflow's
+`WORKFLOW.md` (literature review: §4).
+
+<!-- BEGIN GENERATED: check_permissions.py (literature-review) -->
+(Tables appear here once the permission files are built.)
+<!-- END GENERATED -->
 
 ## 6. What is logged
 
