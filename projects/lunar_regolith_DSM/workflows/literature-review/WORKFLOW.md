@@ -1,7 +1,8 @@
 # WORKFLOW: literature-review
 
-Status: **revision 6, for review** (2026-10-27). Revision 5 was approved for
-building on 2026-10-23. Revision 6 adds:
+Status: **revision 7, for review** (2026-10-27). Revision 5 was approved for
+building on 2026-10-23. Revision 7 applies the triage of critique round 3
+(§11). Revision 6 added:
 - library branches seeded with papers the user chooses (§2);
 - a full-text passage index with keyword plus embedding search (P2);
 - structured tables (P1);
@@ -47,7 +48,8 @@ Decisions: §9.
   - The checker has confirmed each claim's text, quote, equation, numbers,
     kind, basis and questions against the page images.
   - Every important claim (§5) has also passed the units check and the
-    cross-vendor read, or the user has decided it.
+    cross-vendor read, or the user has decided it. An equation the units
+    script cannot parse has not passed the units check (§5).
   - Every memo sentence cites a verified claim (script check). The memo
     checker finds no unsupported statement, or the user has accepted each
     remaining one and the memo marks it.
@@ -57,8 +59,10 @@ Decisions: §9.
 - **Baselines.**
   - **Practice library:** the practice-round library (`library_practice/`,
     85 papers, 2,532 claims, one reader and one checker per paper, no
-    calibration). Rechecking a random sample of its claims through E3–E4
-    measures what this design adds.
+    calibration). Its claims are rechecked through E3–E4, and the user rules
+    on a random 30 of them. Both libraries' error rates are then measured
+    against the user's verdicts, not against the new checker (user decision
+    2026-10-27).
   - **Scripted baselines for the two agent decisions that have one:**
     - screening, against the ranking of SC0;
     - search, keyword only against keyword plus embedding (T-ret).
@@ -114,6 +118,8 @@ The tier sets which stages run, and the limits:
 | M | one method family | APIs, chaining, scout | SC0 and 2 screeners | core papers | 20 papers |
 | L | a whole field | as M, 2 chaining hops | as M | core papers | 20 per wave, small shakedown wave first |
 
+In tier S, U1 is still shown (it is short), A2 runs, and E2 does not.
+
 ## 3. Stages
 
 | # | Stage | Agent or script | Input | Output | Check | Stop / escalate |
@@ -121,38 +127,36 @@ The tier sets which stages run, and the limits:
 | U0 | Brief | user, with the main session | goal, branch, seeds | `reviews/<review>/brief.vN.json`: questions Q1…Qn (each marked *model-critical* or not), criteria, tier, seeds, queries, limits | user approves | — |
 | D1 | Search and chain | `discover.py` | brief, seeds | `candidates.json`; every request and response saved with hash and date | every query logged with its result count; OpenAlex cost estimated before the wave and remaining budget read on each response; Semantic Scholar citation contexts and influential flags kept where present | Keychain key unreadable → stop; HTTP 429 or 5xx → back off and resume; a source still failing → *discovery incomplete*, shown at U1, queries rerun |
 | D2 | Scout (M, L) | `morty-scout`, task *find* | brief questions, criteria, seed titles | citations only (title, authors, year, DOI if known, why) | resolved in D3 | — |
-| D2c | Challenge (on demand) | `morty-scout`, task *challenge* | one statement the user wants to rely on (a novelty claim, a memo gap) | citations that might contradict it, each with why | resolved in D3; every hit read through E1–E4 before it counts | result goes to the user |
-| D3 | Resolve | `resolve.py` | candidates and scout citations | one entry per work, merged by DOI, OpenAlex ID, Crossref preprint relation, then title and first author; abstract present or not; retraction and correction status | resolves in Crossref or OpenAlex, else arXiv, ADS, NTRS or OSTI, title similarity ≥ 0.9 | unresolved → kept, shown at U1 |
+| D2c | Challenge (on demand) | `challenge_terms.py`, then `morty-scout`, task *challenge* | one statement the user wants to rely on (a novelty claim, a memo gap); the script turns it into keyword queries, which the user approves; the scout sees only the approved terms | citations that might contradict it, each with why | resolved in D3; every hit read through E1–E4 before it counts | result goes to the user |
+| D3 | Resolve | `resolve.py` | candidates and scout citations | one entry per work, merged by DOI, OpenAlex ID, Crossref preprint relation, then title and first author; abstract present or not; retraction and correction status | resolves in Crossref or OpenAlex, else arXiv, ADS, NTRS or OSTI; a title match (§5) also needs years within ±1 and no differing series token (Part I / II, numerals) | unresolved → kept, shown at U1; a merge by title alone → shown at U1 |
 | C0 | Calibrate | `calibrate.py` | §5 sets | `calibration.json` | §5 | below threshold → stop, revise prompts |
-| SC0 | Prefilter and baseline (M, L) | `screen_baseline.py` | candidates, brief, seed abstracts | excluded by rule (document type: erratum, editorial, book review; outside the brief's years or languages), each with the rule; the rest ranked by hybrid similarity to the seed abstracts and the brief | script; the ranking stays in the run folder and is never stored on a paper | — |
+| SC0 | Prefilter and baseline (M, L) | `screen_baseline.py` | candidates, brief, seed abstracts | excluded by rule (document type: erratum, editorial, book review; outside the brief's years or languages), each with the rule; the rest ranked by hybrid similarity to the seed abstracts and the brief, using the index's embedding model on a separate store of candidate abstracts | script; the ranking stays in the run folder and is never stored on a paper | — |
 | SC1 | Screen (M, L) | `jerry-screener` ×2, two framings | title, abstract, venue, year, criteria | core / context / exclude, with the exclusion criterion, and the questions it bears on | schema; exclude needs a named criterion | no abstract → never excluded, shown at U1 |
-| SC2 | Compare screens | `compare_screens.py` | both screens, SC0 ranking | agreed list; disagreements; agreement of each screener with the baseline | script | — |
-| SC3 | Adjudicate | `beth-checker` (task screen) | each disagreement, both reasons, the abstract | one decision with reason | schema | "cannot tell" → U1 |
+| SC2 | Combine screens | `compare_screens.py` | both screens, SC0 ranking | by rule: either screener includes → include (core if either says core); both exclude on the same criterion → exclude; both exclude on different criteria → U1; agreement of each screener with the baseline | script | — |
 | U1 | Approve shortlist | user | core and context papers; a random 60 of the exclusions; unresolved and no-abstract candidates; queries and counts; *discovery incomplete* | approved shortlist | the sample bounds the share of wrongly excluded papers (§5) | a relevant paper in the sample → screening prompts revised, C0 screening rerun, wave rescreened |
 | A1 | Acquire | `acquire.py` | shortlist | PDFs, and LaTeX or JATS XML source where openly available, each in a new folder under `Literature/incoming/<review>/`; `acquired.json` (path, sha256, source, copy kind) | DOI or title on page 1 matches; a new copy of a known work is linked to it | no match → logged, not acquired; a newer version of a read paper → its claims rechecked (E3, E4) |
 | A2 | Check the copy (any copy that is not the publisher's version) | `check_copy.py` | copy, published metadata | copy kind; title, author and abstract comparison | match; differences listed on the card | title or authors differ → U2 |
 | U2 | Supply missing papers | user | `fetch_list.md`; A2 differences | copies the user has, or "unavailable"; accept or reject flagged copies | A1, A2 rerun | — |
 | P1 | Prepare | `prepare.py` | acquired files | page images (300 dpi); tiles (300 dpi, below); Marker pages; text from the best source (below); tables (below); figure crops with captions; a map from PDF page to printed page; source disagreements; hashes | every page has an image, tiles and text; every tile within the image limits; tiles cover the text area | a failed page is logged and cannot be cited |
-| P2 | Index | `build_index.py` | P1 output | passage chunks with metadata, keyword index and embeddings, in `index/` (§6) | rebuild from the same inputs gives the same hash (T-det) | — |
-| E1 | Read | `morty-reader`, fresh per paper (per section above ~40 pages) | brief questions (`Q2@v1`), tag vocabulary, the paper's text, page images, tiles, tables and their crops, source disagreements | `reads/<paper>.A.json`: claims (§7), each condition with its page; a symbol list (symbol, meaning, unit as printed, page); a section map | schema; one output per paper or section | failure rules below |
+| P2 | Index | `build_index.py` | P1 output | passage chunks with metadata, keyword index and embeddings, in `index/` (§6) | a rebuild from the same inputs gives the same canonical dump (§8, T-det) | — |
+| E1 | Read | `morty-reader`, fresh per paper (per section above ~40 pages; sections from Marker's headings) | brief questions (`Q2@v1`), tag vocabulary, the paper's text, page images, tables, source disagreements; tiles and crops in its folder, read on demand for every equation, number and symbol it transcribes | `reads/<paper>.A.json`: claims (§7), each condition with its page; a symbol list (symbol, meaning, unit as printed, page); a section map | schema; one output per paper or section; the transcript audit lists the tiles read | failure rules below |
 | E2 | Second read (core papers) | `morty-reader`, fresh | as E1 | `reads/<paper>.B.json` | used by E3 | — |
-| E3 | Check extraction | `check_extraction.py` | reads, text | quote checks; page coverage; table values; A and B merged (§5) | quote ≥ 8 words or a whole sentence, found on the cited page after normalization, unique in the paper; a value cited from a table equals that cell | failure → E4, marked |
-| E3b | Check units | `check_units.py` | symbol lists, equations, parameter claims, `memory/semantic/units.md` | per unit: parses or not; per symbol: dimension against the units table; per equation: homogeneous, inconsistent, or not parsed; dimensions inferred for symbols the paper leaves without a unit | Pint and SymPy (§5) | inconsistent or unparsable unit → E4 with the failing term; *not parsed* counted per paper |
-| E4 | Check claims | `beth-checker` (task claim), per page | all claims citing the page; its image, tiles and crops; the abstract, model, method and conclusions pages; each page a claim lists a condition on; E3 and E3b flags; the brief's questions. Never the reader's text or reasoning | per claim: text supported / overstated / unsupported / not on the page; quote as printed; every equation symbol and number as printed; kind, basis, questions confirmed or corrected; dropped conditions | schema; a correction passes E3 again | not fully confirmed → E5 |
-| X1 | Cross-vendor read (important claims, §5) | `summer-reader` (Codex) | for each important claim: the tile and the name of the quantity or equation, never the claimed value | the equation in LaTeX, or the value and unit, as printed | `compare_reads.py`: reader, checker and X1 agree, after normalization | any disagreement → U3, *disputed, important* |
-| E5 | Revise (≤ 2 rounds) | `morty-reader`, fresh | the claim, the checker's reasons, the cited and condition pages | revised claim → E3, E3b, then a fresh E4 | as E3, E4 | still failing → U3, *disputed* |
+| E3 | Check extraction | `check_extraction.py` | reads, text | quote checks; page coverage; table values; importance (§5); A and B merged (§5) | quote ≥ 8 words or a whole sentence, unique in the paper, and found on the cited page in the text of the imaged PDF (Marker, or the text layer used only to locate it; for LaTeX or XML sources the wording is matched on the source); a value cited from a table equals that cell | failure → E4, marked; a quote that cannot be placed on a page → its own flag |
+| E3b | Check units | `check_units.py` | symbol lists, equations, parameter fields, `memory/semantic/units.md` | per unit: parses or not; per symbol: dimension against the units table; per equation: homogeneous, inconsistent, or not parsed; dimensions inferred for symbols the paper leaves without a unit | Pint and SymPy, with an operator layer for ∇, ∂ and · (§5) | inconsistent or unparsable unit → E4 with the failing term; *not parsed* → X1 and E4, not a units pass, counted per paper |
+| E4 | Check claims | `beth-checker` (task claim), per group of 3 to 5 pages | the claims citing those pages (their fields, never the reader's reasoning or Marker text); the pages' images, tiles and crops; the abstract, model, method and conclusions pages, loaded once; each page a claim lists a condition on; E3 and E3b flags; the brief's questions | per claim: text supported / overstated / unsupported / not on the page; quote as printed; every equation symbol and number as printed; kind, basis, questions confirmed or corrected; dropped conditions | schema | not fully confirmed → E5; a correction by E4 is a new claim version written by the checker, and goes through E3, E3b, X1 (if important) and a fresh E4 that sees only the corrected version |
+| X1 | Cross-vendor read (important claims, §5) | `summer-reader` (Codex) | for each important claim: the tile a script picks from the claim's page and position (both tiles if it is near an edge) and the name of the quantity or equation, never the claimed value | the equation in LaTeX, or the value and unit, as printed | `compare_reads.py` compares the parameter fields or normalized LaTeX of reader, checker and X1 | any disagreement → U3, *disputed, important*; *not found* → E4 |
+| E5 | Revise (≤ 2 rounds) | `morty-reader`, fresh | the claim, the checker's reasons, the cited and condition pages | revised claim → E3, E3b, X1 (if important), then a fresh E4 | as E3, E4 | still failing → U3, *disputed* |
 | U3a | Guided reading (core papers) | user, with `reading_view.py` | each core paper's key pages in order; a page's claims hidden until the page is read; quotes highlighted | per claim right / wrong / unsure; *missed* statements with page | census of every claim on a read page | wrong or unsure → E5, then back to the user; missed statements become claims through E3, E4 |
-| U3b | Audit | user, same view | a random 60 passed claims not seen in U3a; every disputed claim; every *disputed, important* claim | right / wrong | no error in the 60 (§5) | an error → E4 prompt revised, C0 rerun with it, that kind rechecked, a fresh 60 |
+| U3b | Audit | user, same view | a random 60 of the wave's passed claims not seen in U3a; every disputed claim; every *disputed, important* claim | right / wrong | no error in the 60 (§5) | an error → E4 prompt revised, C0 rerun with it, the wave's claims rechecked under the new prompt, a fresh 60 drawn from those; the combined bound over all samples is reported |
 | L1 | Publish | `curator.py`, the only writer | items with passing verdicts or a user decision | records, catalog rows, events (§6) | refuses items without citation, quote match and verdict; stages, moves, sets read-only, appends the event last | refusal → logged, shown at U4; crash → `curator.py recover`; after each publish a snapshot to the backup folder |
-| L2 | Audit | `audit.py` | library, index | report | rehash files; rebuild catalog and index and compare; requery retractions; rerun `check_citations.py` on every memo; check the latest backup | mismatch → stop; new retraction → paper flagged, user told; memo citing a superseded claim → Y1 |
+| L2 | Audit | `audit.py` | library, index, archive | report | rehash files; rebuild catalog and index and compare canonical dumps; requery retractions; rerun `check_citations.py` on every memo; check the latest backup and archive against their hashes | mismatch → stop; new retraction → paper flagged, user told; memo citing a superseded claim → Y1 |
 | Y1 | Synthesize | `beth-synthesizer` | the question; every verified claim for it, by fixed query (question ID; tags through aliases); split in parts above a token limit | `memos/<review>/Qk.vN.md`: statements citing `[id@v1]`; INFERENCE marked with its claims; *library silent* where no claim answers; gaps | Y2, Y3; script: every claim reached some part | — |
-| Y2 | Check citations | `check_citations.py` | memo, library | per sentence: cites ≥ 1 current verified claim; every number occurs in a cited quote (§5) | script | failure → Y1 |
-| Y3 | Check memo | `beth-memo-checker` | memo; the same claim set; claims and passages a broader search found outside it | per statement supported / overstated / unsupported; numbers on the right quantity; inference follows; omitted or contradicting claims and passages; gaps | schema | not supported → Y1 revises once, rest to U4; a relevant passage with no claim → its page goes to E1 (task page), then E3–E4, before any memo may cite it |
-| D2g | Challenge the gaps | `morty-scout`, task *challenge* | each gap the memo lists | citations that may fill it | as D2c | a gap is stated in a memo only after its challenge |
-| T1 | Tag report | `tag_report.py` | library, `vocab.yaml` | per tag: counts; similar names; overlapping claim sets; unused tags | script | — |
-| T2 | Tag proposals | `morty-tagger` | T1 report, definitions, 5 example claims per tag | merge, split, rename, deprecate, promote, each with a reason | schema | — |
-| R1 | Retag for a new question | P2 search, then `morty-reader` (task retag), then `beth-checker` | the new question; the passages the search returns, and every existing claim | proposed `questions[]` additions and pages to read | E4 confirms | before Y1 for that question |
-| U4 | Decide | user | memos, Y3 report, gaps and their challenges, tag proposals, refusals, screening baseline agreement | close, or expand / narrow (new brief version); accept or mark each unsupported memo statement; accept or reject tag changes | accepted tag changes written by `curator.py` (new `vocab.yaml` version, alias map) | — |
+| Y2 | Check citations | `check_citations.py` | memo, library | per sentence: cites ≥ 1 current verified claim; every number, with its unit, matches a cited claim's parameter field or quote (§5) | script | failure → Y1 |
+| Y3 | Check memo | `beth-memo-checker`; for model-critical questions also `summer-memo-checker` (Codex) | memo; the same claim set; claims and passages a broader search found outside it | per statement supported / overstated / unsupported; numbers on the right quantity; inference follows; omitted or contradicting claims and passages; gaps | schema; for model-critical questions the two checkers' verdicts compared by script | not supported, or the checkers disagree → Y1 revises once, rest to U4; a relevant passage with no claim → its page goes to E1 (task page), then E3–E4, before any memo may cite it |
+| D2g | Check the gaps | D1 queries, P2 search, then `morty-scout` (task challenge, as D2c) | each gap the memo lists | the queries run and their counts; citations that may fill it | as D2c | a memo states a gap only as "not found by queries …", listing them |
+| T1 | Tag report and proposals | `tag_report.py` | library, `vocab.yaml` | per tag: counts, unused tags; proposed merges for tags whose names or claim sets are more similar than a set threshold | script | proposals decided at U4 |
+| R1 | Retag for a new question | `retag_candidates.py`, then `morty-reader` (task retag), then `beth-checker` | the new question; the claims a script prefilters by tags, aliases and search score (top N), plus the claims on the pages a passage search returns | proposed `questions[]` additions and pages to read | E4 confirms | before Y1 for that question |
+| U4 | Decide | user | memos, Y3 report, gaps with their queries and challenges, tag proposals, refusals, screening baseline agreement | close, or expand / narrow (new brief version); accept or mark each unsupported memo statement; accept or reject tag changes | accepted tag changes written by `curator.py` (new `vocab.yaml` version, alias map) | — |
 
 **Page tiles (P1).** The models scale a full page down to at most 2,576 px on
 the long edge (Claude docs, "Vision", read 2026-10-23), about 199 dpi for a
@@ -223,16 +227,19 @@ for now, and no Sci-Hub (§9).
 the repository, a manifest, a log or a transcript, and it is removed from
 recorded URLs.
 
-**The reference desk (Q1).** `morty-librarian` answers the user's ad hoc
-questions from the passage index.
-- **Answer format:** `{answer, citations: [{chunk_id, page, quote}],
-  abstain, reason}`.
+**The reference desk (Q1).** A skill, `library-desk`, that the main session
+uses for the user's ad hoc questions. It is not a separate agent.
+- **How it answers:** it runs `library_query.py passages` and returns the
+  hits verbatim (chunk, page, quote), with an optional summary labeled as a
+  summary.
 - **Check:** `check_citations.py` confirms each quote is in the chunk it
   cites.
 - **Abstaining:** an honest *abstain* when the index has nothing is a valid
   answer.
 - **Labeling:** answers are labeled *passage, not checked by E4*.
 - **Limits:** the desk is not on any path that makes a record or a memo.
+
+This is also the course's Lab 5 retriever.
 
 ## 4. Agents and permissions
 
@@ -253,7 +260,17 @@ system or a script, not only stated in a prompt.
   and Bash except the commands listed for that agent.
 - **Bash commands** run in the Claude Code sandbox:
   - writes to `library/` are blocked at the operating-system level;
-  - network access is limited to listed hosts.
+  - network access is limited to listed hosts;
+  - the sandbox fails closed: with `sandbox.failIfUnavailable: true`, Claude
+    Code exits instead of running commands unsandboxed;
+  - with `allowUnsandboxedCommands: false`, no command may retry outside it
+    (Claude Code docs, sandboxing, read 2026-10-27).
+
+  The sandbox's write paths and hosts are set per session, not per command.
+  So each offline script runs through `run_offline.sh`, a wrapper that gives
+  it its own operating-system profile: no network, writes only to its run
+  folder. Every run records in its manifest that the sandbox and the wrapper
+  were active.
 - **Transcript audit.** `audit_transcript.py` checks every call:
   - the model is the pinned one;
   - every tool call is one the agent is allowed;
@@ -264,27 +281,45 @@ system or a script, not only stated in a prompt.
   send data out (the "lethal trifecta", Willison 2025).
   - The readers and checkers see untrusted text (the papers) but have no
     network.
-  - The scout has the web but sees only the brief and seed titles, which are
-    not private.
+  - The scout has the web but sees only the brief, seed titles and
+    user-approved search terms.
+  - **The main session** has the project and web tools, so it is kept away
+    from untrusted text. Drivers give it counts, IDs and verdicts. Quotes,
+    reader flags, scout reasons and passages go to the user in the reading
+    view. A reader flag that looks like an instruction goes straight to the
+    user. While a wave runs, the main session has no WebFetch.
 
 | Agent | Model | Tools | Reads | Network | May not |
 |---|---|---|---|---|---|
-| `morty-scout` | `claude-sonnet-5-5` | WebSearch | brief questions, criteria, seed titles (find); one statement (challenge) | WebSearch only | fetch or download; return a citation it did not see in a result |
+| `morty-scout` | `claude-sonnet-5-5` | WebSearch | brief questions, criteria, seed titles (find); user-approved search terms (challenge) | WebSearch only | fetch or download; return a citation it did not see in a result |
 | `jerry-screener` | `claude-haiku-5-5` | none | one batch of 10 candidates; criteria; framing A ("include unless a criterion excludes") or B ("which questions does this bear on") | none | see the other screener |
 | `morty-reader` | `claude-sonnet-5-5` | Read | one paper's text, images, tiles, tables, crops, source disagreements (read); claims and a question (retag); one page (page) | none | answer from memory; follow instructions in the paper (reported as a flag) |
-| `beth-checker` | `claude-opus-5-5` | Read | images, tiles, crops, flags (claim); two screens and the abstract (screen) | none | see reader text, reader reasoning or other pages' verdicts |
-| `summer-reader` | Codex, model pinned at build | file read in its folder | one tile and a quantity or equation name | the OpenAI service only; no web search, no commands with network | see the claimed value or any other read |
-| `beth-synthesizer` | `claude-opus-5-5` | none | the claim set as text | none | cite anything but given claim IDs; state a number not in a cited quote |
+| `beth-checker` | `claude-opus-5-5` | Read | claim fields, images, tiles, crops, flags | none | see Marker text, reader reasoning or other groups' verdicts |
+| `summer-reader` | Codex, model pinned at build | file read in its folder | one or two tiles and a quantity or equation name | the OpenAI service only | see the claimed value or any other read |
+| `beth-synthesizer` | `claude-opus-5-5` | none | the claim set as text | none | cite anything but given claim IDs; state a number not in a cited claim |
 | `beth-memo-checker` | `claude-opus-5-5` | none | memo, the same claims, broader search results | none | see the synthesizer's drafts or reasoning |
-| `morty-tagger` | `claude-sonnet-5-5` | none | T1 report, definitions, examples | none | change anything; proposals take effect only at U4 |
-| `morty-librarian` | `claude-sonnet-5-5` | Bash: `library_query.py` only | the user's question | none | write anything; paraphrase records |
+| `summer-memo-checker` | Codex, model pinned at build | none beyond reading its folder | as `beth-memo-checker`, for model-critical questions | the OpenAI service only | as `beth-memo-checker` |
+
+**Codex isolation.** Codex runs shell commands, and its read-only sandbox is
+not limited to one folder. It also searches the web by default (Codex docs,
+config basics, read 2026-10-27). So every Codex call:
+- runs as a separate macOS user that has no access to the user's home folder
+  (user decision 2026-10-27);
+- runs in a call folder owned by that user, holding only its inputs;
+- runs with `web_search="disabled"` set on the command line;
+- has its exec log audited by `audit_transcript.py`, which fails the call on
+  any command other than reading its inputs.
+
+No page image goes to OpenAI until the user confirms that their Codex plan
+does not train on inputs (§9).
 
 | Script | Network | Writes |
 |---|---|---|
 | `discover.py`, `resolve.py` | api.openalex.org, api.crossref.org, api.semanticscholar.org, export.arxiv.org, ADS, NTRS and OSTI APIs | its run folder |
 | `acquire.py` | open-access hosts named by OpenAlex, not known in advance. Runs outside the sandbox network list, so it asks once per wave. Downloads are never opened by anything but the parsers, and only after the identity check | `Literature/incoming/` |
-| `prepare.py`, `build_index.py`, every `check_*` and `compare_*` script | none. The embedding model is downloaded once at build from huggingface.co, then used with `HF_HUB_OFFLINE=1` | its run folder; `index/` |
-| `curator.py` | none | `library/` only. The only writer; it runs outside the sandbox (`excludedCommands`) and asks |
+| `prepare.py`, `build_index.py`, every `check_*` and `compare_*` script | none, through `run_offline.sh`. All model weights (Marker, Surya, the table extractor, the embedding model) are downloaded once at build into a pinned local cache and used offline | its run folder; `index/` |
+| `library_query.py` | none | its query log |
+| `curator.py` | none | `library/` and the archive only. The only writer; it runs outside the sandbox (`excludedCommands`) and asks |
 
 **Main session.** It may read the project and run the scripts. Writes to
 `library/` are denied (Edit and Write deny rules plus the sandbox). The
@@ -299,9 +334,12 @@ beth, Haiku → jerry. A Codex agent is `summer-*` (proposed; §9).
 1. **Different information:** the checker must not see the reader's reasoning.
 2. **Different permissions:** the scout alone has the web.
 3. **A second opinion on the same object:** the second reader, the memo
-   checker, and the cross-vendor read.
+   checker, and the cross-vendor reads.
 
-Everything else is a script. Finding and downloading papers is a script
+Everything else is a script or a rule. Round 3 replaced three agent steps:
+- screening adjudication became a rule in SC2;
+- tag proposals became rules in T1;
+- the reference desk became a skill. Finding and downloading papers is a script
 because it is deterministic. Keeping it apart from reading puts an identity
 check between them, keeps the reader off the web, and wastes no reading
 context on failed downloads. The library writer is a script because an agent
@@ -323,30 +361,36 @@ can be talked out of a rule by text it reads, and a script cannot.
 | candidates | resolve in a bibliographic source (D3) | deterministic | exact identifier, or title similarity ≥ 0.9 with first author |
 | candidates | retraction and correction status, Crossref `updated-by` and `filter=updates:` (D3, L2) | deterministic | recorded; shown at U1 |
 | discovery | every query answered | deterministic | else *discovery incomplete* |
-| screens | SC0 rules; two framings compared; adjudicated | deterministic + agents | agree or adjudicated |
+| screens | SC0 rules; two framings combined by rule (SC2) | deterministic + agents | rule applied; any include kept |
 | screens | U1 random 60 exclusions | human, measured | no relevant paper in the sample |
 | screening agents | agreement with the SC0 baseline on the U1 decisions | measured | reported each wave; if the agents add nothing over the baseline for two waves, U4 decides whether to drop them |
 | copies | page 1 identity; A2 comparison | deterministic + user | match, or user accepts |
 | text | source comparison (P1) | deterministic | disagreements listed and passed to E1, E4 |
 | tables | two extractions, cell by cell | deterministic | disagreements flagged; cited cells checked on the crop |
-| quotes | length, presence on the cited page, uniqueness | deterministic | all three |
+| quotes | length, presence on the cited page of the imaged PDF, uniqueness | deterministic | all three |
 | table values | cited value equals the cell | deterministic | equal |
-| units | Pint parse; dimension against the units table; equation homogeneity (E3b) | deterministic | no inconsistency, or E4 resolves it |
+| units | Pint parse; dimension against the units table; equation homogeneity (E3b) | deterministic | no inconsistency, or E4 resolves it; *not parsed* is not a pass |
 | claims | `beth-checker` on images | agent, different input | all confirmed |
-| important claims | X1 against reader and checker | different vendor, compared by script | all three agree, else the user decides |
-| verdicts | 30 random claims per wave rechecked by a fresh E4 | measured | agreement ≥ 90 %; else E4 and C0 rerun |
+| checker corrections | a corrected claim goes through E3, E3b, X1 and a fresh E4 | deterministic + agents | as for any claim |
+| important claims | X1 against reader and checker, on parameter fields | different vendor, compared by script | all three agree, else the user decides |
+| verdict repeatability | 30 random claims per wave rechecked by a fresh E4 | measured; repeatability only, not correctness | agreement ≥ 90 %; else E4 and C0 rerun |
 | recall | E1 vs E2 on core papers; U3a *missed* | measured, human | reported |
 | core claims | U3a | human, census | every claim on read pages checked |
 | other claims | U3b random 60 | human, measured | no error |
-| memos | Y2 citations and numbers, rerun at every L2 | deterministic | 100 % |
-| memos | Y3; D2g on gaps | agents | no unsupported statement left, or user accepts each |
+| memos | Y2 citations, numbers and units, rerun at every L2 | deterministic | 100 % |
+| memos | Y3 (with Codex for model-critical questions); D2g on gaps | agents, two vendors | no unsupported statement left, or user accepts each |
 | search | T-ret | measured | reported; picks the search mode and the embedding model |
 | library, index, backup | rehash; rebuild and compare (L2) | deterministic | no mismatch |
 
 **Important claims.** A claim is *important* if any of these holds:
 - its kind is parameter or equation;
+- by script, whatever its kind: it has a number with a unit, a table cell,
+  or LaTeX;
 - it bears on a question the brief marks *model-critical*;
 - the user marks it.
+
+Importance is recomputed after E4, and a claim that becomes important goes
+through E3b and X1.
 
 What important claims get:
 - **checks:** they go through E3b and X1;
@@ -360,7 +404,9 @@ library. For each paper:
    is a flag (for example `m-1` read for `m^-1`).
 2. **Compare with the units table:** a symbol whose meaning matches a row of
    the project's verified units table must have that row's dimension.
-3. **Check equations:** each transcribed equation that SymPy can parse is
+3. **Check equations:** an operator layer first replaces ∇, ∂ and · with
+   their dimensional effect (1/length, 1/time), since SymPy's LaTeX parser
+   does not handle vector calculus. Each equation that then parses is
    checked term by term for the same dimension. A symbol the paper gives no
    unit for gets its dimension from the equation, and the inferred units are
    listed for E4.
@@ -368,19 +414,22 @@ library. For each paper:
    only for being dimensionless.
 
 Equations that do not parse are counted as *not checked* and reported per
-paper, so coverage is visible. A lost exponent or a swapped symbol usually
+paper, so coverage is visible. They go to X1 and E4, and they have not passed
+the units check. T-units measures the coverage on the B1 seeds. A lost exponent or a swapped symbol usually
 breaks homogeneity; a wrong number with the right unit does not, which is
 what X1 is for.
 
-**Merging readers A and B (E3).** Two claims are the same when all three of
+**Merging readers A and B (E3).** Two claims are the same when all four of
 these hold:
 - they cite the same page;
 - they have the same kind;
-- their quotes overlap by at least half of the shorter quote's words.
+- their quotes overlap by at least half of the shorter quote's words;
+- their claim texts are similar, or their parameter fields match.
 
 What happens to the claims:
 - **A matched pair** becomes one claim. E4 confirms the wording the page
-  supports, and the other wording is kept as a variant.
+  supports. The other wording is kept as a variant, which is never shown to
+  Y1.
 - **Every unmatched claim** is kept and checked by E4.
 - **Reader omission rate:** the share of merged, confirmed claims that the
   reader did not find.
@@ -392,8 +441,10 @@ after normalization (NFKC, lower case, punctuation removed, whitespace
 collapsed). A ratio ≥ 0.9 matches, together with the first author's surname.
 
 **Numbers in memos (Y2).** Numbers are taken from the memo sentence and from
-the cited quotes and equations, normalized (`1e-3` = `10^{-3}` = `0.001`;
-percentages as fractions), and must match within the printed precision.
+the cited claims' parameter fields, quotes and equations, normalized (`1e-3`
+= `10^{-3}` = `0.001`; percentages as fractions). They must match within the
+printed precision, and where the cited claim has a unit, the memo's unit
+must have the same dimension and value after conversion (Pint).
 Exempt: IDs, years, and equation and figure numbers. The script ships with
 test cases for each rule.
 
@@ -421,17 +472,22 @@ test cases for each rule.
     - a dropped condition;
     - a wrong figure;
     - a retracted paper.
-  - **Pass:**
+  - **Tuning and held-out sets** (user decision 2026-10-27). The plants are
+    split at random into a tuning set, used when prompts are revised, and a
+    held-out set, used only for the pass. The user's own plants are all held
+    out.
+  - **Pass, on the held-out set:**
     - every fabricated quote, wrong page, and sign or exponent change caught;
-    - at least 3 of 4 of each other kind caught;
-    - at least 90 % overall;
+    - an overall one-sided 95 % Clopper–Pearson lower bound of at least 85 %
+      (for example, 58 of 60 caught gives 89.9 %);
     - at most 10 % of controls flagged.
   - **Reporting:**
-    - the overall rate with its one-sided 95 % Clopper–Pearson lower bound;
+    - each other kind's catch rate, with its interval. It is not a pass
+      criterion until the kind has 8 or more held-out items, which the
+      growing set provides over time;
     - the catch rate on the user's plants and on Codex's plants, separately.
-    If the user's plants are caught clearly less often (their intervals do
-    not overlap), Codex's plants are too easy, and the rate on the user's
-    plants is the one that counts.
+      If the user's plants are caught clearly less often, Codex's plants are
+      too easy, and the rate on the user's plants is the one that counts.
   - T-res (§12) is part of the core.
 - **Branch, light.** It runs when a branch is seeded, on the one or two seeds
   the user knows well, and tests the judgments that depend on the field.
@@ -518,6 +574,8 @@ index/                      passage index (outside library/, rebuilt, hash in th
   - quote (and the image wording if E4 corrected it);
   - page (PDF index and printed) and location;
   - equation (LaTeX, number);
+  - parameter (quantity, value, unit as printed, uncertainty), so that X1,
+    E3b and Y2 compare fields rather than prose;
   - table cell (table, row, column) and figure;
   - questions (versioned) and tags;
   - basis (derived / numerically tested / experimentally tested / cited /
@@ -556,15 +614,17 @@ index/                      passage index (outside library/, rebuilt, hash in th
   Where the index is used:
   - Y3 and D2g (evidence a memo omits);
   - R1 (pages to reread for a new question);
+  - D2g (queries for each gap);
   - the reference desk;
-  - SC0 (similarity of abstracts).
+  - SC0, which uses the same embedding model on a separate store of candidate
+    abstracts.
 
   It never feeds a memo directly. A passage becomes citable only as a claim,
   through E1 to E4.
 - **Tags.** Facets in `vocab.yaml`: branch, method, phase handling, physics,
   boundary condition, numerics, material and setting.
-  - **New tags:** a reader may propose one; it is *provisional* until T1, T2
-    and U4 accept it.
+  - **New tags:** a reader may propose one; it is *provisional* until the
+    user accepts it at U4.
   - **Changes:** an accepted change is a new `vocab.yaml` version with an
     alias map. Records are never rewritten for a tag change, and searches go
     through the aliases.
@@ -572,7 +632,7 @@ index/                      passage index (outside library/, rebuilt, hash in th
   - subcommands `claims` (filters: branch, tag, paper, question, kind,
     basis, status), `passages` (hybrid search) and `chunk` (one chunk with
     its neighbors);
-  - every query is logged with the asker and purpose.
+  - every query is logged with the asker and purpose (its only write).
 - **Change and deletion.** A correction is a new version; the old one moves to
   `history/` with an event. Nothing is deleted. Only the user can mark a
   record retracted, with `curator.py retract --user-approved "<reason>"`.
@@ -585,6 +645,16 @@ index/                      passage index (outside library/, rebuilt, hash in th
   Snapshots are named by date and never overwritten, with the hash recorded.
   L2 checks the latest one, downloading it first with `brctl download` if
   iCloud has evicted it.
+- **Archive.** After each wave, `curator.py` also writes a dated tarball of
+  everything a recheck needs that git does not hold. That is the P1 outputs
+  (page images, tiles, text, tables, crops, page maps), the library and the
+  run's transcripts. It goes to
+  `~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Courses/Fall2026/ME295/library_archive/`
+  (user decision 2026-10-27).
+  - **Records:** its hash and location are recorded in the manifest, and L2
+    checks it.
+  - **Never in git:** it holds paper text.
+  - **Size:** a few GB over about 100 papers.
 - **What is committed.**
   - Committed: `branches.yaml`, `vocab.yaml`, briefs, `references.bib`, the
     event log, run manifests, search snapshots (bibliographic metadata) and
@@ -601,17 +671,20 @@ in its run folder.
 ## 7. Schemas (summary)
 
 - **Read:** `{paper_id, section_map, claims: [{text, kind, quote, page_pdf,
-  page_printed, location, equation?: {latex, number}, table_cell?: {table,
-  row, column}, figure?, questions[], tags[], basis, conditions: [{text,
-  page_pdf}]}], symbols: [{symbol, meaning, unit_printed, page_pdf,
-  nondimensional?}], nothing_relevant_pages[], proposed_tags[], flags[]}`.
+  page_printed, location, equation?: {latex, number}, parameter?: {quantity,
+  value, unit_printed, uncertainty?}, table_cell?: {table, row, column},
+  figure?, questions[], tags[], basis, conditions: [{text, page_pdf}]}],
+  symbols: [{symbol, meaning, unit_printed, page_pdf, nondimensional?}],
+  nothing_relevant_pages[], proposed_tags[], flags[]}`.
 - **Claim verdict:** `{claim_id, text: supported|overstated|unsupported|
   not_on_cited_page, corrected_text?, quote_on_page, image_quote?, equation:
-  matches|corrected|none, corrected_latex?, numbers: match|mismatch|none,
-  kind, basis, questions (confirmed|corrected), dropped_conditions[], reason}`.
-- **X1 read:** `{claim_id, latex? | {value, unit}?, not_found?}`.
+  matches|corrected|none, corrected_latex?, parameter: match|corrected|none,
+  corrected_parameter?, kind, basis, questions (confirmed|corrected),
+  dropped_conditions[], reason}`.
+- **X1 read:** `{claim_id, latex? | parameter?: {quantity, value,
+  unit_printed}, not_found?}`.
 - **Screen:** `{candidate_id, decision, criterion, questions[], reason}`.
-- **Desk answer:** `{answer, citations: [{chunk_id, page_pdf, quote}],
+- **Desk answer:** `{hits: [{chunk_id, page_pdf, quote}], summary?,
   abstain, reason}`.
 - **U3 verdict:** `{claim_id, user_verdict, correction?, note?}`; missed:
   `{paper_id, page_pdf, statement}`.
@@ -627,9 +700,13 @@ Each wave writes `runs/literature-review/<review>/<run_id>/`:
   - the hashes of agent files, prompts, schemas, the brief, every file
     acquired, every page image and text page, and the index;
   - the versions, weights hashes and flags of Marker, Surya, mutool and the
-    table extractor;
+    table extractor. The hashes are computed from the files actually loaded
+    from the pinned cache, and the run fails if they differ from the lock
+    file;
   - the embedding model: name, Hugging Face revision, weights hash, library
-    versions, device (CPU);
+    versions, device (CPU, one thread);
+  - that the sandbox and `run_offline.sh` were active;
+  - the archive's location and hash;
   - the calibration result and sample seeds;
   - the query filters and returned IDs for Y1 and Y3;
   - verdict counts.
@@ -637,18 +714,23 @@ Each wave writes `runs/literature-review/<review>/<run_id>/`:
   response, hashed and dated. Abstracts are split out and kept locally.
   Databases change, so this snapshot is what makes the candidate set
   reproducible.
-- **`runs.db`** and **`transcripts/`** (local): one row and one transcript per
-  agent call.
+- **`runs.db`** and **`transcripts/`** (local, and in the archive): one row
+  and one transcript per agent call.
 - **Scripts.** Scripts in `scripts/literature_review/` refuse to run with
   uncommitted changes to the workflow's definitions, print their inputs, and
   run in `venv_workflows`.
 
 **What "reproducible" means here.**
 1. **Deterministic stages give identical hashes from the same inputs.** These
-   are D3 on the saved search, SC0, E3, E3b, Y2, L1, L2 and the index build
-   (the embedding model on CPU, with its weights pinned). P1 uses neural
-   models (Marker, Surya, the table extractor), so it is tested for this
-   (T-det); the stored outputs are the reference that later checks read.
+   are D3 on the saved search, SC0, E3, E3b, Y2, L1, L2 and the index build.
+   - **The index** is compared through a canonical dump, not the database
+     file's bytes: chunks sorted by ID, and embeddings rounded to 6
+     significant digits. It is built on CPU with one thread.
+   - **A version change** of the embedding stack is a planned rebuild with a
+     new recorded hash, not an audit failure.
+   - **P1** uses neural models (Marker, Surya, the table extractor), so it is
+     tested for this (T-det). The archived outputs are the reference that
+     later checks read.
 2. **Agent checks repeat at a measured rate.** Rechecking a wave's claims
    gives the same verdicts at an agreement rate measured on 30 random claims
    per wave.
@@ -683,15 +765,24 @@ From the user, 2026-10-27 (revision 6):
 17. **Units:** checked by dimensional analysis.
 18. **Permissions:** explicit for every agent and script.
 19. **Critique round 3:** an independent review looking for LLM steps that a
-    script could do.
+    script could do. Applied in revision 7 as triaged
+    (`runs/design-critique/20261027-170522/triage.md`).
+    - **Decided by the user:**
+      - the archive goes to the course folder (F2);
+      - Codex runs as a separate macOS user (F5);
+      - calibration plants are split into tuning and held-out sets (F10);
+      - the user rules on 30 practice-library claims (F25).
+    - **The other 21 findings** are applied as recommended, for the user's
+      review.
 
 Open:
 20. **Branches:** the list in §2, and 3 to 5 seeds per branch (user).
 21. **Codex:**
-    - agent name (`summer-*` proposed);
+    - agent prefix (`summer-*` proposed);
     - pinned model;
-    - confirmation that the user's plan does not train on inputs, since page
-      images go to OpenAI.
+    - confirmation that the user's plan does not train on inputs. Until then
+      nothing goes to OpenAI, and C0 core starts with the user's and the
+      script-made plants.
 22. **Embedding model:** two open candidates compared by T-ret at build; the
     better one pinned.
 23. **Second table extractor:** chosen by T-table.
@@ -730,11 +821,16 @@ Open:
 | Search misses the passage | T-ret measures it; search is never the only path to a fact |
 | Embedding model or index changes | model pinned by revision and hash; index hash; rebuild and compare at L2 |
 | A memo calls something a gap that the literature has answered | D2g challenge before a gap is stated |
-| Instructions hidden in a paper or web page | readers have no web, write or shell; schema-only output; transcript audit; no agent holds the lethal trifecta |
+| Instructions hidden in a paper or web page | readers have no web, write or shell; schema-only output; transcript audit; no agent holds the lethal trifecta; untrusted text kept out of the main session |
+| Checker's own correction published unchecked | a correction is a new version, checked like any claim |
+| Two papers in a series merged | year and series-token check; title-only merges at U1 |
+| Codex reads beyond its tile, or searches the web | separate macOS user; web search disabled; exec log audited; T-codex |
+| Sandbox fails to start | fails closed; recorded in every manifest |
+| Recorded results cannot be rechecked after a disk loss | archive in the course folder, hash checked at L2 |
 | Library changed by mistake | deny rules, read-only files, sandbox, hashes, audit |
 | Publish interrupted | staging; event last; `recover` |
 | Tool update changes results | versions and weights pinned; recalibration triggers |
-| Tag sprawl or drift | provisional tags; T1, T2; user accepts; aliases |
+| Tag sprawl or drift | provisional tags; T1 proposals; user accepts; aliases |
 | Scope creep | tiers, wave limits, staged waves, U4 |
 | Search not reproducible | raw responses saved and hashed |
 | API key leaked | Keychain only; removed from URLs |
@@ -745,12 +841,14 @@ Open:
   - round 1 (`runs/design-critique/20261023-103742/`): 23 findings, all
     accepted;
   - round 2 (`20261023-111440`): 22 findings, 21 accepted.
-- **Round 3** (revision 6). `beth-critic` gets this file and two extra
-  questions:
+- **Round 3** (`20261027-170522`, revision 6). `beth-critic` got this file
+  and extra questions (`runs/design-critique/focus/rev6_scripts_permissions.md`):
   - which agent steps could be a script, or a script plus a smaller agent
     decision;
+  - whether each agent is justified;
   - where the permissions in §4 are weaker than stated.
 
+  It returned 25 findings and 9 unclear points, all applied in revision 7.
   A Codex critic joins once Codex is set up.
 - **How a critic runs.** It sees only a copy of this file, in a fresh folder,
   headless, with Read and WebSearch. It is not told the design is good.
@@ -770,11 +868,11 @@ build log with the date.
 | T-res | equations and numbers on 3 to 4 dense pages, read from full pages and from tiles, against a known transcription (the authors' LaTeX for Moure & Fu 2024; the user's for one Kaempfer & Plapp page) | tiles: no symbol errors |
 | T-det | P1 and P2 twice on one machine, and on a second machine if available | identical hashes, or differences listed |
 | T-table | 5 or more tables of different layouts from seed papers, extracted by each candidate, compared with the user's check of the crop | the chosen extractor has no cell errors on born-digital tables; errors on scans listed |
-| T-units | Pint and SymPy on the verified units table and on planted unit and exponent errors | every planted error flagged; no verified row flagged |
+| T-units | Pint and SymPy on the verified units table and on planted unit and exponent errors; coverage of the operator layer on the B1 seeds' equations | every planted error flagged; no verified row flagged; coverage reported |
 | T-ret | per branch, 25 questions written by the user from use, before looking at chunks: about 10 exact (symbols, values, named equations), 10 paraphrases and 5 not in the library; gold statements count. Hit@5 for keyword, embedding and hybrid search, and abstains on the 5 | reported; picks the search mode and the model. Misses cost recall, not correctness, so there is no fixed pass |
-| T-perm | each agent's forbidden actions are refused (reader WebSearch, Read outside its folder, scout WebFetch, librarian write, any Bash write to `library/`) and the transcript audit catches a planted violation | all refused and caught |
-| T-codex | Codex runs headless in a clean folder with its model pinned and no web search; its version is recorded | as stated |
+| T-perm | each agent's forbidden actions are refused (reader WebSearch, Read outside its folder, scout WebFetch, any Bash write to `library/`, an offline script reaching the network through `run_offline.sh`) and the transcript audit catches a planted violation | all refused and caught |
+| T-codex | Codex runs headless as the separate user, with its model pinned and web search disabled; a planted read of a project file and a planted web search are both refused or caught by the exec-log audit; its version is recorded | as stated |
 | T-retract | Crossref finds the retraction of 10.1021/am300292v | found |
 | T-key | the Keychain key is read in a headless run; a failed read stops D1 | as stated |
-| T-sandbox | sandbox on: Bash writes to `library/` refused; `curator.py` runs; discovery hosts reachable | all three |
-| T-backup | snapshot written, downloaded and hash-checked | match |
+| T-sandbox | sandbox on: Bash writes to `library/` refused; `curator.py` runs; discovery hosts reachable; with the sandbox made unavailable, Claude Code exits instead of running unsandboxed | all four |
+| T-backup | snapshot and archive written, downloaded and hash-checked | match |

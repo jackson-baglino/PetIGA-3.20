@@ -73,3 +73,13 @@ Unclear points, answered in revision 7:
    excluded command and asks each time it runs.
 9. **Sections for long papers.** P1 splits by Marker's headings; claims
    spanning sections are merged by E3.
+
+## Decisions (2026-10-27)
+
+- **Decided by the user** (all four as recommended):
+  - F2: the archive goes to the iCloud course folder, `ME295/library_archive/`.
+  - F5: Codex runs as a separate macOS user.
+  - F10: plants are split into tuning and held-out sets.
+  - F25: the user rules on 30 practice-library claims.
+- **The other 21 findings and the 9 unclear points** were applied as
+  recommended in revision 7, for the user's review.

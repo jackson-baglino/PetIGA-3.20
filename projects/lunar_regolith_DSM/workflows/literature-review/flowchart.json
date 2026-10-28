@@ -1,10 +1,10 @@
 {
  "title": "literature-review",
  "summary": [
-  "A reusable literature-review workflow built around a library with branches (numerical methods, sublimation physics, sintering, planetary setting, properties), each seeded with papers the user chooses. Seeds steer discovery (citation chaining), screening (a scripted baseline ranks candidates by similarity to the seeds) and calibration. Scripts search Crossref, OpenAlex, Semantic Scholar and arXiv and resolve every candidate; two Haiku screeners judge abstracts against the baseline; an on-demand scout challenges novelty claims and memo gaps.",
-  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images only; Codex reads important values blind. The user reads core papers and audits 60 random claims. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions."
+  "A reusable literature-review workflow built around a library with branches (numerical methods, sublimation physics, sintering, planetary setting, properties), each seeded with papers the user chooses. Seeds steer discovery (citation chaining), screening (a scripted baseline ranks candidates by similarity to the seeds) and calibration. Scripts search Crossref, OpenAlex, Semantic Scholar and arXiv and resolve every candidate; two Haiku screeners judge abstracts, combined by a fixed rule (any include is kept) and measured against the baseline; an on-demand scout challenges novelty claims and memo gaps using search terms the user approves.",
+  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images, and its own corrections are checked again; Codex, isolated as a separate user, reads important values blind. The user reads core papers and audits 60 random claims. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions; the sandbox fails closed; a private archive in the course folder keeps everything a recheck needs."
  ],
- "status": "Revision 6, for review, 2026-10-27 (revision 5 was approved 2026-10-23). Build-time tests (WORKFLOW.md §12) come first.",
+ "status": "Revision 7, for review, 2026-10-27 (critique round 3 applied; revision 5 was approved 2026-10-23). Build-time tests (WORKFLOW.md §12) come first.",
  "lanes": [
   {
    "id": "user",
@@ -70,8 +70,9 @@
    ],
    "job": "Find: web search for work the APIs miss. Challenge: hunts prior work against a novelty claim or a memo gap. Citations only.",
    "details": [
-    "Cannot fetch or write; sees no private data",
-    "Every challenge hit is read and checked before it counts"
+    "Challenge: script-built terms the user approves",
+    "Cannot fetch or write",
+    "Every hit is read and checked before it counts"
    ]
   },
   {
@@ -135,24 +136,8 @@
    "lane": "script",
    "row": 4,
    "kind": "script",
-   "title": "SC2 compare_screens.py",
-   "job": "Compares the two screens, lists disagreements, and measures each screener's agreement with the SC0 baseline."
-  },
-  {
-   "id": "SC3",
-   "lane": "agent",
-   "row": 4,
-   "kind": "agent",
-   "title": "SC3 beth-checker (task: screen)",
-   "model": "claude-opus-5-5",
-   "tools": [
-    "Read"
-   ],
-   "job": "Decides each disagreement from the abstract and both reasons.",
-   "details": [
-    "Gets only the disagreements",
-    "Cannot tell: goes to the user at U1"
-   ]
+   "title": "SC2 compare_screens.py (rule)",
+   "job": "Combines the screens by rule: either includes, include; both exclude on one criterion, exclude; else U1. Measures agreement with SC0."
   },
   {
    "id": "U1",
@@ -240,9 +225,9 @@
    ],
    "job": "Reads one paper and writes its claims, a symbol list with printed units, table cells cited by row and column, and a section map.",
    "details": [
-    "Equations, numbers and symbols read from the tiles",
+    "Reads tiles on demand for every equation, number, symbol",
     "Fresh per paper; no web",
-    "Instructions found in a paper are flagged, not followed"
+    "Instructions found in a paper are flagged to the user"
    ]
   },
   {
@@ -270,7 +255,7 @@
    "lane": "agent",
    "row": 10,
    "kind": "agent",
-   "title": "E4 beth-checker (task: claim)",
+   "title": "E4 beth-checker (per 3 to 5 pages)",
    "model": "claude-opus-5-5",
    "tools": [
     "Read"
@@ -278,8 +263,8 @@
    "job": "On page images only, confirms each claim's text, quote, every equation symbol and number, kind, basis and questions, and dropped conditions.",
    "details": [
     "Checks each equation, number and quote on its tile",
-    "Gets E3, E3b and source-comparison flags",
-    "Never sees the reader's text or reasoning; fresh per page"
+    "Its own corrections go back through E3, E3b, X1 and a fresh E4",
+    "Never sees Marker text or the reader's reasoning"
    ]
   },
   {
@@ -348,26 +333,10 @@
    "row": 14,
    "kind": "script",
    "title": "L2 audit.py",
-   "job": "Rehashes the library, rebuilds the catalog, requeries retractions, rechecks every memo's citations and the latest backup.",
+   "job": "Rehashes the library, compares canonical dumps of catalog and index, requeries retractions, rechecks memos, checks backup and archive.",
    "details": [
     "Memo citing a superseded claim: back to Y1",
     "Mismatch: stop and report; recover first"
-   ]
-  },
-  {
-   "id": "LR",
-   "lane": "agent",
-   "row": 14,
-   "kind": "agent",
-   "title": "morty-librarian (reference desk)",
-   "model": "claude-sonnet-5-5",
-   "tools": [
-    "Bash (library_query.py only)"
-   ],
-   "job": "Answers the user's ad hoc questions from the passage index, citing chunks with quotes a script checks, or abstains.",
-   "details": [
-    "Answers labeled: passage, not checked by E4",
-    "Feeds no stage of a wave; cannot write"
    ]
   },
   {
@@ -401,13 +370,13 @@
    "lane": "agent",
    "row": 16,
    "kind": "agent",
-   "title": "Y3 beth-memo-checker",
+   "title": "Y3 beth-memo-checker (+ Codex, model-critical)",
    "model": "claude-opus-5-5",
    "tools": [],
    "job": "Checks each statement against the same claims plus a passage search, listing omitted or contradicting claims and passages.",
    "details": [
-    "A relevant passage with no claim goes back to E1 for its page",
-    "Each gap is challenged by the scout (D2g) before it is stated"
+    "A relevant passage with no claim goes back to E1",
+    "Gaps: API and passage queries, then a challenge; worded as not found by queries"
    ]
   },
   {
@@ -448,21 +417,7 @@
    "row": 17,
    "kind": "script",
    "title": "T1 tag_report.py (after every wave)",
-   "job": "Counts tag use and lists tags with similar names or mostly the same claims, unused tags and provisional tags."
-  },
-  {
-   "id": "T2",
-   "lane": "agent",
-   "row": 17.5,
-   "kind": "agent",
-   "title": "T2 morty-tagger",
-   "model": "claude-sonnet-5-5",
-   "tools": [],
-   "job": "Proposes tag merges, splits, renames, deprecations and promotions, each with a reason.",
-   "details": [
-    "Proposals only; the user accepts each at U4",
-    "Accepted: new vocab.yaml version with alias map"
-   ]
+   "job": "Counts tag use and proposes merges for tags whose names or claim sets are more similar than a threshold; the user decides at U4."
   },
   {
    "id": "U3b",
@@ -472,8 +427,8 @@
    "title": "U3b Random audit",
    "job": "Checks 60 random passed claims not seen in guided reading, every disputed claim, and every disputed important claim.",
    "details": [
-    "Pass: no error in 60 (rate below 4.9 %, 95 %)",
-    "Error: E4 prompt fixed, C0 rerun, kind rechecked, fresh 60"
+    "Pass: no error in 60 of the wave's claims (bound 4.9 %)",
+    "After an error: recheck, fresh 60 from rechecked claims, combined bound"
    ]
   },
   {
@@ -481,8 +436,8 @@
    "lane": "record",
    "row": 14,
    "kind": "record",
-   "title": "ME295/library_backups/",
-   "job": "Compressed library snapshots in the iCloud course folder, never overwritten; each hash in the event log."
+   "title": "ME295/library_backups/, library_archive/",
+   "job": "Library snapshots after each publish, and a dated archive of page images, text and transcripts per wave; hashes checked; never in git."
   },
   {
    "id": "R1",
@@ -559,8 +514,8 @@
    "title": "E3b check_units.py",
    "job": "Parses every unit with Pint, compares dimensions with the verified units table, and checks each equation term by term with SymPy.",
    "details": [
-    "Infers units the paper leaves out",
-    "Equations that do not parse are counted, not hidden"
+    "Operator layer for ∇, ∂ and · before SymPy",
+    "Not parsed: sent to X1 and E4, not a pass"
    ]
   },
   {
@@ -575,8 +530,8 @@
    ],
    "job": "Given a tile and the name of a quantity or equation, never the claimed value, transcribes it; a script compares three reads.",
    "details": [
-    "Different vendor; disagreement goes to the user",
-    "Important: parameters, equations, model-critical questions"
+    "Separate macOS user; web search off; exec log audited",
+    "Disagreement goes to the user"
    ]
   }
  ],
@@ -629,17 +584,6 @@
   },
   {
    "from": "SC2",
-   "to": "SC3",
-   "kind": "flow"
-  },
-  {
-   "from": "SC2",
-   "to": "U1",
-   "kind": "flow",
-   "label": "agree"
-  },
-  {
-   "from": "SC3",
    "to": "U1",
    "kind": "flow"
   },
@@ -754,16 +698,6 @@
    "kind": "flow"
   },
   {
-   "from": "T1",
-   "to": "T2",
-   "kind": "flow"
-  },
-  {
-   "from": "T2",
-   "to": "U4",
-   "kind": "flow"
-  },
-  {
    "from": "U3a",
    "to": "U3b",
    "kind": "flow"
@@ -853,10 +787,15 @@
    "label": "disagree"
   },
   {
+   "from": "T1",
+   "to": "U4",
+   "kind": "flow"
+  },
+  {
    "from": "RI",
-   "to": "LR",
+   "to": "Y3",
    "kind": "flow",
-   "label": "read only"
+   "label": "passage search"
   }
  ]
 }
