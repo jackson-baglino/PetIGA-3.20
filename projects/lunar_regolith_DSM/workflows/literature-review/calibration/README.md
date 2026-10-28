@@ -19,7 +19,21 @@ What is not yours to write:
 - the plants drafted by `beth-planter` (Opus), which you approve one by one;
 - the mechanical plants a script makes from verified claims.
 
-Both are generated into separate files at build time.
+Both are generated into `generated/`, for you to approve:
+- `generated/script_plants.yaml`: made by `make_plants.py` from your gold
+  statements. There are four kinds: a changed digit, a flipped sign or
+  exponent, a swapped unit, and a page moved by one or two. Identifiers such
+  as Fig. 1 or SA81 are never changed. For each plant, set `approved: true`
+  if it is wrong in exactly the way its note says and isn't accidentally
+  still true; otherwise set it to `false`. Rerunning the script overwrites the
+  file, so approve plants once your gold statements are final.
+- `generated/model_plants.yaml`: drafted by `beth-planter`, later.
+
+When the plants are in, `calibrate.py split --heldout-size N` fixes the
+tuning and held-out sets once, before any scoring. All your own plants are
+held out. To pass, the held-out set needs at least 19 plants that reach the
+checker (E4): your 10 or more, plus approved content plants. Page plants
+don't count toward the 19, because a script catches them.
 
 Order that unblocks the most:
 1. `planted_errors.yaml`
