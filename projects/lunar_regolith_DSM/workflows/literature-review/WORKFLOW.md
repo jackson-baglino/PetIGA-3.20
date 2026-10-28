@@ -29,7 +29,8 @@ Decisions: §9.
   *brief*).
   - **First review (Pillar 1):** numerical methods for multiphase systems in
     which some phases are stationary and others evolve, starting from
-    diffuse-interface and diffuse-domain methods.
+    diffuse-interface and diffuse-domain methods, and methods that couple a
+    sharp-interface description with a diffuse-interface one.
   - **Motivating failure:** the spurious air film that forms where the
     evolving ice field relaxes against a stationary sediment field, so that
     φ_i + φ_s ≠ 1 in the band.
@@ -94,7 +95,7 @@ starting set (the user decides, §9):
 
 | Branch | Covers |
 |---|---|
-| B1 numerical methods | diffuse interface, diffuse domain, multiphase field and smoothed boundary methods with stationary phases (Pillar 1) |
+| B1 numerical methods | diffuse interface, diffuse domain, multiphase field and smoothed boundary methods with stationary phases; methods that couple a sharp-interface description with a diffuse-interface one (Pillar 1) |
 | B2 sublimation physics | Gibbs–Thomson, Hertz–Knudsen, kinetic coefficients, vapor diffusion and Knudsen transport |
 | B3 ice sintering and metamorphism | experiments and models of snow and ice microstructure |
 | B4 planetary setting | lunar polar cold traps, ice in regolith, thermal environment |
