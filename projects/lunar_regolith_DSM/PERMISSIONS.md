@@ -37,7 +37,13 @@ allowed.
 The user: by answering a prompt, or by merging a pull request when agents
 work on branches.
 
-## 5. What is logged
+## 5. Workflow agents and scripts
+
+Each workflow's agents and scripts have their own permission table, with the
+flag or setting that enforces each rule, in its `WORKFLOW.md` (literature
+review: §4).
+
+## 6. What is logged
 
 - Session IDs: `.claude/sessions.tsv` (local, by the SessionStart hook).
 - Session summaries: `project/LOG.md`.

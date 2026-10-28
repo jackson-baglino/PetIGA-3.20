@@ -1,739 +1,862 @@
 {
-  "title": "literature-review",
-  "summary": [
-    "A reusable literature-review workflow for reviews of any size. The user writes a brief (questions, criteria, tier); scripts search Crossref, OpenAlex, Semantic Scholar and arXiv, follow citations, resolve every candidate and record retractions; two Haiku screeners with different framings judge each abstract and may exclude only on a named criterion; an Opus checker settles disagreements. Scripts fetch open-access PDFs, check each is the paper asked for, and compare preprints with the published record.",
-    "A fresh Sonnet reader per paper extracts claims; core papers are read twice and the reads merged by rule. A script checks every quote; an Opus checker, given page images and 300 dpi tiles only (no OCR text), confirms each claim's text, quote, equations, numbers, kind and basis. The user reads the core papers with their claims (guided reading) and audits 60 random other claims. A script (the curator) is the only writer to the library; nothing is ever deleted. Memos are written from every verified claim for a question and checked by script and by a fresh Opus checker that sees the same claims. All agents are Claude models, so the scripts and the user are the independent checks."
-  ],
-  "status": "Revision 5, approved for building, 2026-10-23. Build-time tests (WORKFLOW.md §12) come first.",
-  "lanes": [
-    {
-      "id": "user",
-      "label": "User"
-    },
-    {
-      "id": "script",
-      "label": "Scripts"
-    },
-    {
-      "id": "agent",
-      "label": "Agents"
-    },
-    {
-      "id": "record",
-      "label": "Records"
-    }
-  ],
-  "nodes": [
-    {
-      "id": "U0",
-      "lane": "user",
-      "row": 0,
-      "kind": "user",
-      "title": "U0 Brief",
-      "job": "Writes the questions, inclusion and exclusion criteria, tier (S, M, L), seed papers and queries with the main session.",
-      "details": [
-        "Versioned: each wave records its brief version",
-        "Tier S skips discovery and screening"
-      ]
-    },
-    {
-      "id": "RB",
-      "lane": "record",
-      "row": 0,
-      "kind": "record",
-      "title": "brief.vN.json",
-      "job": "The review's questions, criteria, tier, seeds, queries and limits."
-    },
-    {
-      "id": "D1",
-      "lane": "script",
-      "row": 1,
-      "kind": "script",
-      "title": "D1 discover.py",
-      "job": "Runs the brief's queries on Crossref, OpenAlex, Semantic Scholar and arXiv and follows references and citations of seeds.",
-      "details": [
-        "OpenAlex key from the macOS Keychain; stop if unreadable",
-        "Cost estimated first; remaining budget read",
-        "429 or outage: back off and resume; else discovery incomplete"
-      ]
-    },
-    {
-      "id": "D2",
-      "lane": "agent",
-      "row": 1,
-      "kind": "agent",
-      "title": "D2 morty-scout (tier M, L)",
-      "model": "claude-sonnet-5-5",
-      "tools": [
-        "WebSearch"
-      ],
-      "job": "Searches the web for work the APIs miss (theses, recent preprints, other terms) and returns citations only.",
-      "details": [
-        "Cannot fetch or write",
-        "Fresh per question"
-      ]
-    },
-    {
-      "id": "RS",
-      "lane": "record",
-      "row": 1,
-      "kind": "record",
-      "title": "search/ snapshots",
-      "job": "Raw API responses with hashes and dates, so the candidate set can be reproduced."
-    },
-    {
-      "id": "D3",
-      "lane": "script",
-      "row": 2,
-      "kind": "script",
-      "title": "D3 resolve.py",
-      "job": "Resolves every candidate, merges versions of one work, and records retractions and corrections from Crossref updated-by.",
-      "details": [
-        "Unresolved: kept and shown at U1, not dropped",
-        "Preprint and journal version merged",
-        "Records whether an abstract exists"
-      ]
-    },
-    {
-      "id": "RC",
-      "lane": "record",
-      "row": 2,
-      "kind": "record",
-      "title": "candidates.json",
-      "job": "Deduplicated candidates with DOI, title, abstract and where each was found."
-    },
-    {
-      "id": "C0",
-      "lane": "script",
-      "row": 3,
-      "kind": "script",
-      "title": "C0 calibrate.py (once per prompt or model change)",
-      "job": "Measures the checks on 40+ planted errors over 3+ papers (10+ written by the user), controls, a gold recall set and off-topic abstracts.",
-      "details": [
-        "Gates SC1 and E1: no real wave until it passes",
-        "Every fake quote, wrong page, sign error caught; 3 of 4 of each other kind; 90 % overall",
-        "Rerun after agent, prompt, model, tool or U3b changes"
-      ]
-    },
-    {
-      "id": "SC1",
-      "lane": "agent",
-      "row": 3,
-      "kind": "agent",
-      "title": "SC1 jerry-screener x2, two framings (tier M, L)",
-      "model": "claude-haiku-5-5",
-      "tools": [],
-      "job": "Two screeners with different framings judge each abstract: core, context or exclude; exclude needs a named exclusion criterion.",
-      "details": [
-        "Neither sees the other's decision",
-        "No abstract: never excluded, goes to U1"
-      ]
-    },
-    {
-      "id": "SC2",
-      "lane": "script",
-      "row": 4,
-      "kind": "script",
-      "title": "SC2 compare_screens.py",
-      "job": "Compares the two screens and lists the disagreements."
-    },
-    {
-      "id": "SC3",
-      "lane": "agent",
-      "row": 4,
-      "kind": "agent",
-      "title": "SC3 beth-checker (task: screen)",
-      "model": "claude-opus-5-5",
-      "tools": [
-        "Read"
-      ],
-      "job": "Decides each disagreement from the abstract and both reasons.",
-      "details": [
-        "Gets only the disagreements",
-        "Cannot tell: goes to the user at U1"
-      ]
-    },
-    {
-      "id": "U1",
-      "lane": "user",
-      "row": 5,
-      "kind": "user",
-      "title": "U1 Approve shortlist",
-      "job": "Reviews every core and context paper, 60 random exclusions, unresolved and no-abstract items, and query counts.",
-      "details": [
-        "Sees any discovery-incomplete warning",
-        "Adds or removes papers"
-      ]
-    },
-    {
-      "id": "RL",
-      "lane": "record",
-      "row": 5,
-      "kind": "record",
-      "title": "shortlist.json",
-      "job": "Approved papers with tier and the questions each bears on; no relevance score."
-    },
-    {
-      "id": "A1",
-      "lane": "script",
-      "row": 6,
-      "kind": "script",
-      "title": "A1 acquire.py",
-      "job": "Finds each paper in Literature/, then as open access (OpenAlex, arXiv, Semantic Scholar, repositories), and checks its first page.",
-      "details": [
-        "Each download in its own new folder",
-        "Links a new version to the paper already read; its claims are rechecked",
-        "Not found: listed in fetch_list.md",
-        "No institutional access; no Sci-Hub"
-      ]
-    },
-    {
-      "id": "RP",
-      "lane": "record",
-      "row": 6,
-      "kind": "record",
-      "title": "Literature/incoming/<review>/",
-      "job": "Acquired PDFs with path and SHA-256 in acquired.json."
-    },
-    {
-      "id": "U2",
-      "lane": "user",
-      "row": 6.5,
-      "kind": "user",
-      "title": "U2 Supply missing papers",
-      "job": "Supplies any listed paper they already have, or marks it unavailable; accepts or rejects copies A2 flagged.",
-      "details": [
-        "A1 and A2 rerun on what the user adds"
-      ]
-    },
-    {
-      "id": "P1",
-      "lane": "script",
-      "row": 7,
-      "kind": "script",
-      "title": "P1 prepare.py",
-      "job": "Renders full pages and 300 dpi tiles, runs Marker (OCR to Markdown with LaTeX) and crops figures with captions.",
-      "details": [
-        "Tiles keep small symbols legible: full pages reach the model at about 200 dpi",
-        "Marker, Surya, weights and flags pinned",
-        "Maps PDF page index to printed page"
-      ]
-    },
-    {
-      "id": "RG",
-      "lane": "record",
-      "row": 7,
-      "kind": "record",
-      "title": "pages/, marker/, figures/",
-      "job": "Page PNGs, Marker pages and figure crops, all hashed; local only (copyright)."
-    },
-    {
-      "id": "E1",
-      "lane": "agent",
-      "row": 8,
-      "kind": "agent",
-      "title": "E1 morty-reader (E2: second independent read of core papers)",
-      "model": "claude-sonnet-5-5",
-      "tools": [
-        "Read"
-      ],
-      "job": "Reads one paper and writes its claims (text, kind, basis, quote, pages, equation, conditions, tags) and a section map.",
-      "details": [
-        "Equations, numbers and symbols read from the tiles",
-        "Fresh per paper; no web",
-        "Instructions found in a paper are flagged, not followed"
-      ]
-    },
-    {
-      "id": "RR",
-      "lane": "record",
-      "row": 8,
-      "kind": "record",
-      "title": "reads/<paper>.A.json, .B.json",
-      "job": "The reader's paper card and claims, one file per read."
-    },
-    {
-      "id": "E3",
-      "lane": "script",
-      "row": 9,
-      "kind": "script",
-      "title": "E3 check_extraction.py",
-      "job": "Checks each quote's length, presence on its page and uniqueness, checks page coverage, and merges reads A and B by rule.",
-      "details": [
-        "Quote: 8+ words or a whole sentence",
-        "Same claim: same page and kind, quotes overlap by half"
-      ]
-    },
-    {
-      "id": "E4",
-      "lane": "agent",
-      "row": 10,
-      "kind": "agent",
-      "title": "E4 beth-checker (task: claim)",
-      "model": "claude-opus-5-5",
-      "tools": [
-        "Read"
-      ],
-      "job": "On page images only, confirms each claim's text, quote, every equation symbol and number, kind, basis and questions, and dropped conditions.",
-      "details": [
-        "Checks each equation, number and quote on its tile",
-        "Also sees abstract, model, method, conclusions and condition pages",
-        "Never sees Marker text or the reader's reasoning; fresh per page"
-      ]
-    },
-    {
-      "id": "RV",
-      "lane": "record",
-      "row": 10,
-      "kind": "record",
-      "title": "verdicts.json",
-      "job": "Verdict per claim and equation with location on the page and reason."
-    },
-    {
-      "id": "E5",
-      "lane": "agent",
-      "row": 11,
-      "kind": "agent",
-      "title": "E5 morty-reader (revise, at most 2 rounds)",
-      "model": "claude-sonnet-5-5",
-      "tools": [
-        "Read"
-      ],
-      "job": "Rewrites a failed claim from the page and the checker's reason; the rewrite is checked again.",
-      "details": [
-        "Still failing after 2 rounds: goes to U3"
-      ]
-    },
-    {
-      "id": "U3a",
-      "lane": "user",
-      "row": 12,
-      "kind": "user",
-      "title": "U3a Guided reading (core papers)",
-      "job": "Reads each core paper's key pages in order, opens each page's claims after reading it, marks them, and notes missed statements.",
-      "details": [
-        "Every claim on a read page is checked",
-        "Missed statements: human measure of reader recall"
-      ]
-    },
-    {
-      "id": "L1",
-      "lane": "script",
-      "row": 13,
-      "kind": "script",
-      "title": "L1 curator.py (only writer)",
-      "job": "Publishes items that have a citation, a quote match and a passing verdict or user decision; refuses all others.",
-      "details": [
-        "Stages files; the event, appended last, is the commit",
-        "Sandbox blocks any other write to library/",
-        "Snapshot to the course folder after each publish",
-        "Retraction only by the user, with a reason"
-      ]
-    },
-    {
-      "id": "LB",
-      "lane": "record",
-      "row": 13,
-      "kind": "record",
-      "title": "library/",
-      "job": "Paper cards and claims as versioned JSON files, tags from vocab.yaml, events log; catalog.sqlite is an index rebuilt from the files.",
-      "details": [
-        "views/: one Markdown page per tag and review"
-      ]
-    },
-    {
-      "id": "L2",
-      "lane": "script",
-      "row": 14,
-      "kind": "script",
-      "title": "L2 audit.py",
-      "job": "Rehashes the library, rebuilds the catalog, requeries retractions, rechecks every memo's citations and the latest backup.",
-      "details": [
-        "Memo citing a superseded claim: back to Y1",
-        "Mismatch: stop and report; recover first"
-      ]
-    },
-    {
-      "id": "LR",
-      "lane": "agent",
-      "row": 14,
-      "kind": "agent",
-      "title": "morty-librarian (reference desk)",
-      "model": "claude-sonnet-5-5",
-      "tools": [
-        "Bash (library_query.py only)"
-      ],
-      "job": "Answers the user's ad hoc questions with records quoted verbatim, through a read-only, logged query script.",
-      "details": [
-        "Feeds no stage of a wave",
-        "Cannot write or delete"
-      ]
-    },
-    {
-      "id": "Y1",
-      "lane": "agent",
-      "row": 15,
-      "kind": "agent",
-      "title": "Y1 beth-synthesizer (on request at U4, or at close)",
-      "model": "claude-opus-5-5",
-      "tools": [],
-      "job": "Writes one memo per question from every verified claim for it, by fixed query, citing claim versions; splits large sets.",
-      "details": [
-        "INFERENCE cites the claims it is drawn from",
-        "Script checks every claim reached some part"
-      ]
-    },
-    {
-      "id": "Y2",
-      "lane": "script",
-      "row": 15.5,
-      "kind": "script",
-      "title": "Y2 check_citations.py",
-      "job": "Checks each memo sentence cites a verified claim and every number occurs in a cited claim's quote.",
-      "details": [
-        "Failures go back to Y1 with the list"
-      ]
-    },
-    {
-      "id": "Y3",
-      "lane": "agent",
-      "row": 16,
-      "kind": "agent",
-      "title": "Y3 beth-memo-checker",
-      "model": "claude-opus-5-5",
-      "tools": [],
-      "job": "Checks each statement against the same claim set plus a broader retrieval, and lists omitted or contradicting claims.",
-      "details": [
-        "Fresh Opus context; Fable not available",
-        "Unsupported: Y1 revises once, then U4"
-      ]
-    },
-    {
-      "id": "RM",
-      "lane": "record",
-      "row": 16,
-      "kind": "record",
-      "title": "memos/<review>/Qk.vN.md",
-      "job": "Checked memo per question, published through the curator."
-    },
-    {
-      "id": "U4",
-      "lane": "user",
-      "row": 18,
-      "kind": "user",
-      "title": "U4 Decide",
-      "job": "Reads memos, checker report, gaps and tag proposals; accepts or marks remaining statements; closes, expands or retracts the review.",
-      "details": [
-        "Pillar 1: memo ends with model options"
-      ]
-    },
-    {
-      "id": "A2",
-      "lane": "script",
-      "row": 6.6,
-      "kind": "script",
-      "title": "A2 check_copy.py (non-publisher copies)",
-      "job": "Compares a preprint or repository copy with the published record: title, authors, abstract, errata.",
-      "details": [
-        "Copy kind recorded on every claim read from it",
-        "Title or authors differ: user decides at U2",
-        "Published version later: claims rechecked"
-      ]
-    },
-    {
-      "id": "T1",
-      "lane": "script",
-      "row": 17,
-      "kind": "script",
-      "title": "T1 tag_report.py (after every wave)",
-      "job": "Counts tag use and lists tags with similar names or mostly the same claims, unused tags and provisional tags."
-    },
-    {
-      "id": "T2",
-      "lane": "agent",
-      "row": 17.5,
-      "kind": "agent",
-      "title": "T2 morty-tagger",
-      "model": "claude-sonnet-5-5",
-      "tools": [],
-      "job": "Proposes tag merges, splits, renames, deprecations and promotions, each with a reason.",
-      "details": [
-        "Proposals only; the user accepts each at U4",
-        "Accepted: new vocab.yaml version with alias map"
-      ]
-    },
-    {
-      "id": "U3b",
-      "lane": "user",
-      "row": 12.5,
-      "kind": "user",
-      "title": "U3b Random audit",
-      "job": "Checks 60 random passed claims not covered by guided reading, plus every disputed claim.",
-      "details": [
-        "Pass: no error in 60 (rate below 4.9 %, 95 %)",
-        "Error: E4 prompt fixed, C0 rerun, kind rechecked, fresh 60"
-      ]
-    },
-    {
-      "id": "BK",
-      "lane": "record",
-      "row": 14,
-      "kind": "record",
-      "title": "ME295/library_backups/",
-      "job": "Compressed library snapshots in the iCloud course folder, never overwritten; each hash in the event log."
-    },
-    {
-      "id": "R1",
-      "lane": "agent",
-      "row": 14.6,
-      "kind": "agent",
-      "title": "R1 morty-reader (task: retag; when a question is added or changed)",
-      "model": "claude-sonnet-5-5",
-      "tools": [
-        "Read"
-      ],
-      "job": "Proposes which existing claims bear on a new or changed question; beth-checker confirms each.",
-      "details": [
-        "Question IDs are versioned (Q2@v1)",
-        "Recorded in the manifest"
-      ]
-    }
-  ],
-  "edges": [
-    {
-      "from": "U0",
-      "to": "RB",
-      "kind": "data"
-    },
-    {
-      "from": "U0",
-      "to": "D1",
-      "kind": "flow"
-    },
-    {
-      "from": "U0",
-      "to": "D2",
-      "kind": "flow"
-    },
-    {
-      "from": "D1",
-      "to": "RS",
-      "kind": "data"
-    },
-    {
-      "from": "D1",
-      "to": "D3",
-      "kind": "flow"
-    },
-    {
-      "from": "D2",
-      "to": "D3",
-      "kind": "flow",
-      "label": "citations"
-    },
-    {
-      "from": "D3",
-      "to": "RC",
-      "kind": "data"
-    },
-    {
-      "from": "D3",
-      "to": "SC1",
-      "kind": "flow"
-    },
-    {
-      "from": "C0",
-      "to": "SC1",
-      "kind": "flow"
-    },
-    {
-      "from": "SC1",
-      "to": "SC2",
-      "kind": "flow"
-    },
-    {
-      "from": "SC2",
-      "to": "SC3",
-      "kind": "flow"
-    },
-    {
-      "from": "SC2",
-      "to": "U1",
-      "kind": "flow",
-      "label": "agree"
-    },
-    {
-      "from": "SC3",
-      "to": "U1",
-      "kind": "flow"
-    },
-    {
-      "from": "U1",
-      "to": "RL",
-      "kind": "data"
-    },
-    {
-      "from": "U1",
-      "to": "A1",
-      "kind": "flow"
-    },
-    {
-      "from": "A1",
-      "to": "RP",
-      "kind": "data"
-    },
-    {
-      "from": "P1",
-      "to": "RG",
-      "kind": "data"
-    },
-    {
-      "from": "P1",
-      "to": "E1",
-      "kind": "flow"
-    },
-    {
-      "from": "E1",
-      "to": "RR",
-      "kind": "data"
-    },
-    {
-      "from": "E1",
-      "to": "E3",
-      "kind": "flow"
-    },
-    {
-      "from": "E3",
-      "to": "E4",
-      "kind": "flow"
-    },
-    {
-      "from": "E4",
-      "to": "RV",
-      "kind": "data"
-    },
-    {
-      "from": "E4",
-      "to": "E5",
-      "kind": "flow",
-      "label": "not supported"
-    },
-    {
-      "from": "E5",
-      "to": "E3",
-      "kind": "loop",
-      "label": "recheck"
-    },
-    {
-      "from": "E4",
-      "to": "U3a",
-      "kind": "flow"
-    },
-    {
-      "from": "L1",
-      "to": "LB",
-      "kind": "data"
-    },
-    {
-      "from": "L1",
-      "to": "L2",
-      "kind": "flow"
-    },
-    {
-      "from": "Y1",
-      "to": "Y2",
-      "kind": "flow"
-    },
-    {
-      "from": "Y2",
-      "to": "Y3",
-      "kind": "flow"
-    },
-    {
-      "from": "Y3",
-      "to": "RM",
-      "kind": "data"
-    },
-    {
-      "from": "U4",
-      "to": "U0",
-      "kind": "loop",
-      "label": "expand or retract"
-    },
-    {
-      "from": "A1",
-      "to": "A2",
-      "kind": "flow"
-    },
-    {
-      "from": "A2",
-      "to": "U2",
-      "kind": "stop",
-      "label": "not found or differs"
-    },
-    {
-      "from": "U2",
-      "to": "A1",
-      "kind": "loop",
-      "label": "recheck"
-    },
-    {
-      "from": "A2",
-      "to": "P1",
-      "kind": "flow"
-    },
-    {
-      "from": "Y3",
-      "to": "T1",
-      "kind": "flow"
-    },
-    {
-      "from": "T1",
-      "to": "T2",
-      "kind": "flow"
-    },
-    {
-      "from": "T2",
-      "to": "U4",
-      "kind": "flow"
-    },
-    {
-      "from": "U3a",
-      "to": "U3b",
-      "kind": "flow"
-    },
-    {
-      "from": "U3b",
-      "to": "L1",
-      "kind": "flow"
-    },
-    {
-      "from": "LB",
-      "to": "LR",
-      "kind": "flow",
-      "label": "read only"
-    },
-    {
-      "from": "L1",
-      "to": "BK",
-      "kind": "data"
-    },
-    {
-      "from": "L2",
-      "to": "R1",
-      "kind": "flow",
-      "label": "new question"
-    },
-    {
-      "from": "R1",
-      "to": "Y1",
-      "kind": "flow"
-    },
-    {
-      "from": "L2",
-      "to": "Y1",
-      "kind": "flow",
-      "label": "fixed query"
-    }
-  ]
+ "title": "literature-review",
+ "summary": [
+  "A reusable literature-review workflow built around a library with branches (numerical methods, sublimation physics, sintering, planetary setting, properties), each seeded with papers the user chooses. Seeds steer discovery (citation chaining), screening (a scripted baseline ranks candidates by similarity to the seeds) and calibration. Scripts search Crossref, OpenAlex, Semantic Scholar and arXiv and resolve every candidate; two Haiku screeners judge abstracts against the baseline; an on-demand scout challenges novelty claims and memo gaps.",
+  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images only; Codex reads important values blind. The user reads core papers and audits 60 random claims. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions."
+ ],
+ "status": "Revision 6, for review, 2026-10-27 (revision 5 was approved 2026-10-23). Build-time tests (WORKFLOW.md §12) come first.",
+ "lanes": [
+  {
+   "id": "user",
+   "label": "User"
+  },
+  {
+   "id": "script",
+   "label": "Scripts"
+  },
+  {
+   "id": "agent",
+   "label": "Agents"
+  },
+  {
+   "id": "record",
+   "label": "Records"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "U0",
+   "lane": "user",
+   "row": 0,
+   "kind": "user",
+   "title": "U0 Brief",
+   "job": "Writes the questions (each marked model-critical or not), criteria, tier, seeds and queries for one branch.",
+   "details": [
+    "Versioned: each wave records its brief version",
+    "Tier S skips discovery and screening"
+   ]
+  },
+  {
+   "id": "RB",
+   "lane": "record",
+   "row": 0,
+   "kind": "record",
+   "title": "brief.vN.json",
+   "job": "The review's questions, criteria, tier, seeds, queries and limits."
+  },
+  {
+   "id": "D1",
+   "lane": "script",
+   "row": 1,
+   "kind": "script",
+   "title": "D1 discover.py",
+   "job": "Runs the brief's queries on Crossref, OpenAlex, Semantic Scholar and arXiv and follows references and citations of seeds.",
+   "details": [
+    "OpenAlex key from the macOS Keychain; stop if unreadable",
+    "Cost estimated first; remaining budget read",
+    "429 or outage: back off and resume; else discovery incomplete",
+    "Chains references and citing works from every seed"
+   ]
+  },
+  {
+   "id": "D2",
+   "lane": "agent",
+   "row": 1,
+   "kind": "agent",
+   "title": "D2 morty-scout (find; challenge on demand)",
+   "model": "claude-sonnet-5-5",
+   "tools": [
+    "WebSearch"
+   ],
+   "job": "Find: web search for work the APIs miss. Challenge: hunts prior work against a novelty claim or a memo gap. Citations only.",
+   "details": [
+    "Cannot fetch or write; sees no private data",
+    "Every challenge hit is read and checked before it counts"
+   ]
+  },
+  {
+   "id": "RS",
+   "lane": "record",
+   "row": 1,
+   "kind": "record",
+   "title": "search/ snapshots",
+   "job": "Raw API responses with hashes and dates, so the candidate set can be reproduced."
+  },
+  {
+   "id": "D3",
+   "lane": "script",
+   "row": 2,
+   "kind": "script",
+   "title": "D3 resolve.py",
+   "job": "Resolves every candidate, merges versions of one work, and records retractions and corrections from Crossref updated-by.",
+   "details": [
+    "Unresolved: kept and shown at U1, not dropped",
+    "Preprint and journal version merged",
+    "Records whether an abstract exists"
+   ]
+  },
+  {
+   "id": "RC",
+   "lane": "record",
+   "row": 2,
+   "kind": "record",
+   "title": "candidates.json",
+   "job": "Deduplicated candidates with DOI, title, abstract and where each was found."
+  },
+  {
+   "id": "C0",
+   "lane": "script",
+   "row": 3,
+   "kind": "script",
+   "title": "C0 calibrate.py (core once; light per branch)",
+   "job": "Core: planted errors (user's 10+, Codex drafts the user approves, script-made) and controls. Branch: gold statements and field-dependent plants.",
+   "details": [
+    "Gates SC1 and E1: no real wave until it passes",
+    "Every fake quote, wrong page, sign error caught; 3 of 4 of each other kind; 90 % overall",
+    "Confirmed real errors join the set; rerun after agent, prompt, model or tool changes"
+   ]
+  },
+  {
+   "id": "SC1",
+   "lane": "agent",
+   "row": 3,
+   "kind": "agent",
+   "title": "SC1 jerry-screener x2, two framings (tier M, L)",
+   "model": "claude-haiku-5-5",
+   "tools": [],
+   "job": "Two screeners with different framings judge each abstract: core, context or exclude; exclude needs a named exclusion criterion.",
+   "details": [
+    "Neither sees the other's decision",
+    "No abstract: never excluded, goes to U1"
+   ]
+  },
+  {
+   "id": "SC2",
+   "lane": "script",
+   "row": 4,
+   "kind": "script",
+   "title": "SC2 compare_screens.py",
+   "job": "Compares the two screens, lists disagreements, and measures each screener's agreement with the SC0 baseline."
+  },
+  {
+   "id": "SC3",
+   "lane": "agent",
+   "row": 4,
+   "kind": "agent",
+   "title": "SC3 beth-checker (task: screen)",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read"
+   ],
+   "job": "Decides each disagreement from the abstract and both reasons.",
+   "details": [
+    "Gets only the disagreements",
+    "Cannot tell: goes to the user at U1"
+   ]
+  },
+  {
+   "id": "U1",
+   "lane": "user",
+   "row": 5,
+   "kind": "user",
+   "title": "U1 Approve shortlist",
+   "job": "Reviews every core and context paper, 60 random exclusions, unresolved and no-abstract items, and query counts.",
+   "details": [
+    "Sees any discovery-incomplete warning",
+    "Adds or removes papers"
+   ]
+  },
+  {
+   "id": "RL",
+   "lane": "record",
+   "row": 5,
+   "kind": "record",
+   "title": "shortlist.json",
+   "job": "Approved papers with tier and the questions each bears on; no relevance score."
+  },
+  {
+   "id": "A1",
+   "lane": "script",
+   "row": 6,
+   "kind": "script",
+   "title": "A1 acquire.py",
+   "job": "Finds each paper in Literature/, then as open access (OpenAlex, arXiv, Semantic Scholar, repositories), and checks its first page.",
+   "details": [
+    "Each download in its own new folder",
+    "Links a new version to the paper already read; its claims are rechecked",
+    "Not found: listed in fetch_list.md",
+    "No institutional access; no Sci-Hub"
+   ]
+  },
+  {
+   "id": "RP",
+   "lane": "record",
+   "row": 6,
+   "kind": "record",
+   "title": "Literature/incoming/<review>/",
+   "job": "Acquired PDFs with path and SHA-256 in acquired.json."
+  },
+  {
+   "id": "U2",
+   "lane": "user",
+   "row": 6.5,
+   "kind": "user",
+   "title": "U2 Supply missing papers",
+   "job": "Supplies any listed paper they already have, or marks it unavailable; accepts or rejects copies A2 flagged.",
+   "details": [
+    "A1 and A2 rerun on what the user adds"
+   ]
+  },
+  {
+   "id": "P1",
+   "lane": "script",
+   "row": 7,
+   "kind": "script",
+   "title": "P1 prepare.py",
+   "job": "Takes text from the best source (LaTeX, XML, then Marker), renders pages and 300 dpi tiles, extracts tables twice and crops figures.",
+   "details": [
+    "Source comparison flags equations and numbers that disagree",
+    "Tables: headers carried to every row, cells compared across extractors",
+    "Marker, Surya, extractor weights and flags pinned"
+   ]
+  },
+  {
+   "id": "RG",
+   "lane": "record",
+   "row": 7,
+   "kind": "record",
+   "title": "pages/, text/, tables/, figures/",
+   "job": "Page images, tiles, text, structured tables and crops, all hashed; local only (copyright)."
+  },
+  {
+   "id": "E1",
+   "lane": "agent",
+   "row": 8,
+   "kind": "agent",
+   "title": "E1 morty-reader (E2: second independent read of core papers)",
+   "model": "claude-sonnet-5-5",
+   "tools": [
+    "Read"
+   ],
+   "job": "Reads one paper and writes its claims, a symbol list with printed units, table cells cited by row and column, and a section map.",
+   "details": [
+    "Equations, numbers and symbols read from the tiles",
+    "Fresh per paper; no web",
+    "Instructions found in a paper are flagged, not followed"
+   ]
+  },
+  {
+   "id": "RR",
+   "lane": "record",
+   "row": 8,
+   "kind": "record",
+   "title": "reads/<paper>.A.json, .B.json",
+   "job": "The reader's paper card and claims, one file per read."
+  },
+  {
+   "id": "E3",
+   "lane": "script",
+   "row": 9,
+   "kind": "script",
+   "title": "E3 check_extraction.py",
+   "job": "Checks each quote's length, presence on its page and uniqueness, checks table values against their cells, and merges reads A and B.",
+   "details": [
+    "Quote: 8+ words or a whole sentence",
+    "Same claim: same page and kind, quotes overlap by half"
+   ]
+  },
+  {
+   "id": "E4",
+   "lane": "agent",
+   "row": 10,
+   "kind": "agent",
+   "title": "E4 beth-checker (task: claim)",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read"
+   ],
+   "job": "On page images only, confirms each claim's text, quote, every equation symbol and number, kind, basis and questions, and dropped conditions.",
+   "details": [
+    "Checks each equation, number and quote on its tile",
+    "Gets E3, E3b and source-comparison flags",
+    "Never sees the reader's text or reasoning; fresh per page"
+   ]
+  },
+  {
+   "id": "RV",
+   "lane": "record",
+   "row": 10,
+   "kind": "record",
+   "title": "verdicts.json",
+   "job": "Verdict per claim and equation with location on the page and reason."
+  },
+  {
+   "id": "E5",
+   "lane": "agent",
+   "row": 11,
+   "kind": "agent",
+   "title": "E5 morty-reader (revise, at most 2 rounds)",
+   "model": "claude-sonnet-5-5",
+   "tools": [
+    "Read"
+   ],
+   "job": "Rewrites a failed claim from the page and the checker's reason; the rewrite is checked again.",
+   "details": [
+    "Still failing after 2 rounds: goes to U3"
+   ]
+  },
+  {
+   "id": "U3a",
+   "lane": "user",
+   "row": 12,
+   "kind": "user",
+   "title": "U3a Guided reading (core papers)",
+   "job": "Reads each core paper's key pages in order, opens each page's claims after reading it, marks them, and notes missed statements.",
+   "details": [
+    "Every claim on a read page is checked",
+    "Missed statements: human measure of reader recall"
+   ]
+  },
+  {
+   "id": "L1",
+   "lane": "script",
+   "row": 13,
+   "kind": "script",
+   "title": "L1 curator.py (only writer)",
+   "job": "Publishes items that have a citation, a quote match and a passing verdict or user decision; refuses all others.",
+   "details": [
+    "Stages files; the event, appended last, is the commit",
+    "Sandbox blocks any other write to library/",
+    "Snapshot to the course folder after each publish",
+    "Retraction only by the user, with a reason"
+   ]
+  },
+  {
+   "id": "LB",
+   "lane": "record",
+   "row": 13,
+   "kind": "record",
+   "title": "library/",
+   "job": "Cards, claims, symbols and tables as versioned JSON; branches.yaml and vocab.yaml; events log; catalog rebuilt from the files.",
+   "details": [
+    "views/: one Markdown page per tag and review"
+   ]
+  },
+  {
+   "id": "L2",
+   "lane": "script",
+   "row": 14,
+   "kind": "script",
+   "title": "L2 audit.py",
+   "job": "Rehashes the library, rebuilds the catalog, requeries retractions, rechecks every memo's citations and the latest backup.",
+   "details": [
+    "Memo citing a superseded claim: back to Y1",
+    "Mismatch: stop and report; recover first"
+   ]
+  },
+  {
+   "id": "LR",
+   "lane": "agent",
+   "row": 14,
+   "kind": "agent",
+   "title": "morty-librarian (reference desk)",
+   "model": "claude-sonnet-5-5",
+   "tools": [
+    "Bash (library_query.py only)"
+   ],
+   "job": "Answers the user's ad hoc questions from the passage index, citing chunks with quotes a script checks, or abstains.",
+   "details": [
+    "Answers labeled: passage, not checked by E4",
+    "Feeds no stage of a wave; cannot write"
+   ]
+  },
+  {
+   "id": "Y1",
+   "lane": "agent",
+   "row": 15,
+   "kind": "agent",
+   "title": "Y1 beth-synthesizer (on request at U4, or at close)",
+   "model": "claude-opus-5-5",
+   "tools": [],
+   "job": "Writes one memo per question from every verified claim for it, by fixed query, citing claim versions; splits large sets.",
+   "details": [
+    "INFERENCE cites the claims it is drawn from",
+    "Script checks every claim reached some part",
+    "May write: library silent"
+   ]
+  },
+  {
+   "id": "Y2",
+   "lane": "script",
+   "row": 15.5,
+   "kind": "script",
+   "title": "Y2 check_citations.py",
+   "job": "Checks each memo sentence cites a verified claim and every number occurs in a cited claim's quote.",
+   "details": [
+    "Failures go back to Y1 with the list"
+   ]
+  },
+  {
+   "id": "Y3",
+   "lane": "agent",
+   "row": 16,
+   "kind": "agent",
+   "title": "Y3 beth-memo-checker",
+   "model": "claude-opus-5-5",
+   "tools": [],
+   "job": "Checks each statement against the same claims plus a passage search, listing omitted or contradicting claims and passages.",
+   "details": [
+    "A relevant passage with no claim goes back to E1 for its page",
+    "Each gap is challenged by the scout (D2g) before it is stated"
+   ]
+  },
+  {
+   "id": "RM",
+   "lane": "record",
+   "row": 16,
+   "kind": "record",
+   "title": "memos/<review>/Qk.vN.md",
+   "job": "Checked memo per question, published through the curator."
+  },
+  {
+   "id": "U4",
+   "lane": "user",
+   "row": 18,
+   "kind": "user",
+   "title": "U4 Decide",
+   "job": "Reads memos, checker report, gaps and tag proposals; accepts or marks remaining statements; closes, expands or retracts the review.",
+   "details": [
+    "Pillar 1: memo ends with model options"
+   ]
+  },
+  {
+   "id": "A2",
+   "lane": "script",
+   "row": 6.6,
+   "kind": "script",
+   "title": "A2 check_copy.py (non-publisher copies)",
+   "job": "Compares a preprint or repository copy with the published record: title, authors, abstract, errata.",
+   "details": [
+    "Copy kind recorded on every claim read from it",
+    "Title or authors differ: user decides at U2",
+    "Published version later: claims rechecked"
+   ]
+  },
+  {
+   "id": "T1",
+   "lane": "script",
+   "row": 17,
+   "kind": "script",
+   "title": "T1 tag_report.py (after every wave)",
+   "job": "Counts tag use and lists tags with similar names or mostly the same claims, unused tags and provisional tags."
+  },
+  {
+   "id": "T2",
+   "lane": "agent",
+   "row": 17.5,
+   "kind": "agent",
+   "title": "T2 morty-tagger",
+   "model": "claude-sonnet-5-5",
+   "tools": [],
+   "job": "Proposes tag merges, splits, renames, deprecations and promotions, each with a reason.",
+   "details": [
+    "Proposals only; the user accepts each at U4",
+    "Accepted: new vocab.yaml version with alias map"
+   ]
+  },
+  {
+   "id": "U3b",
+   "lane": "user",
+   "row": 12.5,
+   "kind": "user",
+   "title": "U3b Random audit",
+   "job": "Checks 60 random passed claims not seen in guided reading, every disputed claim, and every disputed important claim.",
+   "details": [
+    "Pass: no error in 60 (rate below 4.9 %, 95 %)",
+    "Error: E4 prompt fixed, C0 rerun, kind rechecked, fresh 60"
+   ]
+  },
+  {
+   "id": "BK",
+   "lane": "record",
+   "row": 14,
+   "kind": "record",
+   "title": "ME295/library_backups/",
+   "job": "Compressed library snapshots in the iCloud course folder, never overwritten; each hash in the event log."
+  },
+  {
+   "id": "R1",
+   "lane": "agent",
+   "row": 14.6,
+   "kind": "agent",
+   "title": "R1 morty-reader (task: retag; when a question is added or changed)",
+   "model": "claude-sonnet-5-5",
+   "tools": [
+    "Read"
+   ],
+   "job": "For a new or changed question: a passage search finds pages, the reader proposes questions[] additions, beth-checker confirms.",
+   "details": [
+    "Question IDs are versioned (Q2@v1)",
+    "Recorded in the manifest"
+   ]
+  },
+  {
+   "id": "UB",
+   "lane": "user",
+   "row": -1,
+   "kind": "user",
+   "title": "B0 Branches and seeds",
+   "job": "Chooses the library's branches and 3 to 5 seed papers for each, then the branch is seeded (wave 0) before any wave.",
+   "details": [
+    "Seeds include a review and papers the user knows well",
+    "Those carry the branch calibration"
+   ]
+  },
+  {
+   "id": "RBR",
+   "lane": "record",
+   "row": -1,
+   "kind": "record",
+   "title": "branches.yaml",
+   "job": "Branches and their seed DOIs, versioned and committed."
+  },
+  {
+   "id": "SC0",
+   "lane": "script",
+   "row": 2.5,
+   "kind": "script",
+   "title": "SC0 screen_baseline.py (tier M, L)",
+   "job": "Excludes by fixed rules (document type, years, language) and ranks the rest by similarity to seed abstracts: the screening baseline.",
+   "details": [
+    "Ranking kept in the run folder, never stored on a paper"
+   ]
+  },
+  {
+   "id": "P2",
+   "lane": "script",
+   "row": 7.5,
+   "kind": "script",
+   "title": "P2 build_index.py",
+   "job": "Cuts text into structural chunks (paragraph, equation, table, caption), embeds them with a pinned local model and builds a keyword index.",
+   "details": [
+    "Hybrid search: keyword (BM25) and embedding, merged by rank fusion",
+    "Exact search, CPU, weights hashed: same inputs give the same index"
+   ]
+  },
+  {
+   "id": "RI",
+   "lane": "record",
+   "row": 7.5,
+   "kind": "record",
+   "title": "index/",
+   "job": "Chunks with paper, page and section, the keyword index and the embeddings; rebuilt from the prepared files; local only."
+  },
+  {
+   "id": "E3b",
+   "lane": "script",
+   "row": 9.5,
+   "kind": "script",
+   "title": "E3b check_units.py",
+   "job": "Parses every unit with Pint, compares dimensions with the verified units table, and checks each equation term by term with SymPy.",
+   "details": [
+    "Infers units the paper leaves out",
+    "Equations that do not parse are counted, not hidden"
+   ]
+  },
+  {
+   "id": "X1",
+   "lane": "agent",
+   "row": 10.5,
+   "kind": "agent",
+   "title": "X1 summer-reader (Codex; important claims)",
+   "model": "Codex, pinned at build",
+   "tools": [
+    "file read in its folder"
+   ],
+   "job": "Given a tile and the name of a quantity or equation, never the claimed value, transcribes it; a script compares three reads.",
+   "details": [
+    "Different vendor; disagreement goes to the user",
+    "Important: parameters, equations, model-critical questions"
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "U0",
+   "to": "RB",
+   "kind": "data"
+  },
+  {
+   "from": "U0",
+   "to": "D1",
+   "kind": "flow"
+  },
+  {
+   "from": "U0",
+   "to": "D2",
+   "kind": "flow"
+  },
+  {
+   "from": "D1",
+   "to": "RS",
+   "kind": "data"
+  },
+  {
+   "from": "D1",
+   "to": "D3",
+   "kind": "flow"
+  },
+  {
+   "from": "D2",
+   "to": "D3",
+   "kind": "flow",
+   "label": "citations"
+  },
+  {
+   "from": "D3",
+   "to": "RC",
+   "kind": "data"
+  },
+  {
+   "from": "C0",
+   "to": "SC1",
+   "kind": "flow"
+  },
+  {
+   "from": "SC1",
+   "to": "SC2",
+   "kind": "flow"
+  },
+  {
+   "from": "SC2",
+   "to": "SC3",
+   "kind": "flow"
+  },
+  {
+   "from": "SC2",
+   "to": "U1",
+   "kind": "flow",
+   "label": "agree"
+  },
+  {
+   "from": "SC3",
+   "to": "U1",
+   "kind": "flow"
+  },
+  {
+   "from": "U1",
+   "to": "RL",
+   "kind": "data"
+  },
+  {
+   "from": "U1",
+   "to": "A1",
+   "kind": "flow"
+  },
+  {
+   "from": "A1",
+   "to": "RP",
+   "kind": "data"
+  },
+  {
+   "from": "P1",
+   "to": "RG",
+   "kind": "data"
+  },
+  {
+   "from": "E1",
+   "to": "RR",
+   "kind": "data"
+  },
+  {
+   "from": "E1",
+   "to": "E3",
+   "kind": "flow"
+  },
+  {
+   "from": "E4",
+   "to": "RV",
+   "kind": "data"
+  },
+  {
+   "from": "E4",
+   "to": "E5",
+   "kind": "flow",
+   "label": "not supported"
+  },
+  {
+   "from": "E5",
+   "to": "E3",
+   "kind": "loop",
+   "label": "recheck"
+  },
+  {
+   "from": "E4",
+   "to": "U3a",
+   "kind": "flow"
+  },
+  {
+   "from": "L1",
+   "to": "LB",
+   "kind": "data"
+  },
+  {
+   "from": "L1",
+   "to": "L2",
+   "kind": "flow"
+  },
+  {
+   "from": "Y1",
+   "to": "Y2",
+   "kind": "flow"
+  },
+  {
+   "from": "Y2",
+   "to": "Y3",
+   "kind": "flow"
+  },
+  {
+   "from": "Y3",
+   "to": "RM",
+   "kind": "data"
+  },
+  {
+   "from": "U4",
+   "to": "U0",
+   "kind": "loop",
+   "label": "expand or retract"
+  },
+  {
+   "from": "A1",
+   "to": "A2",
+   "kind": "flow"
+  },
+  {
+   "from": "A2",
+   "to": "U2",
+   "kind": "stop",
+   "label": "not found or differs"
+  },
+  {
+   "from": "U2",
+   "to": "A1",
+   "kind": "loop",
+   "label": "recheck"
+  },
+  {
+   "from": "A2",
+   "to": "P1",
+   "kind": "flow"
+  },
+  {
+   "from": "Y3",
+   "to": "T1",
+   "kind": "flow"
+  },
+  {
+   "from": "T1",
+   "to": "T2",
+   "kind": "flow"
+  },
+  {
+   "from": "T2",
+   "to": "U4",
+   "kind": "flow"
+  },
+  {
+   "from": "U3a",
+   "to": "U3b",
+   "kind": "flow"
+  },
+  {
+   "from": "U3b",
+   "to": "L1",
+   "kind": "flow"
+  },
+  {
+   "from": "L1",
+   "to": "BK",
+   "kind": "data"
+  },
+  {
+   "from": "L2",
+   "to": "R1",
+   "kind": "flow",
+   "label": "new question"
+  },
+  {
+   "from": "R1",
+   "to": "Y1",
+   "kind": "flow"
+  },
+  {
+   "from": "L2",
+   "to": "Y1",
+   "kind": "flow",
+   "label": "fixed query"
+  },
+  {
+   "from": "UB",
+   "to": "RBR",
+   "kind": "data"
+  },
+  {
+   "from": "UB",
+   "to": "U0",
+   "kind": "flow"
+  },
+  {
+   "from": "D3",
+   "to": "SC0",
+   "kind": "flow"
+  },
+  {
+   "from": "SC0",
+   "to": "SC1",
+   "kind": "flow"
+  },
+  {
+   "from": "P1",
+   "to": "P2",
+   "kind": "flow"
+  },
+  {
+   "from": "P2",
+   "to": "RI",
+   "kind": "data"
+  },
+  {
+   "from": "P2",
+   "to": "E1",
+   "kind": "flow"
+  },
+  {
+   "from": "E3",
+   "to": "E3b",
+   "kind": "flow"
+  },
+  {
+   "from": "E3b",
+   "to": "E4",
+   "kind": "flow"
+  },
+  {
+   "from": "E4",
+   "to": "X1",
+   "kind": "flow",
+   "label": "important"
+  },
+  {
+   "from": "X1",
+   "to": "U3b",
+   "kind": "stop",
+   "label": "disagree"
+  },
+  {
+   "from": "RI",
+   "to": "LR",
+   "kind": "flow",
+   "label": "read only"
+  }
+ ]
 }

@@ -9,7 +9,7 @@ Writes runs/design-critique/<run_id>/: manifest.json, critiques/<agent>.json, ru
 Refuses to run while the design, the agents, or this folder have uncommitted changes.
 
     venv_workflows/bin/python scripts/design_critique/run_critique.py \
-        --design workflows/literature-review/WORKFLOW.md --agents rick-critic beth-critic
+        --design workflows/literature-review/WORKFLOW.md --agents beth-critic [--focus <questions.md>]
 """
 import argparse
 import json
@@ -44,10 +44,17 @@ def main():
     ap.add_argument("--design", required=True, help="workflow design to critique, relative to the project root")
     ap.add_argument("--agents", nargs="+", required=True, help="critic agent names in .claude/agents/")
     ap.add_argument("--run-id", default=None)
+    ap.add_argument("--focus", default=None,
+                    help="committed text file of extra questions, appended to the task (recorded in the manifest)")
     args = ap.parse_args()
+    task = TASK
+    if args.focus:
+        task += "\n\nIn addition to your usual review, answer these questions as findings:\n" + \
+                (ROOT / args.focus).read_text()
 
     design = (ROOT / args.design).resolve()
     paths = [args.design, "scripts/design_critique", "scripts/units_verification/agents.py"] + \
+            ([args.focus] if args.focus else []) + \
             [f".claude/agents/{a}.md" for a in args.agents]
     dirty = uvlib.run(["git", "status", "--porcelain", "--", *paths], cwd=ROOT).strip()
     if dirty:
@@ -64,7 +71,7 @@ def main():
 
     def one(name):
         try:
-            out, info = agents.call_agent(rdir, "critique", name, name, TASK, {"WORKFLOW.md": design}, schema,
+            out, info = agents.call_agent(rdir, "critique", name, name, task, {"WORKFLOW.md": design}, schema,
                                           check=check, allow=("WebSearch",))
         except agents.AgentError as e:
             return name, None, {"error": json.loads(str(e))}
@@ -89,7 +96,7 @@ def main():
 
     manifest = {"workflow": "design-critique", "run_id": run_id, "created": uvlib.now(), "git_commit": commit,
                 "design": {"path": args.design, "sha256": uvlib.sha256(design)},
-                "schema_sha256": uvlib.sha256(SCHEMA_PATH), "task_sha256": uvlib.sha256_bytes(TASK.encode()),
+                "schema_sha256": uvlib.sha256(SCHEMA_PATH), "task_sha256": uvlib.sha256_bytes(task.encode()), "focus": args.focus,
                 "script_sha256": uvlib.sha256(Path(__file__)), "tools": uvlib.tool_versions(), "critics": critics}
     uvlib.write_json(rdir / "manifest.json", manifest)
     print(f"manifest: {uvlib.rel(rdir / 'manifest.json')}")
