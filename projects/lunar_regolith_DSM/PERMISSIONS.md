@@ -55,7 +55,22 @@ below. The reasons for each rule stay here and in the workflow's
 `WORKFLOW.md` (literature review: §4).
 
 <!-- BEGIN GENERATED: check_permissions.py (literature-review) -->
-(Tables appear here once the permission files are built.)
+Generated from `.claude/permissions/literature-review/` and the project settings by `scripts/literature_review/check_permissions.py`; do not edit by hand.
+
+| Agent or session | Allowed tools | Network | Inputs | Untrusted text | Way out | Private data |
+|---|---|---|---|---|---|---|
+| `beth-checker` | `Read` | none | untrusted | yes | no | no |
+| `beth-memo-checker` | none | none | untrusted, user_private | yes | no | yes |
+| `beth-planter` | `Read` | none | untrusted | yes | no | no |
+| `beth-skeptic` | none | none | untrusted, user_private | yes | no | yes |
+| `beth-synthesizer` | none | none | untrusted, user_private | yes | no | yes |
+| `jerry-screener` | none | none | untrusted | yes | no | no |
+| `morty-blind-reader` | `Read` | none | untrusted | yes | no | no |
+| `morty-desk` | `Bash(venv_workflows/bin/python scripts/literature_review/library_query.py passages *)` | none | untrusted | yes | no | no |
+| `morty-reader` | `Read` | none | untrusted | yes | no | no |
+| `morty-scout` | `WebSearch` | web search | public | yes | yes | no |
+| `review-mode` | all but web tools | api.openalex.org, api.crossref.org, api.semanticscholar.org, export.arxiv.org, api.adsabs.harvard.edu, ntrs.nasa.gov, www.osti.gov | user_private | no | yes | yes |
+| `normal` (accepted risk) | all | WebFetch(domain:api.crossref.org); WebFetch(domain:code.claude.com); WebFetch(domain:doi.org); others ask | user_private, untrusted | yes | yes | yes |
 <!-- END GENERATED -->
 
 ## 6. What is logged

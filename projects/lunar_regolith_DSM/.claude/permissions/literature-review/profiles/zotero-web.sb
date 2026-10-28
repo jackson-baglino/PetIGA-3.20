@@ -1,0 +1,10 @@
+;; Scripts that call a web API: outbound TCP 443 and DNS only; writes only to the run folder and temp.
+;; macOS sandbox profiles cannot filter by host name, so the host list is enforced by the
+;; script's own HTTP client (an allow-list checked before each request) and recorded in the manifest.
+(version 1)
+(allow default)
+(deny network*)
+(allow network* (local unix-socket))
+(allow network-outbound (remote tcp "*:443") (remote udp "*:53") (remote tcp "*:53"))
+(deny file-write*)
+(allow file-write* (subpath (param "RUN_DIR")) (subpath (param "TMP")) (literal "/dev/null"))

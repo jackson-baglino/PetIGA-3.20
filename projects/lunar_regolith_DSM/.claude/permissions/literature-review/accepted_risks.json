@@ -1,0 +1,4 @@
+{
+  "_about": "Entries allowed to hold all three legs, each with the user's reason. Only the user adds an entry.",
+  "normal": "The everyday main session: project files (private), the user's Literature folder and fetched pages (untrusted), and WebFetch to listed domains (a way out). Fetches to any other domain ask the user first, and the pipeline's stores are denied. Accepted by the user on 2026-10-28 (keep Literature readable)."
+}

@@ -1,0 +1,47 @@
+{
+  "_about": "What each agent or session is given, by class. untrusted: text from papers, web or APIs. user_private: the user's unpublished plans, project files, keys. public: material the user approved for sharing, or published metadata such as titles. Drivers check every input file against this list (transcript audit).",
+  "agents": {
+    "morty-scout": [
+      "public"
+    ],
+    "jerry-screener": [
+      "untrusted"
+    ],
+    "morty-reader": [
+      "untrusted"
+    ],
+    "beth-checker": [
+      "untrusted"
+    ],
+    "morty-blind-reader": [
+      "untrusted"
+    ],
+    "beth-planter": [
+      "untrusted"
+    ],
+    "beth-synthesizer": [
+      "untrusted",
+      "user_private"
+    ],
+    "beth-memo-checker": [
+      "untrusted",
+      "user_private"
+    ],
+    "beth-skeptic": [
+      "untrusted",
+      "user_private"
+    ],
+    "morty-desk": [
+      "untrusted"
+    ]
+  },
+  "sessions": {
+    "review-mode": [
+      "user_private"
+    ],
+    "normal": [
+      "user_private",
+      "untrusted"
+    ]
+  }
+}

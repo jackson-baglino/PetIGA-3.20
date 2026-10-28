@@ -1,0 +1,8 @@
+;; Offline scripts: no network at all; writes only to the run folder (RUN_DIR) and temp.
+;; Used by wf_launch as: sandbox-exec -f offline.sb -D RUN_DIR=<run folder> -D TMP=<temp> <script>
+(version 1)
+(allow default)
+(deny network*)
+(allow network* (local unix-socket))
+(deny file-write*)
+(allow file-write* (subpath (param "RUN_DIR")) (subpath (param "TMP")) (literal "/dev/null"))

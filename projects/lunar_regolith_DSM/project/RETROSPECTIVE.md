@@ -12,6 +12,29 @@ our own mistake.
 
 ## Pivots and redos
 
+### 2026-10-28 — Two permission mechanisms in the design did not work as written
+- **What happened:** building the permission files showed:
+  - **Carve-outs:** revision 9's review mode was "one deny list with `!`
+    carve-outs". The docs say a carve-out cannot reach an anchored rule, and
+    cannot reopen a file inside a blocked directory, so that allow-list
+    would not have worked.
+  - **`Write(...)` rules:** the first live test printed warnings that
+    path-scoped `Write(...)` deny rules are ignored. Only `Edit(...)` covers
+    file edits.
+  - **The scout:** the trifecta check found that the scout's inputs (the
+    brief's questions) plus its web search made all three legs.
+- **Pivot:**
+  - review mode uses deny rules, a PreToolUse hook as the allow-list, and
+    the sandbox;
+  - the `Write(...)` rules were removed;
+  - the scout gets only search terms the user approves for sharing.
+- **Lesson:**
+  - Run a permission file against the real tool before trusting it.
+  - Read the tool's warnings.
+  - A check that computes the legs finds what prose review missed.
+- **Evidence:** `.claude/permissions/literature-review/README.md`;
+  `scripts/literature_review/check_permissions.py`.
+
 ### 2026-10-28 — Codex dropped; permissions moved from prose to settings files
 - **What happened:**
   - **Codex:** it was the cross-vendor reader, so that its misreadings would

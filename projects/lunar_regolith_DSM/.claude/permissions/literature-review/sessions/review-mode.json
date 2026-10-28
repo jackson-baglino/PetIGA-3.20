@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "WebFetch",
+      "WebSearch",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(git push *)",
+      "Bash(security *)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(nc *)",
+      "Bash(open *)",
+      "Edit(/library/**)",
+      "Read(/library/papers/**)",
+      "Read(/library/memos/**)",
+      "Read(/library/history/**)",
+      "Read(/library/views/**)",
+      "Read(/library/.staging/**)",
+      "Read(/library/events.jsonl)",
+      "Read(/library/catalog.sqlite)",
+      "Read(/library/references.bib)",
+      "Read(/library_practice/**)",
+      "Read(/index/**)",
+      "Read(//Users/jacksonbaglino/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Literature/**)",
+      "Read(//Users/jacksonbaglino/Library/Mobile Documents/com~apple~CloudDocs/Documents/Courses/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/permissions/literature-review/hooks/review_read_allowlist.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": [
+        "~/"
+      ],
+      "allowRead": [
+        "./scripts",
+        "./workflows/literature-review",
+        "./.claude/permissions",
+        "./library/reviews",
+        "./venv_workflows",
+        "./.git",
+        "~/.gitconfig"
+      ]
+    },
+    "network": {
+      "allowedDomains": [
+        "api.openalex.org",
+        "api.crossref.org",
+        "api.semanticscholar.org",
+        "export.arxiv.org",
+        "api.adsabs.harvard.edu",
+        "ntrs.nasa.gov",
+        "www.osti.gov"
+      ]
+    }
+  }
+}

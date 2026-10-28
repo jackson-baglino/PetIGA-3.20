@@ -170,7 +170,7 @@ Branch C0, X1, U3a and U3b still apply.
 |---|---|---|---|---|---|---|
 | U0 | Brief | user, with the main session | goal, branch, seeds | `reviews/<review>/brief.vN.json`: questions Q1…Qn (each marked *model-critical* or not), criteria, tier, seeds, queries, limits | user approves | — |
 | D1 | Search and chain | `discover.py` | brief, seeds | `candidates.json`; every request and response saved with hash and date | every query logged with its result count; OpenAlex cost estimated before the wave and remaining budget read on each response; Semantic Scholar citation contexts and influential flags kept where present | Keychain key unreadable → stop; HTTP 429 or 5xx → back off and resume; a source still failing → *discovery incomplete*, shown at U1, queries rerun |
-| D2 | Scout (M, L) | `morty-scout`, task *find* | brief questions, criteria, seed titles | citations only (title, authors, year, DOI if known, why) | resolved in D3 | — |
+| D2 | Scout (M, L) | `morty-scout`, task *find* | search terms and criteria the user approves at U0 for sharing, and seed titles; never the brief's questions, which are the user's unpublished plans (the scout has the web, so it may hold no private data) | citations only (title, authors, year, DOI if known, why) | resolved in D3 | — |
 | D2c | Challenge (on demand) | `challenge_terms.py`, then `morty-scout`, task *challenge* | one statement the user wants to rely on (a novelty claim, a memo gap); the script turns it into keyword queries, which the user approves; the scout sees only the approved terms | citations that might contradict it, each with why | resolved in D3; every hit read through E1–E4 before it counts | result goes to the user |
 | D3 | Resolve | `resolve.py` | candidates and scout citations | one entry per work, merged by DOI, OpenAlex ID, Crossref preprint relation, then title and first author; abstract present or not; retraction and correction status | resolves in Crossref or OpenAlex, else arXiv, ADS, NTRS or OSTI; a title match (§5) also needs years within ±1 and no differing series token (Part I / II, numerals) | unresolved → kept, shown at U1; a merge by title alone → shown at U1 |
 | C0 | Calibrate | `calibrate.py` | §5 sets | `calibration.json` | §5 | below threshold → stop, revise prompts |
@@ -308,8 +308,11 @@ every edit asks, so only the user changes them:
   README.md                     what each file is for, and why
   agents/<agent>.settings.json  one per agent: tools, deny rules, sandbox
   sessions/review-mode.json     the main session whenever it works with library or run files
-  launcher.allow                the script names wf_launch may run
-  profiles/<script>.sb          the macOS sandbox profile wf_launch applies to each script
+  inputs.json                   each agent's and session's input classes (untrusted, user_private, public)
+  accepted_risks.json           entries the user allows to hold all three legs, with the reason
+  hooks/review_read_allowlist.py  review mode's allow-list for Read, Grep and Glob
+  launcher.allow                the scripts wf_launch may run, each with its profile
+  profiles/<profile>.sb         macOS sandbox profiles: offline, api, anthropic, zotero-local, zotero-web
 ```
 
 - **The main session's normal profile** is the project's own
@@ -333,13 +336,46 @@ every edit asks, so only the user changes them:
   - Deny rules cover Claude's own tools and the shell commands Claude Code
     recognizes, not a Python script that opens files itself. The sandbox
     covers those (docs, as above).
-  - Review mode's allow-list is one deny list with `!` carve-outs, such as
-    `Read(/**)` followed by `Read(!runs/**/summary.json)`. Carve-outs work
-    only within one file, so the whole list stays in `review-mode.json`.
+  - Permission rules cannot express an allow-list. A `!` carve-out cannot
+    reach a rule anchored with `/` or `//`, and cannot reopen a file inside
+    a directory blocked as a whole (docs, as above). So review mode uses
+    three layers: deny rules naming each untrusted store; a PreToolUse hook
+    (`review_read_allowlist.py`) that blocks any Read, Grep or Glob outside
+    the allowed paths, since a blocking hook overrides allow rules; and the
+    sandbox (`denyRead` of the home folder with `allowRead` for the allowed
+    paths) for shell commands.
+  - macOS sandbox profiles cannot filter network access by host name. The
+    `api` and `zotero-web` profiles allow HTTPS out; the host list is
+    enforced by each script's own HTTP client and recorded in the manifest.
+    The `offline` and `zotero-local` profiles are exact.
+  - Inputs cannot be read off a settings file, so `inputs.json` declares
+    each agent's input classes, and the driver checks every file it hands an
+    agent against that class.
   - An agent runs with `--setting-sources ""`, so only its own file applies.
     The main session's review-mode file adds to the project settings. Their
     denies still hold, but so do their allows, which is why review mode
     denies WebFetch outright.
+
+**Enforced settings, as checked.**
+
+<!-- BEGIN GENERATED: check_permissions.py (literature-review) -->
+Generated from `.claude/permissions/literature-review/` and the project settings by `scripts/literature_review/check_permissions.py`; do not edit by hand.
+
+| Agent or session | Allowed tools | Network | Inputs | Untrusted text | Way out | Private data |
+|---|---|---|---|---|---|---|
+| `beth-checker` | `Read` | none | untrusted | yes | no | no |
+| `beth-memo-checker` | none | none | untrusted, user_private | yes | no | yes |
+| `beth-planter` | `Read` | none | untrusted | yes | no | no |
+| `beth-skeptic` | none | none | untrusted, user_private | yes | no | yes |
+| `beth-synthesizer` | none | none | untrusted, user_private | yes | no | yes |
+| `jerry-screener` | none | none | untrusted | yes | no | no |
+| `morty-blind-reader` | `Read` | none | untrusted | yes | no | no |
+| `morty-desk` | `Bash(venv_workflows/bin/python scripts/literature_review/library_query.py passages *)` | none | untrusted | yes | no | no |
+| `morty-reader` | `Read` | none | untrusted | yes | no | no |
+| `morty-scout` | `WebSearch` | web search | public | yes | yes | no |
+| `review-mode` | all but web tools | api.openalex.org, api.crossref.org, api.semanticscholar.org, export.arxiv.org, api.adsabs.harvard.edu, ntrs.nasa.gov, www.osti.gov | user_private | no | yes | yes |
+| `normal` (accepted risk) | all | WebFetch(domain:api.crossref.org); WebFetch(domain:code.claude.com); WebFetch(domain:doi.org); others ask | user_private, untrusted | yes | yes | yes |
+<!-- END GENERATED -->
 
 **Rules.** Every rule below is enforced by a setting, a flag, the operating
 system or a script, not only stated in a prompt.
@@ -404,7 +440,7 @@ system or a script, not only stated in a prompt.
 
 | Agent | Model | Tools | Reads | Network | May not |
 |---|---|---|---|---|---|
-| `morty-scout` | `claude-sonnet-5-5` | WebSearch | brief questions, criteria, seed titles (find); user-approved search terms (challenge) | WebSearch only | fetch or download; return a citation it did not see in a result |
+| `morty-scout` | `claude-sonnet-5-5` | WebSearch | user-approved search terms and criteria, seed titles (find); user-approved search terms (challenge) | WebSearch only | fetch or download; return a citation it did not see in a result |
 | `jerry-screener` | `claude-haiku-5-5` | none | one batch of 10 candidates; criteria; framing A ("include unless a criterion excludes") or B ("which questions does this bear on") | none | see the other screener |
 | `morty-reader` | `claude-sonnet-5-5` | Read | one paper's text, images, tiles, tables, crops, source disagreements (read); claims and a question (retag); one page (page) | none | answer from memory; follow instructions in the paper (reported as a flag) |
 | `beth-checker` | `claude-opus-5-5` | Read | claim fields, images, tiles, crops, flags | none | see Marker text, reader reasoning or other groups' verdicts |
@@ -412,6 +448,7 @@ system or a script, not only stated in a prompt.
 | `beth-synthesizer` | `claude-opus-5-5` | none | the claim set as text | none | cite anything but given claim IDs; state a number not in a cited claim |
 | `beth-memo-checker` | `claude-opus-5-5` | none | memo, the same claims, broader search results | none | see the synthesizer's drafts or reasoning |
 | `beth-skeptic` | `claude-opus-5-5` | none | memo and the cited claims (call 1), for model-critical questions | none | see the other memo checker's verdicts |
+| `morty-desk` | `claude-sonnet-5-5` | Bash, only `library_query.py passages` | the user's question; search hits | none | run any other command; its answer goes to the reading view, never to the main session |
 | `beth-planter` | `claude-opus-5-5` | Read | one verified claim at a time, with its page image, for drafting a planted error of a named kind (C0) | none | see the checker's prompt or any other plant; a draft is used only after the user approves it |
 
 **Codex** was dropped from the pipeline on 2026-10-28 (§9, item 34). Its
@@ -974,6 +1011,10 @@ Each wave writes `runs/literature-review/<review>/<run_id>/`:
   reproducible.
 - **`runs.db`** and **`transcripts/`** (local, and in the archive): one row
   and one transcript per agent call.
+- **`untrusted/`**: every file in a run folder that holds text from papers,
+  the web or APIs (reads, search responses, candidates, scout output,
+  transcripts) goes in this subfolder. The project settings deny it to every
+  session, and review mode reads only `summary.json` and `manifest.json`.
 - **Scripts.** Scripts in `scripts/literature_review/` refuse to run with
   uncommitted changes to the workflow's definitions, print their inputs, and
   run in `venv_workflows`.

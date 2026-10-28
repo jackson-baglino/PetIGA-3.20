@@ -16,7 +16,22 @@
       "Bash(mpirun *)",
       "Read(./.env)",
       "Read(./.env.*)",
-      "Read(~/.ssh/**)"
+      "Read(~/.ssh/**)",
+      "Read(/library/papers/**)",
+      "Read(/library/memos/**)",
+      "Read(/library/history/**)",
+      "Read(/library/views/**)",
+      "Read(/library/.staging/**)",
+      "Read(/library/events.jsonl)",
+      "Read(/library/catalog.sqlite)",
+      "Read(/library/references.bib)",
+      "Read(/library_practice/**)",
+      "Read(/index/**)",
+      "Read(/runs/literature-review/**/untrusted/**)",
+      "Read(//Users/jacksonbaglino/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Literature/incoming/**)",
+      "Edit(/library/**)",
+      "Edit(/library_practice/**)",
+      "Edit(/index/**)"
     ]
   },
   "hooks": {

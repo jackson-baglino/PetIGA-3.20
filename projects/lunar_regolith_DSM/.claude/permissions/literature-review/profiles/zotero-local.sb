@@ -1,0 +1,8 @@
+;; zotero_pull.py: only Zotero's local API on this machine; writes only to Literature/incoming (OUT_DIR) and temp.
+(version 1)
+(allow default)
+(deny network*)
+(allow network* (local unix-socket))
+(allow network-outbound (remote ip "localhost:23119"))
+(deny file-write*)
+(allow file-write* (subpath (param "OUT_DIR")) (subpath (param "TMP")) (literal "/dev/null"))
