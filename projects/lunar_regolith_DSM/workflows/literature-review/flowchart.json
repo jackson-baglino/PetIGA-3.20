@@ -210,8 +210,11 @@
    "lane": "record",
    "row": 7,
    "kind": "record",
-   "title": "pages/, text/, tables/, figures/",
-   "job": "Page images, tiles, text, structured tables and crops, all hashed; local only (copyright)."
+   "title": "content/ (staged in the run folder)",
+   "job": "The whole paper: text per page, equations, tables, figures, page images and tiles, hashed; published unchanged to the library.",
+   "details": [
+    "Extracted by script, no model rewriting; complete but not checked"
+   ]
   },
   {
    "id": "E1",
@@ -322,9 +325,10 @@
    "row": 13,
    "kind": "record",
    "title": "library/",
-   "job": "Cards, claims, symbols and tables as versioned JSON; branches.yaml and a fixed tag vocabulary; events log; catalog rebuilt from files.",
+   "job": "Per paper: source files and the whole paper's content (never edited), plus cards, claims and symbols; tags; events log.",
    "details": [
-    "views/: one Markdown page per tag and review"
+    "views/: one Markdown page per tag and review",
+    "Only claims (checked) may be cited in memos"
    ]
   },
   {

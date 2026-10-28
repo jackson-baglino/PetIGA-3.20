@@ -12,6 +12,19 @@ our own mistake.
 
 ## Pivots and redos
 
+### 2026-10-28 — The library still stored only a description of each paper
+- **What happened:** revision 6 added a full-text index, but the text itself
+  stayed in P1's run folder and the archive. The library record of a paper
+  was still its card, claims, symbols and tables, so the design summary read
+  as a set of key facts, not the paper. The user caught it.
+- **Pivot:** each paper's library folder holds the whole paper (source files,
+  full text per page, equations, tables, figures, page images), written once
+  and never edited. Claims are a checked layer on top, and the index is
+  rebuilt from the library.
+- **Lesson:** adding a capability is not the same as changing the record.
+  Check that the summary a user reads says what the design stores.
+- **Evidence:** WORKFLOW.md §1 and §6, edit of 2026-10-28.
+
 ### 2026-10-27 — Codex is an auto-updating alpha
 - **What happened:** the Codex installed for cross-vendor checks is the
   command-line tool bundled inside the VS Code extension. It is an alpha

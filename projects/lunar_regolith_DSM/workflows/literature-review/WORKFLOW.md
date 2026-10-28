@@ -14,6 +14,10 @@ Codex (§9). Revision 6 added:
 - a calibration split into a core part and a light part per branch (§5);
 - an explicit permission table (§4).
 
+Edit of 2026-10-28 (user): each paper's library record holds the whole
+paper (full text, equations, tables, figures, page images, source files), not
+only the claims extracted from it (§1, §6).
+
 Nothing is built yet; §12's tests come first. Flowchart: `flowchart.html`,
 rendered from `flowchart.json` by `scripts/flowchart/render_flowchart.py`.
 Decisions: §9.
@@ -30,15 +34,29 @@ Decisions: §9.
     evolving ice field relaxes against a stationary sediment field, so that
     φ_i + φ_s ≠ 1 in the band.
 - **Finished output.**
-  1. **Library records.** For each paper read:
-     - a card (bibliographic data only);
-     - claims, each with its kind, basis, a verbatim quote, the page, any
-       equation in LaTeX with its printed number, and verdicts from a checker
-       that did not write it;
-     - its tables as structured data;
-     - its symbols with units.
-  2. **A passage index** of every paper's full text, searchable by keyword and
-     by meaning (§6).
+  1. **Library records.** For each paper read, the library stores the whole
+     paper, plus a checked layer on top of it:
+     - **The paper itself**, as scripts extracted it, with no model rewriting:
+       - the files acquired (PDF, and LaTeX or JATS source);
+       - the full text of every page, from the best source;
+       - every displayed equation in LaTeX with its printed number;
+       - every table as structured data;
+       - every figure with its caption;
+       - page images and tiles;
+       - the section map and the PDF-to-printed page map.
+
+       Nothing is left out because it seemed unimportant at reading time.
+     - **The checked layer:**
+       - a card (bibliographic data only);
+       - claims, each with its kind, basis, a verbatim quote, the page, any
+         equation in LaTeX with its printed number, and verdicts from a
+         checker that did not write it;
+       - its symbols with units.
+
+     The text is the record of what the paper says. A claim is a statement
+     about it that has been checked, and only claims are cited in memos.
+  2. **A passage index** over the stored full text, searchable by keyword and
+     by meaning, rebuilt from the library at any time (§6).
   3. **One memo per review question.** Every statement cites claim IDs. Each
      memo ends with what the literature does not answer.
   4. **Model options** (Pillar 1 only), at the end of the memo, for discussion
@@ -139,8 +157,8 @@ In tier S, U1 is still shown (it is short), A2 runs, and E2 does not.
 | A2 | Check the copy (any copy that is not the publisher's version) | `check_copy.py` | copy, published metadata | copy kind; title, author and abstract comparison | match; differences listed on the card | title or authors differ → U2 |
 | U2 | Supply missing papers | user | `fetch_list.md`; A2 differences | copies the user has, or "unavailable"; accept or reject flagged copies | A1, A2 rerun | — |
 | Z1 | Add to Zotero (deferred by the user, 2026-10-27; not built for now) | `zotero_add.py` | approved shortlist, `acquired.json` | per paper: a Zotero item (Crossref metadata) in the collection `lunar_regolith_DSM/<branch>`, tagged with the review; the PDF attached when acquired, tag *needs PDF* when not; `zotero_map.json` (paper → Zotero key) | the library is searched by DOI (by title without one) first; an existing item is never duplicated or edited, only added to the collection; the uploaded file's hash matches `acquired.json` | API error or storage full → item added without its file, logged, shown at U4 |
-| P1 | Prepare | `prepare.py` | acquired files | page images (300 dpi); tiles (300 dpi, below); Marker pages; text from the best source (below); tables (below); figure crops with captions; a map from PDF page to printed page; source disagreements; hashes | every page has an image, tiles and text; every tile within the image limits; tiles cover the text area | a failed page is logged and cannot be cited |
-| P2 | Index | `build_index.py` | P1 output | passage chunks with metadata, keyword index and embeddings, in `index/` (§6) | a rebuild from the same inputs gives the same canonical dump (§8, T-det) | — |
+| P1 | Prepare | `prepare.py`, then `curator.py` publishes | acquired files | the paper's full content (§6, `content/`): page images (300 dpi); tiles (300 dpi, below); Marker pages; text from the best source (below); equations; tables (below); figure crops with captions; section map; a map from PDF page to printed page; source disagreements; hashes. Written to the run folder, then published unchanged into the paper's library folder | every page has an image, tiles and text; every tile within the image limits; tiles cover the text area; the published files hash the same as the run folder's | a failed page is logged and cannot be cited |
+| P2 | Index | `build_index.py` | the library's `content/` folders | passage chunks with metadata, keyword index and embeddings, in `index/` (§6) | a rebuild from the same inputs gives the same canonical dump (§8, T-det) | — |
 | E1 | Read | `morty-reader`, fresh per paper (per section above ~40 pages; sections from Marker's headings) | brief questions (`Q2@v1`), tag vocabulary, the paper's text, page images, tables, source disagreements; tiles and crops in its folder, read on demand for every equation, number and symbol it transcribes | `reads/<paper>.A.json`: claims (§7), each condition with its page; a symbol list (symbol, meaning, unit as printed, page); a section map | schema; one output per paper or section; the transcript audit lists the tiles read | failure rules below |
 | E2 | Second read (core papers) | `morty-reader`, fresh | as E1 | `reads/<paper>.B.json` | used by E3 | — |
 | E3 | Check extraction | `check_extraction.py` | reads, text | quote checks; page coverage; table values; importance (§5); A and B merged (§5) | quote ≥ 8 words or a whole sentence, unique in the paper, and found on the cited page in the text of the imaged PDF (Marker, or the text layer used only to locate it; for LaTeX or XML sources the wording is matched on the source); a value cited from a table equals that cell | failure → E4, marked; a quote that cannot be placed on a page → its own flag |
@@ -196,7 +214,7 @@ follows:
 2. **Extract twice:**
    - from the source text when there is one;
    - otherwise with Marker and with a second extractor, chosen by T-table.
-3. **Store:** `tables/<paper>_T<k>.json` holds the caption, column headers
+3. **Store:** `content/<copy>/tables/T<k>.json` holds the caption, column headers
    with their units, row headers (with group headers carried down to every
    row, so a row read alone still names its group), cells, footnotes, page,
    and which extractor gave each cell.
@@ -583,10 +601,19 @@ library/
   vocab.yaml                tag vocabulary with alias map, versioned
   papers/<paper_id>/
     card.v1.json            bibliographic data, identifiers, copies, status, branches, tags
+    source/<copy_hash>/     the files acquired: PDF, and LaTeX or JATS source
+    content/<copy_hash>/    the whole paper as P1 extracted it; written once, never edited
+      pages/p001.md ...     full text of each page, from the best source
+      equations.jsonl       every displayed equation: LaTeX, printed number, page
+      tables/T1.json ...    every table (P1, two extractions compared)
+      figures/              crops with their captions
+      images/, tiles/       300 dpi page images and tiles
+      sections.json         section headings with pages
+      page_map.json         PDF page to printed page
+      disagreements.json    where the text sources differ (P1)
+      manifest.json         every file's hash; the tools and versions used
     claims/<claim_id>.v1.json
     symbols.v1.json         symbol, meaning, unit as printed, page; E3b results
-    tables/<table_id>.v1.json
-    figures/, crops/        images (local only)
   reviews/<review>/         brief.vN.json, waves.json, shortlist.json
   memos/<review>/Qk.vN.md
   views/                    generated pages per branch, tag and review
@@ -602,8 +629,20 @@ index/                      passage index (outside library/, rebuilt, hash in th
 - **IDs.** `paper_id` is internal and assigned once (`kaempfer_2009_k3f9`);
   the card lists every identifier and every copy read, with its kind and
   hash. `claim_id` is `<paper_id>.c007`. IDs never change or get reused.
+- **Two layers per paper.**
+  - **Content** (`source/`, `content/`) is the whole paper, extracted by
+    scripts with no model rewriting. It is complete but not checked: an
+    equation Marker transcribed from a PDF may be wrong, and the record says
+    which source each page came from. Any question asked later can be
+    answered from it without fetching the paper again.
+  - **Claims** are statements about the content that have passed E3 and E4.
+    Only claims may be cited in a memo.
+
+  A new copy of a paper (say, the published version after the arXiv one)
+  gets its own `content/<copy_hash>/`; the old one stays.
 - **Cards** hold bibliographic data, copies, status, branches and tags only.
-  Anything about a paper's content is a claim and goes through E3 and E4.
+  Anything said about a paper's content is a claim and goes through E3 and
+  E4.
 - **Claim fields:**
   - text and kind (method, equation, result, assumption, limitation,
     parameter);
@@ -622,7 +661,8 @@ index/                      passage index (outside library/, rebuilt, hash in th
   - status, verdicts (checker, model, run; X1; user), version.
 
   Memos cite `[id@v1]`.
-- **Passage index (P2).** Chunks follow the paper's structure, not a
+- **Passage index (P2).** Built from the `content/` folders, so it can be
+  rebuilt from the library alone. Chunks follow the paper's structure, not a
   character count. A chunk is one of:
   - a paragraph, with its section heading;
   - a displayed equation, with the sentence before and after;
@@ -677,15 +717,15 @@ index/                      passage index (outside library/, rebuilt, hash in th
   - deny rules and read-only files;
   - the sandbox for Bash writes;
   - hashes and the event log (L2).
-- **Backup.** After each publish, a compressed snapshot (without images) goes
+- **Backup.** After each publish, a compressed snapshot (every record and every paper's text,
+  equations and tables; without page images, tiles or source files) goes
   to `~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Courses/Fall2026/ME295/library_backups/`.
   Snapshots are named by date and never overwritten, with the hash recorded.
   L2 checks the latest one, downloading it first with `brctl download` if
   iCloud has evicted it.
 - **Archive.** After each wave, `curator.py` also writes a dated tarball of
-  everything a recheck needs that git does not hold. That is the P1 outputs
-  (page images, tiles, text, tables, crops, page maps), the library and the
-  run's transcripts. It goes to
+  everything a recheck needs that git does not hold. That is the library
+  (with every paper's `source/` and `content/`) and the run's transcripts. It goes to
   `~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Courses/Fall2026/ME295/library_archive/`
   (user decision 2026-10-27).
   - **Records:** its hash and location are recorded in the manifest, and L2
