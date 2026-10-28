@@ -1,0 +1,333 @@
+{
+  "findings": [
+    {
+      "id": "F1",
+      "area": "checks",
+      "severity": "major",
+      "where": "§4 Review mode and Rules, Bash bullet: \"each offline script runs through `run_offline.sh`, a wrapper that gives it its own operating-system profile\"; §8 Scripts: \"print their inputs\"",
+      "problem": "(Q2) This is a path the design misses. On macOS a process that is already sandboxed cannot apply another Seatbelt profile, so `run_offline.sh` either fails inside the review-mode sandbox or has to run outside it (`excludedCommands`). If it runs outside, any command passed through it escapes `sandbox.filesystem.denyRead`, and scripts that print their inputs or tracebacks put paper text into the main session.",
+      "failure_scenario": "Inside the sandbox, the nested sandbox-exec returns 'Operation not permitted', so every P1, E3 and Y2 script fails, and so does the wave. The likely workaround is to exclude `run_offline.sh` from the sandbox. After that, `run_offline.sh cat library/papers/x/content/.../p003.md`, or a JSON error from `check_extraction.py` that quotes a malformed claim, puts untrusted text into the main session, which still has the project and allow-listed hosts. T-trifecta only tests the Read tool, WebFetch and curl, so it passes.",
+      "fix": "Replace the wrapper with a fixed launcher that takes only a script name from an allow-list, not arbitrary argv, and runs outside the Claude sandbox with its own profile. Have it capture stdout and stderr into the run folder and return only the schema-validated summary to the session. Add a planted traceback and a `run_offline.sh cat` attempt to T-trifecta.",
+      "confidence": "medium",
+      "source": "https://bdash.net.nz/posts/sandboxing-on-macos/"
+    },
+    {
+      "id": "F2",
+      "area": "checks",
+      "severity": "major",
+      "where": "§4 Review mode: \"reads are denied on every folder that holds text from papers or the web (reads, text, tables, index, scout output, search responses)\"",
+      "problem": "(Q2) The deny list leaves out several stores that also hold untrusted text: claims (verbatim quotes), `library/papers/*/content` and `source`, `Literature/incoming` (the PDFs), `candidates.json` and `shortlist.json` (titles and abstracts from the APIs), `fetch_list.md`, `transcripts/`, `runs.db`, `events.jsonl` ('why' free text), `views/`, `references.bib`, `history/`, memos, and the calibration gold set.",
+      "failure_scenario": "A preprint title or abstract carries an instruction. It reaches `candidates.json` through D1/D3, and the main session reads that file while preparing U1. The session holds project data and network to the allow-listed hosts. Nothing in T-trifecta tests these paths.",
+      "fix": "Invert the rule. In review mode, allow Read and Bash reads only on an explicit allow-list (the summary folder, scripts, settings, briefs) and deny everything else. Extend T-trifecta with one planted instruction in each untrusted store.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F3",
+      "area": "checks",
+      "severity": "major",
+      "where": "§3 reference desk: \"returns the hits verbatim (chunk, page, quote)\"; §4: \"While a wave runs, the main session has no WebFetch\"",
+      "problem": "(Q2) Review mode applies only while a wave runs. The library-desk skill, U4 work, and design-critique triage all happen in the main session outside waves, where it has WebFetch, the project, and verbatim passages. That is all three legs of the trifecta.",
+      "failure_scenario": "Between waves the user asks the desk a question. A returned chunk holds a hidden instruction, and the main session, which now has WebFetch, sends the brief or project data to a URL. Nothing blocks this, because review mode is off.",
+      "fix": "Run the desk, and any session that reads library text, under review mode all the time, or as a headless call with no network that returns schema-only JSON. Make review mode the default profile, not a per-wave one.",
+      "confidence": "high",
+      "source": "https://code.claude.com/docs/en/sandboxing"
+    },
+    {
+      "id": "F4",
+      "area": "checks",
+      "severity": "major",
+      "where": "§4 How independent the checks are; §3 E4 Input \"never the reader's reasoning or Marker text\"; X1 \"compares the parameter fields or normalized LaTeX of reader, checker and X1\"",
+      "problem": "(Q1 weakest point #1) The checker gets the reader's quote, LaTeX and parameter fields to confirm, plus `disagreements.json`, which holds the Marker readings. It is therefore anchored on the reader's transcription, which is often Marker's, so 'reader and checker agree' in X1 is not two independent reads.",
+      "failure_scenario": "Marker reads \\phi_s^{2} as \\phi_s^{-2}, and the reader copies it. Opus is shown that LaTeX and confirms it on a plausible-looking tile. X1 rests on a single Codex read, and if Codex misreads the same faint exponent, all three agree and the error is published as verified.",
+      "fix": "For equation and parameter claims, have E4 transcribe blind first: give it the quantity name and position only, then show the claim and have it compare. Use the blind transcription as the checker's field in X1.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F5",
+      "area": "checks",
+      "severity": "major",
+      "where": "§5 Branch, light: \"Planted errors: about 10 … Pass: … planted errors are caught as in the core\"",
+      "problem": "(Q4) The core rule needs a one-sided 95% Clopper–Pearson lower bound of at least 85%. With about 10 plants, even 10 of 10 caught gives a lower bound of 0.05^(1/10) ≈ 74%, so the branch calibration can never pass. At least 19 plants, all caught, are needed.",
+      "failure_scenario": "B1's seeds get 10 approved plants and all are caught, but the lower bound is 74%, so C0 says stop. Either the branch stalls, or the rule is quietly read as 'all caught', a much weaker gate that goes unrecorded.",
+      "fix": "State the branch rule explicitly, e.g. at least 19 held-out field-dependent plants with all caught, or 'all caught' reported with its interval and not called a pass.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F6",
+      "area": "checks",
+      "severity": "major",
+      "where": "§5 C0 Core: \"mechanical errors made by script…\"; \"an overall one-sided 95 % Clopper–Pearson lower bound of at least 85 %\"",
+      "problem": "(Q4) The overall bound pools script-made mechanical plants, plus fabricated quotes and wrong pages that the deterministic E3 always catches, with the judgment errors only E4 can catch. The pooled rate then mostly measures E3, not the checker the acceptance test relies on.",
+      "failure_scenario": "There are 40 script plants and 20 judgment plants (number on the wrong quantity, hedge made certain). E3 catches all 40 and E4 catches 13 of 20. With a couple more script plants the pool passes the 85% bound, while E4's real catch rate on judgment errors is about 65%.",
+      "fix": "Gate separately: deterministic-check kinds must all be caught, and the Clopper–Pearson bound is computed only on plants that pass E3 and reach E4. Set the size of the held-out set in advance (at least 19 for an 85% bound with zero misses).",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F7",
+      "area": "checks",
+      "severity": "major",
+      "where": "§5 Tuning and held-out sets; Reruns; §3 C0: \"below threshold → stop, revise prompts\"",
+      "problem": "(Q4) The same held-out set is reused after every prompt revision until C0 passes. Prompts are then selected on it, so it is no longer held out and the pass bound is biased upward.",
+      "failure_scenario": "C0 fails at 82%. The prompts are revised with the held-out misses visible, and the next run passes on the same items. The stated 95% bound no longer holds for new errors.",
+      "fix": "Use the held-out set at most once per prompt version, and never show its misses to whoever revises the prompts. After a failure, draw a fresh held-out set from the growing pool, or report the number of attempts with the bound.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F8",
+      "area": "checks",
+      "severity": "major",
+      "where": "§5 Growing set: \"Every error confirmed at E4, X1 or U3 is added to its branch's calibration set\"",
+      "problem": "(Q4) Errors confirmed at E4 are, by construction, errors the checker already catches. Adding them to the calibration set raises the measured catch rate whatever the checker's real ability.",
+      "failure_scenario": "After several waves most of the set is E4-found errors, so C0 reports a high catch rate. The errors E4 misses, found only through U3b, stay rare in the set.",
+      "fix": "Add to the held-out set only errors found independently of E4 (X1 resolved by the user, U3a/U3b, Y3). Keep E4-found errors for tuning only.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F9",
+      "area": "checks",
+      "severity": "major",
+      "where": "§5 C0 Core: \"Plants: planted errors in 2 to 3 papers\"; §12 T-res: Moure & Fu 2024 (authors' LaTeX), Kaempfer & Plapp",
+      "problem": "(Q4) Calibration is measured on a different population from the one it is applied to. Core C0 and T-res use 2–3 recent born-digital B1 papers, but the gate is applied to every branch, including scanned or older experimental papers in B2, B3 and B5, where OCR, tiles and tables behave differently.",
+      "failure_scenario": "A 1970s scanned sintering paper has a misread exponent in a property table. A checker weak on scans passed a gate that never contained a scan, and the branch's light calibration tests only field judgments.",
+      "fix": "Stratify core plants by copy kind (born-digital PDF, LaTeX/JATS, scan). Require each branch's calibration to include its dominant copy kind, and record the copy kind of each plant.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F10",
+      "area": "checks",
+      "severity": "major",
+      "where": "§1 Acceptance: \"found no error in a random 60 of the other passed claims (U3b)\"; §5 Sample bounds",
+      "problem": "(Q4) U3b samples uniformly from all passed claims, while memos and model decisions rest on a small, model-critical, memo-cited subset. The 4.9% bound therefore does not bound the error rate of the claims that reach the model.",
+      "failure_scenario": "A wave has 600 passed claims, 40 of them model-critical parameters cited in the memo. The random 60 contains about 4 of these, so even with 0 errors in the sample, the cited parameters could carry a 20% error rate.",
+      "fix": "Stratify U3b: census or a separate sample of the claims cited by model-critical memo statements, and the uniform 60 for the rest. Report the bound per stratum.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F11",
+      "area": "checks",
+      "severity": "major",
+      "where": "§5 Numbers in memos (Y2): \"must match within the printed precision … a cited claim's parameter field or quote\"",
+      "problem": "Y2 accepts a memo number if it appears anywhere in a cited claim. Swapped numbers, or a number attached to the wrong quantity, therefore pass the script, and only the LLM memo check catches them, Opus alone for questions that are not model-critical.",
+      "failure_scenario": "A memo assigns a claim's 0.1 and 2e-5 to the wrong quantities, both dimensionless or with no unit in the claim. Y2 passes, and if beth-memo-checker misses it, the error reaches the user cited as verified.",
+      "fix": "Require each memo number to carry the claim ID and parameter quantity in a structured inline tag. Have Y2 match value, unit and quantity name against that claim's parameter field.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F12",
+      "area": "checks",
+      "severity": "major",
+      "where": "§3 Y3 Input: \"claims and passages a broader search found outside it\"; §6 \"It never feeds a memo directly\"",
+      "problem": "(Q3) The memo checker sees unchecked passages next to the cited claims. A statement the claims do not support but a passage does may be judged 'supported', so unchecked content certifies a memo sentence.",
+      "failure_scenario": "The synthesizer overreaches its cited claim. The checker sees a passage from another paper that says exactly this and marks it supported. Y2 passes because a verified claim is cited.",
+      "fix": "Split Y3 into two calls: support is judged only against the cited claims, and passages are used only to list omissions and contradictions. Have the schema forbid passage-based support.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F13",
+      "area": "efficiency",
+      "severity": "major",
+      "where": "§5 Important claims: \"by script, whatever its kind: it has a number with a unit, a table cell, or LaTeX\"; \"user time: it grows … not with the number of papers\"",
+      "problem": "(Q1 weakest point #2) In B1 and B5 papers nearly every claim has LaTeX or a number with a unit, so almost all claims are important. X1 calls, E3b, and disputes sent to the user then grow linearly with papers.",
+      "failure_scenario": "A 20-paper B1 wave has about 600 claims, about 80% of them important, so there are about 480 Codex calls. A 5% disagreement rate, mostly from formatting (F14), sends about 24 disputes to U3 per wave.",
+      "fix": "Narrow importance to model-critical questions plus claims cited by a memo, and run X1 on those. Measure the disagreement rate on the shakedown wave before committing.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F14",
+      "area": "robustness",
+      "severity": "major",
+      "where": "§3 X1: \"`compare_reads.py` compares the parameter fields or normalized LaTeX\"; Stop: \"any disagreement → U3\"",
+      "problem": "(Q1 weakest point #2, continued) 'Normalized LaTeX' equality is undefined. Equivalent transcriptions (\\mathrm, \\left(, \\cdot vs juxtaposition, the order of subscripts, \\partial forms) differ as strings, and SymPy cannot parse vector calculus. False disputes will flood U3.",
+      "failure_scenario": "\\nabla\\cdot(M\\nabla\\mu) and \\nabla \\cdot \\left( M \\nabla \\mu \\right) differ after whitespace stripping, so the claim goes to the user. Over hundreds of equations the wave stalls at U3.",
+      "fix": "Specify a token-level canonicalizer with a tested equivalence list, and measure its false-dispute rate in T-res. Send formatting-only differences to E4, not to the user.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F15",
+      "area": "robustness",
+      "severity": "major",
+      "where": "§4 Codex isolation: \"runs as a separate macOS user that has no access to the user's home folder\"; §9 25: \"codex-cli 0.165.0, `~/.local/bin/codex`\"",
+      "problem": "The installed Codex binary, and probably its auth, live in the main user's home folder, which the separate user by decision cannot access. There is also no described way for the sandboxed session or driver to switch users.",
+      "failure_scenario": "`sudo -u codexuser ~/.local/bin/codex exec …` fails with permission denied, so all X1 and summer-memo-checker calls fail and every important claim goes to the user. Or the home folder is opened to make it work, which defeats the isolation.",
+      "fix": "Install a pinned Codex binary in a root-owned shared path, log in once as the separate user, and launch calls through a root-owned helper allowed in sudoers for that one command. Test this in T-codex.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F16",
+      "area": "assumptions",
+      "severity": "major",
+      "where": "§4 summer-reader Tools: \"file read in its folder\"; Codex isolation: \"fails the call on any command other than reading its inputs\"",
+      "problem": "Codex sees an image when it is attached with `--image/-i`. Reading a PNG through a shell command gives bytes, not vision input, and path-based image reading is reported to be unreliable.",
+      "failure_scenario": "Given a tile path, Codex runs `cat tile.png`, gets no usable image, and returns not_found or a guess. X1 adds no cross-vendor check, and nothing in C0 or T-codex tests X1 accuracy.",
+      "fix": "Attach tiles with `codex exec -i <tile>`, and have the audit allow zero shell commands. Add an X1 case with a known answer to T-codex.",
+      "confidence": "medium",
+      "source": "https://codex.danielvaughan.com/2026/03/28/codex-cli-image-workflows/"
+    },
+    {
+      "id": "F17",
+      "area": "checks",
+      "severity": "major",
+      "where": "§1 checked layer: \"its symbols with units\"; §6 `symbols.v1.json`: \"symbol, meaning, unit as printed, page; E3b results\"",
+      "problem": "(Q3) The symbol list and E3b's inferred dimensions are stored in the 'checked layer', but E4 only checks symbols that appear in a claim. Reader-written symbol meanings and inferred units can be reused later as if checked.",
+      "failure_scenario": "The reader lists M as mobility where the paper uses M for molar mass. No claim cites M, so E4 never sees the entry, and a later question or E3b reference relies on it.",
+      "fix": "Move symbols to the content layer (unchecked), or put every symbol entry through E4. Have E3b never treat inferred dimensions as reference values.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F18",
+      "area": "assumptions",
+      "severity": "major",
+      "where": "§1 and §6 Two layers: \"Any question asked later can be answered from it without fetching the paper again\"; A1 acquires \"PDFs, and LaTeX or JATS XML source\"",
+      "problem": "(Q3) Supplementary material, errata or corrigendum texts, and data behind figures are not acquired or stored. These are often where model parameters and property tables live (B2, B5).",
+      "failure_scenario": "A later question asks for a sublimation coefficient that sits in a paper's SI table. Y1 records 'library silent', and D2g states a gap that the paper answers.",
+      "fix": "Have A1 fetch linked supplementary files and corrigenda (Crossref/JATS relations) into `source/`, run P1 on them under the same paper_id, and mark on the card any supplement that could not be acquired.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F19",
+      "area": "checks",
+      "severity": "major",
+      "where": "§3 L2: \"new retraction → paper flagged, user told\"; §6: \"Only the user can mark a record retracted\"; Y2: \"cites ≥ 1 current verified claim\"",
+      "problem": "Between L2 finding a retraction and the user's decision, the paper's claims stay 'current verified', and Y1 and Y2 keep using and passing them.",
+      "failure_scenario": "L2 flags a retraction while the user is busy. The next Y1 cites the paper's claims, Y2 passes, and the memo reaches the user.",
+      "fix": "Have Y1 exclude, and Y2 fail, any claim on a flagged paper until the user rules.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F20",
+      "area": "assumptions",
+      "severity": "minor",
+      "where": "§3 Page tiles: \"The models scale a full page down to at most 2,576 px on the long edge\"; \"a 3.4 × 5.5 inch tile is 1020 × 1650 px\"",
+      "problem": "The 2,576 px tier applies to some models only. The others, likely Haiku and possibly Sonnet 5.5, are capped at 1,568 px, so a 1650 px tile would be downscaled for the reader.",
+      "failure_scenario": "The Sonnet reader receives tiles below 300 dpi, so the tile gain T-res measured does not hold for E1.",
+      "fix": "Look up the limit for each pinned model, size tiles to at most 1568 px long edge, and run T-res with each reading model.",
+      "confidence": "low",
+      "source": "https://platform.claude.com/docs/en/build-with-claude/vision"
+    },
+    {
+      "id": "F21",
+      "area": "efficiency",
+      "severity": "minor",
+      "where": "§6 Archive: \"After each wave … a dated tarball of everything\"; Backup: \"After each publish, a compressed snapshot\"",
+      "problem": "Each wave archives, and each publish snapshots, the whole library rather than what changed, so storage grows quadratically. iCloud Drive is a sync folder, not a versioned backup.",
+      "failure_scenario": "After 10 waves, 10 full tarballs of 300 dpi images and tiles exceed 'a few GB'. iCloud fills or evicts them, and L2's `brctl download` stalls.",
+      "fix": "Archive per paper copy hash (content-addressed, written once) plus a per-wave hash manifest, and merge backup and archive into that one store.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F22",
+      "area": "robustness",
+      "severity": "minor",
+      "where": "§5 Reruns: \"A Claude Code or Codex version change runs a 10-item subset first\"; §9 25: only Codex is version-locked",
+      "problem": "Claude Code updates itself often and is not version-locked, so the version can change mid-wave while the manifest records one version.",
+      "failure_scenario": "An auto-update between E1 and E4 changes `-p` or permission behavior. The E4 calls ran under an unrecorded version, and the C0 subset was never run for it.",
+      "fix": "Pin Claude Code with a lock file and disable auto-update. Record the version per call in runs.db and stop on a mismatch.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F23",
+      "area": "robustness",
+      "severity": "minor",
+      "where": "§8 \"Agent checks repeat at a measured rate\"; §4 Codex \"model pinned at build\"",
+      "problem": "Pinned Claude and Codex models will be retired, and ChatGPT-plan Codex may not offer dated snapshots, so recorded agent verdicts cannot be rerun with the same model.",
+      "failure_scenario": "A year later a reviewer asks for X1 to be redone, and only a different model is available.",
+      "fix": "State that agent verdicts are reproducible only through their archived transcripts. Prefer dated model IDs where offered, and record each pinned model's deprecation date.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F24",
+      "area": "efficiency",
+      "severity": "minor",
+      "where": "§3 Tables (P1): \"with a second extractor, chosen by T-table\"; §5 Important claims (a table cell makes a claim important); E4 \"checks the cell against the crop when … the claim is important\"",
+      "problem": "(Q5) Every claim that cites a table cell is already important, so E4 always checks it against the crop. The second extractor and the cell-by-cell comparison add nothing the acceptance test needs.",
+      "failure_scenario": "Selecting, pinning and maintaining a second neural extractor adds build time and C0 rerun triggers, but catches no extra wrong cells.",
+      "fix": "Drop the second extractor and the comparison. Keep one extractor (chosen by T-table) plus the E4 crop check.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F25",
+      "area": "efficiency",
+      "severity": "minor",
+      "where": "§2 tier M/L \"SC0 and 2 screeners\"; §5 verdict repeatability \"30 random claims per wave\"; D2c; Z1",
+      "problem": "(Q5) The acceptance test needs none of: two LLM screeners plus a baseline, per-wave repeatability sampling, D2c, or the Z1 design. Screening safety rests on 'any include kept' and the U1 sample.",
+      "failure_scenario": "Each wave pays for two Haiku passes, an SC0 build, an agreement report and 30 extra E4 calls, none of which can block publication.",
+      "fix": "Run one screener plus SC0, with U1 as the gate. Make repeatability sampling and D2c on-demand diagnostics.",
+      "confidence": "low",
+      "source": null
+    }
+  ],
+  "unclear": [
+    {
+      "where": "§3 E4 vs P1",
+      "issue": "E4 is to see \"never … Marker text\", yet \"the list [of source disagreements] goes to E1 and E4\". That list contains Marker's readings."
+    },
+    {
+      "where": "§3 E3, quotes",
+      "issue": "\"for LaTeX or XML sources the wording is matched on the source\". Sources have no pages, so how is \"found on the cited page\" checked, and how are `pages/p001.md` built from a source?"
+    },
+    {
+      "where": "§1 Acceptance vs §1 output 4 and Y1",
+      "issue": "\"Every memo sentence cites a verified claim\", but model options, *library silent* statements and gap statements cite no claim. Which sentences does Y2 exempt?"
+    },
+    {
+      "where": "§5 C0 Core",
+      "issue": "\"mechanical errors made by script from verified claims\". C0 runs before any wave, so which verified claims exist then?"
+    },
+    {
+      "where": "§5 C0 Reporting",
+      "issue": "\"not a pass criterion until the kind has 8 or more held-out items\". What is the criterion at 8? \"caught clearly less often\" has no threshold."
+    },
+    {
+      "where": "§3/§4 acquire.py",
+      "issue": "\"Runs outside the sandbox network list, so it asks once per wave\". Is it an excludedCommand (fully unsandboxed) or a sandbox network prompt? Can the main session choose its URLs?"
+    },
+    {
+      "where": "§4 Review mode",
+      "issue": "How are the drivers that launch `claude -p` and Codex (as another user) run in review mode? They must read untrusted folders and reach the Anthropic and OpenAI hosts, which review mode denies to Bash."
+    },
+    {
+      "where": "§3 U1",
+      "issue": "Does \"a random 60 of the exclusions\" include SC0's rule exclusions, or only screener exclusions?"
+    },
+    {
+      "where": "§2 tier S",
+      "issue": "Tier S skips screening and E2. Do branch C0, X1, U3a and U3b still apply for the acceptance test?"
+    },
+    {
+      "where": "§6 Passage index",
+      "issue": "When a paper has several copies, are both copies indexed, and which one do the desk and Y3 return?"
+    },
+    {
+      "where": "§5 Verdict repeatability",
+      "issue": "\"else E4 and C0 rerun\". Rerun E4 on the whole wave, under which prompt?"
+    },
+    {
+      "where": "§1 edit 2026-10-28 vs §6 Backup",
+      "issue": "The record holds page images, but the per-publish backup excludes images, tiles and sources. Between wave archives, claims cannot be rechecked against images after a disk loss."
+    },
+    {
+      "where": "§5 Units",
+      "issue": "Who verifies `memory/semantic/units.md`? Is its hash in the manifest? It is E3b's source of truth."
+    }
+  ]
+}
