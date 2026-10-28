@@ -104,3 +104,9 @@ Unclear points, answered in revision 8:
     questions, plus a random 20 % of the other important claims to measure
     what is skipped; decide after the shakedown wave's disagreement rate.
   - (b) keep X1 on every important claim.
+
+## Decisions (2026-10-28)
+
+- **Decided by the user:** F3 option (a) and F13 option (a), as recommended.
+- **The other findings and the 13 unclear points** were approved and applied
+  as recommended in revision 8 (commit 557c851b).
