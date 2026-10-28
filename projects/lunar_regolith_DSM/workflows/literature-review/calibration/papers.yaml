@@ -31,7 +31,18 @@
   file: Research/Projects/lunar_regolith_DSM/Literature/moure_fu_2024.pdf
   arxiv: 2407.21213   # v1 includes the authors' LaTeX source
   branches: [B1]
-  roles: [tres, tret]
+  roles: [tret]
+
+# The arXiv v1 PDF (48 pages) and the authors' LaTeX source, downloaded 2026-10-28 (sha256 e265eb8a28ac...
+# and f1e3e9fa94cd...). T-res uses this copy, because its pages match the source; the journal PDF above
+# is a different layout (pp. 7808-7821).
+- id: moure_fu_2024_arxiv_v1
+  citation: "Moure, A. and Fu, X. (2024). A phase-field model for wet snow metamorphism. arXiv:2407.21213v1."
+  doi: 10.48550/arXiv.2407.21213
+  file: Research/Projects/lunar_regolith_DSM/Literature/moure_fu_2024_arxiv_v1/moure_fu_2024_arxiv_v1.pdf
+  source: Research/Projects/lunar_regolith_DSM/Literature/moure_fu_2024_arxiv_v1/source_2407.21213v1.tar.gz
+  branches: [B1]
+  roles: [tres]
 
 # Li et al.: DOI, volume and pages checked on Crossref and OpenAlex 2026-10-26 (not retracted; Crossref garbles
 # the umlaut in Raetz). Publisher PDF from intlpress.com, 27 pages = pp. 81-107, title page checked the same day.
@@ -42,3 +53,42 @@
   pmcid: PMC3097555   # NIH author manuscript, not downloaded; cite pages from the journal PDF
   branches: [B1]
   roles: []   # user to set: gold_statements (10 slots ready), planted_errors, tret?
+
+# B1 seeds chosen by the user on 2026-10-28 (WORKFLOW.md §9, item 38). DOIs checked on Crossref.
+# Files are acquired in build step 2; "file" is filled in then.
+- id: lervag_lowengrub_2015
+  citation: "Lervåg, K. Y. and Lowengrub, J. (2015). Analysis of the diffuse-domain method for solving PDEs in complex geometries. Commun. Math. Sci. 13(6)."
+  doi: 10.4310/cms.2015.v13.n6.a6
+  file:
+  branches: [B1]
+  roles: [tret]
+- id: yu_chen_thornton_2012
+  citation: "Yu, H.-C., Chen, H.-Y. and Thornton, K. (2012). Extended smoothed boundary method for solving partial differential equations with general boundary conditions on complex boundaries. Modelling Simul. Mater. Sci. Eng. 20, 075008."
+  doi: 10.1088/0965-0393/20/7/075008
+  file:
+  branches: [B1]
+  roles: [tret]
+- id: folch_plapp_2005
+  citation: "Folch, R. and Plapp, M. (2005). Quantitative phase-field modeling of two-phase growth. Phys. Rev. E 72, 011602."
+  doi: 10.1103/physreve.72.011602
+  file:
+  branches: [B1]
+  roles: [tret]
+- id: steinbach_2009
+  citation: "Steinbach, I. (2009). Phase-field models in materials science. Modelling Simul. Mater. Sci. Eng. 17, 073001."
+  doi: 10.1088/0965-0393/17/7/073001
+  file:
+  branches: [B1]
+  roles: [tret]
+- id: plapp_2011
+  citation: "Plapp, M. (2011). Unified derivation of phase-field models for alloy solidification from a grand-potential functional. Phys. Rev. E 84, 031601."
+  doi: 10.1103/physreve.84.031601
+  file:
+  branches: [B1]
+  roles: [tret]
+- id: joshi_jaiman_2018
+  citation: "Joshi, V. and Jaiman, R. K. (2018). A hybrid variational Allen-Cahn/ALE scheme for the coupled analysis of two-phase fluid-structure interaction. Int. J. Numer. Methods Eng."
+  doi: 10.1002/nme.5961
+  file:
+  branches: [B1]
+  roles: [tret]

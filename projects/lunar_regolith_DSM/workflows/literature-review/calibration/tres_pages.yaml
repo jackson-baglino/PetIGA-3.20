@@ -18,7 +18,7 @@
 #     latex: '2.178 \times 10^{-5}\,\mathrm{m^2\,s^{-1}}'
 
 pages:
-  - paper: moure_fu_2024
+  - paper: moure_fu_2024_arxiv_v1   # the arXiv v1 PDF (48 pages), not the journal PDF
     page_pdf: []     # 2 or 3 page numbers, e.g. [4, 5, 9]
     source: latex
     items: []        # filled by script from the arXiv source

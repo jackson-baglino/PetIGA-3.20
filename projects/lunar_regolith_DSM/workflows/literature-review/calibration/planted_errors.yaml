@@ -1,6 +1,6 @@
 # Planted errors written by you: at least 10, for the CORE calibration (WORKFLOW.md §5).
 # Yours are all held out: they score the checks and are never used to tune prompts. They
-# are also the control that tells us whether the Codex-drafted plants are realistic, so
+# are also the control that tells us whether the model-drafted plants are realistic, so
 # aim at the hard kinds: a condition stated on another page dropped, a cited result passed
 # off as the paper's own, a widened scope, a plausible subscript, sign or unit swap.
 # Use the papers you know best: kaempfer_plapp_2009 and molaro_2019.

@@ -16,7 +16,7 @@ script hands it.
 | `papers.yaml` | the calibration papers (filled in) | — | — |
 
 What is not yours to write:
-- the plants drafted by Codex, which you approve one by one;
+- the plants drafted by `beth-planter` (Opus), which you approve one by one;
 - the mechanical plants a script makes from verified claims.
 
 Both are generated into separate files at build time.
@@ -43,5 +43,10 @@ Roles of the papers (user's choice, 2026-10-23; branches 2026-10-27):
 - Leave unused slots empty, or delete them.
 - Wrap text that contains a colon followed by a space in single quotes.
 
-When a file is done, say so. A script checks it before use: the schema, that
-the pages exist in the PDF, and that there are no duplicates.
+Check a file at any time, as often as you like:
+
+    venv_workflows/bin/python scripts/literature_review/check_calibration.py
+
+It reports, per entry, YAML errors (with the line), missing or invalid fields,
+pages that do not exist in the paper (printed page numbers are mapped to the
+PDF), and duplicates. It never prints paper text. Empty slots are ignored.
