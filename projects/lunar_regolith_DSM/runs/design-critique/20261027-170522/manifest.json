@@ -1,0 +1,42 @@
+{
+  "workflow": "design-critique",
+  "run_id": "20261027-170522",
+  "created": "2026-10-27T17:10:20-07:00",
+  "git_commit": "cd64e493519b5ea9ebeb24cfbd063259db9e0053",
+  "design": {
+    "path": "workflows/literature-review/WORKFLOW.md",
+    "sha256": "7b12fba1233404869af875f293633e69115c184f4022474240474bf899b2342c"
+  },
+  "schema_sha256": "38fa2d66e1178dd0c031afca99832e3bfd31c3a296cbf61a6d78a372313438ec",
+  "task_sha256": "fb383d680f6e140920cfb35d32fb87c6d1d64d935e79e4a748ee4973fd84524e",
+  "focus": "runs/design-critique/focus/rev6_scripts_permissions.md",
+  "script_sha256": "4200ef8aa9de37dcd92508fc12e0c4f912be844eb209b71e216cf0096e5907eb",
+  "tools": {
+    "claude_code": "2.1.312 (Claude Code)",
+    "mutool": "mutool version 1.24.9"
+  },
+  "critics": {
+    "beth-critic": {
+      "agent": "beth-critic",
+      "model": "claude-opus-5-5",
+      "agent_sha256": "2941951eb846638a0e9c653d5402710a79f2cbee1246d613f9c3047615e8128c",
+      "input_sha256": "99812383be19bd8e4855d31c55a96c1e51799c1654513e4508f4d1a3da49b534",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/design-critique/20261027-170522/transcripts/critique/beth-critic_try1.jsonl"
+        }
+      ],
+      "output": "runs/design-critique/20261027-170522/critiques/beth-critic.json",
+      "n_findings": 25,
+      "by_severity": {
+        "critical": 2,
+        "major": 12,
+        "minor": 11
+      },
+      "n_unclear": 9,
+      "n_web_sourced": 3
+    }
+  }
+}
