@@ -2,7 +2,7 @@
  "title": "literature-review",
  "summary": [
   "A reusable literature-review workflow built around a library with branches (numerical methods, sublimation physics, sintering, planetary setting, properties), each seeded with papers the user chooses. Seeds steer discovery (citation chaining), screening (a scripted baseline ranks candidates by similarity to the seeds) and calibration. Scripts search Crossref, OpenAlex, Semantic Scholar and arXiv and resolve every candidate; two Haiku screeners judge abstracts, combined by a fixed rule (any include is kept) and measured against the baseline; an on-demand scout challenges novelty claims and memo gaps using search terms the user approves.",
-  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images, and its own corrections are checked again; Codex, isolated as a separate user, reads important values blind. The user reads core papers and audits 60 random claims. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions; the sandbox fails closed; a private archive in the course folder keeps everything a recheck needs. Every shortlisted paper is also added to the user's Zotero with its PDF."
+  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images, and its own corrections are checked again; Codex, isolated as a separate user, reads important values blind. The user reads core papers and audits 60 random claims. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions; during a wave the main session runs in a review mode with no way out and no untrusted text; the sandbox fails closed; a private archive in the course folder keeps everything a recheck needs."
  ],
  "status": "Revision 7, for review, 2026-10-27 (critique round 3 applied; revision 5 was approved 2026-10-23). Build-time tests (WORKFLOW.md §12) come first.",
  "lanes": [
@@ -525,18 +525,6 @@
     "Separate macOS user; web search off; exec log audited",
     "Disagreement goes to the user"
    ]
-  },
-  {
-   "id": "Z1",
-   "lane": "script",
-   "row": 6.8,
-   "kind": "script",
-   "title": "Z1 zotero_add.py",
-   "job": "Adds every shortlisted paper to the user's Zotero, in a collection per branch, with its PDF when acquired.",
-   "details": [
-    "Searches by DOI first: never duplicates or edits an item",
-    "Asks each run: writes to an outside account"
-   ]
   }
  ],
  "edges": [
@@ -787,18 +775,13 @@
    "label": "passage search"
   },
   {
-   "from": "A2",
-   "to": "Z1",
-   "kind": "flow"
-  },
-  {
-   "from": "Z1",
-   "to": "P1",
-   "kind": "flow"
-  },
-  {
    "from": "Y3",
    "to": "U4",
+   "kind": "flow"
+  },
+  {
+   "from": "A2",
+   "to": "P1",
    "kind": "flow"
   }
  ]
