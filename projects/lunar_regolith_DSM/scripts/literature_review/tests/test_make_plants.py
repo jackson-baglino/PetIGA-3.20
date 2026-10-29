@@ -36,6 +36,13 @@ class MakePlants(unittest.TestCase):
             new, _ = mp.changed_value_digit("1.8e6", rng)
             self.assertTrue(new.endswith("e6") and new != "1.8e6" and not new.startswith("0"))
 
+    def test_typo_is_carried_to_every_plant(self):
+        e = {"paper": "li_2009", "page": 85, "kind": "equation", "statement": "a term $-2 u$ with $10^{3}$",
+             "typo": "the sign should be +"}
+        plants = mp.plants_for(1, e, {}, random.Random(4))
+        self.assertTrue(plants)
+        self.assertTrue(all(p["source_typo"] == "the sign should be +" for p in plants))
+
     def test_exponent_and_sign_flips(self):
         rng = random.Random(3)
         t, v, note = mp.sign_or_exponent("order of $10^{90}$ years", None, rng)

@@ -66,6 +66,15 @@ class CheckCalibration(unittest.TestCase):
         problems, _ = self.problems(cc.check_tret)
         self.assertTrue(any("absent question leaves" in p for p in problems))
 
+    def test_basis_must_be_a_listed_one(self):
+        self.write("gold_statements.yaml", "statements:\n  - paper: li_2009\n    page: 85\n"
+                   "    kind: result\n    statement: x\n    basis: measured\n"
+                   "  - paper: li_2009\n    page: 86\n    kind: result\n    statement: y\n"
+                   "    basis: cited\n    typo: z\n")
+        problems, _ = self.problems(cc.check_gold)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("basis 'measured'", problems[0])
+
     def test_empty_slots_are_ignored(self):
         problems, _ = self.problems(cc.check_planted)
         self.assertEqual(problems, [])

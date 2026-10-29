@@ -147,6 +147,8 @@ def plants_for(i, e, pp, rng):
     base = {"paper": e["paper"], "from_statement": i, "location": e.get("location"),
             "kind_of_claim": e.get("kind"), "correct_claim": text, "correct_page": e.get("page"),
             "correct_value": e.get("value"), "correct_unit": e.get("unit")}
+    if not cc.blank(e.get("typo")):
+        base["source_typo"] = e["typo"]       # a plant may happen to correct it; the user rejects those
     r = changed_digit(text, rng)
     if r:
         out.append(dict(base, kind="changed_digit", planted_claim=r[0], planted_page=e.get("page"),
@@ -217,7 +219,9 @@ def main(argv=None):
             f"(seed {args.seed}, {args.per_statement} per statement) from gold_statements.yaml.\n"
             "# Mechanical planted errors for the core calibration (WORKFLOW.md §5). Review each one:\n"
             "# set approved to true if the planted version is wrong in exactly the way the note says\n"
-            "# and is not accidentally still true, false otherwise. Rerunning the script overwrites\n"
+            "# and is not accidentally still true, false otherwise. A plant with source_typo comes\n"
+            "# from a statement recording a typo in the paper; reject it if it corrects the typo.\n"
+            "# Rerunning the script overwrites\n"
             "# this file, so record approvals only once the gold statements are final.\n")
     with open(args.out, "w") as f:
         f.write(head)

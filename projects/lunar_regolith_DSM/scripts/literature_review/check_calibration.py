@@ -31,6 +31,7 @@ PLANT_KINDS = {"fabricated_quote", "wrong_page", "equation_sign_or_exponent", "e
                "wrong_attribution", "wrong_figure"}
 CLAIM_KINDS = {"method", "equation", "result", "assumption", "limitation", "parameter"}
 TRET_KINDS = {"exact", "paraphrase", "absent"}
+BASES = {"derived", "numerically tested", "experimentally tested", "cited", "asserted"}
 
 
 def blank(v):
@@ -186,6 +187,8 @@ def check_gold(pp, problems, counts):
                 problems.append(f"{w}: '{k}' is empty")
         if e.get("kind") and e["kind"] not in CLAIM_KINDS:
             problems.append(f"{w}: kind '{e['kind']}' is not one of {sorted(CLAIM_KINDS)}")
+        if not blank(e.get("basis")) and str(e["basis"]).strip() not in BASES:
+            problems.append(f"{w}: basis '{e['basis']}' is not one of {sorted(BASES)}")
         vals = [not blank(e.get(k)) for k in ("symbol", "value", "unit")]
         if any(vals) and not all(vals[1:]):
             problems.append(f"{w}: a value needs both value and unit (symbol optional)")
