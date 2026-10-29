@@ -17,6 +17,14 @@
 #   symbol, value, unit: only for a value (kind parameter, or a numerical result). A script
 #              matches these exactly; units are compared by dimension (J/(m^3 K) = J m^-3 K^-1).
 #              Leave them empty otherwise.
+#   basis:     optional; where the fact comes from, as in the claim records:
+#              derived | numerically tested | experimentally tested | cited | asserted.
+#              A review mostly cites or asserts. For cited, name the source in the statement.
+#   typo:      optional; only if the paper has a typo in what the statement records. Write
+#              the statement as printed, and here the correct form and how you know it
+#              (neighboring equations, the author manuscript). Plants made from this
+#              statement show the typo, so you can reject any that happen to correct it.
+# Optional fields and fields that do not apply can be left empty or deleted; both are fine.
 # Prose statements are matched to the readers' claims by an Opus judge; you review every
 # statement it marks as missed and a sample of those it marks as found.
 # Leave a slot you do not need empty, or delete it. Add slots by copying one.
@@ -35,180 +43,181 @@ statements:
 
   # ---- kaempfer_plapp_2009 (branch B1, numerical methods): 12 slots ----
   - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 3
+    location: Eq. (1)
+    kind: equation
+    statement: The humidity ratio $x_s(T)$ is defined from an emprical realtion in pressures for saturated vapor over ice, $x_s(T) = 0.62 \frac{P_{vs}(T)}{P_a - P_{vs}(T)}$.
+    symbol: x_s(T)
+    value:
+    unit: 
+  - paper: kaempfer_plapp_2009
+    page: 4
+    location: Table I
+    kind: parameter
+    statement: Table I gives the thermal conductivity of air.
+    symbol: \kappa_a
+    value: 0.02
+    unit: W m^-1 K^-1 
+  - paper: kaempfer_plapp_2009
+    page: 5
+    location: Eq (11)
+    kind: equation
+    statement: The equilibrium state of the vapor field interacting with a curved ice surface is given by the generalized Gibbs-Thomson relation.
+    symbol: 
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page: [5, 3]
+    location: Eq (13)
+    kind: equation
+    statement: The capillarly lenght is inversely proportional to temperature and is expected to vary little in any given simulation.
+    symbol: d_0
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page: 6
+    location: Section II.A
+    kind: parameter
+    statement: The condensation coefficeint $\alpha$ has values beteen 10^-3 and 10^-1 for ice, and is inversely proportional to kinetic coefficient.
+    symbol: $\alpha$
+    value:
+    unit: 
+  - paper: kaempfer_plapp_2009
+    page: 7
+    location: Eq (33)
+    kind: equation
+    statement: The phase-field model is constructed from a double-well potential and a phase change term, which is depedent on the local vapor saturation.
     symbol:
     value:
     unit:
   - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 8
+    location: Section II.C
+    kind: method
+    statement: The the interface correction term on the kinetic coefficient for diffusivity is assumed to be two sided to prevent other spurious effects on the interface, which would need additional model complexity to correct if implemented otherwise.
     symbol:
     value:
     unit:
   - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 8
+    location: Eq (43)
+    kind: equation
+    statement: 'The thin interface width is strongly controlled by three ratios: two ratios that are related to the heat diffusivity and one related to the vapor diffusivity.'
+    symbol: W
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page: 10
+    location: Section II.D
+    kind: method
+    statement: The diffusivities are scaled by a parameter $\xi$ in order to increase the maximum time step of the simulation; this implementation does not change the thin-interface constraints or the recovery of the sharp-interface limit.
     symbol:
     value:
     unit:
   - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 11
+    location: Section III.B
+    kind: result
+    statement: The phase-field model was validated against a psudeoanalytical solution for ice growth in one dimension.
     symbol:
     value:
     unit:
   - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 13
+    location: Section III.C
+    kind: result
+    statement: The phase-field model was qualitatively validated in 2D against an experimental observation for bubble migration within ice, where the model did not honor the thin interface constraints.
     symbol:
     value:
     unit:
   - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
-  - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
-  - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
-  - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
-  - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
-  - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
-  - paper: kaempfer_plapp_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 15
+    location: Section IV
+    kind: limitation
+    statement: The kinetic coefficient is assumed to be constant in the phase-field model, which is a limitation of the model since it is known to vary with temperature and surface orientation; and furthermore, a more complicated formulation of the kinetic coefficient would require additional model complexity to implement and could possible render the model intractable.
     symbol:
     value:
     unit:
 
   # ---- li_2009 (branch B1, the diffuse domain approach; this week's homework paper): 10 slots ----
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 83
+    location: Eq (2.1)
+    kind: equation
+    statement: The diffuse domain approach defines represents a time-dependent domain $\Omega(t)$ with a smooth phase field function $\phi(x,t)$, which is 1 inside the domain and 0 outside, and transitions smoothly across the boundary as defined by a hyperbolic tangent function.
     symbol:
     value:
     unit:
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 84
+    location: Eq. (2.6)
+    kind: equation
+    statement: To apply Nuemann or Robin boundary conditions on the diffuse domain, the problem can be reformulated using an indicator functioin $\chi_{\Omega(t)}$ and a smooth approximation of the Dirac delta function $\delta_{\epsilon}(\phi)$, which is nonzero only in a thin layer around the boundary.
     symbol:
     value:
     unit:
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 84
+    location: Eq. (2.2)
+    kind: equation
+    statement: For a place equation defined in a time-depdent domain, Dirchlet, Nuemann, and Robin boundary conditions can be applied on the boundary of the domain.
     symbol:
     value:
     unit:
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 85
+    location: 2.2
+    kind: method
+    statement:  In the diffuse domain approach, the boundary conditions are applied in a thin layer around the boundary as approximations defined from performing matched asymptotic expansions of the original problem and the diffuse domain reformulation.
     symbol:
     value:
     unit:
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 86
+    location: 2.2
+    kind: method
+    statement: By matching the inner and outer expansions in an overlapping region where both expansions are valid, it can be shown that the limit of $u_0(r, s, t)$ as it approaches zero from both the left and right is equivilent to the limit of $U_0(z, s, t)$ as it approaches infinity from both the left and right.
     symbol:
     value:
     unit:
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 86
+    location: Eq. (2.23)
+    kind: equation
+    statement: The equation shown here is $\nabla \cdot \left\{ \left( 1 + \epsilon^{-1} B(\phi) \right) \nabla u \bigr) \right\} - \epsilon^{-2} B(\phi) (u - g) = \phi f$
+    typo: The equation in the paper has an extra closing parenthesis after the first $\nabla u$ term, which is a typo. Or the authors are missing an opening parenthesis somewhere else in the equation, which is also a typo.
     symbol:
     value:
     unit:
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 88
+    location: Eq. (2.25)
+    kind: equation
+    statement: The equation shown here is $\int_{-\infty}^{\infty} B(\Phi_0)\,dz = \int_1^0 \dfrac{B(\Phi_0)}{\partial_z\Phi_0}\,d\Phi_0 = \dfrac{1}{6}\int_0^1 \dfrac{B(\Phi_0)}{\Phi_0(1-\Phi_0)}\,d\Phi_0 \sim \dfrac{1}{6}\int_0^1 \Phi_0(1-\Phi_0)\,d\Phi_0 \ne 0,$.
     symbol:
     value:
     unit:
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 88
+    location: Eq. (2.38)
+    kind: equation
+    statement: The equatioin here is $\partial_t(\phi u) - \nabla\cdot(\phi\mathbf{A}\nabla u) + \phi\mathbf{b}\cdot\nabla u + \phi c u - \epsilon k(u-g)|\nabla\phi|^2 = \phi f \quad \mathrm{in}\quad \Omega$.
     symbol:
     value:
     unit:
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 88
+    location: Eq. (2.37)
+    kind: equation
+    statement: The equation here is $\partial_t(\phi u) - \nabla\cdot(\phi\mathbf{A}\nabla u) + \phi\mathbf{b}\cdot\nabla u + \phi c u + \mathrm{B.C.} = \phi f \quad \mathrm{in}\quad \Omega,$ where the term $\mathrm{B.C.}$ is a placeholder for the appropriate diffuse domain boundary condition term forms.
     symbol:
     value:
     unit:
   - paper: li_2009
-    page:
-    location:
-    kind:
-    statement:
+    page: 94
+    location: Eq. (2.46)
+    kind: equation
+    statement: The equation here is $\partial_z\left(\Phi_0 U_0\left(\widehat{\mathbf{b}}_0\cdot\mathbf{n}-V\right)\right) - \partial_z\left(\Phi_0\mathbf{n}\widehat{\mathbf{A}}_0\left(\mathbf{n}\partial_z U_1+\mathbf{s}\partial_s U_0\right)\right) - k(U_0-G_0)(\partial_z\Phi_0)^2=0.$
     symbol:
     value:
     unit:
@@ -232,15 +241,12 @@ statements:
     statement: $\dot{n}$ is the rate of normal displacement to the surface in the SA81 model.
   - paper: molaro_2019
     page: 249
-    # CHECK: this describes how the model is organized; "method" may fit better than "equation".
-    kind: equation
+    kind: method
     statement: 'The SA81 model is split into three categories of growth mechanisms: nondensifying mechanisms, densifying mechanisms, and redistribution mechanisms.'
   - paper: molaro_2019
     page: 256
     kind: result
-    # CHECK: "the experiments that the authors did not perform" is hard to match. Do you mean
-    # experiments by other groups (which ones)? Name them so the judge can tell.
-    statement: The SA81 model did not reproduce the growth rates observed in the experiments that the authors did not perform.
+    statement: The SA81 model did not reproduce the growth rates observed in the experiments that were perfromed by Hobbs & Mason (1964), Kingery (1960), and Thomas et al. (1994).
   - paper: molaro_2019
     page: 258
     kind: result
@@ -264,68 +270,48 @@ statements:
 
   # ---- blackford_2007 (branch B3, sintering; a review): 8 slots ----
   - paper: blackford_2007
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
+    page: 357
+    location: Section 2.2.2
+    kind: result
+    statement: 'Diffusion mechanisms can be broken into two primary categories: those that cause densification--bulk transport mechanisms which include grainn boundary diffusion and plastic flow--and those that do not--surface transport mechanisms which include surface diffusion and ice growth by vapor transport.'
   - paper: blackford_2007
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
+    page: 360
+    location: Figure 5
+    kind: result
+    statement: 'Figure 5 is a pair of sechematics showing both solid sate and liquid-phase sintering. In this diagram we see the interfacial energies, and contact angles. The surface energy on the solid vapor interface is $109 mJ/m^2$.'
+    symbol: $\gamma_{sv}$
+    value: 109
+    unit: mJ m^-2
   - paper: blackford_2007
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
+    page: 360
+    location: Figure 5
+    kind: result
+    statement: 'The contact angle observed in solid-state sintering is much larger than the one observed in liquid-phase sintering, which is a result of the difference in surface energies between the two processes.'
+    symbol: $\Phi$
   - paper: blackford_2007
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
+    page: 370
+    location: Section 4
+    kind: result
+    statement: 'Vapor transport is the dominant mechanism in most laboratory sintering experiments, and surface diffusion is only expected to dominate at temperatures warmer that $-6^\circ$C or colder than $-40^\circ$C, and for neck raddii smaller than 1 micron.'
   - paper: blackford_2007
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
+    page: 371
+    location: Section 4.2
+    kind: result
+    statement: 'Densification in snowpacks falls into three main categories: (1) densification of snow into firn up to 0.55 g/cm^3, (2) densification of firn into ice up to 0.82 to 0.84 g/cm^3, and (3) densification of bubly ice from 0.82 up to 0.917 g/cm^3.'
   - paper: blackford_2007
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
+    page: 370
+    location: Figure 11
+    kind: result
+    statement: The rate of neck grwoth between sintering grains increases with homologous temperature, where the two mechanisms that exhibit the fastest neck growth are vapor transport and surface diffusion, depending on the temperature.
   - paper: blackford_2007
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
+    page: 370
+    location: Figure 10
+    kind: result
+    statement: Surface diffusion is the dominant mechanism for neck growth at temperatures colder than homologous temperature of 0.8 and near 1.0, and only for grains that are sufficiently small, with small neck radii.
   - paper: blackford_2007
-    page:
-    location:
-    kind:
-    statement:
-    symbol:
-    value:
-    unit:
+    page: 367
+    location: Section 3.3
+    kind: result
+    statement: 'Numerical simulations modeling the effects of snow metamorphism are increasingly using x-ray CT images as initial inputs to their models.'
 
   # ---- optional: moure_fu_2024 (branch B1), if you know it well enough. Copy slots here. ----
