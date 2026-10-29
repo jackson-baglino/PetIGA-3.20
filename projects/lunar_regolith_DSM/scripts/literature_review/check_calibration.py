@@ -29,6 +29,9 @@ PLANT_KINDS = {"fabricated_quote", "wrong_page", "equation_sign_or_exponent", "e
                "number_wrong_quantity", "wrong_unit", "wrong_table_cell", "hedge_made_certain",
                "wrong_basis", "wrong_kind", "wrong_question", "dropped_condition", "scope_widened",
                "wrong_attribution", "wrong_figure", "contradicted"}
+# Kinds a user may plant. fabricated_quote, wrong_page and wrong_table_cell need a verbatim quote,
+# a second page or a table cell, and are caught by script, so make_plants.py makes those.
+USER_PLANT_KINDS = PLANT_KINDS - {"fabricated_quote", "wrong_page", "wrong_table_cell"}
 CLAIM_KINDS = {"method", "equation", "result", "assumption", "limitation", "parameter"}
 TRET_KINDS = {"exact", "paraphrase", "absent"}
 BASES = {"derived", "numerically tested", "experimentally tested", "cited", "asserted"}
@@ -154,7 +157,7 @@ def check_planted(pp, problems, counts):
         for k in keys:
             if blank(e.get(k)):
                 problems.append(f"{w}: '{k}' is empty")
-        if e.get("kind") and e["kind"] not in PLANT_KINDS:
+        if e.get("kind") and e["kind"] not in USER_PLANT_KINDS:
             problems.append(f"{w}: kind '{e['kind']}' is not one of the listed kinds")
         if e.get("kind") == "dropped_condition" and blank(e.get("condition_page")):
             problems.append(f"{w}: a dropped_condition needs condition_page")

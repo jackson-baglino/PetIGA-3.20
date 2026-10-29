@@ -9,14 +9,11 @@
 # Fields
 #   paper:           id from papers.yaml
 #   page:            page number PRINTED on the page the claim cites
-#   kind:            fabricated_quote | wrong_page | equation_sign_or_exponent |
-#                    equation_symbol_swap | number_wrong_quantity | wrong_unit |
-#                    wrong_table_cell | hedge_made_certain | wrong_basis | wrong_kind |
-#                    wrong_question | dropped_condition | scope_widened |
-#                    wrong_attribution | wrong_figure | contradicted (says the opposite
-#                    of the page)
-#                  fabricated_quote, wrong_page and wrong_table_cell are caught by script and
-#                  need a quote or a second page, so the script makes those; prefer the others.
+#   kind:            equation_sign_or_exponent | equation_symbol_swap |
+#                    number_wrong_quantity | wrong_unit | hedge_made_certain |
+#                    wrong_basis | wrong_kind | wrong_question | dropped_condition |
+#                    scope_widened | wrong_attribution | wrong_figure |
+#                    contradicted (says the opposite of the page)
 #   condition_page:  for dropped_condition only: the page where the dropped condition is stated
 #   correct_claim:   the true statement, in your words
 #   planted_claim:   your altered version: wrong in exactly one way
@@ -35,13 +32,20 @@
 errors:
 
   # ---- kaempfer_plapp_2009: 6 slots ----
+  # REVIEW Fix: 'kinietic' -> 'kinetic' in correct_claim, so the two versions differ only in the unit.
   - paper: kaempfer_plapp_2009
     page: 4
     kind: wrong_unit
     condition_page: 
-    correct_claim: The condensation coefficient is inversely proportional to the interface kinietic coefficient, and is unitless.
+    correct_claim: The condensation coefficient is inversely proportional to the interface kinetic coefficient, and is unitless.
     planted_claim: The condensation coefficient is inversely proportional to the interface kinetic coefficient, and has units of m/s.
     note: The condensation coefficient is unitless, not a velocity.
+  # REVIEW Fix: kind -> scope_widened (basis means derived / tested / cited / asserted; the change here
+  #   is sharp-interface limit -> thin-interface constraints).
+  #   Check p. 8 first: a thin-interface correction usually exists to recover the sharp-interface
+  #   conditions at finite width, so the planted version may be true. If unsure, replace the plant.
+  #   Also: 'prevents prevents' -> 'prevents'; remove 'the correction term slows down the interface'
+  #   from the note, which is not part of the claim.
   - paper: kaempfer_plapp_2009
     page: 8
     kind: wrong_basis
@@ -49,6 +53,7 @@ errors:
     correct_claim: The interface correction term on the kinetic coefficient for diffusivity prevents prevents spurious effects on the interface, and recovers the gibbs-thomson effect in the sharp-interface limit.
     planted_claim: The interface correction term on the kinetic coefficient for diffusivity prevents spurious effects on the interface, and recovers the gibbs-thomson effect as long as the thin interface constraints are satisfied.
     note: The thin interface constraints are not what recovers the gibbs-thomson effect and the correction term slows down the interface. The Gibbs-Thomson effect is only fully recovered in the sharp-interface limit, not just when the thin interface constraints are satisfied.
+  # REVIEW Fix: the note says 'Libbrecht (2013)'; it should say 2017.
   - paper: kaempfer_plapp_2009
     page: 6
     kind: wrong_attribution
@@ -56,6 +61,8 @@ errors:
     correct_claim: The range for the condensation coefficinet is described by Libbrecht (2006).
     planted_claim: The range for the condensation coefficient is described by Libbrecht (2017).
     note: The reference on this page in this paper is to Libbrecht (2006), not Libbrecht (2013), although Libbrecht (2017) also states this. Libbrecht (2017) wasn't even written when this paper was published.
+  # REVIEW Fix: kind -> scope_widened (1D -> 2D widens what the validation covered; no number moved
+  #   to another quantity).
   - paper: kaempfer_plapp_2009
     page: 11
     kind: number_wrong_quantity
@@ -63,6 +70,8 @@ errors:
     correct_claim: The model was validated in 1D by comparing the model results to a psuedoanalytical solution.
     planted_claim: The model was validated in 2D by comparing the model results to a psuedoanalytical solution.
     note: The model was validated in 1D, and only qualitatively validated in 2D.
+  # REVIEW Fix: kind -> equation_sign_or_exponent (phi^3 -> phi^2 is an exponent change).
+  #   Fix: both versions open with $$ and close with $; use $...$.
   - paper: kaempfer_plapp_2009
     page: 7
     kind: equation_symbol_swap
@@ -70,6 +79,9 @@ errors:
     correct_claim: The phase-field governing equation is $$\tau\dfrac{\partial\phi}{\partial t} = W^2\nabla^2\phi + (\phi-\phi^3) + \lambda[u-u_{\mathrm{eq}}(T)](1-\phi^2)^2$
     planted_claim: The phase-field governing equation is $$\tau\dfrac{\partial\phi}{\partial t} = W^2\nabla^2\phi + (\phi-\phi^2) + \lambda[u-u_{\mathrm{eq}}(T)](1-\phi^2)^2$
     note: 'The exponent on the cubic term is wrong: it should be $\phi^3$, not $\phi^2$.'
+  # REVIEW Fix: kind -> wrong_unit (K/m -> K). Write the note, e.g. 'A gradient is in K/m, not K.'
+  #   Fix: 'simulaiton from a simulation performed' is garbled in both; e.g. 'a 2D simulation
+  #   performed with a gradient of 190 K/m'. Keep 'gradient' in both so only the unit differs.
   - paper: kaempfer_plapp_2009
     page: 14
     kind: equation_sign_or_exponent
@@ -79,6 +91,10 @@ errors:
     note:
 
   # ---- molaro_2019: 6 slots ----
+  # REVIEW Fix: kind -> contradicted (fabricated_quote needs a verbatim quote and is caught by script).
+  #   Check p. 266: the note says the paper makes no claim about consolidation, which
+  #   contradicts correct_claim. correct_claim must be what the page says; rewrite whichever is wrong.
+  #   Fix: 'consolidated well consolidated' -> 'well consolidated'.
   - paper: molaro_2019
     page: 266
     kind: fabricated_quote
@@ -86,6 +102,7 @@ errors:
     correct_claim: The paper states that the surface of Enceladus at the south pole is expected to be covered in a layer of porous ice that is expected to be consolidated only at and very near to the Tiger Stripes.
     planted_claim: The paper states that the surface of Enceladus at the south pole is expected to be covered in a layer of porous ice that is expected to be consolidated well consolidated everywhere, except at and very near to the Tiger Stripes.
     note: The paper does not make a claim to the consolidation of the ice layer on Enceladus. The do state that sintering on Enceladus they expect very limited sintering to occur.
+  # REVIEW Fix: 'Swinkled' -> 'Swinkels' (also in the note) and 'metaalic' -> 'metallic', in both versions.
   - paper: molaro_2019
     page: 243
     kind: wrong_attribution
@@ -107,6 +124,9 @@ errors:
     correct_claim: The diffusive currents as defined in the SA81 model, are described by the parameters $\dot{V}$ and have units of m^3/s.
     planted_claim: The diffusive currents as defined in the SA81 model, are described by the parameters $\dot{V}$ and have units of m^2/s.
     note: The paper states that the diffusive currents have units of m^3/s, not m^2/s.
+  # REVIEW Replace: wrong_page is made by script and needs a second page field, so this plant cannot be
+  #   scored. Use another fact with a kind the script cannot make, e.g. dropped_condition (give
+  #   condition_page), wrong_attribution or hedge_made_certain.
   - paper: molaro_2019
     page: 247
     kind: wrong_page
@@ -114,6 +134,9 @@ errors:
     correct_claim: The description of stage 0 sintering, adhesion, begins on page 247 and continues on page 248.
     planted_claim: The description of stage 0 sintering, adhesion, begins on page 246 and continues on page 247.
     note: The description of stage 0 sintering, adhesion, begins on page 247 and continues on page 248, not starting on page 246.
+  # REVIEW Fix: kind -> contradicted (densifying vs nondensifying says the opposite of the page).
+  #   Fix: 'mecahnism' -> 'mechanism', and 'Lattice (or volume diffusion)' -> 'Lattice (or volume)
+  #   diffusion', in both versions.
   - paper: molaro_2019
     page: 249
     kind: fabricated_quote
