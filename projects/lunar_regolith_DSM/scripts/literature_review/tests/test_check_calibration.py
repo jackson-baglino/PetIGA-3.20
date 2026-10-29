@@ -85,6 +85,8 @@ class CheckCalibration(unittest.TestCase):
         self.assertIn("value must be one number", problems[0])
 
     def test_empty_slots_are_ignored(self):
+        self.write("planted_errors.yaml", "errors:\n  - paper: li_2009\n    page:\n    kind:\n"
+                   "    correct_claim:\n    planted_claim:\n    note:\n")
         problems, _ = self.problems(cc.check_planted)
         self.assertEqual(problems, [])
 
