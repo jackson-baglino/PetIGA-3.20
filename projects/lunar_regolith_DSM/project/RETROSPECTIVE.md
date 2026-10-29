@@ -12,6 +12,37 @@ our own mistake.
 
 ## Pivots and redos
 
+### 2026-10-29 — P1 tiles and equation numbers: blind spots the user caught
+- **What happened:**
+  - **Tiles:** the first tiler cut pages using only blank rows of ink. Its
+    early versions made sliver tiles, found false column gutters in centered
+    equations and produced boxes of negative height; tests caught those. The
+    version that passed still did not know what it was cutting. The user's
+    look at the tiles found a table cut mid-row ("vapor" orphaned in the next
+    tile), a plot separated from its axis labels and one caption spread over
+    three tiles.
+  - **Equation numbers:** P1 reported 47 numbered equations for Li et al.;
+    the user counted 58. Marker had kept every number, but wrote (2.21)–(2.34)
+    on a short line after the equation ("in Ω , (2.21)"), which the parser
+    did not allow for.
+  - **Housekeeping:** the run folders holding paper text were not
+    git-ignored; the sandbox needed realpath'd folders ("No usable temporary
+    directory"); a test read the user's live planted-error file and so tested
+    nothing fixed; an aliased `cp -i` prompt silently hung a background job.
+- **Pivot:**
+  - tiles are now made of whole Marker layout blocks (tables and figures
+    with captions never cut);
+  - the parser reads the qualifier form and finds all 58;
+  - the untrusted run folders are ignored, sandbox paths are realpath'd,
+    the test uses a fixture, and scripts use `command cp -f`.
+- **Lesson:**
+  - **Counts are not checks.** Coverage 1.0 and "no failed pages" said
+    nothing about whether tiles were readable; a human looking at three
+    pages did. Every extraction needs a known answer to compare against.
+  - **Use the structure the tools already have.** Marker already knew where
+    every table and figure was.
+- **Evidence:** commits e00e0f93, ddef489e, deec4bc1, c1a2c487.
+
 ### 2026-10-28 — Two permission mechanisms in the design did not work as written
 - **What happened:** building the permission files showed:
   - **Carve-outs:** revision 9's review mode was "one deny list with `!`
