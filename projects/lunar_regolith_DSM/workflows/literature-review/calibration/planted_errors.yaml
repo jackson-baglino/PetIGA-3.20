@@ -3,7 +3,8 @@
 # are also the control that tells us whether the model-drafted plants are realistic, so
 # aim at the hard kinds: a condition stated on another page dropped, a cited result passed
 # off as the paper's own, a widened scope, a plausible subscript, sign or unit swap.
-# Use the papers you know best: kaempfer_plapp_2009 and molaro_2019.
+# Use the papers you know best: kaempfer_plapp_2009 and molaro_2019. Any paper in papers.yaml
+# works (li_2009, blackford_2007); change a slot's paper id to use another one.
 #
 # Fields
 #   paper:           id from papers.yaml
@@ -29,84 +30,88 @@
 #   note: The range and grain size are stated in the methods, not on page 12.
 
 errors:
-  - paper:
+
+  # ---- kaempfer_plapp_2009: 6 slots ----
+  - paper: kaempfer_plapp_2009
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: kaempfer_plapp_2009
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: kaempfer_plapp_2009
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: kaempfer_plapp_2009
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: kaempfer_plapp_2009
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: kaempfer_plapp_2009
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+
+  # ---- molaro_2019: 6 slots ----
+  - paper: molaro_2019
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: molaro_2019
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: molaro_2019
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: molaro_2019
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: molaro_2019
     page:
     kind:
     condition_page:
     correct_claim:
     planted_claim:
     note:
-  - paper:
+  - paper: molaro_2019
     page:
     kind:
     condition_page:

@@ -147,7 +147,7 @@ def check_planted(pp, problems, counts):
     n = 0
     for i, e in enumerate(d.get("errors") or [], 1):
         keys = ("paper", "page", "kind", "correct_claim", "planted_claim", "note")
-        if not filled(e, keys):
+        if not filled(e, keys[1:]):                   # a slot with only its paper id is still empty
             continue
         n += 1
         w = f"planted_errors.yaml entry {i}"
