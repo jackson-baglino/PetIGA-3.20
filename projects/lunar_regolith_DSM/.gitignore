@@ -87,3 +87,7 @@ runs/**/inspection/
 runs/**/runs.db
 runs/**/transcripts/
 runs/**/transcript*.jsonl
+
+# Literature review: paper text and images never enter git (WORKFLOW.md §8, untrusted/)
+runs/literature-review/**/untrusted/
+runs/literature-review/p1-dev/
