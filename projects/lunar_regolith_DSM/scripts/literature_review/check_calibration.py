@@ -192,6 +192,10 @@ def check_gold(pp, problems, counts):
         vals = [not blank(e.get(k)) for k in ("symbol", "value", "unit")]
         if any(vals) and not all(vals[1:]):
             problems.append(f"{w}: a value needs both value and unit (symbol optional)")
+        v = e.get("value")
+        if not blank(v) and not re.fullmatch(r"-?\d+(\.\d+)?([eE][-+]?\d+)?", str(v).strip()):
+            problems.append(f"{w}: value must be one number (1.8e6); put ranges, comparisons and "
+                            "equations in the statement and leave symbol, value and unit empty")
         if e.get("page") is not None and e.get("paper"):
             page_check(e["paper"], e["page"], pp, w, problems)
         s = str(e.get("statement", "")).strip().lower()

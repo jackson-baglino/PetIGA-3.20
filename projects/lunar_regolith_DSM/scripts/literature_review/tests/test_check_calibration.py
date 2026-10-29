@@ -75,6 +75,15 @@ class CheckCalibration(unittest.TestCase):
         self.assertEqual(len(problems), 1)
         self.assertIn("basis 'measured'", problems[0])
 
+    def test_value_must_be_one_number(self):
+        self.write("gold_statements.yaml", "statements:\n  - paper: li_2009\n    page: 85\n"
+                   "    kind: parameter\n    statement: x\n    value: '[1e-3, 1e-1]'\n    unit: '1'\n"
+                   "  - paper: li_2009\n    page: 86\n    kind: parameter\n    statement: y\n"
+                   "    value: 1.8e6\n    unit: J m^-3 K^-1\n")
+        problems, _ = self.problems(cc.check_gold)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("value must be one number", problems[0])
+
     def test_empty_slots_are_ignored(self):
         problems, _ = self.problems(cc.check_planted)
         self.assertEqual(problems, [])
