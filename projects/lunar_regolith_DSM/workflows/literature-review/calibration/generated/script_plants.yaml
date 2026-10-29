@@ -21,7 +21,7 @@ plants:
   planted_page: 3
   note: 'digit changed: 0.62 -> 0.64'
   id: S-19ff6850
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 1
   location: Eq. (1)
@@ -37,7 +37,7 @@ plants:
   planted_page: 1
   note: 'page moved: 3 -> 1'
   id: S-25dbdcc8
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 2
   location: Table I
@@ -52,7 +52,7 @@ plants:
   planted_page: 4
   note: 'value digit changed: 0.02 -> 0.03'
   id: S-22cf57f3
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 2
   location: Table I
@@ -67,7 +67,7 @@ plants:
   note: 'unit changed: W m^-1 K^-1 -> W m^-1 K'
   planted_unit: W m^-1 K
   id: S-15e3af71
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 3
   location: Eq (11)
@@ -83,7 +83,7 @@ plants:
   planted_page: 4
   note: 'page moved: 5 -> 4'
   id: S-8a99cdf4
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 4
   location: Eq (13)
@@ -101,7 +101,7 @@ plants:
   planted_page: 3
   note: 'page moved: 5 -> 3'
   id: S-d426a38d
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 5
   location: Section II.A
@@ -117,7 +117,7 @@ plants:
   planted_page: 6
   note: 'sign dropped: -1 -> 1'
   id: S-b14de936
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 5
   location: Section II.A
@@ -133,7 +133,7 @@ plants:
   planted_page: 6
   note: 'digit changed: 10 -> 90'
   id: S-cb04bca5
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 6
   location: Eq (33)
@@ -149,7 +149,7 @@ plants:
   planted_page: 6
   note: 'page moved: 7 -> 6'
   id: S-40db0ea8
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 7
   location: Section II.C
@@ -167,7 +167,7 @@ plants:
   planted_page: 10
   note: 'page moved: 8 -> 10'
   id: S-d533e293
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 8
   location: Eq (43)
@@ -183,7 +183,7 @@ plants:
   planted_page: 6
   note: 'page moved: 8 -> 6'
   id: S-18a6e73b
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 9
   location: Section II.D
@@ -201,7 +201,7 @@ plants:
   planted_page: 9
   note: 'page moved: 10 -> 9'
   id: S-0428dc28
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 10
   location: Section III.B
@@ -217,7 +217,7 @@ plants:
   planted_page: 9
   note: 'page moved: 11 -> 9'
   id: S-848109a2
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 11
   location: Section III.C
@@ -233,7 +233,7 @@ plants:
   planted_page: 11
   note: 'page moved: 13 -> 11'
   id: S-ccd314c3
-  approved: null
+  approved: true
 - paper: kaempfer_plapp_2009
   from_statement: 12
   location: Section IV
@@ -253,7 +253,7 @@ plants:
   planted_page: 14
   note: 'page moved: 15 -> 14'
   id: S-aa5e932e
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 13
   location: Eq (2.1)
@@ -271,7 +271,7 @@ plants:
   planted_page: 83
   note: 'digit changed: 0 -> 9'
   id: S-8aa375ef
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 13
   location: Eq (2.1)
@@ -289,7 +289,7 @@ plants:
   planted_page: 84
   note: 'page moved: 83 -> 84'
   id: S-36f5f774
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 14
   location: Eq. (2.6)
@@ -307,7 +307,7 @@ plants:
   planted_page: 83
   note: 'page moved: 84 -> 83'
   id: S-89796be7
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 15
   location: Eq. (2.2)
@@ -323,7 +323,7 @@ plants:
   planted_page: 83
   note: 'page moved: 84 -> 83'
   id: S-42c7be65
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 16
   location: 2.2
@@ -341,7 +341,7 @@ plants:
   planted_page: 87
   note: 'page moved: 85 -> 87'
   id: S-6326dd62
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 17
   location: 2.2
@@ -361,7 +361,7 @@ plants:
   planted_page: 85
   note: 'page moved: 86 -> 85'
   id: S-96cf0e42
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 18
   location: Eq. (2.23)
@@ -380,7 +380,7 @@ plants:
   planted_page: 86
   note: 'digit changed: 1 -> 3'
   id: S-13a574a5
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 18
   location: Eq. (2.23)
@@ -399,7 +399,7 @@ plants:
   planted_page: 86
   note: 'exponent flipped: ^{-1} -> ^{1}'
   id: S-1c20e183
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 19
   location: Eq. (2.25)
@@ -417,7 +417,7 @@ plants:
   planted_page: 88
   note: 'digit changed: 1 -> 3'
   id: S-c8568d24
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 19
   location: Eq. (2.25)
@@ -435,7 +435,7 @@ plants:
   planted_page: 87
   note: 'page moved: 88 -> 87'
   id: S-21e32686
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 20
   location: Eq. (2.38)
@@ -451,7 +451,7 @@ plants:
   planted_page: 88
   note: 'digit changed: 2 -> 8'
   id: S-8810b267
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 20
   location: Eq. (2.38)
@@ -467,7 +467,7 @@ plants:
   planted_page: 90
   note: 'page moved: 88 -> 90'
   id: S-8ee42893
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 21
   location: Eq. (2.37)
@@ -485,7 +485,7 @@ plants:
   planted_page: 86
   note: 'page moved: 88 -> 86'
   id: S-9268d017
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 22
   location: Eq. (2.46)
@@ -503,7 +503,7 @@ plants:
   planted_page: 94
   note: 'digit changed: 0 -> 3'
   id: S-544e825a
-  approved: null
+  approved: true
 - paper: li_2009
   from_statement: 22
   location: Eq. (2.46)
@@ -521,7 +521,7 @@ plants:
   planted_page: 92
   note: 'page moved: 94 -> 92'
   id: S-a3d32759
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 23
   location: Fig. 1
@@ -535,7 +535,7 @@ plants:
   planted_page: 245
   note: 'page moved: 244 -> 245'
   id: S-a1538312
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 24
   location: null
@@ -549,7 +549,7 @@ plants:
   planted_page: 245
   note: 'page moved: 246 -> 245'
   id: S-340f0ffa
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 25
   location: null
@@ -563,7 +563,7 @@ plants:
   planted_page: 247
   note: 'page moved: 246 -> 247'
   id: S-5d9b420d
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 26
   location: null
@@ -579,7 +579,7 @@ plants:
   planted_page: 248
   note: 'page moved: 249 -> 248'
   id: S-5a3fe5df
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 27
   location: null
@@ -595,7 +595,7 @@ plants:
   planted_page: 256
   note: 'digit changed: 1960 -> 3960'
   id: S-ea5a274d
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 27
   location: null
@@ -611,7 +611,7 @@ plants:
   planted_page: 257
   note: 'page moved: 256 -> 257'
   id: S-56c75126
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 28
   location: null
@@ -627,7 +627,7 @@ plants:
   planted_page: 258
   note: 'sign dropped: -55 -> 55'
   id: S-e0857018
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 28
   location: null
@@ -643,7 +643,7 @@ plants:
   planted_page: 258
   note: 'digit changed: 10 -> 16'
   id: S-11de6902
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 29
   location: null
@@ -659,7 +659,7 @@ plants:
   planted_page: 258
   note: 'page moved: 260 -> 258'
   id: S-eba44e55
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 30
   location: null
@@ -675,7 +675,7 @@ plants:
   planted_page: 266
   note: 'sign dropped: -193 -> 193'
   id: S-0d8c79e8
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 30
   location: null
@@ -691,7 +691,7 @@ plants:
   planted_page: 266
   note: 'unit changed: nanometers -> micrometers'
   id: S-ec264a53
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 31
   location: null
@@ -707,7 +707,7 @@ plants:
   planted_page: 267
   note: 'unit changed: years -> days'
   id: S-1f94075e
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 31
   location: null
@@ -723,7 +723,7 @@ plants:
   planted_page: 267
   note: 'exponent flipped: ^{90} -> ^{-90}'
   id: S-28c11bb5
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 32
   location: null
@@ -739,7 +739,7 @@ plants:
   planted_page: 260
   note: 'sign dropped: -20 -> 20'
   id: S-96e151b9
-  approved: null
+  approved: true
 - paper: molaro_2019
   from_statement: 32
   location: null
@@ -755,7 +755,7 @@ plants:
   planted_page: 260
   note: 'unit changed: ^\circ$C -> $ K'
   id: S-b6cd29ef
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 33
   location: Section 2.2.2
@@ -773,7 +773,7 @@ plants:
   planted_page: 355
   note: 'page moved: 357 -> 355'
   id: S-9961d2d2
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 34
   location: Figure 5
@@ -792,7 +792,7 @@ plants:
   note: 'unit changed: mJ m^-2 -> mJ m^-3'
   planted_unit: mJ m^-3
   id: S-baf03b81
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 34
   location: Figure 5
@@ -811,7 +811,7 @@ plants:
   planted_page: 360
   note: 'value digit changed: 109 -> 108'
   id: S-81241f7b
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 35
   location: Figure 5
@@ -829,7 +829,7 @@ plants:
   planted_page: 359
   note: 'page moved: 360 -> 359'
   id: S-c3a40f6f
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 36
   location: Section 4
@@ -847,7 +847,7 @@ plants:
   planted_page: 370
   note: 'unit changed: micron -> millimeter'
   id: S-d46fc0d9
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 36
   location: Section 4
@@ -865,7 +865,7 @@ plants:
   planted_page: 370
   note: 'sign dropped: -6 -> 6'
   id: S-515b43b6
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 37
   location: Section 4.2
@@ -883,7 +883,7 @@ plants:
   planted_page: 371
   note: 'digit changed: 3 -> 8'
   id: S-7a1b760c
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 37
   location: Section 4.2
@@ -901,7 +901,7 @@ plants:
   planted_page: 373
   note: 'page moved: 371 -> 373'
   id: S-866e29b0
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 38
   location: Figure 11
@@ -919,7 +919,7 @@ plants:
   planted_page: 369
   note: 'page moved: 370 -> 369'
   id: S-f7efa1d7
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 39
   location: Figure 10
@@ -937,7 +937,7 @@ plants:
   planted_page: 370
   note: 'digit changed: 0.8 -> 3.8'
   id: S-17b52569
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 39
   location: Figure 10
@@ -955,7 +955,7 @@ plants:
   planted_page: 371
   note: 'page moved: 370 -> 371'
   id: S-2ca2a2a3
-  approved: null
+  approved: true
 - paper: blackford_2007
   from_statement: 40
   location: Section 3.3
@@ -971,4 +971,4 @@ plants:
   planted_page: 369
   note: 'page moved: 367 -> 369'
   id: S-64643eb5
-  approved: null
+  approved: true
