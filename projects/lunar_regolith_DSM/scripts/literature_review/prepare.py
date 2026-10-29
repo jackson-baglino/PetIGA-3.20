@@ -278,8 +278,11 @@ def equations(pages):
         for m in DISPLAY.finditer(pages[p]):
             latex = m.group(1).strip()
             t = TAG.search(latex)
-            after = pages[p][m.end():m.end() + 16]
-            t2 = re.match(r"\s*\((" + EQ_NUMBER + r")\)", after)
+            # The number may follow the equation directly, or end a short line after it
+            # that carries a qualifier, as in "in $\Omega$ , (2.21)".
+            after = pages[p][m.end():m.end() + 80]
+            t2 = (re.match(r"\s*\((" + EQ_NUMBER + r")\)", after)
+                  or re.match(r"[ \t]*\n?(?:(?!\$\$)[^\n]){0,60}?\((" + EQ_NUMBER + r")\)[ \t]*(?:\n|$)", after))
             number = (t.group(1) or t.group(2)) if t else (t2.group(1) if t2 else None)
             out.append({"page_pdf": p, "number": number, "latex": latex})
     return out

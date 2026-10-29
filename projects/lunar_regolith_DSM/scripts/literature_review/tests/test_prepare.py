@@ -87,11 +87,11 @@ class Tiles(unittest.TestCase):
 class MarkerOutput(unittest.TestCase):
     def test_pages_equations_and_headings(self):
         md = ("\n\n{0}" + "-" * 48 + "\n\n# Title\n\ntext\n\n"
-              "{1}" + "-" * 48 + "\n\n## 2. Model\n\n$$a = b \\tag{3}$$\n\n$$c = d$$ (4)\n\n$$e$$\n\n$$f$$ (2.14)\n\n$$g$$ (A.3)\n")
+              "{1}" + "-" * 48 + "\n\n## 2. Model\n\n$$a = b \\tag{3}$$\n\n$$c = d$$ (4)\n\n$$e$$\n\n$$f$$ (2.14)\n\n$$g$$ (A.3)\n\n$$h$$\n in $\\Omega$ , (2.21)\n\n$$k$$\n\nsee the results in (2.5) and the text that follows it\n")
         pages = pr.split_pages(md)
         self.assertEqual(sorted(pages), [1, 2])
         eqs = pr.equations(pages)
-        self.assertEqual([(e["page_pdf"], e["number"]) for e in eqs], [(2, "3"), (2, "4"), (2, None), (2, "2.14"), (2, "A.3")])
+        self.assertEqual([(e["page_pdf"], e["number"]) for e in eqs], [(2, "3"), (2, "4"), (2, None), (2, "2.14"), (2, "A.3"), (2, "2.21"), (2, None)])
         self.assertEqual([(s["page_pdf"], s["level"]) for s in pr.sections(pages)], [(1, 1), (2, 2)])
 
 
