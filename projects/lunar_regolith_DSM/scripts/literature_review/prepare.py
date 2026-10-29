@@ -267,7 +267,8 @@ def run_marker(pdf):
 
 
 DISPLAY = re.compile(r"\$\$(.+?)\$\$", flags=re.S)
-TAG = re.compile(r"\\tag\{([^}]*)\}|\((\d+[a-z]?|[A-Z]\d+)\)\s*$")
+EQ_NUMBER = r"\d+(?:\.\d+)*[a-z]?|[A-Z]\.?\d+(?:\.\d+)*[a-z]?"   # 12, 3b, 2.14, A1, A.3
+TAG = re.compile(r"\\tag\{([^}]*)\}|\((" + EQ_NUMBER + r")\)\s*$")
 HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$", flags=re.M)
 
 
@@ -277,8 +278,8 @@ def equations(pages):
         for m in DISPLAY.finditer(pages[p]):
             latex = m.group(1).strip()
             t = TAG.search(latex)
-            after = pages[p][m.end():m.end() + 12]
-            t2 = re.match(r"\s*\((\d+[a-z]?|[A-Z]\d+)\)", after)
+            after = pages[p][m.end():m.end() + 16]
+            t2 = re.match(r"\s*\((" + EQ_NUMBER + r")\)", after)
             number = (t.group(1) or t.group(2)) if t else (t2.group(1) if t2 else None)
             out.append({"page_pdf": p, "number": number, "latex": latex})
     return out
