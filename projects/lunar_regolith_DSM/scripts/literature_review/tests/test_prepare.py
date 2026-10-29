@@ -84,6 +84,52 @@ class Tiles(unittest.TestCase):
         self.assertEqual(pr.plan_tiles(page()), [])
 
 
+def block(kind, x0, y0, x1, y1):
+    """A Marker block from a box in pixels (the layout is in points, 72 per inch)."""
+    k = 72 / pr.DPI
+    return {"type": kind, "bbox": [x0 * k, y0 * k, x1 * k, y1 * k]}
+
+
+def layout(*blocks):
+    return {"bbox": [0, 0, W * 72 / pr.DPI, H * 72 / pr.DPI], "blocks": list(blocks)}
+
+
+class LayoutTiles(unittest.TestCase):
+    def test_figure_keeps_its_axis_labels_and_caption(self):
+        img = page()
+        img[300:1500, 300:2250:9] = 0                                 # the plot
+        img[1530:1560, 600:1900] = 0                                  # axis labels below its box
+        lines(img, 300, 2250, 1650, 1800)                             # caption, three lines
+        lines(img, 300, 2250, 2000, 3000)                             # text after it
+        lay = layout(block("Figure", 300, 300, 2250, 1500), block("Caption", 300, 1650, 2250, 1780),
+                     block("Text", 300, 2000, 2250, 2980))
+        boxes = pr.plan_layout_tiles(img, lay)
+        fig = [b for b in boxes if b[1] <= 300]
+        self.assertEqual(len(fig), 1)
+        self.assertGreaterEqual(fig[0][3], 1780)                      # labels and caption in it
+        self.assertEqual(pr.coverage(img, [{"box_px": b} for b in boxes]), 1.0)
+
+    def test_tall_table_is_one_tile(self):
+        img = lines(page(), 300, 2250, 200, 3100, pitch=40, height=20)
+        boxes = pr.plan_layout_tiles(img, layout(block("Table", 300, 200, 2250, 3090)))
+        self.assertEqual(len(boxes), 1)
+
+    def test_text_is_packed_per_column_between_blocks(self):
+        img = page()
+        cols = []
+        for x0, x1 in ((300, 1200), (1350, 2250)):
+            for y0 in range(300, 3000, 450):
+                lines(img, x0, x1, y0, y0 + 380)
+                cols.append(block("Text", x0, y0, x1, y0 + 380))
+        boxes = pr.plan_layout_tiles(img, layout(*cols))
+        self.assertTrue(all(b[2] <= 1360 or b[0] >= 1190 for b in boxes))      # no tile spans both
+        self.assertTrue(all(b[3] - b[1] <= pr.TARGET for b in boxes))
+        self.assertLess(len(boxes), len(cols))
+        for b in boxes:                                                         # cuts between blocks
+            self.assertFalse(any(c["bbox"][1] * pr.DPI / 72 < b[1] < c["bbox"][3] * pr.DPI / 72
+                                 and b[0] < c["bbox"][2] * pr.DPI / 72 for c in cols))
+
+
 class MarkerOutput(unittest.TestCase):
     def test_pages_equations_and_headings(self):
         md = ("\n\n{0}" + "-" * 48 + "\n\n# Title\n\ntext\n\n"

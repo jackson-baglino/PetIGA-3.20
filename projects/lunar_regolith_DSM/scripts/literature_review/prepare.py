@@ -5,7 +5,8 @@ For one copy of a paper (a PDF), writes into the run folder
 
     <run>/untrusted/content/<paper_id>/<copy_hash>/
       images/p001.png ...    300 dpi page images
-      tiles/p001_t1.png ...  tiles: about half a column high, cut at gaps in the ink, at most
+      layout.json            Marker's blocks per page (type and box), used to cut the tiles
+      tiles/p001_t1.png ...  tiles: whole layout blocks, about 4.5 inches of a column, at most
                              2,000 px on the long edge (Claude's cap when a request holds more
                              than 20 images); tiles.json gives each tile's box on the page
       pages/p001.md ...      Marker's text of each page (PDF page numbers)
@@ -22,15 +23,21 @@ Not built yet (P1 later parts): text from arXiv LaTeX or JATS source, tables (tw
 extractions compared), figure crops, disagreements between sources, and publishing into
 the library through curator.py.
 
-Tiles. A page is split into columns at a gutter: a band of blank pixel columns near the
+Tiles. With Marker's layout (marker_run.py), tiles are made of whole layout blocks: a
+table, or a figure with its axis labels and caption, is one tile, scaled down if it is over
+2,000 px; text and equations are packed in reading order into tiles of about 4.5 inches of
+a column, so cuts fall between blocks. Without Marker (--skip-marker), or on a page with no
+blocks, the older ink-only method below is used.
+
+Ink-only tiles. A page is split into columns at a gutter: a band of blank pixel columns near the
 middle that the ink crosses on few rows. Rows where ink crosses the gutter (titles,
 wide figures and equations) are full-width bands; the rest is cut per column. Each band is
 cut into tiles of about half a column high at blank rows, so no line is cut in two; where
 no blank row lies near the target, the next tile starts 1 inch above the cut. A tile wider
 than 2,000 px is scaled down to fit, and its dpi is recorded.
 
-Marker runs as `marker_single <pdf> --paginate_output --output_format markdown` with the
-flags below; never with --use_llm, which would send pages to an external API. The model
+Marker runs once per paper through marker_run.py, with the settings of
+`marker_single <pdf> --paginate_output --output_format markdown` and the flags below; never with --use_llm, which would send pages to an external API. The model
 weights come from the local cache, and the run is offline.
 
     venv_workflows/bin/python scripts/literature_review/prepare.py --run <run folder> \\
@@ -214,9 +221,114 @@ def plan_tiles(gray):
     return boxes
 
 
-def write_tiles(img_path, outdir, page):
+KEEP_WHOLE = {"Table", "TableGroup", "Figure", "FigureGroup", "Picture", "PictureGroup", "Form"}
+FLOATS = KEEP_WHOLE - {"Form"}
+TARGET = DPI * 9 // 2           # px; a tile holds about 4.5 inches of a column, as before
+NEAR = DPI // 4                 # px; ink outside every block joins a block this close
+PAD = 6                         # px around each block
+
+
+def _union(a, b):
+    return (min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3]))
+
+
+def _gap(a, b):
+    """Distance in px between two boxes (0 if they touch or overlap)."""
+    dx = max(0, a[0] - b[2], b[0] - a[2])
+    dy = max(0, a[1] - b[3], b[1] - a[3])
+    return max(dx, dy)
+
+
+def _overlap(a, b):
+    return max(0, min(a[2], b[2]) - max(a[0], b[0])) * max(0, min(a[3], b[3]) - max(a[1], b[1]))
+
+
+def layout_atoms(gray, layout):
+    """Marker's blocks on one page as [type, box] in pixels, in reading order.
+
+    Ink outside every block (axis labels, stray numbers) joins the nearest block within
+    NEAR, or becomes its own atom; a caption outside a figure group joins the figure or
+    table next to it in reading order.
+    """
+    from scipy import ndimage
+    H, W = gray.shape
+    sx, sy = W / layout["bbox"][2], H / layout["bbox"][3]
+    atoms = []
+    for b in layout["blocks"]:
+        x0, y0, x1, y1 = b["bbox"]
+        box = (max(0, int(x0 * sx) - PAD), max(0, int(y0 * sy) - PAD),
+               min(W, int(np.ceil(x1 * sx)) + PAD), min(H, int(np.ceil(y1 * sy)) + PAD))
+        if box[2] > box[0] and box[3] > box[1]:
+            atoms.append([b["type"], box])
+    ink = gray < INK
+    inside = np.zeros_like(ink)
+    for _, (x0, y0, x1, y1) in atoms:
+        inside[y0:y1, x0:x1] = True
+    stray = ink & ~inside
+    if stray.any():
+        lab, n = ndimage.label(ndimage.binary_dilation(stray, iterations=MIN_GAP))
+        for sl in ndimage.find_objects(lab):
+            ys, xs = sl
+            sub = stray[sl] & (lab[sl] > 0)
+            if not sub.any():
+                continue
+            box = (xs.start, ys.start, xs.stop, ys.stop)
+            near = [(i, _gap(box, a[1])) for i, a in enumerate(atoms)]
+            i, d = min(near, key=lambda t: t[1]) if near else (None, None)
+            if i is not None and d <= NEAR:
+                atoms[i][1] = _union(atoms[i][1], box)
+            else:
+                atoms.append(["Ink", box])
+    merged = []
+    for t, box in atoms:
+        if t == "Caption" and merged and merged[-1][0] in FLOATS:
+            merged[-1][1] = _union(merged[-1][1], box)
+        elif merged and merged[-1][0] == "Caption" and t in FLOATS:
+            merged[-1] = [t, _union(merged[-1][1], box)]
+        else:
+            merged.append([t, box])
+    return merged
+
+
+def plan_layout_tiles(gray, layout):
+    """Tile boxes from Marker's layout: whole blocks, packed in reading order.
+
+    Consecutive blocks share a tile when one spans the other's columns, the tile stays under
+    TARGET rows and it overlaps no other block. Tables and figures (with their captions) are
+    never cut; a text block taller than MAX_EDGE is cut at blank rows as in plan_tiles.
+    """
+    atoms = layout_atoms(gray, layout)
+    ink = gray < INK
+    tol = DPI // 6
+    tiles = []                                              # [box, [atom indices]]
+
+    def fits(box, members):
+        return all(_overlap(box, a[1]) <= 0.02 * (a[1][2] - a[1][0]) * (a[1][3] - a[1][1])
+                   for j, a in enumerate(atoms) if j not in members)
+
+    for i, (t, box) in enumerate(atoms):
+        if tiles:
+            cur, members = tiles[-1]
+            nested = ((box[0] >= cur[0] - tol and box[2] <= cur[2] + tol)
+                      or (cur[0] >= box[0] - tol and cur[2] <= box[2] + tol))
+            u = _union(cur, box)
+            if nested and u[3] - u[1] <= TARGET and fits(u, members + [i]):
+                tiles[-1] = [u, members + [i]]
+                continue
+        tiles.append([box, [i]])
+    boxes = []
+    for box, members in tiles:
+        x0, y0, x1, y1 = box
+        if y1 - y0 > MAX_EDGE and not any(atoms[j][0] in KEEP_WHOLE for j in members):
+            boxes += [(x0, a, x1, b) for a, b in cut_band(ink, y0, y1, x0, x1, TARGET)]
+        else:
+            boxes.append(box)
+    return boxes
+
+
+def write_tiles(img_path, outdir, page, layout=None):
     gray = np.asarray(Image.open(img_path).convert("L"))
-    boxes = plan_tiles(gray)
+    boxes = plan_layout_tiles(gray, layout) if layout and layout["blocks"] else plan_tiles(gray)
     tiles = []
     boxes = [b for b in boxes if b[2] > b[0] and b[3] > b[1]]
     for k, (x0, y0, x1, y1) in enumerate(boxes, 1):
@@ -252,18 +364,15 @@ def split_pages(md):
 
 
 def run_marker(pdf):
-    marker = Path(sys.executable).parent / "marker_single"
+    """Marker's pages {page: Markdown} and layout [{bbox, blocks}] (marker_run.py, one pass)."""
     env = dict(os.environ, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
     with tempfile.TemporaryDirectory() as tmp:
         env["MPLCONFIGDIR"] = tmp
-        p = subprocess.run([str(marker), str(pdf), "--output_dir", tmp, *MARKER_FLAGS],
+        p = subprocess.run([sys.executable, str(Path(__file__).with_name("marker_run.py")), str(pdf), tmp],
                            capture_output=True, text=True, env=env)
         if p.returncode != 0:
             raise RuntimeError(f"Marker failed with exit code {p.returncode}")
-        mds = list(Path(tmp).rglob("*.md"))
-        if len(mds) != 1:
-            raise RuntimeError(f"Marker wrote {len(mds)} Markdown files, expected 1")
-        return split_pages(mds[0].read_text())
+        return split_pages((Path(tmp) / "marker.md").read_text()), json.loads((Path(tmp) / "layout.json").read_text())
 
 
 DISPLAY = re.compile(r"\$\$(.+?)\$\$", flags=re.S)
@@ -309,11 +418,14 @@ def prepare(run, paper_id, pdf, skip_marker=False):
         raise SystemExit(f"{out.relative_to(run)} exists; content is written once")
     t0 = time.time()
     n = render(pdf, out / "images")
+    pages, layout = run_marker(pdf) if not skip_marker else ({}, [])
+    if layout:
+        (out / "layout.json").write_text(json.dumps(layout, indent=1))
     (out / "tiles").mkdir()
     all_tiles, failed, low_cover = [], [], []
     for p in range(1, n + 1):
         img = out / "images" / f"p{p:03d}.png"
-        tiles, gray = write_tiles(img, out / "tiles", p)
+        tiles, gray = write_tiles(img, out / "tiles", p, layout[p - 1] if p <= len(layout) else None)
         c = coverage(gray, tiles)
         if c < 0.999:
             low_cover.append({"page_pdf": p, "ink_covered": round(c, 4)})
@@ -332,7 +444,6 @@ def prepare(run, paper_id, pdf, skip_marker=False):
                         .stderr.strip().splitlines()[0]}}
     eqs, secs, no_text = [], [], []
     if not skip_marker:
-        pages = run_marker(pdf)
         (out / "pages").mkdir()
         for p in range(1, n + 1):
             text = pages.get(p, "")
@@ -354,6 +465,7 @@ def prepare(run, paper_id, pdf, skip_marker=False):
     summary = {"stage": "P1", "paper_id": paper_id, "copy_sha256": copy_hash, "pages": n,
                "tiles": len(all_tiles), "tiles_per_page_max": max(
                    (sum(1 for t in all_tiles if t["page"] == p) for p in range(1, n + 1)), default=0),
+               "tiles_from_layout": bool(layout),
                "tiles_scaled_down": sum(1 for t in all_tiles if t["dpi"] < DPI),
                "min_tile_dpi": min((t["dpi"] for t in all_tiles), default=None),
                "pages_ink_not_fully_covered": low_cover, "failed_pages": failed,
