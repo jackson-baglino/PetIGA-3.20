@@ -13,7 +13,10 @@
 #                    equation_symbol_swap | number_wrong_quantity | wrong_unit |
 #                    wrong_table_cell | hedge_made_certain | wrong_basis | wrong_kind |
 #                    wrong_question | dropped_condition | scope_widened |
-#                    wrong_attribution | wrong_figure
+#                    wrong_attribution | wrong_figure | contradicted (says the opposite
+#                    of the page)
+#                  fabricated_quote, wrong_page and wrong_table_cell are caught by script and
+#                  need a quote or a second page, so the script makes those; prefer the others.
 #   condition_page:  for dropped_condition only: the page where the dropped condition is stated
 #   correct_claim:   the true statement, in your words
 #   planted_claim:   your altered version: wrong in exactly one way
@@ -33,88 +36,88 @@ errors:
 
   # ---- kaempfer_plapp_2009: 6 slots ----
   - paper: kaempfer_plapp_2009
-    page:
-    kind:
-    condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    page: 4
+    kind: wrong_unit
+    condition_page: 
+    correct_claim: The condensation coefficient is inversely proportional to the interface kinietic coefficient, and is unitless.
+    planted_claim: The condensation coefficient is inversely proportional to the interface kinetic coefficient, and has units of m/s.
+    note: The condensation coefficient is unitless, not a velocity.
   - paper: kaempfer_plapp_2009
-    page:
-    kind:
-    condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    page: 8
+    kind: wrong_basis
+    condition_page: 
+    correct_claim: The interface correction term on the kinetic coefficient for diffusivity prevents prevents spurious effects on the interface, and recovers the gibbs-thomson effect in the sharp-interface limit.
+    planted_claim: The interface correction term on the kinetic coefficient for diffusivity prevents spurious effects on the interface, and recovers the gibbs-thomson effect as long as the thin interface constraints are satisfied.
+    note: The thin interface constraints are not what recovers the gibbs-thomson effect and the correction term slows down the interface. The Gibbs-Thomson effect is only fully recovered in the sharp-interface limit, not just when the thin interface constraints are satisfied.
   - paper: kaempfer_plapp_2009
-    page:
-    kind:
+    page: 6
+    kind: wrong_attribution
     condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    correct_claim: The range for the condensation coefficinet is described by Libbrecht (2006).
+    planted_claim: The range for the condensation coefficient is described by Libbrecht (2017).
+    note: The reference on this page in this paper is to Libbrecht (2006), not Libbrecht (2013), although Libbrecht (2017) also states this. Libbrecht (2017) wasn't even written when this paper was published.
   - paper: kaempfer_plapp_2009
-    page:
-    kind:
+    page: 11
+    kind: number_wrong_quantity
     condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    correct_claim: The model was validated in 1D by comparing the model results to a psuedoanalytical solution.
+    planted_claim: The model was validated in 2D by comparing the model results to a psuedoanalytical solution.
+    note: The model was validated in 1D, and only qualitatively validated in 2D.
   - paper: kaempfer_plapp_2009
-    page:
-    kind:
+    page: 7
+    kind: equation_symbol_swap
     condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    correct_claim: The phase-field governing equation is $$\tau\dfrac{\partial\phi}{\partial t} = W^2\nabla^2\phi + (\phi-\phi^3) + \lambda[u-u_{\mathrm{eq}}(T)](1-\phi^2)^2$
+    planted_claim: The phase-field governing equation is $$\tau\dfrac{\partial\phi}{\partial t} = W^2\nabla^2\phi + (\phi-\phi^2) + \lambda[u-u_{\mathrm{eq}}(T)](1-\phi^2)^2$
+    note: 'The exponent on the cubic term is wrong: it should be $\phi^3$, not $\phi^2$.'
   - paper: kaempfer_plapp_2009
-    page:
-    kind:
+    page: 14
+    kind: equation_sign_or_exponent
     condition_page:
-    correct_claim:
-    planted_claim:
+    correct_claim: Fig. 9 shows the results from a 2D simulaiton from a simulation performed with gradient $\nabla T=190$K/m.
+    planted_claim: Fig. 9 shows the results from a 2D simulaiton from a simulation performed at $\nabla T=190$K.
     note:
 
   # ---- molaro_2019: 6 slots ----
   - paper: molaro_2019
-    page:
-    kind:
+    page: 266
+    kind: fabricated_quote
     condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    correct_claim: The paper states that the surface of Enceladus at the south pole is expected to be covered in a layer of porous ice that is expected to be consolidated only at and very near to the Tiger Stripes.
+    planted_claim: The paper states that the surface of Enceladus at the south pole is expected to be covered in a layer of porous ice that is expected to be consolidated well consolidated everywhere, except at and very near to the Tiger Stripes.
+    note: The paper does not make a claim to the consolidation of the ice layer on Enceladus. The do state that sintering on Enceladus they expect very limited sintering to occur.
   - paper: molaro_2019
-    page:
-    kind:
+    page: 243
+    kind: wrong_attribution
     condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    correct_claim: The authors employ a model described by Swinkled & Ashby (1981) first employed in metallurgy to describe how metaalic powder sinters, and apply it to the sintering of ice grains.
+    planted_claim: The authors employ a model described by Swinkled & Ashby (1983) first employed in metallurgy to describe how metaalic powder sinters, and apply it to the sintering of ice grains.
+    note: The paper cites Swinkled & Ashby (1981) as the source of the model, not Swinkled & Ashby (1983).
   - paper: molaro_2019
-    page:
-    kind:
+    page: 245
+    kind: equation_symbol_swap
     condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    correct_claim: Figure 2. shows where curvature influences the ice growth dyanmics of ice particles of radius a.
+    planted_claim: Figure 2. shows where curvature influences the ice growth dyanmics of ice particles of radius $\alpha$.
+    note: The paper uses the symbol a to denote the radius of the ice particles, not $\alpha$.
   - paper: molaro_2019
-    page:
-    kind:
+    page: 246
+    kind: wrong_unit
     condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    correct_claim: The diffusive currents as defined in the SA81 model, are described by the parameters $\dot{V}$ and have units of m^3/s.
+    planted_claim: The diffusive currents as defined in the SA81 model, are described by the parameters $\dot{V}$ and have units of m^2/s.
+    note: The paper states that the diffusive currents have units of m^3/s, not m^2/s.
   - paper: molaro_2019
-    page:
-    kind:
+    page: 247
+    kind: wrong_page
     condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    correct_claim: The description of stage 0 sintering, adhesion, begins on page 247 and continues on page 248.
+    planted_claim: The description of stage 0 sintering, adhesion, begins on page 246 and continues on page 247.
+    note: The description of stage 0 sintering, adhesion, begins on page 247 and continues on page 248, not starting on page 246.
   - paper: molaro_2019
-    page:
-    kind:
+    page: 249
+    kind: fabricated_quote
     condition_page:
-    correct_claim:
-    planted_claim:
-    note:
+    correct_claim: Lattice (or volume diffusion) is a mecahnism of ice growth that is nondensifying.
+    planted_claim: Lattice (or volume diffusion) is a mecahnism of ice growth that pulls the centers of two sintering grains towards one another.
+    note: The paper states that lattice diffusion is a nondensifying mechanism of ice growth, not that it pulls the centers of two sintering grains towards one another.

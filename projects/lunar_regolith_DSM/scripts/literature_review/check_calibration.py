@@ -28,7 +28,7 @@ DOCS = os.path.expanduser("~/Library/Mobile Documents/com~apple~CloudDocs/Docume
 PLANT_KINDS = {"fabricated_quote", "wrong_page", "equation_sign_or_exponent", "equation_symbol_swap",
                "number_wrong_quantity", "wrong_unit", "wrong_table_cell", "hedge_made_certain",
                "wrong_basis", "wrong_kind", "wrong_question", "dropped_condition", "scope_widened",
-               "wrong_attribution", "wrong_figure"}
+               "wrong_attribution", "wrong_figure", "contradicted"}
 CLAIM_KINDS = {"method", "equation", "result", "assumption", "limitation", "parameter"}
 TRET_KINDS = {"exact", "paraphrase", "absent"}
 BASES = {"derived", "numerically tested", "experimentally tested", "cited", "asserted"}
