@@ -46,6 +46,21 @@ class Split(unittest.TestCase):
         kinds = [p["kind"] for p in ps if p["id"] in h]
         self.assertEqual(kinds.count("a"), 5)
 
+    def test_plants_from_one_statement_stay_together(self):
+        ps = [dict(plant(i, kind=k), from_statement=i // 2, correct_page=i // 2)
+              for i, k in zip(range(40), ["changed_digit", "wrong_unit"] * 20)]
+        h, t = cal.split(ps, 10, seed=3)
+        side = {p["id"]: p["id"] in h for p in ps}
+        for s in range(20):
+            self.assertEqual(side[f"P{2 * s:03d}"], side[f"P{2 * s + 1:03d}"])
+
+    def test_plants_on_a_user_plant_page_are_held_out(self):
+        ps = [dict(plant(0, source="user"), planted_page=7)]
+        ps += [dict(plant(i), from_statement=i, correct_page=i) for i in range(1, 30)]
+        h, t = cal.split(ps, 5, seed=3)
+        self.assertIn("P007", h)
+        self.assertNotIn("P007", t)
+
 
 class Score(unittest.TestCase):
     def setUp(self):

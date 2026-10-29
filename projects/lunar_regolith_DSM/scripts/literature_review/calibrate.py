@@ -109,12 +109,32 @@ def load_plants():
     return plants
 
 
+def main_page(page):
+    return page[0] if isinstance(page, list) and page else page
+
+
 def split(plants, heldout_size, seed):
-    """User plants all held out; the rest drawn round-robin by kind until heldout_size."""
+    """User plants all held out; the rest drawn round-robin by kind until heldout_size.
+
+    Plants made from the same fact go to the same side, so tuning on one never teaches the
+    checker the answer to another: script plants from one gold statement form one group, and
+    any plant on the paper and page of a user plant is held out with it.
+    """
     held = [p["id"] for p in plants if p["source"] == "user"]
-    rest = collections.defaultdict(list)
+    user_pages = {(p["paper"], main_page(p.get("planted_page"))) for p in plants
+                  if p["source"] == "user" and p.get("planted_page") is not None}
+    groups = collections.defaultdict(list)
     for p in sorted((p for p in plants if p["source"] != "user"), key=lambda p: p["id"]):
-        rest[p["kind"]].append(p["id"])
+        key = (p["paper"], p["from_statement"]) if p.get("from_statement") is not None else p["id"]
+        groups[key].append(p)
+    rest = collections.defaultdict(list)
+    for key, g in sorted(groups.items(), key=lambda kv: str(kv[0])):
+        pages = {(p["paper"], main_page(p.get("correct_page", p.get("planted_page")))) for p in g}
+        pages |= {(p["paper"], main_page(p.get("planted_page"))) for p in g}
+        if pages & user_pages:
+            held += [p["id"] for p in g]
+        else:
+            rest[min(p["kind"] for p in g)].append([p["id"] for p in g])
     rng = random.Random(seed)
     for k in rest:
         rng.shuffle(rest[k])
@@ -122,8 +142,8 @@ def split(plants, heldout_size, seed):
     while len(held) < heldout_size and any(rest.values()):
         for k in kinds:
             if rest[k] and len(held) < heldout_size:
-                held.append(rest[k].pop())
-    tuning = [i for k in kinds for i in rest[k]]
+                held += rest[k].pop()
+    tuning = [i for k in kinds for g in rest[k] for i in g]
     return sorted(held), sorted(tuning)
 
 
