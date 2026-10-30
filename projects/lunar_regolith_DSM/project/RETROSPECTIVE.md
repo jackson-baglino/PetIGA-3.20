@@ -12,6 +12,41 @@ our own mistake.
 
 ## Pivots and redos
 
+### 2026-10-29 — Tiling dropped; the first checker flagged correct statements; four plants were no-ops
+- **What happened:**
+  - **Tiling:** three tilers were built (ink rows, layout blocks, layout
+    blocks with fixes); the user's look at each found new problems. T-res
+    then showed whole pages read all 20 known equations exactly in 3 of 3
+    repeats (also at 2,000 px), while tiles misplaced a superscript once.
+    The tiling work had been solving a problem that a measurement showed we
+    did not have.
+  - **The first checker** caught 25 of 28 tuning plants but also flagged 33
+    of 40 correct controls (the user's gold statements): its prompt told it
+    to find what is wrong "not to agree". A classifier call sorted the flags
+    without the main session reading them.
+  - **No-op plants:** 4 approved script plants changed a statement's value
+    or unit field but not its text; shown the text alone, the checker
+    rightly called them supported. Found by inspecting tuning misses.
+  - **Comparison noise:** the reader and the blind checker first agreed on
+    4 of 24 Li equations; 14 differed only by a trailing "in Ω".
+  - **Marker** was replaced by MinerU2.5-Pro (Kaempfer & Plapp p. 7: 10 of
+    10 equations exact, Marker 7).
+- **Pivot:**
+  - whole pages are the reading unit; tiles are shelved;
+  - checker v2 judges "overstated" by whether a modeler would conclude
+    differently: control flags 33 → 19 of 40 with the same catches, and 12
+    of the 19 dispute the user's statements on facts or pages (for the user);
+  - plants and controls carry value and unit fields;
+  - the canonicalizer drops trailing qualifiers; agreement 18 of 21.
+- **Lesson:**
+  - **Measure before engineering.** One cheap known-answer test (T-res)
+    replaced a day of tiling work.
+  - **A check needs a false-positive measurement.** Catch rate alone made
+    the v1 checker look good.
+  - **Inspect the misses.** Two of three "misses" were the test's fault.
+- **Evidence:** commits 0e7f0103, caf865b0, 23421ac8, 72c261a8, d81a3098;
+  `runs/literature-review/tres/summary_tres.json`.
+
 ### 2026-10-29 — P1 tiles and equation numbers: blind spots the user caught
 - **What happened:**
   - **Tiles:** the first tiler cut pages using only blank rows of ink. Its
