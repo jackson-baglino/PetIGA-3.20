@@ -12,7 +12,11 @@ The paper's applicability checklist, which you wrote earlier from the whole pape
 Claims (JSON):
 {claims}
 
-For each claim:
+For each claim, first find every number, exponent, unit, sign, year and
+equation in the claim's text and fields, and compare each one, character by
+character, with the page. A claim whose number, unit, sign or year differs
+from the page in any digit or symbol is unsupported (or its parameter or
+equation corrected), however close the rest of it is. Then:
 - text:
   - supported: the cited page says this. Different wording, a summary, a
     rounded phrase or a detail left out are fine as long as what a modeler
