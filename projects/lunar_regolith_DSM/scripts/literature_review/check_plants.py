@@ -154,8 +154,13 @@ def main(argv=None):
                 verdicts[v["claim_id"]] = v
             vfile.write_text(json.dumps(verdicts, indent=1))
             print(f"{paper} call {k + 1}: {len(g)} items, {meta['seconds']} s", flush=True)
+        missing = [x["id"] for x in items if x["id"] not in verdicts]
+        if missing:
+            print(f"{paper}: {len(missing)} items without a verdict (failed calls); rerun to resume", flush=True)
         for x in items:
             v = verdicts.get(x["id"])
+            if v is None:
+                continue                                    # no result is not a miss
             if x["role"] == "plant":
                 results.append({"plant_id": x["id"], "caught_by": ("E4" if v and caught(v, x) else None)})
                 by_item[x["id"]] = (x, v)
