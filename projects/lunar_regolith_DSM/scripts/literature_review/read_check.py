@@ -35,6 +35,7 @@ CONTRACT = ac.PROJECT / "workflows" / "literature-review" / "B1_CONTRACT.md"
 EDGE = 2000
 GROUP = 4                                   # cited pages per E4.2 call
 MAX_IMAGES = 20
+MAX_PAGES = 40                              # pages per reader call (WORKFLOW.md §3, E1)
 
 
 def questions():
@@ -120,12 +121,22 @@ def main(argv=None):
         return json.loads(f.read_text()) if f.exists() else None
 
     if "E1" in a.stages and load("read") is None:
-        with tempfile.TemporaryDirectory() as tmp:
-            files = folder_with(pages, tmp)
-            res, meta = ac.call(tmp, ac.prompt("reader", files=files, questions=qs), "read", "morty-reader")
-        log["calls"].append({"step": "E1", **meta})
-        if res is None:
-            raise SystemExit(f"E1 failed: {meta}")
+        # A paper over MAX_PAGES is read in parts of about equal size; a fresh reader per part.
+        nparts = -(-len(pages) // MAX_PAGES)
+        size = -(-len(pages) // nparts)
+        res = {"section_map": [], "claims": [], "symbols": [], "nothing_relevant_pages": [], "flags": []}
+        for k in range(nparts):
+            part = pages[k * size:(k + 1) * size]
+            what = "" if nparts == 1 else (f" This call covers pages {int(part[0].stem[1:])} to "
+                                           f"{int(part[-1].stem[1:])} of {len(pages)}; another reader covers the rest.")
+            with tempfile.TemporaryDirectory() as tmp:
+                files = folder_with(part, tmp) + what
+                r, meta = ac.call(tmp, ac.prompt("reader", files=files, questions=qs), "read", "morty-reader")
+            log["calls"].append({"step": "E1", "part": k + 1, **meta})
+            if r is None:
+                raise SystemExit(f"E1 failed: {meta}")
+            for key in res:
+                res[key] += r[key]
         for i, c in enumerate(res["claims"], 1):
             c["id"] = f"{a.paper_id}-c{i:03d}"
         save("read", res)
