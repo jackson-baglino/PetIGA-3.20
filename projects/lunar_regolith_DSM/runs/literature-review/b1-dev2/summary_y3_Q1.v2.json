@@ -1,0 +1,87 @@
+{
+ "statements": {
+  "supported": 88,
+  "overstated": 12,
+  "unsupported": 1
+ },
+ "omissions": {
+  "omitted_claim/high": 1,
+  "contradicting_claim/medium": 1,
+  "dropped_condition/medium": 2,
+  "omitted_claim/medium": 3,
+  "omitted_claim/low": 2,
+  "contradicting_claim/low": 1,
+  "dropped_condition/low": 1,
+  "gap/medium": 1
+ },
+ "usage": {
+  "support": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 72972,
+   "cache_read_input_tokens": 0,
+   "output_tokens": 22398,
+   "output_tokens_details": {
+    "thinking_tokens": 9374
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 72972,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 22398,
+     "cache_read_input_tokens": 0,
+     "cache_creation_input_tokens": 72972,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 72972
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "omissions": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 259293,
+   "cache_read_input_tokens": 0,
+   "output_tokens": 6699,
+   "output_tokens_details": {
+    "thinking_tokens": 3830
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 259293,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 6699,
+     "cache_read_input_tokens": 0,
+     "cache_creation_input_tokens": 259293,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 259293
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  }
+ }
+}

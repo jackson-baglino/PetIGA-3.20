@@ -1,0 +1,92 @@
+{
+ "question": "Q1",
+ "version": 2,
+ "revision_of": 1,
+ "claims_given": 167,
+ "per_paper": {
+  "folch_plapp_2005": {
+   "claims": 68,
+   "for_question": 45
+  },
+  "joshi_jaiman_2018": {
+   "claims": 14,
+   "for_question": 9
+  },
+  "kaempfer_plapp_2009": {
+   "claims": 21,
+   "for_question": 9
+  },
+  "lervag_lowengrub_2015": {
+   "claims": 48,
+   "for_question": 11
+  },
+  "li_2009": {
+   "claims": 49,
+   "for_question": 16
+  },
+  "moure_fu_2024_arxiv_v1": {
+   "claims": 38,
+   "for_question": 17
+  },
+  "plapp_2011": {
+   "claims": 16,
+   "for_question": 12
+  },
+  "steinbach_2009": {
+   "claims": 27,
+   "for_question": 15
+  },
+  "yu_chen_thornton_2012": {
+   "claims": 76,
+   "for_question": 33
+  }
+ },
+ "claims_cited": 125,
+ "papers_cited": 9,
+ "y2": {
+  "sentences": 176,
+  "exempt": 43,
+  "uncited": 0,
+  "unknown_ids": 0,
+  "numbers": 24,
+  "untagged_numbers": 0,
+  "tag_mismatch": 0,
+  "pass": true
+ },
+ "y2_failing_sentences": {},
+ "seconds": 83.9,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 168854,
+  "cache_read_input_tokens": 1653,
+  "output_tokens": 12284,
+  "output_tokens_details": {
+   "thinking_tokens": 2389
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 168854,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 12284,
+    "cache_read_input_tokens": 1653,
+    "cache_creation_input_tokens": 168854,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 168854
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ }
+}

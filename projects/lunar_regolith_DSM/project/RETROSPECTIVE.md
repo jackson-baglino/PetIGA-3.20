@@ -12,6 +12,34 @@ our own mistake.
 
 ## Pivots and redos
 
+### 2026-10-30 — The memo draft invented a number; the citation check had its own bugs
+- **What happened:** the first Q1 memo draft (Y1) failed the citation
+  check (Y2) on 32 counts.
+  - **Real failures:** 21 uncited factual sentences, and one invented
+    number. The draft gave Li's peak error as "about 2.3×10⁻³" when the
+    cited claim says only "about 10⁻³".
+  - **Script bugs:** 10 were false positives. Bold lead-in lines were
+    counted as sentences, the interval [0,1] was read as two numbers, and the
+    tag search used `s.find()`, which matched a digit inside a citation ID
+    such as `…2012-c022`.
+  - Earlier the same day, a helper named like a local variable crashed the E4
+    run before its first call.
+- **Pivot:**
+  - fixed the script and added tests (e24dcceb);
+  - added a revise step that gives the synthesizer only the failing
+    sentences (61b2b269). v2 passes Y2, and the invented number is gone.
+  - The skeptic (Y3) on v2 still found 12 overstated statements and 1
+    unsupported one, and a high-importance omission.
+- **Lesson:**
+  - **A synthesizer adds precision its sources lack.** Only a check that
+    compares every number with its claim catches this.
+  - **Check the checker on the real output before trusting its counts.**
+  - **A dry run with a fake agent costs nothing.** It is worth doing before
+    any paid run.
+- **Evidence:** commits e24dcceb, 61b2b269, 6ff67685;
+  `runs/literature-review/b1-dev2/summary_memo_Q1.v{1,2}.json`,
+  `summary_y3_Q1.v2.json`.
+
 ### 2026-10-30 — The checker was right about many "false flags"
 - **What happened:** the user reviewed the 19 gold statements the v3
   checker disputed.
