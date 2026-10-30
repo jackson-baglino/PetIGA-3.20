@@ -14,6 +14,8 @@ import re
 
 EXEMPT = re.compile(r"^#+\s*(\d+\.\s*)?\**\s*(model options|library silent|gaps)", re.I)
 CITE = re.compile(r"\[([a-z0-9_]+-c\d{3})(?:@v\d+)?(?:\s+([^\]]*))?\]")
+LABEL = re.compile(r"^\s*\*\*[^*]+\*\*\s*$")             # a bold lead-in line, a subheading in effect
+INTERVAL = re.compile(r"\[\s*[-−]?\d+(?:\.\d+)?\s*,\s*[-−]?\d+(?:\.\d+)?\s*\]")   # math such as [0,1]
 NUMBER = re.compile(r"(?<![\w.\-])[-−]?\d+(?:\.\d+)?(?:\s*[×x]\s*10\^?\{?[-−]?\d+\}?)?(?![\w])")
 
 
@@ -23,6 +25,8 @@ def sentences(md):
     for line in md.splitlines():
         if line.startswith("#"):
             exempt = bool(EXEMPT.match(line))
+            continue
+        if LABEL.match(line):
             continue
         protected = re.sub(r"\b(Eqs?|Figs?|Sec|Ref|e\.g|i\.e|al|cf|vs|approx)\.", lambda m: m.group(0)[:-1] + "\u2024", line)
         for s in re.split(r"(?<=[.!?])\s+(?=[A-Z(\[])", protected.strip(" -*")):
@@ -53,14 +57,14 @@ def check(md, claims):
             continue
         if not cites:
             res["uncited"].append(i)
-        bare = CITE.sub(" ", s)
+        # Citations and intervals blanked to the same length, so positions in `bare` are positions in `s`.
+        bare = INTERVAL.sub(lambda m: " " * len(m.group(0)), CITE.sub(lambda m: " " * len(m.group(0)), s))
         for m in NUMBER.finditer(bare):
             n = m.group(0).strip()
             if re.fullmatch(r"\(?\d+(\.\d+)?\)?", n) and re.search(r"(Eq|Section|Fig|Table|page|\()\.?\s*$", bare[:m.start()]):
                 continue                                    # an equation, section or figure number
             res["numbers"] += 1
-            tail = s[s.find(n):][:len(n) + 80] if n in s else ""
-            tag = CITE.search(tail)
+            tag = CITE.search(s[m.end():m.end() + 80])      # the first tag after this number
             if not tag:
                 res["untagged_numbers"].append(i)
             elif tag.group(1) in by and n.replace("−", "-").lstrip("-") not in claim_text(by[tag.group(1)]):

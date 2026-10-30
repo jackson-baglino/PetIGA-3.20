@@ -30,6 +30,25 @@ class Citations(unittest.TestCase):
         md = "## 2. Methods\n\nThe constraint in Eq. (2.21) sums the fields [li_2009-c002].\n"
         self.assertTrue(cx.check(md, CLAIMS)["pass"])
 
+    def test_number_found_at_its_place_not_inside_a_citation_id(self):
+        # "2" also occurs in "2009"; the tag must be looked for after this "2", not after the one in the id.
+        claims = [{"id": "li_2009-c003", "text": "The width was 16.74 grid spacings and the deviation less than 2 deg."}]
+        md = ("## 2. Methods\n\nWith a width of 16.74 [li_2009-c003 width] spacings the angle deviated "
+              "by less than 2 [li_2009-c003 deviation] degrees.\n")
+        r = cx.check(md, claims)
+        self.assertEqual((r["untagged_numbers"], r["tag_mismatch"]), ([], []))
+
+    def test_bold_labels_and_intervals_are_not_checked(self):
+        md = ("## 2. Methods\n\n**Folch and Plapp: what it does.**\n\n"
+              "- The bounds [0,1] are not imposed [li_2009-c002].\n")
+        r = cx.check(md, CLAIMS)
+        self.assertTrue(r["pass"], r)
+        self.assertEqual(r["sentences"], 1)
+
+    def test_bold_text_inside_a_sentence_is_still_checked(self):
+        md = "## 2. Methods\n\n**Note.** The method is exact in every case.\n"
+        self.assertEqual(cx.check(md, CLAIMS)["uncited"], [1])
+
 
 if __name__ == "__main__":
     unittest.main()
