@@ -1,0 +1,28 @@
+{
+ "paper_id": "joshi_jaiman_2018",
+ "pages": 25,
+ "claims": 14,
+ "claims_by_kind": {
+  "method": 4,
+  "attribution": 2,
+  "limitation": 1,
+  "equation": 3,
+  "result": 3,
+  "parameter": 1
+ },
+ "conditions": 28,
+ "symbols": 12,
+ "flags": 6,
+ "seconds": 80.0,
+ "calls": [
+  {
+   "step": "E1",
+   "agent": "morty-reader",
+   "seconds": 80.0,
+   "exit": 0,
+   "num_turns": 27
+  }
+ ],
+ "e3_quotes_ok": 12,
+ "e3_on_cited_page": 13
+}
