@@ -1,0 +1,28 @@
+{
+ "page": {
+  "items": 60,
+  "exact": 60,
+  "wrong": 0,
+  "missed": 0,
+  "errors": [],
+  "pass": true
+ },
+ "tiles_ink": {
+  "items": 60,
+  "exact": 59,
+  "wrong": 1,
+  "missed": 0,
+  "errors": [
+   {
+    "page": "moure_fu_2024_arxiv_v1 p19 r1",
+    "label": "(30)",
+    "result": "wrong",
+    "diff": [
+     "+^I",
+     "-^I"
+    ]
+   }
+  ],
+  "pass": false
+ }
+}

@@ -962,6 +962,14 @@ Open:
     57 approved script plants, T-res pages). Done.
 44. **PDF parser:** replacing Marker; chosen by its tests in §3 (P1).
 45. **Page tiling:** whole pages, tiles, or zoom crops; chosen by T-res.
+    Result (2026-10-29, `runs/literature-review/tres/summary_tres.json`):
+    on the four T-res pages (20 numbered equations, Sonnet 5.5 reader,
+    3 fresh reads each), whole pages gave 60 of 60 exact; ink tiles gave 59
+    of 60 (one superscript misplaced). Whole pages are used for reading;
+    tiles are not needed for equations. A zoom crop of a region is the
+    fallback if a later test (tables, small numbers in text, scans) fails.
+    Not yet tested: tables, numbers with units in running text, scanned
+    pages, the Opus checker.
 
 ## 10. Risks and failure modes
 
