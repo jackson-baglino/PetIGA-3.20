@@ -61,6 +61,26 @@ report). Exit 2: the spec is invalid (errors listed). Requires Graphviz
   included), over another label or over a lane title, and no edge through a
   node that is not one of its ends. Segments are tested exactly, not sampled.
 
+## Progress view
+
+```bash
+venv_lunar/bin/python scripts/flowchart/render_flowchart.py workflows/literature-review/flowchart.json \
+    --progress workflows/literature-review/B1_CONTRACT.md --png
+```
+
+Draws the same chart a second time as `flowchart_<contract prefix>_progress.html` (here
+`flowchart_b1_progress.html`). The run contract's `## Status` section is the one source:
+a table with one row per node (`| Node | Stage | Status | Evidence |`; rows with node `—`
+are outputs without a node and appear only in the page's table), a `Here: <id>` line and
+a `Next by the contract: <id>` line. Status words: `done`, `dev`, `partial`, `not-run`,
+`not-built`, `outside`. A node missing from the table, an unknown node or status word, or
+a here/next id that is not a node is a spec error (exit 2).
+
+In this view the border color encodes the status, not the kind (the box shape still tells
+a stage from a record); nodes outside the run are grayed out and lose their details; the
+"here" node gets a thick border and the "next" node a thick dashed one. Colors are the
+`--status-*` values in `theme.css`.
+
 ## Conventions
 
 - Box styling encodes only the node kind (user, script, agent, record);

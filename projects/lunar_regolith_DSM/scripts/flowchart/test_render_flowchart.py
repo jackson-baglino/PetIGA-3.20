@@ -55,5 +55,34 @@ class Lint(unittest.TestCase):
         self.assertTrue(types & {"label_over_edge", "label_over_node"}, types)
 
 
+class Progress(unittest.TestCase):
+    CONTRACT = rf.ROOT / "workflows" / "literature-review" / "B1_CONTRACT.md"
+    SPEC = rf.ROOT / "workflows" / "literature-review" / "flowchart.json"
+
+    def test_status_table_covers_every_node(self):
+        spec, prog = json.loads(self.SPEC.read_text()), rf.read_progress(self.CONTRACT)
+        self.assertEqual(rf.validate_progress(spec, prog), [])
+        self.assertTrue(prog["here"] and prog["next"])
+
+    def test_missing_unknown_and_bad_rows_are_errors(self):
+        import tempfile
+        spec = {"nodes": [{"id": "A"}, {"id": "B"}]}
+        md = ("# x\n\n## Status\n\nHere: A\nNext by the contract: Z\n\n"
+              "| Node | Stage | Status | Evidence |\n|---|---|---|---|\n"
+              "| A | a | finished | |\n| C | c | done | |\n| — | output | not-run | |\n\n## Versions\n")
+        with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as f:
+            f.write(md)
+        prog = rf.read_progress(f.name)
+        Path(f.name).unlink()
+        self.assertEqual(len(prog["rows"]), 3)                  # the "—" row is kept for the page
+        errs = " ".join(rf.validate_progress(spec, prog))
+        for want in ("node B: no row", "status row C", "node A: status must be", '"next: Z"'):
+            self.assertIn(want, errs)
+
+    def test_progress_chart_is_clean(self):
+        code, report = rf.render(self.SPEC, contract=self.CONTRACT)
+        self.assertEqual((code, report["issues"]), (0, []))
+
+
 if __name__ == "__main__":
     unittest.main()

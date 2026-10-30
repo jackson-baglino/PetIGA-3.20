@@ -121,6 +121,77 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 - `papers.yaml` still lists Li's calibration roles as unset and the Zotero
   seeds without a file; they are filled when this contract is approved.
 
+## Status
+
+Where B1 stands, one row per node of `flowchart.json` (every node, so the
+progress chart can be drawn from this table) and one row per contract output
+that has no node. Read at the start of every session; updated in the same
+commit as the work it records. The "Remaining" list in `.claude/ACTIVITY_LOG.md`
+is copied from here, not written from memory. Rendered as
+`flowchart_b1_progress.html` by
+`scripts/flowchart/render_flowchart.py workflows/literature-review/flowchart.json --progress workflows/literature-review/B1_CONTRACT.md`.
+
+Status words: **done**; **dev** (done only in a development run, before the
+prompts are frozen, so not a B1 result); **partial**; **not-run** (built, not
+yet run); **not-built**; **outside** (not run in B1, see the stages section).
+
+Here: Y3
+Next by the contract: C0
+
+"Here" is where the development run `runs/literature-review/b1-dev2` has
+reached. "Next by the contract" is where the contract's order puts us: the
+frozen final evaluation comes before the nine papers and the memo.
+
+| Node | Stage | Status | Evidence, or what is missing |
+|---|---|---|---|
+| UB | B0 branches and seeds | done | B1 seeds chosen 2026-10-28; recorded in `calibration/papers.yaml` |
+| RBR | branches.yaml | partial | no `branches.yaml`; the B1 seeds live in `calibration/papers.yaml` |
+| U0 | Brief | done | this contract, approved 2026-10-30 |
+| RB | brief.vN.json | done | this contract stands in for the brief |
+| D1 | discover.py | outside | |
+| D2 | morty-scout | outside | |
+| RS | search snapshots | outside | |
+| D3 | resolve.py | outside | |
+| RC | candidates.json | outside | |
+| SC0 | screen_baseline.py | outside | |
+| C0 | calibrate.py | partial | diagnostic done on the tuning set (calib-dev5: plants 14/14, controls flagged 5/30); prompts not frozen, held-out evaluation not run |
+| SC1 | jerry-screener | outside | |
+| SC2 | compare_screens.py | outside | |
+| U1 | approve shortlist | outside | |
+| RL | shortlist.json | outside | |
+| A1 | acquire.py | outside | copies already on disk |
+| RP | Literature/incoming | done | nine PDFs on disk; hashes in the Papers table |
+| U2 | supply missing papers | done | Zotero pull 2026-10-29 |
+| A2 | check_copy.py | partial | Moure & Fu arXiv v1 approved by the user; script not built; seven Zotero copies "copy kind not checked" |
+| P1 | prepare.py | partial | parser (MinerU) and page method (whole pages, 2,000 px) chosen; P1 content only for Li, Kaempfer & Plapp, Molaro (p1-dev); reads use page images |
+| RG | content/ | partial | as P1 |
+| P2 | build_index.py | outside | |
+| RI | index/ | outside | |
+| Z1 | zotero_add.py | outside | |
+| E1 | morty-reader | dev | 9/9 papers, b1-dev2; E2 second read outside |
+| RR | reads | dev | b1-dev2/untrusted/<paper>/read.json |
+| E3 | quote check | dev | 9/9, in read_check.py (not a separate check_extraction.py) |
+| E3b | check_units.py | outside | |
+| E4 | beth-checker | dev | 9/9, steps 0-2 (last four 2026-10-30) |
+| RV | verdicts.json | dev | b1-dev2 |
+| X1 | blind re-read (V1) | not-built | V1 should run before Y2; skipped in b1-dev2 |
+| E5 | revise failed claims | not-built | failed claims are dropped by Y1 instead (e.g. Yu: 1 overstated, 1 unsupported) |
+| U3a | guided reading (U3) | not-run | |
+| U3b | random audit | outside | B1 runs only U3's cited-claims part, not the random 60 |
+| L1 | curator.py | not-built | |
+| LB | library/ | not-built | |
+| L2 | audit.py | outside | |
+| BK | backup archive | not-built | contract output 6, with the restore test |
+| R1 | retag reader | outside | |
+| Y1 | beth-synthesizer | dev | Q1 v1, v2 (revise step); Q2/Q3 sections and leads missing |
+| Y2 | check_citations.py | dev | v2 passes |
+| Y3 | skeptic | dev | v2: 88 supported, 12 overstated, 1 unsupported; 12 omissions (1 high) |
+| RM | memos | dev | in b1-dev2/untrusted/memos, not `memos/b1/` |
+| U4 | user decides | not-run | |
+| — | run manifests (output 6) | not-built | no manifest.json in b1-dev2 or calib-dev*; per-call usage is in calls.jsonl |
+| — | repeat-run comparison (output 5) | not-run | |
+| — | restore test (output 6) | not-built | |
+
 ## Versions
 
 - v1 draft, 2026-10-29.

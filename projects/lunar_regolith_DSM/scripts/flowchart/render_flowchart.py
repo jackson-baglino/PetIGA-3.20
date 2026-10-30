@@ -3,6 +3,12 @@
 
     python scripts/flowchart/render_flowchart.py workflows/<name>/flowchart.json [--png]
     python scripts/flowchart/render_flowchart.py --all [--png]      # every workflows/*/flowchart.json
+    python scripts/flowchart/render_flowchart.py <spec> --progress <contract.md> [--png]
+
+With --progress, the chart is drawn a second time as a progress view, written next to the spec
+as flowchart_<contract prefix>_progress.html: each node's border shows its status from the
+contract's "## Status" table (one row per node), nodes outside the run are grayed out, and the
+nodes named on the "Here:" and "Next by the contract:" lines get a thick solid or dashed border.
 
 Layout is deterministic: each node sits on a grid (its lane is the column, its
 "row" the row); Graphviz (neato -n2, orthogonal splines) routes the edges. Edge
@@ -55,6 +61,8 @@ KIND_TEXT = {"user": "user decision point", "script": "deterministic script: sam
 EDGE_TEXT = {"flow": "main flow", "data": "writes a record", "stop": "stop and ask the user",
              "loop": "loop back for a recheck"}
 EDGE_W = {"flow": 1.5, "data": 1.0, "stop": 1.5, "loop": 1.4}
+STATUS_TEXT = {"done": "done", "dev": "development run only", "partial": "partial", "not-run": "built, not run",
+               "not-built": "not built", "outside": "outside this run"}
 
 
 def load_theme(path=THEME_CSS):
@@ -105,20 +113,32 @@ def wrap(s, width=WRAP):
     return textwrap.wrap(str(s), width) or [""]
 
 
-def node_label(n):
-    """Graphviz HTML-like label: title, model/tools line, one-sentence job, then details."""
+def node_label(n, status=None):
+    """Graphviz HTML-like label: title, model/tools line, one-sentence job, then details.
+
+    With a progress status: a status line under the title; a node outside the run is muted and
+    drops its details."""
     accent = T[f"kind-{n['kind']}"]
-    rows = [f'<TR><TD ALIGN="LEFT"><FONT COLOR="{T["text"]}"><B>{esc(n["title"])}</B></FONT></TD></TR>']
+    out = status == "outside"
+    rows = [f'<TR><TD ALIGN="LEFT"><FONT COLOR="{T["text-muted"] if out else T["text"]}"><B>{esc(n["title"])}'
+            f'</B></FONT></TD></TR>']
     lines = 1
+    if status:
+        rows.append(f'<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="{T["status-" + status]}"><B>'
+                    f'{esc(STATUS_TEXT[status].upper())}</B></FONT></TD></TR>')
+        lines += 1
+    if out:
+        accent = T["status-outside"]
     if n["kind"] == "agent":
         meta = f'{n["model"]} · tools: {", ".join(n["tools"]) or "none"}'
         for l in wrap(meta):
             rows.append(f'<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="{accent}">{esc(l)}</FONT></TD></TR>')
             lines += 1
     for l in wrap(n.get("job", "")):
-        rows.append(f'<TR><TD ALIGN="LEFT"><FONT COLOR="{T["text-2"]}"><I>{esc(l)}</I></FONT></TD></TR>')
+        rows.append(f'<TR><TD ALIGN="LEFT"><FONT COLOR="{T["status-outside"] if out else T["text-2"]}"><I>{esc(l)}'
+                    f'</I></FONT></TD></TR>')
         lines += 1
-    for d in n.get("details", []):
+    for d in ([] if out else n.get("details", [])):
         for i, l in enumerate(wrap(d, WRAP - 2)):
             rows.append(f'<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" COLOR="{T["text-muted"]}">'
                         f'{"• " if i == 0 else "  "}{esc(l)}</FONT></TD></TR>')
@@ -166,11 +186,38 @@ def validate(spec):
     return errs
 
 
-def layout(spec):
+def read_progress(md_path):
+    """The "## Status" section of a run contract: rows, status per node, the here and next nodes."""
+    text = Path(md_path).read_text()
+    m = re.search(r"^## Status\s*$(.*?)(?=^## |\Z)", text, re.S | re.M)
+    if not m:
+        raise ValueError(f"{md_path}: no '## Status' section")
+    sec = m.group(1)
+    rows = []
+    for line in sec.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
+        if len(cells) == 4 and cells[0] not in ("Node", "") and not set(cells[0]) <= set("-"):
+            rows.append(dict(zip(("node", "stage", "status", "evidence"), cells)))
+    pick = lambda key: (re.search(rf"^{key}:\s*(\S+)\s*$", sec, re.M) or [None, None])[1]
+    return {"rows": rows, "status": {r["node"]: r["status"] for r in rows if r["node"] != "—"},
+            "here": pick("Here"), "next": pick("Next by the contract")}
+
+
+def validate_progress(spec, prog):
+    ids = {n["id"] for n in spec["nodes"]}
+    errs = [f"node {i}: no row in the status table" for i in sorted(ids - set(prog["status"]))]
+    errs += [f"status row {i}: not a node of the chart" for i in sorted(set(prog["status"]) - ids)]
+    errs += [f"node {i}: status must be one of {list(STATUS_TEXT)}" for i, s in prog["status"].items()
+             if s not in STATUS_TEXT]
+    errs += [f'"{k}: {prog[k]}" is not a node of the chart' for k in ("here", "next") if prog[k] and prog[k] not in ids]
+    return errs
+
+
+def layout(spec, prog=None):
     lane_x = {l["id"]: i * LANE_W + LANE_W / 2 for i, l in enumerate(spec["lanes"])}
     labels, heights = {}, {}
     for n in spec["nodes"]:
-        labels[n["id"]], heights[n["id"]] = node_label(n)
+        labels[n["id"]], heights[n["id"]] = node_label(n, prog["status"][n["id"]] if prog else None)
     rows = sorted({n["row"] for n in spec["nodes"]})
     row_h = {r: max(heights[n["id"]] for n in spec["nodes"] if n["row"] == r) for r in rows}
     total = TOP + 2 * EDGE_PAD + sum(row_h.values()) + ROW_GAP * (len(rows) - 1)
@@ -182,7 +229,7 @@ def layout(spec):
     return pos, labels, total
 
 
-def to_dot(spec, pos, labels, total):
+def to_dot(spec, pos, labels, total, prog=None):
     width = LANE_W * len(spec["lanes"])
     out = ['digraph G {', 'graph [splines=ortho, outputorder=edgesfirst, pad=0, bgcolor="transparent", '
            'fontname="Helvetica"];', 'node [fontname="Helvetica", fontsize=11];',
@@ -193,12 +240,24 @@ def to_dot(spec, pos, labels, total):
         x, y = pos[n["id"]]
         shape = "note" if n["kind"] == "record" else "box"
         style = "filled" if n["kind"] == "record" else "rounded,filled"
-        out.append(f'"{n["id"]}" [shape={shape}, style="{style}", fillcolor="{T["node-fill"]}", '
-                   f'color="{T["kind-" + n["kind"]]}", penwidth=1.5, width={NODE_W / 72:.3f}, margin="0.12,0.06", '
+        color, fill, pen = T["kind-" + n["kind"]], T["node-fill"], 1.5
+        if prog:
+            st = prog["status"][n["id"]]
+            color = T["status-" + st]
+            fill = T["node-fill-outside"] if st == "outside" else fill
+            pen = 1.0 if st == "outside" else 2.5
+            if n["id"] in (prog["here"], prog["next"]):
+                pen = 5.0
+                style += ",dashed" if n["id"] == prog["next"] and n["id"] != prog["here"] else ""
+        out.append(f'"{n["id"]}" [shape={shape}, style="{style}", fillcolor="{fill}", '
+                   f'color="{color}", penwidth={pen}, width={NODE_W / 72:.3f}, margin="0.12,0.06", '
                    f'pos="{x:.1f},{y:.1f}!", label={labels[n["id"]]}];')
     for e in spec["edges"]:
         k = e.get("kind", "flow")
-        out.append(f'"{e["from"]}" -> "{e["to"]}" [color="{T["edge-" + k]}", penwidth={EDGE_W[k]}];')
+        col = T["edge-" + k]
+        if prog and "outside" in (prog["status"][e["from"]], prog["status"][e["to"]]):
+            col = T["status-outside"]
+        out.append(f'"{e["from"]}" -> "{e["to"]}" [color="{col}", penwidth={EDGE_W[k]}];')
     out.append("}")
     return "\n".join(out)
 
@@ -376,8 +435,10 @@ def lint(svg, spec, lane_titles):
     return {"nodes": len(nodes), "edge_labels": len(labels), "issues": issues}
 
 
-def page(spec, svg, spec_path):
+def page(spec, svg, spec_path, prog=None, contract=None):
     nodes = spec["nodes"]
+    if prog:
+        return progress_page(spec, svg, spec_path, prog, contract)
     legend = "".join(f'<span class="chip"><span class="sw" style="border-color:{T["kind-" + k]}"></span>{KIND_TEXT[k]}</span>'
                      for k in KINDS if any(n["kind"] == k for n in nodes))
     legend += "".join(f'<span class="chip"><span class="ln" style="background:{T["edge-" + k]}"></span>{EDGE_TEXT[k]}</span>'
@@ -418,13 +479,61 @@ def page(spec, svg, spec_path):
 """
 
 
-def render(spec_path, png=False):
+def progress_page(spec, svg, spec_path, prog, contract):
+    """The progress view: the chart, a status legend with counts, and the status table with its evidence."""
+    counts = {s: sum(1 for v in prog["status"].values() if v == s) for s in STATUS_TEXT}
+    legend = "".join(f'<span class="chip"><span class="sw" style="border-color:{T["status-" + s]}"></span>'
+                     f'{STATUS_TEXT[s]} ({counts[s]})</span>' for s in STATUS_TEXT)
+    legend += ('<span class="chip"><span class="sw" style="border-width:4px"></span>here (the development run)</span>'
+               '<span class="chip"><span class="sw" style="border-width:4px;border-style:dashed"></span>'
+               'next by the contract</span>'
+               '<span class="chip">box shape: rounded = stage, folded corner = record</span>')
+    title_of = {n["id"]: n["title"] for n in spec["nodes"]}
+    rows = "".join(
+        f'<tr><td class="mono">{esc(r["node"])}</td><td class="stage">{esc(title_of.get(r["node"], r["stage"]))}</td>'
+        f'<td class="kind" style="color:{T["status-" + r["status"]] if r["status"] in STATUS_TEXT else T["text"]}">'
+        f'{esc(STATUS_TEXT.get(r["status"], r["status"]))}</td><td>{esc(r["evidence"])}</td></tr>'
+        for r in prog["rows"])
+    try:
+        src = spec_path.resolve().relative_to(ROOT)
+        csrc = Path(contract).resolve().relative_to(ROOT)
+    except ValueError:
+        src, csrc = spec_path, contract
+    page_w = int(LANE_W * len(spec["lanes"]) * 4 / 3) + 104
+    return f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{esc(spec["title"])}: progress</title>
+<style>
+{THEME_TEXT}
+:root {{ --page-width: {page_w}px; }}
+</style></head><body><main class="page">
+<div class="eyebrow">Workflow progress</div>
+<h1>{esc(spec["title"])}: progress</h1>
+<p>Status of every stage, from the "Status" section of {esc(csrc)}. Here: {esc(prog["here"] or "—")}
+({esc(title_of.get(prog["here"], ""))}). Next by the contract: {esc(prog["next"] or "—")}
+({esc(title_of.get(prog["next"], ""))}).</p>
+<div class="card">
+{svg}
+</div>
+<h2>Legend</h2>
+<div class="legend">{legend}</div>
+<h2>Status table</h2>
+<table><tr><th>Node</th><th>Stage</th><th>Status</th><th>Evidence, or what is missing</th></tr>{rows}</table>
+<footer>Rendered from {esc(src)} and {esc(csrc)} by scripts/flowchart/render_flowchart.py --progress</footer>
+</main></body></html>
+"""
+
+
+def render(spec_path, png=False, contract=None):
     spec = json.loads(spec_path.read_text())
     errs = validate(spec)
+    prog = read_progress(contract) if contract else None
+    if prog:
+        errs += validate_progress(spec, prog)
     if errs:
         return 2, {"spec": str(spec_path), "spec_errors": errs}
-    pos, labels, total = layout(spec)
-    dot = to_dot(spec, pos, labels, total)
+    pos, labels, total = layout(spec, prog)
+    dot = to_dot(spec, pos, labels, total, prog)
     r = subprocess.run(["neato", "-n2", "-Tsvg"], input=dot, capture_output=True, text=True)
     if r.returncode != 0:
         return 3, {"spec": str(spec_path), "graphviz_error": r.stderr}
@@ -432,14 +541,16 @@ def render(spec_path, png=False):
     svg, lane_titles = add_lanes(svg, spec, total)
     svg = place_labels(spec, svg, lane_titles)
     out = spec_path.with_suffix(".html")
-    out.write_text(page(spec, svg, spec_path))
+    if prog:
+        out = spec_path.with_name(f"{spec_path.stem}_{Path(contract).stem.split('_')[0].lower()}_progress.html")
+    out.write_text(page(spec, svg, spec_path, prog, contract))
     report = {"spec": str(spec_path), **lint(svg, spec, lane_titles)}
     warnings = [l for l in r.stderr.splitlines() if l.strip()]
     if warnings:
         report["graphviz_warnings"] = warnings
     if png:
         import tempfile
-        shot = Path(tempfile.gettempdir()) / f"flowchart_{spec_path.parent.name}.png"
+        shot = Path(tempfile.gettempdir()) / f"{out.stem}_{spec_path.parent.name}.png"
         chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
         h = int(total * 4 / 3) + 1100
         subprocess.run([chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars",
@@ -452,13 +563,18 @@ def render(spec_path, png=False):
 
 def main(argv):
     png = "--png" in argv
+    contract = None
+    if "--progress" in argv:
+        i = argv.index("--progress")
+        contract = argv[i + 1]
+        argv = argv[:i] + argv[i + 2:]
     if "--all" in argv:
         specs = sorted((ROOT / "workflows").glob("*/flowchart.json"))
     else:
         specs = [Path(a) for a in argv[1:] if not a.startswith("--")]
     status = 0
     for s in specs:
-        code, report = render(s, png)
+        code, report = render(s, png, contract)
         print(json.dumps(report, indent=1))
         status = max(status, code)
     return status
