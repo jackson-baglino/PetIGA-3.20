@@ -1,0 +1,26 @@
+{
+ "paper_id": "steinbach_2009",
+ "pages": 32,
+ "claims": 27,
+ "claims_by_kind": {
+  "method": 8,
+  "result": 11,
+  "limitation": 4,
+  "equation": 4
+ },
+ "conditions": 50,
+ "symbols": 15,
+ "flags": 6,
+ "seconds": 162.4,
+ "calls": [
+  {
+   "step": "E1",
+   "agent": "morty-reader",
+   "seconds": 162.4,
+   "exit": 0,
+   "num_turns": 34
+  }
+ ],
+ "e3_quotes_ok": 25,
+ "e3_on_cited_page": 25
+}

@@ -1,0 +1,35 @@
+{
+ "paper_id": "moure_fu_2024_arxiv_v1",
+ "pages": 48,
+ "claims": 38,
+ "claims_by_kind": {
+  "method": 7,
+  "limitation": 13,
+  "definition": 1,
+  "equation": 8,
+  "result": 8,
+  "attribution": 1
+ },
+ "conditions": 65,
+ "symbols": 27,
+ "flags": 12,
+ "seconds": 189.2,
+ "calls": [
+  {
+   "step": "E1",
+   "agent": "morty-reader",
+   "seconds": 93.2,
+   "exit": 0,
+   "num_turns": 26
+  },
+  {
+   "step": "E1",
+   "agent": "morty-reader",
+   "seconds": 95.9,
+   "exit": 0,
+   "num_turns": 26
+  }
+ ],
+ "e3_quotes_ok": 34,
+ "e3_on_cited_page": 37
+}

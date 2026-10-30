@@ -1,0 +1,27 @@
+{
+ "paper_id": "plapp_2011",
+ "pages": 36,
+ "claims": 16,
+ "claims_by_kind": {
+  "method": 1,
+  "attribution": 3,
+  "result": 4,
+  "limitation": 2,
+  "equation": 6
+ },
+ "conditions": 31,
+ "symbols": 20,
+ "flags": 6,
+ "seconds": 136.8,
+ "calls": [
+  {
+   "step": "E1",
+   "agent": "morty-reader",
+   "seconds": 136.8,
+   "exit": 0,
+   "num_turns": 38
+  }
+ ],
+ "e3_quotes_ok": 15,
+ "e3_on_cited_page": 15
+}

@@ -1,0 +1,36 @@
+{
+ "paper_id": "yu_chen_thornton_2012",
+ "pages": 59,
+ "claims": 76,
+ "claims_by_kind": {
+  "method": 20,
+  "attribution": 4,
+  "equation": 19,
+  "result": 24,
+  "limitation": 6,
+  "parameter": 2,
+  "definition": 1
+ },
+ "conditions": 142,
+ "symbols": 57,
+ "flags": 14,
+ "seconds": 434.2,
+ "calls": [
+  {
+   "step": "E1",
+   "agent": "morty-reader",
+   "seconds": 165.0,
+   "exit": 0,
+   "num_turns": 32
+  },
+  {
+   "step": "E1",
+   "agent": "morty-reader",
+   "seconds": 269.1,
+   "exit": 0,
+   "num_turns": 31
+  }
+ ],
+ "e3_quotes_ok": 70,
+ "e3_on_cited_page": 71
+}
