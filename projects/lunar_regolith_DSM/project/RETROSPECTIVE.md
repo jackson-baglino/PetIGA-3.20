@@ -12,6 +12,35 @@ our own mistake.
 
 ## Pivots and redos
 
+### 2026-10-30 — The checker was right about many "false flags"
+- **What happened:** the user reviewed the 19 gold statements the v3
+  checker disputed.
+  - **Checker right:** the user agreed with it on most of them. Some
+    statements held the user's own inferences, not the paper's text (an
+    "empirical relation", "varies little in a simulation", a two-sided
+    correction drawn from experience). Others had typos (1 vs 2 µm,
+    0.917 vs 0.919, "place" for Poisson) or pages from another version of
+    Li (four equation pages).
+  - **Checker wrong:** the user held their ground on one, the extra
+    parenthesis printed in Li Eq. (2.23).
+  - **Plants rebuilt:** 18 statements changed, so the plants built from
+    them were stale. The generator's single random stream meant that one
+    edit would have reshuffled 46 of 57 plants.
+- **Pivot:**
+  - the statements were corrected;
+  - the generator now draws each statement's plants on their own and keeps
+    the approved plants of unchanged statements. 29 approvals carried over
+    and 31 new plants await approval;
+  - the split is redrawn before any held-out scoring.
+- **Lesson:**
+  - **A control set is only as good as its gold.** The "19 of 40 controls
+    flagged" rate mostly measured errors in the gold statements, not
+    checker strictness.
+  - **Gold should record what the page says.** The reader's inference
+    belongs elsewhere.
+- **Evidence:** `workflows/literature-review/calibration/gold_statements.yaml`
+  (ruling comments), `make_plants.py`, commit 6c6b9ada.
+
 ### 2026-10-29 — Tiling dropped; the first checker flagged correct statements; four plants were no-ops
 - **What happened:**
   - **Tiling:** three tilers were built (ink rows, layout blocks, layout
