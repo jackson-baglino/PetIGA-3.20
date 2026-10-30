@@ -13,19 +13,41 @@
  "conditions": 40,
  "symbols": 11,
  "flags": 7,
- "seconds": 0.0,
- "calls": [],
+ "seconds": 100.1,
+ "calls": [
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 26.2,
+   "exit": 0,
+   "num_turns": 7
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 39.9,
+   "exit": 0,
+   "num_turns": 6
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 33.9,
+   "exit": 0,
+   "num_turns": 7
+  }
+ ],
  "e3_quotes_ok": 18,
  "e3_on_cited_page": 19,
  "checklist_items": 50,
  "verdicts": {
-  "supported": 16,
-  "overstated": 5,
+  "supported": 20,
+  "overstated": 1,
   "unsupported": 0,
   "not_on_cited_page": 0
  },
  "verdicts_missing": 0,
- "dropped_conditions": 60,
+ "dropped_conditions": 21,
  "equation_corrected": 0,
  "parameter_corrected": 1,
  "blind_items": 9,

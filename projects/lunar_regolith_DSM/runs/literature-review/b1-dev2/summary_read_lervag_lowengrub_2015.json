@@ -13,16 +13,73 @@
  "conditions": 75,
  "symbols": 15,
  "flags": 8,
- "seconds": 217.5,
+ "seconds": 283.1,
  "calls": [
   {
-   "step": "E1",
-   "agent": "morty-reader",
-   "seconds": 217.5,
+   "step": "E4.0",
+   "agent": "beth-checker",
+   "seconds": 72.0,
    "exit": 0,
    "num_turns": 34
+  },
+  {
+   "step": "E4.1",
+   "agent": "beth-checker",
+   "seconds": 25.7,
+   "exit": 0,
+   "num_turns": 12
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 53.3,
+   "exit": 0,
+   "num_turns": 10
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 25.4,
+   "exit": 0,
+   "num_turns": 6
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 38.7,
+   "exit": 0,
+   "num_turns": 9
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 35.0,
+   "exit": 0,
+   "num_turns": 7
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 33.0,
+   "exit": 0,
+   "num_turns": 5
   }
  ],
  "e3_quotes_ok": 47,
- "e3_on_cited_page": 48
+ "e3_on_cited_page": 48,
+ "checklist_items": 42,
+ "verdicts": {
+  "supported": 46,
+  "overstated": 2,
+  "unsupported": 0,
+  "not_on_cited_page": 0
+ },
+ "verdicts_missing": 0,
+ "dropped_conditions": 34,
+ "equation_corrected": 0,
+ "parameter_corrected": 0,
+ "blind_items": 15,
+ "blind_agree": 8,
+ "blind_unnumbered_not_compared": 4,
+ "blind_not_found": 2
 }

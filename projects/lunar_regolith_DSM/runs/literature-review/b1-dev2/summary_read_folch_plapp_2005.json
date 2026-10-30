@@ -13,16 +13,87 @@
  "conditions": 115,
  "symbols": 25,
  "flags": 8,
- "seconds": 291.5,
+ "seconds": 410.0,
  "calls": [
   {
-   "step": "E1",
-   "agent": "morty-reader",
-   "seconds": 291.5,
+   "step": "E4.0",
+   "agent": "beth-checker",
+   "seconds": 96.5,
    "exit": 0,
    "num_turns": 39
+  },
+  {
+   "step": "E4.1",
+   "agent": "beth-checker",
+   "seconds": 35.8,
+   "exit": 0,
+   "num_turns": 18
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 33.5,
+   "exit": 0,
+   "num_turns": 6
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 40.3,
+   "exit": 0,
+   "num_turns": 8
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 35.9,
+   "exit": 0,
+   "num_turns": 8
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 53.2,
+   "exit": 0,
+   "num_turns": 6
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 39.5,
+   "exit": 0,
+   "num_turns": 8
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 36.1,
+   "exit": 0,
+   "num_turns": 6
+  },
+  {
+   "step": "E4.2",
+   "agent": "beth-checker",
+   "seconds": 38.9,
+   "exit": 0,
+   "num_turns": 9
   }
  ],
  "e3_quotes_ok": 67,
- "e3_on_cited_page": 67
+ "e3_on_cited_page": 67,
+ "checklist_items": 43,
+ "verdicts": {
+  "supported": 64,
+  "overstated": 2,
+  "unsupported": 2,
+  "not_on_cited_page": 0
+ },
+ "verdicts_missing": 0,
+ "dropped_conditions": 37,
+ "equation_corrected": 0,
+ "parameter_corrected": 0,
+ "blind_items": 23,
+ "blind_agree": 18,
+ "blind_unnumbered_not_compared": 0,
+ "blind_not_found": 1
 }
