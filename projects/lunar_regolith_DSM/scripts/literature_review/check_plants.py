@@ -125,11 +125,7 @@ def main(argv=None):
         pages = rc.render(pdf, out)
         by_num = {int(f.stem[1:]): f for f in pages}
         if not (out / "checklist.json").exists():
-            with tempfile.TemporaryDirectory() as tmp:
-                files = rc.folder_with(pages, tmp)
-                res, meta = ac.call(tmp, ac.prompt("checker_applicability", files=files, questions=rc.questions()),
-                                    "checklist", "beth-checker",
-                                    ledger=ledger, step="checklist", paper=paper)
+            res, meta = rc.checklist(pages, rc.questions(), ledger, paper=paper)
             if res is None:
                 raise SystemExit(f"checklist failed for {paper}: {meta}")
             (out / "checklist.json").write_text(json.dumps(res, indent=1))

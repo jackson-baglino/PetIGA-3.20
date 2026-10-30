@@ -7,7 +7,8 @@ Pages are given to the agents as whole-page images scaled to 2,000 px on the lon
 (T-res, §9 item 45). Steps, each a fresh headless call:
   E1   morty-reader: the whole paper and the brief's questions -> claims, symbols
   E3   script: each quote found on its cited page in the PDF's text layer, unique, >= 8 words
-  E4.0 beth-checker: the whole paper, no claims -> applicability checklist
+  E4.0 beth-checker: the whole paper, no claims -> applicability checklist (in parts, as E1,
+       for a paper over MAX_PAGES)
   E4.1 beth-checker: equation and value claims named only by number or quantity and page
        -> blind transcription, compared with the reader's by script
   E4.2 beth-checker, per group of up to 4 cited pages: the claims, the checklist, E3 flags
@@ -73,6 +74,31 @@ def folder_with(pages, tmp):
     for f in pages:
         shutil.copy(f, Path(tmp) / f.name)
     return ", ".join(f.name for f in pages)
+
+
+def parts(pages):
+    """Pages in parts of about equal size, none over MAX_PAGES, with the note telling a call which part it has."""
+    n = -(-len(pages) // MAX_PAGES)
+    size = -(-len(pages) // n)
+    for k in range(n):
+        part = pages[k * size:(k + 1) * size]
+        yield k + 1, part, ("" if n == 1 else f" This call covers pages {int(part[0].stem[1:])} to "
+                                              f"{int(part[-1].stem[1:])} of {len(pages)}; another call covers the rest.")
+
+
+def checklist(pages, qs, ledger, **tag):
+    """E4.0: the applicability checklist, one fresh checker per part; (checklist or None, meta of a failed call)."""
+    res = {"pages_read": [], "items": []}
+    for k, part, what in parts(pages):
+        with tempfile.TemporaryDirectory() as tmp:
+            files = folder_with(part, tmp) + what
+            r, meta = ac.call(tmp, ac.prompt("checker_applicability", files=files, questions=qs),
+                              "checklist", "beth-checker", ledger=ledger, step="E4.0", part=k, **tag)
+        if r is None:
+            return None, meta
+        res["pages_read"] += r["pages_read"]
+        res["items"] += r["items"]
+    return res, None
 
 
 # ---- E3 ----
@@ -167,17 +193,12 @@ def main(argv=None):
 
     if "E1" in a.stages and load("read") is None:
         # A paper over MAX_PAGES is read in parts of about equal size; a fresh reader per part.
-        nparts = -(-len(pages) // MAX_PAGES)
-        size = -(-len(pages) // nparts)
         res = {"section_map": [], "claims": [], "symbols": [], "nothing_relevant_pages": [], "flags": []}
-        for k in range(nparts):
-            part = pages[k * size:(k + 1) * size]
-            what = "" if nparts == 1 else (f" This call covers pages {int(part[0].stem[1:])} to "
-                                           f"{int(part[-1].stem[1:])} of {len(pages)}; another reader covers the rest.")
+        for k, part, what in parts(pages):
             with tempfile.TemporaryDirectory() as tmp:
-                files = folder_with(part, tmp) + what
+                files = folder_with(part, tmp) + what.replace("another call", "another reader")
                 r, meta = ac.call(tmp, ac.prompt("reader", files=files, questions=qs), "read", "morty-reader",
-                                  ledger=ledger, step="E1", part=k + 1)
+                                  ledger=ledger, step="E1", part=k)
             if r is None:
                 fail(f"E1 failed: {meta}")
             for key in res:
@@ -194,10 +215,7 @@ def main(argv=None):
 
     if "E4" in a.stages:
         if load("checklist") is None:
-            with tempfile.TemporaryDirectory() as tmp:
-                files = folder_with(pages, tmp)
-                res, meta = ac.call(tmp, ac.prompt("checker_applicability", files=files, questions=qs),
-                                    "checklist", "beth-checker", ledger=ledger, step="E4.0")
+            res, meta = checklist(pages, qs, ledger)
             if res is None:
                 fail(f"E4.0 failed: {meta}")
             save("checklist", res)
