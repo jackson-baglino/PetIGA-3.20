@@ -1,0 +1,2 @@
+{"type": "object", "additionalProperties": false, "required": ["memo"],
+ "properties": {"memo": {"type": "string"}}}
