@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["results"],
+  "properties": {
+    "results": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "required": ["index", "found", "claim_ids", "missing"],
+      "properties": {
+        "index": {"type": "integer"},
+        "found": {"enum": ["full", "partial", "none"]},
+        "claim_ids": {"type": "array", "items": {"type": "string"}},
+        "missing": {"type": "string"}
+      }}}
+  }
+}
