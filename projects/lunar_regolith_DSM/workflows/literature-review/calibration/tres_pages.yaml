@@ -19,33 +19,33 @@
 
 pages:
   - paper: moure_fu_2024_arxiv_v1   # the arXiv v1 PDF (48 pages), not the journal PDF
-    page_pdf: []     # 2 or 3 page numbers, e.g. [4, 5, 9]
+    page_pdf: [8, 14, 19]     # 2 or 3 page numbers, e.g. [4, 5, 9]
     source: latex
     items: []        # filled by script from the arXiv source
   - paper: kaempfer_plapp_2009
-    page_pdf:
+    page_pdf: 7
     source: user
     items:
-      - label:
-        latex:
-      - label:
-        latex:
-      - label:
-        latex:
-      - label:
-        latex:
-      - label:
-        latex:
-      - label:
-        latex:
-      - label:
-        latex:
-      - label:
-        latex:
-      - label:
-        latex:
-      - label:
-        latex:
+      - label: (27)
+        latex: $\displaystyle \kappa(\phi)=\kappa_i\frac{1+\phi}{2}+\kappa_a\frac{1-\phi}{2}$
+      - label: (28)
+        latex: $\displaystyle C(\phi)=C_i\frac{1+\phi}{2}+C_a\frac{1-\phi}{2}$
+      - label: (29)
+        latex: $\displaystyle D(\phi)=D_v\frac{1-\phi}{2}$
+      - label: (30)
+        latex: $\displaystyle \rho(\phi)=\rho_i\frac{1+\phi}{2}+\rho_v\frac{1-\phi}{2}$
+      - label: (31)
+        latex: $\displaystyle \rho_{\mathrm{eq}}(\phi,T)=\rho_i\frac{1+\phi}{2}+\rho_{vs}(T)\frac{1-\phi}{2}$
+      - label: (32)
+        latex: $\displaystyle u=\frac{\rho(\phi)-\rho_{\mathrm{eq}}(\phi,T_0)}{\rho_i}$
+      - label: (33)
+        latex: $\displaystyle \tau\frac{\partial\phi}{\partial t}=W^2\nabla^2\phi+(\phi-\phi^3)+\lambda[u-u_{\mathrm{eq}}(T)](1-\phi^2)^2$
+      - label: (34)
+        latex: $\displaystyle C(\phi)\frac{\partial T}{\partial t}=\nabla[\kappa(\phi)\nabla T]+\frac{L_{sg}}{2}\frac{\partial\phi}{\partial t}$
+      - label: (35)
+        latex: $\displaystyle \frac{\partial u}{\partial t}=\nabla[D(\phi)\nabla u]-\frac{1}{2}\frac{\partial\phi}{\partial t}$
+      - label: (36)
+        latex: $\displaystyle C(\phi)\frac{\partial T}{\partial t}=\nabla[\kappa(\phi)\nabla T]+L_{sg}\left(\nabla(D(\phi)\nabla u)-\frac{\partial u}{\partial t}\right)$
       - label:
         latex:
       - label:
