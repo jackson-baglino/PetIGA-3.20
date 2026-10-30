@@ -961,6 +961,15 @@ Open:
 30. **Calibration material:** written (40 gold statements, 11 user plants,
     57 approved script plants, T-res pages). Done.
 44. **PDF parser:** replacing Marker; chosen by its tests in §3 (P1).
+    Result (2026-10-29, commits 16c5d280, 2c1d9f5b): **MinerU2.5-Pro**,
+    run locally on the Mac's GPU in `venv_docparse/`, offline under the P1
+    sandbox (`prepare.py --parser mineru`, the default). Li et al.: 58 of 58
+    numbered equations; Kaempfer & Plapp p. 7: 10 of 10 equations exact
+    against the user's transcription (Marker 7 of 10); Molaro 41 of 41
+    numbered equations (Marker 37 of 42); about 10 to 15 s per page.
+    PaddleOCR-VL-1.6 was not installed: on this Mac it needs a separate
+    model server, which the no-network sandbox blocks. Marker stays as a
+    fallback (`--parser marker`).
 45. **Page tiling:** whole pages, tiles, or zoom crops; chosen by T-res.
     Result (2026-10-29, `runs/literature-review/tres/summary_tres.json`):
     on the four T-res pages (20 numbered equations, Sonnet 5.5 reader,
