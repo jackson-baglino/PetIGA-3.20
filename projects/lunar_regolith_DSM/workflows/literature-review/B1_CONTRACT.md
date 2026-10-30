@@ -116,7 +116,7 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
   Q1, Q2, Q3 or none; recall is counted only on those labeled.
 - Confirm the arXiv v1 copy of Moure & Fu as the copy read (its pages match
   the LaTeX source; the journal PDF has a different layout).
-- Confirm Q2 and Q3 as written.
+- ~~Confirm Q2 and Q3 as written.~~ Confirmed by the user, 2026-10-30.
 - `papers.yaml` still lists Li's calibration roles as unset and the Zotero
   seeds without a file; they are filled when this contract is approved.
 
