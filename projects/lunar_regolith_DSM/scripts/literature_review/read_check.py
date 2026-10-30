@@ -200,11 +200,16 @@ def main(argv=None):
             b = blind.get(c["id"])
             if not b:
                 continue
+            if c.get("equation") and not re.search(r"\d", c["equation"].get("number") or ""):
+                comp.append({"claim_id": c["id"], "agree": None, "not_found": False, "unnumbered": True})
+                continue
             if c.get("equation"):
                 same = (not b.get("not_found")) and tres.canon(c["equation"]["latex"]) == tres.canon(b.get("latex", ""))
             else:
                 bp = b.get("parameter") or {}
-                vu = lambda q: tres.canon(str(q.get("value", "")) + str(q.get("unit_printed", ""))).replace("{}", "")
+                def vu(q):                                  # value and unit; braces and 1e-3 notation ignored
+                    v = re.sub(r"(\d)[eE]([-+]?\d+)", r"\1\\times10^{\2}", str(q.get("value", "")))
+                    return re.sub(r"[{}]", "", tres.canon(v + str(q.get("unit_printed", ""))))
                 same = (not b.get("not_found")) and vu(c["parameter"]) == vu(bp)   # the unit may sit in either field
             comp.append({"claim_id": c["id"], "agree": bool(same), "not_found": bool(b.get("not_found"))})
         save("blind_compare", comp)
@@ -232,7 +237,9 @@ def main(argv=None):
     if (out / "blind_compare.json").exists():
         bc = load("blind_compare")
         s["blind_items"] = len(bc)
-        s["blind_agree"] = sum(b["agree"] for b in bc)
+        s["blind_agree"] = sum(b["agree"] is True for b in bc)
+        s["blind_unnumbered_not_compared"] = sum(b["agree"] is None for b in bc)
+        s["blind_not_found"] = sum(b["not_found"] for b in bc)
     (run / f"summary_read_{a.paper_id}.json").write_text(json.dumps(s, indent=1))
     print(json.dumps(s, indent=1))
 

@@ -1,0 +1,36 @@
+{
+ "paper_id": "li_2009",
+ "pages": 27,
+ "claims": 49,
+ "claims_by_kind": {
+  "method": 8,
+  "definition": 1,
+  "attribution": 5,
+  "equation": 20,
+  "limitation": 3,
+  "result": 11,
+  "parameter": 1
+ },
+ "conditions": 83,
+ "symbols": 20,
+ "flags": 10,
+ "seconds": 0.0,
+ "calls": [],
+ "e3_quotes_ok": 45,
+ "e3_on_cited_page": 48,
+ "checklist_items": 42,
+ "verdicts": {
+  "supported": 41,
+  "overstated": 8,
+  "unsupported": 0,
+  "not_on_cited_page": 0
+ },
+ "verdicts_missing": 0,
+ "dropped_conditions": 95,
+ "equation_corrected": 0,
+ "parameter_corrected": 0,
+ "blind_items": 24,
+ "blind_agree": 18,
+ "blind_unnumbered_not_compared": 3,
+ "blind_not_found": 2
+}

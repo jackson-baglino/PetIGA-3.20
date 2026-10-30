@@ -91,6 +91,8 @@ def canon(s):
     s = re.sub(r"\\(?:,|;|:|!| |quad|qquad)(?![A-Za-z])|~", "", s)
     s = _unwrap(s)
     s = re.sub(r"\\[dt]frac", r"\\frac", s)
+    s = s.replace("<<", "\\ll ").replace(">>", "\\gg ")
+    s = re.sub(r"\^\{?\\prime\}?|'", lambda m: "^\\prime ", s)
     s = re.sub(r"\\le(?![A-Za-z])", r"\\leq", s)
     s = re.sub(r"\\ge(?![A-Za-z])", r"\\geq", s)
     s = re.sub(r"\\(exp|ln|log|sin|cos|tan|sinh|cosh|tanh|max|min|det|tr|erf)(?![A-Za-z])", r"\1", s)
@@ -100,6 +102,7 @@ def canon(s):
         s = re.sub(r"(?<![\\A-Za-z}^_])\{([A-Za-z]{2,})\}", r"\1", s)   # ={exp}( -> =exp(                                      # {x} -> x for one token, except as an argument
         s = re.sub(r"(?<![\\A-Za-z}])\{(\\[A-Za-z]+|[A-Za-z0-9])\}", r"\1", s)
     s = re.sub(r"([_^])\{(\\[A-Za-z]+|[A-Za-z0-9])\}", r"\1\2", s)
+    s = re.sub(r"[,.;]*\{(?:in|on|at|for|as|with|where|if)\b[^{}]*\}.*$", "", s)   # "\text{in }\Omega" qualifier
     s = re.sub(r"[,.;]+$", "", s)
     s = re.sub(r"\(\d+[a-z]?\)$", "", s)                    # a number written into the equation
     return s
