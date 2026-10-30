@@ -41,13 +41,20 @@ def main(argv=None):
         raise SystemExit(f"judge failed: {meta}")
     (out / "recall.json").write_text(json.dumps(res, indent=1))
     by = {r["index"]: r for r in res["results"]}
+    # Recall counts only statements labeled with a question; [none] and unlabeled ones are listed, not counted.
     n = {"full": 0, "partial": 0, "none": 0}
+    counted = 0
     for i, g in enumerate(gold, 1):
         r = by.get(i, {"found": "none"})
-        n[r["found"]] += 1
-        print(f"  {i:2d} p.{g.get('page')} {g.get('kind'):<10} {r['found']}")
-    print(f"{a.paper_id}: {len(gold)} gold statements, full {n['full']}, partial {n['partial']}, none {n['none']}, "
-          f"claims {len(claims)}")
+        qs = [str(q) for q in g.get("questions") or []]
+        asked = any(q != "none" for q in qs)
+        if asked:
+            n[r["found"]] += 1
+            counted += 1
+        print(f"  {i:2d} p.{g.get('page')} {g.get('kind'):<10} {r['found']:<8} {','.join(qs) or 'unlabeled'}"
+              + ("" if asked else "  (not counted)"))
+    print(f"{a.paper_id}: {counted} of {len(gold)} gold statements counted, full {n['full']}, partial {n['partial']}, "
+          f"none {n['none']}, claims {len(claims)}")
 
 
 if __name__ == "__main__":

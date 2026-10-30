@@ -192,6 +192,10 @@ def check_gold(pp, problems, counts):
             problems.append(f"{w}: kind '{e['kind']}' is not one of {sorted(CLAIM_KINDS)}")
         if not blank(e.get("basis")) and str(e["basis"]).strip() not in BASES:
             problems.append(f"{w}: basis '{e['basis']}' is not one of {sorted(BASES)}")
+        qs = e.get("questions") or []
+        if not isinstance(qs, list) or any(str(q) not in ("Q1", "Q2", "Q3", "none") for q in qs) \
+                or ("none" in map(str, qs) and len(qs) > 1):
+            problems.append(f"{w}: questions must be a list of Q1, Q2, Q3, or [none]")
         vals = [not blank(e.get(k)) for k in ("symbol", "value", "unit")]
         if any(vals[1:]) and not all(vals[1:]):               # a symbol alone names the quantity
             problems.append(f"{w}: a value needs both value and unit (a symbol alone is fine)")
