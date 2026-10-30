@@ -1,0 +1,5 @@
+{"type": "object", "additionalProperties": false, "required": ["items"],
+ "properties": {"items": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+   "required": ["claim_id", "category"],
+   "properties": {"claim_id": {"type": "string"},
+     "category": {"enum": ["wording", "missing_qualifier", "factual_error", "other_page", "statement_garbled", "other"]}}}}}}
