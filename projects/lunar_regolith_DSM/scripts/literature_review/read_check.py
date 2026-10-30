@@ -86,7 +86,7 @@ def parts(pages):
                                               f"{int(part[-1].stem[1:])} of {len(pages)}; another call covers the rest.")
 
 
-def checklist(pages, qs, ledger, **tag):
+def applicability(pages, qs, ledger, **tag):
     """E4.0: the applicability checklist, one fresh checker per part; (checklist or None, meta of a failed call)."""
     res = {"pages_read": [], "items": []}
     for k, part, what in parts(pages):
@@ -215,7 +215,7 @@ def main(argv=None):
 
     if "E4" in a.stages:
         if load("checklist") is None:
-            res, meta = checklist(pages, qs, ledger)
+            res, meta = applicability(pages, qs, ledger)
             if res is None:
                 fail(f"E4.0 failed: {meta}")
             save("checklist", res)

@@ -125,7 +125,7 @@ def main(argv=None):
         pages = rc.render(pdf, out)
         by_num = {int(f.stem[1:]): f for f in pages}
         if not (out / "checklist.json").exists():
-            res, meta = rc.checklist(pages, rc.questions(), ledger, paper=paper)
+            res, meta = rc.applicability(pages, rc.questions(), ledger, paper=paper)
             if res is None:
                 raise SystemExit(f"checklist failed for {paper}: {meta}")
             (out / "checklist.json").write_text(json.dumps(res, indent=1))
