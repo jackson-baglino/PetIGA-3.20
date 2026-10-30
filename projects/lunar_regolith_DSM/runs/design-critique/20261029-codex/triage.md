@@ -4,6 +4,12 @@ Codex (gpt-6.1-sol, clean CODEX_HOME, read-only, no web searches in its log)
 reviewed revision 9 plus STATUS.md. Findings: `findings.md`. Recommendations
 below are the main session's; the user decides.
 
+**Decided** (user, 2026-10-29): all recommendations accepted, findings 1 to 15
+(WORKFLOW.md §9, items 40 and 43). Finding 11 takes the option in the table:
+a dedicated review session that may read selected evidence but has no
+network, no writes and no broad file access; the desk and the counts-only
+rule are deferred. Applied in WORKFLOW.md revision 10.
+
 | # | Finding | Checked | Recommendation |
 |---|---|---|---|
 | 1 | Build a small B1 path with a stopping point; defer LaTeX/JATS, whole-paper tables and figures, embeddings, desk, discovery | fits the model-first rule | **Accept.** Becomes revision 10. Keep P1 as built. |
