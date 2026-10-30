@@ -50,17 +50,30 @@ def pdf_page(printed, offset):
 def items_for(paper, ids, plants, offset):
     """Claims to check: plants on this paper in the set, and the paper's gold statements."""
     out = []
+    gold = yaml.safe_load(open(Path(cc.CAL) / "gold_statements.yaml"))["statements"]
+
+    def parameter(symbol, value, unit):
+        # A value or unit field travels with the claim, as the reader's parameter field does;
+        # plants that change only the field are invisible without it.
+        if value is None and not unit:
+            return None
+        return {"quantity": str(symbol or ""), "value": "" if value is None else str(value),
+                "unit_printed": str(unit or "")}
+
     for p in plants:
         if p["paper"] != paper or p["id"] not in ids:
             continue
         fact = ("S", p["from_statement"]) if p.get("from_statement") is not None else ("U", p["id"])
+        g = gold[p["from_statement"] - 1] if p.get("from_statement") else {}
         out.append({"id": p["id"], "role": "plant", "kind_planted": p["kind"], "fact": fact,
-                    "text": p["planted_claim"], "page_pdf": pdf_page(p.get("planted_page"), offset)})
-    gold = yaml.safe_load(open(Path(cc.CAL) / "gold_statements.yaml"))["statements"]
+                    "text": p["planted_claim"], "page_pdf": pdf_page(p.get("planted_page"), offset),
+                    "parameter": parameter(g.get("symbol"), p.get("planted_value", p.get("correct_value")),
+                                           p.get("planted_unit", p.get("correct_unit")))})
     for i, g in enumerate(gold, 1):
         if g.get("paper") == paper and g.get("statement"):
             out.append({"id": f"G{i:03d}", "role": "control", "fact": ("S", i),
-                        "text": g["statement"], "page_pdf": pdf_page(g.get("page"), offset)})
+                        "text": g["statement"], "page_pdf": pdf_page(g.get("page"), offset),
+                        "parameter": parameter(g.get("symbol"), g.get("value"), g.get("unit"))})
     return [x for x in out if x["page_pdf"]]
 
 
@@ -124,8 +137,10 @@ def main(argv=None):
         for k, g in enumerate(calls(items)):
             if all(x["id"] in verdicts for x in g):
                 continue
-            shown = [{"id": x["id"], "text": x["text"], "kind": "result", "quote": "", "page_pdf": x["page_pdf"],
-                      "location": "", "conditions": [], "quote_check": "not given"} for x in g]
+            shown = [{"id": x["id"], "text": x["text"], "kind": "parameter" if x.get("parameter") else "result",
+                      "quote": "", "page_pdf": x["page_pdf"], "location": "", "conditions": [],
+                      "quote_check": "not given", **({"parameter": x["parameter"]} if x.get("parameter") else {})}
+                     for x in g]
             show = [by_num[p] for p in sorted({x["page_pdf"] for x in g}) if p in by_num]
             with tempfile.TemporaryDirectory() as tmp:
                 files = rc.folder_with(show, tmp)
