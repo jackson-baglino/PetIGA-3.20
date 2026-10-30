@@ -13,7 +13,8 @@ Two subcommands:
           - every sign or exponent change caught;
           - the plants that reach E4 (not caught by E3): a one-sided 95 % Clopper-Pearson
             lower bound of at least 85 %, which needs at least 19 of them;
-          - each kind with 8 or more held-out plants reaching E4: the same bound by itself;
+          Each kind's catch rate is reported with its interval but is not a gate: n of n caught
+          gives a bound of 0.05^(1/n), below 85 % for any n under 19 (revision 10, Codex finding 8).
           - at most 10 % of the controls flagged.
           A held-out set is scored once per prompt version, and a set that has failed is never
           scored again: the next prompt version needs a fresh held-out set. The ledger records
@@ -55,7 +56,6 @@ E3_KINDS = {"fabricated_quote", "wrong_page", "wrong_table_cell"}
 ALL_CAUGHT_KINDS = {"equation_sign_or_exponent"}
 BOUND = 0.85
 MIN_E4 = 19
-KIND_MIN = 8
 CONTROL_MAX = 0.10
 CONF = 0.95
 
@@ -181,11 +181,6 @@ def score(plants, held_ids, results):
     for p, c in e4:
         per_kind[p["kind"]][1] += 1
         per_kind[p["kind"]][0] += bool(c)
-    for kind, (kk, nn) in sorted(per_kind.items()):
-        if nn >= KIND_MIN:
-            b = cp_lower(kk, nn)
-            gates.append((f"{kind} ({nn} plants): lower bound >= {BOUND:.0%}", b >= BOUND,
-                          f"{kk} of {nn}, lower bound {b:.1%}"))
     nf, nc = sum(controls), len(controls)
     gates.append((f"controls flagged <= {CONTROL_MAX:.0%}", nc > 0 and nf / nc <= CONTROL_MAX,
                   f"{nf} of {nc} flagged" if nc else "no controls"))
