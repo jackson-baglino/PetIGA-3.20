@@ -1,0 +1,6 @@
+{"type": "object", "additionalProperties": false, "required": ["statements"],
+ "properties": {"statements": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+   "required": ["section", "summary", "verdict", "reason"],
+   "properties": {"section": {"type": "string"}, "summary": {"type": "string"},
+     "verdict": {"enum": ["supported", "overstated", "unsupported"]}, "claim_ids": {"type": "array", "items": {"type": "string"}},
+     "reason": {"type": "string"}}}}}}

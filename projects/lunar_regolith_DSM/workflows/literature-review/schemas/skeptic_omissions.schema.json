@@ -1,0 +1,6 @@
+{"type": "object", "additionalProperties": false, "required": ["omissions"],
+ "properties": {"omissions": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+   "required": ["kind", "what", "claim_ids", "importance"],
+   "properties": {"kind": {"enum": ["omitted_claim", "contradicting_claim", "dropped_condition", "gap"]},
+     "what": {"type": "string"}, "claim_ids": {"type": "array", "items": {"type": "string"}},
+     "importance": {"enum": ["high", "medium", "low"]}}}}}}
