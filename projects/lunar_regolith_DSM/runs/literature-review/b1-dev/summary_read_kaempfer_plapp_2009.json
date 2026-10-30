@@ -1,0 +1,33 @@
+{
+ "paper_id": "kaempfer_plapp_2009",
+ "pages": 17,
+ "claims": 16,
+ "claims_by_kind": {
+  "limitation": 4,
+  "equation": 2,
+  "method": 3,
+  "result": 4,
+  "parameter": 1,
+  "attribution": 2
+ },
+ "conditions": 28,
+ "symbols": 6,
+ "flags": 5,
+ "seconds": 0.0,
+ "calls": [],
+ "e3_quotes_ok": 10,
+ "e3_on_cited_page": 11,
+ "checklist_items": 50,
+ "verdicts": {
+  "supported": 9,
+  "overstated": 7,
+  "unsupported": 0,
+  "not_on_cited_page": 0
+ },
+ "verdicts_missing": 0,
+ "dropped_conditions": 47,
+ "equation_corrected": 0,
+ "parameter_corrected": 0,
+ "blind_items": 3,
+ "blind_agree": 2
+}

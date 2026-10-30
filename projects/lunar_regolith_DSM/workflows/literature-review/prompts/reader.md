@@ -16,8 +16,10 @@ What to extract:
   Prefer completeness on Q1; for Q2 and Q3 extract what the paper says, do not
   search for more.
 - Each claim gets `text` (your one-sentence statement, no stronger than the
-  paper), `quote` (a verbatim sentence or a passage of 8 or more words from
-  the cited page that supports it, copied exactly, not from an equation),
+  paper), `quote` (a verbatim passage of 8 or more words of running text from
+  the cited page that supports it, copied character for character: no
+  paraphrase, no ellipsis, no symbols or equations inside the quote; a script
+  checks it against the page's text),
   `page_pdf`, `location` (section, equation number, figure or table),
   `kind`, `questions`, `basis` (how the paper establishes it: derived,
   numerically_tested, experimentally_tested, cited, asserted) and

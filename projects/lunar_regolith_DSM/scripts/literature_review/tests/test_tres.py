@@ -14,6 +14,8 @@ SAME = [
     (r"a = b \tag{3}", r"a=b"),
     (r"F^{\rm tri} = {\rm exp}(x)", r"F^{tri}=\exp(x)"),
     (r"x_{i}+{y}", r"x_i+y"),
+    ("W \u226a 10\u207b\u00b3 m", r"W \ll 10^{-3} m"),
+    ("2 \u00d7 10^{-5}", r"2\times10^{-5}"),
 ]
 DIFFERENT = [
     (r"\epsilon^{-1}", r"\epsilon^{1}"),

@@ -56,6 +56,10 @@ WHAT = {"page": "The image is one whole page.",
 
 # ---- canonical LaTeX ----
 
+UNICODE = {"\u2212": "-", "\u00d7": "\\times ", "\u22c5": "\\cdot ", "\u00b7": "\\cdot ", "\u226a": "\\ll ",
+           "\u226b": "\\gg ", "\u2264": "\\leq ", "\u2265": "\\geq ", "\u2248": "\\approx ", "\u00b0": "^\\circ ",
+           "\u03bc": "\\mu ", "\u00b5": "\\mu ", "\u221e": "\\infty ", "\u2207": "\\nabla ", "\u2202": "\\partial "}
+SUPER = dict(zip("\u207b\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079", "-0123456789"))
 TRANSPARENT = r"\\(?:mathrm|text|textrm|operatorname|rm|ensuremath|mathit|textit)"
 
 
@@ -78,6 +82,9 @@ def canon(s):
     (\\mathbf, \\boldsymbol, \\mathcal, \\mathbb, \\vec, \\hat).
     """
     s = s.strip().strip("$")
+    s = re.sub("[" + "".join(SUPER) + "]+", lambda m: "^{" + "".join(SUPER[c] for c in m.group(0)) + "}", s)
+    for u, t in UNICODE.items():                           # a value read as "≪ 10⁻³" vs "\ll 10^{-3}"
+        s = s.replace(u, t)
     s = re.sub(r"\\tag\*?\{[^}]*\}", "", s)
     s = re.sub(r"\\(?:displaystyle|textstyle|\[|\])", "", s)
     s = re.sub(r"\\(?:left|right|[bB]igg?[lr]?)(?![A-Za-z])", "", s)

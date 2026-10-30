@@ -204,8 +204,8 @@ def main(argv=None):
                 same = (not b.get("not_found")) and tres.canon(c["equation"]["latex"]) == tres.canon(b.get("latex", ""))
             else:
                 bp = b.get("parameter") or {}
-                same = (not b.get("not_found")) and str(c["parameter"]["value"]).replace(" ", "") == \
-                    str(bp.get("value", "")).replace(" ", "")
+                vu = lambda q: tres.canon(str(q.get("value", "")) + str(q.get("unit_printed", ""))).replace("{}", "")
+                same = (not b.get("not_found")) and vu(c["parameter"]) == vu(bp)   # the unit may sit in either field
             comp.append({"claim_id": c["id"], "agree": bool(same), "not_found": bool(b.get("not_found"))})
         save("blind_compare", comp)
 
