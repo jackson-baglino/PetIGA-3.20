@@ -65,6 +65,30 @@ class MakePlants(unittest.TestCase):
         p, _ = mp.wrong_page(250, None, random.Random(6))
         self.assertIn(abs(p - 250), (1, 2))
 
+    def test_rerun_keeps_unchanged_statements(self):
+        import tempfile
+        import unittest.mock as um
+        import yaml
+        gold = {"statements": [
+            {"paper": "x", "page": 10, "kind": "result", "statement": "grows 25 um in 10 days"},
+            {"paper": "x", "page": 20, "kind": "result", "statement": "about 300 K at 4 bar"}]}
+        with tempfile.TemporaryDirectory() as d, \
+                um.patch.object(mp.cc, "papers", lambda problems: {}), \
+                um.patch.object(mp.cc, "load_yaml", lambda name, problems: gold), \
+                um.patch("builtins.print"):
+            out = os.path.join(d, "p.yaml")
+            mp.main(["--out", out])
+            first = yaml.safe_load(open(out))["plants"]
+            for p in first:
+                p["approved"] = True
+            yaml.safe_dump({"plants": first}, open(out, "w"))
+            gold["statements"][1]["statement"] = "about 310 K at 4 bar"
+            mp.main(["--out", out])
+            second = yaml.safe_load(open(out))["plants"]
+        kept = [p for p in second if p["from_statement"] == 1]
+        self.assertEqual(kept, [p for p in first if p["from_statement"] == 1])
+        self.assertTrue(all(p["approved"] is None for p in second if p["from_statement"] == 2))
+
 
 if __name__ == "__main__":
     unittest.main()
