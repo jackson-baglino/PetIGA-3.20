@@ -11,6 +11,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 import prepare as pr  # noqa: E402
+import docparse_run as dp  # noqa: E402
 
 W, H = 2550, 3300                   # a letter page at 300 dpi
 
@@ -138,6 +139,31 @@ class LayoutTiles(unittest.TestCase):
         body = [b for b in boxes if b[0] < 2250]
         self.assertTrue(all(b[2] <= 2260 for b in body))
         self.assertEqual(pr.coverage(img, [{"box_px": b} for b in boxes]), 1.0)
+
+
+class MinerUOutput(unittest.TestCase):
+    def test_numbers_join_their_equation_and_reach_prepare(self):
+        blocks = [{"type": "paragraph_title", "bbox": [0.1, 0.05, 0.5, 0.07], "content": "2. Model"},
+                  {"type": "equation", "bbox": [0.1, 0.10, 0.40, 0.14], "content": "\\[\na = b\n\\]"},
+                  {"type": "formula_number", "bbox": [0.44, 0.11, 0.48, 0.13], "content": "(2.14)"},
+                  {"type": "equation", "bbox": [0.6, 0.10, 0.88, 0.14], "content": "\\[\nc = d \\tag {7}\n\\]"},
+                  {"type": "formula_number", "bbox": [0.91, 0.11, 0.95, 0.13], "content": "(7)"},
+                  {"type": "equation", "bbox": [0.1, 0.20, 0.40, 0.24], "content": "\\[ e \\]"}]
+        out = dp.attach_numbers([dict(b) for b in blocks])
+        self.assertEqual([b["type"] for b in out], ["paragraph_title", "equation", "equation", "equation"])
+        self.assertAlmostEqual(out[1]["bbox"][2], 0.48)                 # the number joins the left equation
+        eqs = pr.equations({1: dp.markdown(out)})
+        self.assertEqual([e["number"] for e in eqs], ["2.14", "7", None])
+        self.assertEqual(eqs[0]["latex"], "a = b \\tag{2.14}")
+        self.assertEqual([s["level"] for s in pr.sections({1: dp.markdown(out)})], [2])
+
+    def test_every_mineru_type_maps_to_a_layout_type(self):
+        types = {"text", "title", "doc_title", "paragraph_title", "table", "equation", "formula_number", "code",
+                 "algorithm", "aside_text", "ref_text", "index", "phonetic", "list_item", "table_caption",
+                 "image_caption", "code_caption", "caption", "table_footnote", "image_footnote", "footnote",
+                 "header", "footer", "page_number", "page_footnote", "image", "chart", "list", "image_block",
+                 "equation_block", "unknown"}
+        self.assertEqual(types - set(dp.TYPES), set())
 
 
 class MarkerOutput(unittest.TestCase):

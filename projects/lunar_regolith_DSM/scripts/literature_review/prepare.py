@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""P1, first part: page images, tiles, Marker text, equations, sections and page map (WORKFLOW.md §3, §6).
+"""P1, first part: page images, tiles, parsed text, equations, sections and page map (WORKFLOW.md §3, §6).
 
 For one copy of a paper (a PDF), writes into the run folder
 
     <run>/untrusted/content/<paper_id>/<copy_hash>/
       images/p001.png ...    300 dpi page images
-      layout.json            Marker's blocks per page (type and box), used to cut the tiles
+      layout.json            the parser's blocks per page (type and box), used to cut the tiles
       tiles/p001_t1.png ...  tiles: whole layout blocks, about 4.5 inches of a column, at most
                              2,000 px on the long edge (Claude's cap when a request holds more
                              than 20 images); tiles.json gives each tile's box on the page
-      pages/p001.md ...      Marker's text of each page (PDF page numbers)
-      equations.jsonl        displayed equations Marker found: LaTeX, printed number, page
-      sections.json          Marker's headings with their pages
+      pages/p001.md ...      the parser's text of each page (PDF page numbers)
+      equations.jsonl        displayed equations the parser found: LaTeX, printed number, page
+      sections.json          the parser's headings with their pages
       page_map.json          PDF page to printed page (from the printed page numbers)
       manifest.json          every file's sha256; tool versions, flags and model files
 
@@ -23,10 +23,10 @@ Not built yet (P1 later parts): text from arXiv LaTeX or JATS source, tables (tw
 extractions compared), figure crops, disagreements between sources, and publishing into
 the library through curator.py.
 
-Tiles. With Marker's layout (marker_run.py), tiles are made of whole layout blocks: a
+Tiles. With the parser's layout, tiles are made of whole layout blocks: a
 table, or a figure with its axis labels and caption, is one tile, scaled down if it is over
 2,000 px; text and equations are packed in reading order into tiles of about 4.5 inches of
-a column, so cuts fall between blocks. Without Marker (--skip-marker), or on a page with no
+a column, so cuts fall between blocks. Without a parser (--parser none), or on a page with no
 blocks, the older ink-only method below is used.
 
 Ink-only tiles. A page is split into columns at a gutter: a band of blank pixel columns near the
@@ -36,12 +36,15 @@ cut into tiles of about half a column high at blank rows, so no line is cut in t
 no blank row lies near the target, the next tile starts 1 inch above the cut. A tile wider
 than 2,000 px is scaled down to fit, and its dpi is recorded.
 
-Marker runs once per paper through marker_run.py, with the settings of
-`marker_single <pdf> --paginate_output --output_format markdown` and the flags below; never with --use_llm, which would send pages to an external API. The model
-weights come from the local cache, and the run is offline.
+Parser. MinerU2.5-Pro (docparse_run.py, in venv_docparse) reads the 300 dpi page images
+through MLX on this machine: a layout pass, then each block read as LaTeX, HTML or text.
+Chosen over Marker on 2026-10-29: it read all 10 equations of Kaempfer & Plapp p. 7 exactly
+as the user transcribed them (Marker 7) and finds the printed equation numbers as blocks.
+Marker (marker_run.py, `--parser marker`) is kept as a fallback, never with --use_llm. Both
+run offline from local weights; nothing leaves the machine.
 
     venv_workflows/bin/python scripts/literature_review/prepare.py --run <run folder> \\
-        --paper-id <id> --pdf <file> [--skip-marker] [--allow-dirty]
+        --paper-id <id> --pdf <file> [--parser mineru|marker|none] [--allow-dirty]
 """
 import argparse
 import datetime
@@ -72,7 +75,8 @@ GUTTER = int(0.12 * DPI)        # a column gutter is at least this wide
 MARKER_FLAGS = ["--paginate_output", "--output_format", "markdown", "--disable_image_extraction",
                 "--disable_tqdm"]
 PAGE_SEP = re.compile(r"^\{(\d+)\}-{48}\s*$", flags=re.M)
-MODEL_CACHE = Path.home() / "Library" / "Caches" / "datalab" / "models"
+MODEL_CACHE = Path.home() / "Library" / "Caches" / "datalab" / "models"     # Marker's weights
+DOCPARSE_PY = Path(__file__).resolve().parents[2] / "venv_docparse" / "bin" / "python"
 DEFINITIONS = ["scripts/literature_review", "workflows/literature-review", ".claude/permissions"]
 
 
@@ -248,7 +252,7 @@ def _overlap(a, b):
 
 
 def layout_atoms(gray, layout):
-    """Marker's blocks on one page as [type, box] in pixels, in reading order.
+    """The parser's blocks on one page as [type, box] in pixels, in reading order.
 
     Ink outside every block (axis labels, stray numbers) joins the nearest block within
     NEAR, or becomes its own atom; a caption outside a figure group joins the figure or
@@ -313,7 +317,7 @@ def layout_atoms(gray, layout):
 
 
 def plan_layout_tiles(gray, layout):
-    """Tile boxes from Marker's layout: whole blocks, packed in reading order.
+    """Tile boxes from the parser's layout: whole blocks, packed in reading order.
 
     Consecutive blocks share a tile when they share columns, the tile stays under TARGET
     rows (or the blocks overlap, as parts of one figure do) and it overlaps no other block,
@@ -378,7 +382,7 @@ def coverage(gray, tiles):
     return 1.0 if n == 0 else float((ink & covered).sum() / n)
 
 
-# ---- Marker ----
+# ---- parsers ----
 
 def split_pages(md):
     """{page (1-based): markdown} from Marker's paginated output ({0}----... separators, 0-based)."""
@@ -396,6 +400,19 @@ def run_marker(pdf):
         if p.returncode != 0:
             raise RuntimeError(f"Marker failed with exit code {p.returncode}")
         return split_pages((Path(tmp) / "marker.md").read_text()), json.loads((Path(tmp) / "layout.json").read_text())
+
+
+def run_mineru(images):
+    """MinerU2.5-Pro's pages {page: Markdown}, layout [{bbox, blocks}] and tool record (docparse_run.py)."""
+    env = dict(os.environ, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
+    with tempfile.TemporaryDirectory() as tmp:
+        p = subprocess.run([str(DOCPARSE_PY), str(Path(__file__).with_name("docparse_run.py")), str(images), tmp, str(DPI)],
+                           capture_output=True, text=True, env=env)
+        if p.returncode != 0:
+            raise RuntimeError(f"MinerU failed with exit code {p.returncode}")
+        pages = {int(k): v for k, v in json.loads((Path(tmp) / "pages.json").read_text()).items()}
+        return (pages, json.loads((Path(tmp) / "layout.json").read_text()),
+                json.loads((Path(tmp) / "tool.json").read_text()))
 
 
 DISPLAY = re.compile(r"\$\$(.+?)\$\$", flags=re.S)
@@ -434,14 +451,19 @@ def marker_versions():
 
 # ---- driver ----
 
-def prepare(run, paper_id, pdf, skip_marker=False):
+def prepare(run, paper_id, pdf, parser="mineru"):
     copy_hash = sha256(pdf)
     out = Path(run) / "untrusted" / "content" / paper_id / copy_hash[:16]
     if out.exists():
         raise SystemExit(f"{out.relative_to(run)} exists; content is written once")
     t0 = time.time()
     n = render(pdf, out / "images")
-    pages, layout = run_marker(pdf) if not skip_marker else ({}, [])
+    pages, layout, tool = {}, [], None
+    if parser == "mineru":
+        pages, layout, tool = run_mineru(out / "images")
+    elif parser == "marker":
+        pages, layout = run_marker(pdf)
+        tool = {"flags": MARKER_FLAGS, **marker_versions()}
     if layout:
         (out / "layout.json").write_text(json.dumps(layout, indent=1))
     (out / "tiles").mkdir()
@@ -466,7 +488,7 @@ def prepare(run, paper_id, pdf, skip_marker=False):
               "tools": {"mutool": subprocess.run(["mutool", "-v"], capture_output=True, text=True)
                         .stderr.strip().splitlines()[0]}}
     eqs, secs, no_text = [], [], []
-    if not skip_marker:
+    if parser != "none":
         (out / "pages").mkdir()
         for p in range(1, n + 1):
             text = pages.get(p, "")
@@ -478,9 +500,8 @@ def prepare(run, paper_id, pdf, skip_marker=False):
             for e in eqs:
                 f.write(json.dumps(e) + "\n")
         (out / "sections.json").write_text(json.dumps(secs, indent=1))
-        record["tools"]["marker_flags"] = MARKER_FLAGS
-        record["tools"]["marker"] = marker_versions()
-    failed += [{"page_pdf": p, "why": "no text from Marker"} for p in no_text]
+        record["tools"]["parser"] = {"name": parser, **tool}
+    failed += [{"page_pdf": p, "why": f"no text from {parser}"} for p in no_text]
     record["failed_pages"] = failed
     record["files"] = {str(f.relative_to(out)): sha256(f) for f in sorted(out.rglob("*"))
                        if f.is_file() and f.name != "manifest.json"}
@@ -488,7 +509,7 @@ def prepare(run, paper_id, pdf, skip_marker=False):
     summary = {"stage": "P1", "paper_id": paper_id, "copy_sha256": copy_hash, "pages": n,
                "tiles": len(all_tiles), "tiles_per_page_max": max(
                    (sum(1 for t in all_tiles if t["page"] == p) for p in range(1, n + 1)), default=0),
-               "tiles_from_layout": bool(layout),
+               "parser": parser, "tiles_from_layout": bool(layout),
                "tiles_scaled_down": sum(1 for t in all_tiles if t["dpi"] < DPI),
                "min_tile_dpi": min((t["dpi"] for t in all_tiles), default=None),
                "pages_ink_not_fully_covered": low_cover, "failed_pages": failed,
@@ -504,15 +525,16 @@ def main(argv=None):
     ap.add_argument("--run", required=True, help="run folder, runs/literature-review/<review>/<run_id>")
     ap.add_argument("--paper-id", required=True)
     ap.add_argument("--pdf", required=True)
-    ap.add_argument("--skip-marker", action="store_true", help="images and tiles only")
+    ap.add_argument("--parser", choices=["mineru", "marker", "none"], default="mineru",
+                    help="mineru (default); marker (fallback); none: images and tiles only")
     ap.add_argument("--allow-dirty", action="store_true", help="development only")
     a = ap.parse_args(argv)
     print(f"P1 prepare: run={a.run} paper={a.paper_id} pdf={os.path.basename(a.pdf)} dpi={DPI} "
-          f"max_edge={MAX_EDGE} marker={'skipped' if a.skip_marker else ' '.join(MARKER_FLAGS)}")
+          f"max_edge={MAX_EDGE} parser={a.parser}")
     dirty = uncommitted_definitions()
     if dirty and not a.allow_dirty:
         raise SystemExit("workflow definitions have uncommitted changes; commit first:\n  " + "\n  ".join(dirty))
-    s = prepare(a.run, a.paper_id, a.pdf, a.skip_marker)
+    s = prepare(a.run, a.paper_id, a.pdf, a.parser)
     print(json.dumps(s, indent=1))
     return 1 if s["failed_pages"] or s["pages_ink_not_fully_covered"] else 0
 
