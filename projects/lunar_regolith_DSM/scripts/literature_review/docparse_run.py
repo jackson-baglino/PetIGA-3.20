@@ -40,6 +40,8 @@ TYPES = {                                   # MinerU block type -> prepare's lay
     "page_footnote": "Footnote", "aside_text": "PageHeader",
 }
 TAG = re.compile(r"\\tag\*?\s*\{\s*([^}]*?)\s*\}")
+INLINE = re.compile(r"\$[^$]*\$|\\\(.*?\\\)")                    # inline math, $...$ or \(...\)
+NUMBER = re.compile(r"[,;.]?\s*\(\s*((?:[A-Z]\s*\.?\s*)?\d[\d\s.]*[a-z]?)\s*\)\s*$")   # "(2.14)", "(2. 4 0)"
 
 
 def model_path():
@@ -48,16 +50,43 @@ def model_path():
 
 
 def equation_latex(content):
-    """MinerU writes \\[ ... \\tag {n} \\]; return the LaTeX inside and the number."""
+    """MinerU writes \\[ ... \\tag {n} \\]; return the LaTeX inside and the number.
+
+    A number MinerU left as text at the end, as in "... = 0. (2. 4 0)", is taken too.
+    """
     s = (content or "").strip()
     s = re.sub(r"^\\\[|\\\]$", "", s).strip()
     m = TAG.search(s)
-    number = m.group(1).strip("() ") if m else None
-    return TAG.sub("", s).strip(), number
+    if m:
+        return TAG.sub("", s).strip(), m.group(1).strip("() ").replace(" ", "")
+    m = NUMBER.search(s)
+    if m:
+        return s[:m.start()].strip(), re.sub(r"\s", "", m.group(1))
+    return s, None
+
+
+def numbered_line(b):
+    """A text block that is one displayed equation with a short qualifier and its number,
+    as in "\\(u = g\\) in \\(\\Omega\\), (2.21)": MinerU reads such lines as text. Returns LaTeX
+    for an equation block, or None."""
+    c = (b.get("content") or "").strip()
+    m = NUMBER.search(c)
+    if b["type"] != "text" or not m or not INLINE.search(c) or b["bbox"][3] - b["bbox"][1] > 0.04:
+        return None
+    words = re.findall(r"[A-Za-z]{2,}", INLINE.sub(" ", c[:m.start()]))
+    if len(words) > 4:
+        return None
+    body = re.sub(r"\$|\\\(|\\\)", " ", c[:m.start()]).strip()
+    return "\\[ " + body + " \\tag{" + re.sub(r"\s", "", m.group(1)) + "} \\]"
 
 
 def attach_numbers(blocks):
-    """Merge each formula_number block into the equation level with it; returns blocks."""
+    """Merge each formula_number block into the equation level with it, and turn numbered
+    equation lines read as text into equations; returns blocks."""
+    for b in blocks:
+        latex = numbered_line(b)
+        if latex:
+            b["type"], b["content"] = "equation", latex
     eqs = [b for b in blocks if b["type"] in ("equation", "equation_block")]
     out = []
     for b in blocks:

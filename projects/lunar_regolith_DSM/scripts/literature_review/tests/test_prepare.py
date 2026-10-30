@@ -157,6 +157,13 @@ class MinerUOutput(unittest.TestCase):
         self.assertEqual(eqs[0]["latex"], "a = b \\tag{2.14}")
         self.assertEqual([s["level"] for s in pr.sections({1: dp.markdown(out)})], [2])
 
+    def test_numbered_lines_read_as_text_become_equations(self):
+        blocks = [{"type": "text", "bbox": [0.13, 0.53, 0.72, 0.55], "content": "\\(u = g\\) on \\(\\partial\\Omega\\), (2.21)"},
+                  {"type": "text", "bbox": [0.11, 0.60, 0.72, 0.62], "content": "and we find from \\(u\\) the result we need in (2.5)"},
+                  {"type": "equation", "bbox": [0.2, 0.70, 0.7, 0.74], "content": "\\[ v = 0. (2. 4 0) \\]"}]
+        eqs = pr.equations({1: dp.markdown(dp.attach_numbers([dict(b) for b in blocks]))})
+        self.assertEqual([e["number"] for e in eqs], ["2.21", "2.40"])
+
     def test_every_mineru_type_maps_to_a_layout_type(self):
         types = {"text", "title", "doc_title", "paragraph_title", "table", "equation", "formula_number", "code",
                  "algorithm", "aside_text", "ref_text", "index", "phonetic", "list_item", "table_caption",
