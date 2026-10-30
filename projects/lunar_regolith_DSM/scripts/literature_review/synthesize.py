@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Y1 and Y2: draft the memo from the checked claims and check its citations (WORKFLOW.md §3).
 
-    synthesize.py --run <run folder> [--question Q1] [--version 1]
+    synthesize.py --run <run folder> [--question Q1] [--version 1] [--revise]
+
+With --revise, version k is a revision of version k-1: the synthesizer gets its own draft,
+the sentences Y2 failed and the same claims, and fixes only those (WORKFLOW.md §3, Y2
+failure -> Y1).
 
 Claims enter if the checker (E4 step 2) called them supported, or overstated with a
 corrected text, which replaces the reader's; unsupported and not-on-cited-page claims are
@@ -52,24 +56,39 @@ def main(argv=None):
     ap.add_argument("--run", required=True)
     ap.add_argument("--question", default="Q1")
     ap.add_argument("--version", type=int, default=1)
+    ap.add_argument("--revise", action="store_true")
     a = ap.parse_args(argv)
     run = Path(a.run).resolve()
     claims, lists, counts = checked_claims(run, a.question)
     q = next(l for l in rc.questions().splitlines() if l.startswith(a.question))
     outdir = run / "untrusted" / "memos"
     outdir.mkdir(parents=True, exist_ok=True)
+    if a.revise:
+        prev = f"{a.question}.v{a.version - 1}"
+        claims = json.loads((outdir / f"{prev}.claims.json").read_text())   # the same claims as the draft
+        draft = (outdir / f"{prev}.md").read_text()
+        y2 = cx.check(draft, claims)
+        text = {i: t for i, _, t in cx.sentences(draft)}
+        failures = [f"- {k}: {text[i]}" for k in ("uncited", "unknown_ids", "untagged_numbers", "tag_mismatch")
+                    for i in dict.fromkeys(y2[k])]
+        if not failures:
+            raise SystemExit(f"v{a.version - 1} already passes Y2; nothing to revise")
+        text = ac.prompt("synthesizer_revise", question=q, memo=draft, failures="\n".join(failures),
+                         claims=json.dumps(claims), checklists=json.dumps(lists))
+    else:
+        text = ac.prompt("synthesizer", question=q, claims=json.dumps(claims), checklists=json.dumps(lists))
     (outdir / f"{a.question}.v{a.version}.claims.json").write_text(json.dumps(claims, indent=1))
     with tempfile.TemporaryDirectory() as tmp:
-        res, meta = ac.call(tmp, ac.prompt("synthesizer", question=q, claims=json.dumps(claims),
-                                           checklists=json.dumps(lists)), "memo", "beth-synthesizer",
-                            ledger=run / "calls.jsonl", step="Y1", question=a.question, version=a.version)
+        res, meta = ac.call(tmp, text, "memo", "beth-synthesizer", ledger=run / "calls.jsonl",
+                            step="Y1.revise" if a.revise else "Y1", question=a.question, version=a.version)
     if res is None:
         raise SystemExit(f"Y1 failed: {meta}")
     memo = outdir / f"{a.question}.v{a.version}.md"
     memo.write_text(res["memo"])
     y2 = cx.check(res["memo"], claims)
     cited = sorted(set(re.findall(r"\[([a-z0-9_]+-c\d{3})", res["memo"])))
-    summary = {"question": a.question, "version": a.version, "claims_given": len(claims), "per_paper": counts,
+    summary = {"question": a.question, "version": a.version, "revision_of": a.version - 1 if a.revise else None,
+               "claims_given": len(claims), "per_paper": counts,
                "claims_cited": len(cited), "papers_cited": len({c.rsplit("-c", 1)[0] for c in cited}),
                "y2": {k: (len(v) if isinstance(v, list) else v) for k, v in y2.items()},
                "y2_failing_sentences": {k: v for k, v in y2.items() if isinstance(v, list) and v},
