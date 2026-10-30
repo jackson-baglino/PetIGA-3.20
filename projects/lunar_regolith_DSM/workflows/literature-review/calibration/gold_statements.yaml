@@ -48,7 +48,7 @@ statements:
     page: 3
     location: Eq. (1)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     # dropped 'empirical relation', which was the user's own addition (ruling 2026-10-30)
     statement: 'The humidity ratio $x_s(T)$ of air saturated with vapor over ice is defined from the saturation vapor pressure over ice and the air pressure, $x_s(T) = 0.62 \frac{P_{vs}(T)}{P_a - P_{vs}(T)}$.'
     symbol: x_s(T)
@@ -58,7 +58,7 @@ statements:
     page: 4
     location: Table I
     kind: parameter
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     statement: Table I gives the thermal conductivity of air.
     symbol: \kappa_a
     value: 0.02
@@ -67,7 +67,7 @@ statements:
     page: 5
     location: Eq (11)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     statement: The equilibrium state of the vapor field interacting with a curved ice surface is given by the generalized Gibbs-Thomson relation.
     symbol: 
     value:
@@ -76,7 +76,7 @@ statements:
     page: [5, 3]
     location: Eq (13)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     # dropped 'expected to vary little in a simulation', the user's inference, which ignores temperature gradient metamorphism (ruling 2026-10-30). The user confirms Eq. (13) is on p. 5 (031502-5); the checker's page dispute was wrong
     statement: 'The capillary length $d_0$ is inversely proportional to temperature.'
     symbol: d_0
@@ -86,7 +86,7 @@ statements:
     page: 6
     location: Section II.A
     kind: parameter
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     statement: The condensation coefficeint $\alpha$ has values beteen 10^-3 and 10^-1 for ice, and is inversely proportional to kinetic coefficient.
     symbol: $\alpha$
     value:
@@ -95,7 +95,7 @@ statements:
     page: 7
     location: Eq (33)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     statement: The phase-field model is constructed from a double-well potential and a phase change term, which is depedent on the local vapor saturation.
     symbol:
     value:
@@ -104,7 +104,7 @@ statements:
     page: 8
     location: Section II.C
     kind: method
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [Q1]   # Q1, Q2, Q3 or none
     # rewritten by Claude from the user's ruling 2026-10-30 (symmetric diffusivity, anti-trapping term); the user should confirm against p. 8
     statement: 'The model takes the vapor diffusivity to be symmetric, the same in the ice as in the air; with unequal diffusivities, an anti-trapping term could be added to remove the spurious interface effects this would otherwise cause.'
     symbol:
@@ -114,7 +114,7 @@ statements:
     page: 8
     location: Eq (43)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     statement: 'The thin interface width is strongly controlled by three ratios: two ratios that are related to the heat diffusivity and one related to the vapor diffusivity.'
     symbol: W
     value:
@@ -123,7 +123,7 @@ statements:
     page: 10
     location: Section II.D
     kind: method
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     statement: The diffusivities are scaled by a parameter $\xi$ in order to increase the maximum time step of the simulation; this implementation does not change the thin-interface constraints or the recovery of the sharp-interface limit.
     symbol:
     value:
@@ -132,7 +132,7 @@ statements:
     page: 11
     location: Section III.B
     kind: result
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     statement: The phase-field model was validated against a psudeoanalytical solution for ice growth in one dimension.
     symbol:
     value:
@@ -141,7 +141,7 @@ statements:
     page: 13
     location: Section III.C
     kind: result
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     # statement: checker's corrected text, accepted by the user 2026-10-30
     statement: 'The phase-field model was validated in 2D against Stehle''s experiments on cylindrical-hole (bubble) migration in ice under a temperature gradient, with W = 1e-6 m chosen at the very limit of the phase-field/sharp-interface criteria. Simulated velocities fell within the order of magnitude of the experiments and reproduced the trend with parameters.'
     symbol:
@@ -151,7 +151,7 @@ statements:
     page: 15
     location: Section IV
     kind: limitation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     # statement: checker's corrected text, accepted by the user 2026-10-30
     statement: 'The kinetic coefficient β is taken as constant and isotropic. The complexity of ice crystal growth is believed to come mainly from an anisotropic, strongly temperature-dependent β, but no accepted estimates of β exist. Adding an anisotropic β would complicate the analysis, and for faceted growth it would make the sharp-interface conditions (Eqs. 42–43) impossible to satisfy for all orientations with a finite W, so a thin-interface limit would have to be developed.'
     symbol:
@@ -163,7 +163,7 @@ statements:
     page: 83
     location: Eq (2.1)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [Q1, Q2]   # Q1, Q2, Q3 or none
     statement: The diffuse domain approach defines represents a time-dependent domain $\Omega(t)$ with a smooth phase field function $\phi(x,t)$, which is 1 inside the domain and 0 outside, and transitions smoothly across the boundary as defined by a hyperbolic tangent function.
     symbol:
     value:
@@ -172,7 +172,7 @@ statements:
     page: [85, 84]
     location: Eq. (2.6)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [Q1, Q2]   # Q1, Q2, Q3 or none
     # page: Eq. (2.6) is on p. 85 of this PDF, the indicator function on p. 84; the NIH manuscript differs (ruling 2026-10-30)
     statement: To apply Nuemann or Robin boundary conditions on the diffuse domain, the problem can be reformulated using an indicator functioin $\chi_{\Omega(t)}$ and a smooth approximation of the Dirac delta function $\delta_{\epsilon}(\phi)$, which is nonzero only in a thin layer around the boundary.
     symbol:
@@ -182,7 +182,7 @@ statements:
     page: 84
     location: Eq. (2.2)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [Q1, Q2]   # Q1, Q2, Q3 or none
     # statement: checker's corrected text, accepted by the user 2026-10-30
     statement: 'For the Poisson equation Δu = f on a fixed domain Ω1, the paper considers Dirichlet (u = g), Neumann (∇u·n = g, with a compatibility condition on f and g), and Robin (∇u·n = k(u − g), k < 0) boundary conditions on ∂Ω1. Time-dependent domains are treated later (section 2.6) for a general PDE, with modified conditions A∇u·n + uV = g or k(u − g).'
     symbol:
@@ -192,7 +192,7 @@ statements:
     page: 85
     location: 2.2
     kind: method
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [Q1, Q2]   # Q1, Q2, Q3 or none
     # statement: checker's corrected text, accepted by the user 2026-10-30
     statement: 'The diffuse-domain approximations impose the boundary conditions through lower-order terms that act in the thin diffuse layer. The method of matched asymptotic expansions is then used to formally justify them, showing that the original PDE and boundary condition are recovered at leading order.'
     symbol:
@@ -202,7 +202,7 @@ statements:
     page: 86
     location: 2.2
     kind: method
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [Q1, Q2]   # Q1, Q2, Q3 or none
     statement: By matching the inner and outer expansions in an overlapping region where both expansions are valid, it can be shown that the limit of $u_0(r, s, t)$ as it approaches zero from both the left and right is equivilent to the limit of $U_0(z, s, t)$ as it approaches infinity from both the left and right.
     symbol:
     value:
@@ -211,7 +211,7 @@ statements:
     page: 86
     location: Eq. (2.23)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     # kept as written: the user confirms the extra parenthesis is printed (ruling 2026-10-30)
     statement: The equation shown here is $\nabla \cdot \left\{ \left( 1 + \epsilon^{-1} B(\phi) \right) \nabla u \bigr) \right\} - \epsilon^{-2} B(\phi) (u - g) = \phi f$
     typo: The equation in the paper has an extra closing parenthesis after the first $\nabla u$ term, which is a typo. Or the authors are missing an opening parenthesis somewhere else in the equation, which is also a typo.
@@ -222,7 +222,7 @@ statements:
     page: 87
     location: Eq. (2.25)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     # page 88 -> 87 (ruling 2026-10-30)
     statement: The equation shown here is $\int_{-\infty}^{\infty} B(\Phi_0)\,dz = \int_1^0 \dfrac{B(\Phi_0)}{\partial_z\Phi_0}\,d\Phi_0 = \dfrac{1}{6}\int_0^1 \dfrac{B(\Phi_0)}{\Phi_0(1-\Phi_0)}\,d\Phi_0 \sim \dfrac{1}{6}\int_0^1 \Phi_0(1-\Phi_0)\,d\Phi_0 \ne 0,$.
     symbol:
@@ -232,7 +232,7 @@ statements:
     page: 92
     location: Eq. (2.38)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     # page 88 -> 92, where Eq. (2.38) first appears in this PDF's text layer (ruling 2026-10-30, all Li equation pages)
     statement: The equatioin here is $\partial_t(\phi u) - \nabla\cdot(\phi\mathbf{A}\nabla u) + \phi\mathbf{b}\cdot\nabla u + \phi c u - \epsilon k(u-g)|\nabla\phi|^2 = \phi f \quad \mathrm{in}\quad \Omega$.
     symbol:
@@ -242,7 +242,7 @@ statements:
     page: 91
     location: Eq. (2.37)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [Q1, Q2]   # Q1, Q2, Q3 or none
     # page 88 -> 91, where Eq. (2.37) first appears in this PDF's text layer (ruling 2026-10-30)
     statement: The equation here is $\partial_t(\phi u) - \nabla\cdot(\phi\mathbf{A}\nabla u) + \phi\mathbf{b}\cdot\nabla u + \phi c u + \mathrm{B.C.} = \phi f \quad \mathrm{in}\quad \Omega,$ where the term $\mathrm{B.C.}$ is a placeholder for the appropriate diffuse domain boundary condition term forms.
     symbol:
@@ -252,7 +252,7 @@ statements:
     page: 93
     location: Eq. (2.46)
     kind: equation
-    questions: []   # Q1, Q2, Q3 or none
+    questions: [none]   # Q1, Q2, Q3 or none
     # page 94 -> 93, where Eq. (2.46) first appears in this PDF's text layer (ruling 2026-10-30)
     statement: The equation here is $\partial_z\left(\Phi_0 U_0\left(\widehat{\mathbf{b}}_0\cdot\mathbf{n}-V\right)\right) - \partial_z\left(\Phi_0\mathbf{n}\widehat{\mathbf{A}}_0\left(\mathbf{n}\partial_z U_1+\mathbf{s}\partial_s U_0\right)\right) - k(U_0-G_0)(\partial_z\Phi_0)^2=0.$
     symbol:

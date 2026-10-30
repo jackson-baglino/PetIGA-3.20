@@ -111,9 +111,10 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 
 ## Open before approval
 
-- Confirm or change the core and context roles above.
+- ~~Confirm or change the core and context roles above.~~ Confirmed by the user, 2026-10-30.
 - Label each of the 22 B1 gold statements (Kaempfer & Plapp 12, Li 10) with
-  Q1, Q2, Q3 or none; recall is counted only on those labeled.
+  Q1, Q2, Q3 or none; recall is counted only on those labeled. Done 2026-10-30:
+  Li 6 [Q1, Q2] and 4 none; Kaempfer & Plapp 1 Q1 and 11 none.
 - Confirm the arXiv v1 copy of Moure & Fu as the copy read (its pages match
   the LaTeX source; the journal PDF has a different layout).
 - ~~Confirm Q2 and Q3 as written.~~ Confirmed by the user, 2026-10-30.
@@ -123,3 +124,4 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ## Versions
 
 - v1 draft, 2026-10-29.
+- v1 approved by the user, 2026-10-30, except the Moure & Fu copy (open).
