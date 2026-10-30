@@ -115,6 +115,8 @@ def main(argv=None):
     plants = cal.load_plants()
     papers = a.papers or sorted({p["paper"] for p in plants if p["id"] in ids})
     results, by_item = [], {}
+    ledger = run / "calls.jsonl"                    # every agent call with its token usage
+    n0 = len(ac.ledger_calls(ledger))
     for paper in papers:
         pdf = pdf_of(paper)
         offset = cc.PageMap(str(pdf)).offset
@@ -126,7 +128,8 @@ def main(argv=None):
             with tempfile.TemporaryDirectory() as tmp:
                 files = rc.folder_with(pages, tmp)
                 res, meta = ac.call(tmp, ac.prompt("checker_applicability", files=files, questions=rc.questions()),
-                                    "checklist", "beth-checker")
+                                    "checklist", "beth-checker",
+                                    ledger=ledger, step="checklist", paper=paper)
             if res is None:
                 raise SystemExit(f"checklist failed for {paper}: {meta}")
             (out / "checklist.json").write_text(json.dumps(res, indent=1))
@@ -146,7 +149,8 @@ def main(argv=None):
                 files = rc.folder_with(show, tmp)
                 res, meta = ac.call(tmp, ac.prompt("checker_verdicts", files=files,
                                                    checklist=json.dumps(checklist["items"]),
-                                                   claims=json.dumps(shown)), "verdicts", "beth-checker")
+                                                   claims=json.dumps(shown)), "verdicts", "beth-checker",
+                                    ledger=ledger, step=f"plants_{a.set}", paper=paper, call=k + 1)
             if res is None:
                 print(f"{paper} call {k + 1}: failed ({meta.get('exit')})", flush=True)
                 continue
@@ -167,6 +171,7 @@ def main(argv=None):
             else:
                 results.append({"control_id": x["id"], "flagged": bool(v and caught(v, x)), "paper": paper,
                                 "verdict": v["text"] if v else None})
+    print("usage this invocation:", json.dumps(ac.usage_total(ac.ledger_calls(ledger)[n0:])), flush=True)
     with open(run / f"plants_{a.set}.jsonl", "w") as f:
         for r in results:
             f.write(json.dumps(r) + "\n")

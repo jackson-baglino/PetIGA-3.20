@@ -12,7 +12,8 @@ Pages are given to the agents as whole-page images scaled to 2,000 px on the lon
        -> blind transcription, compared with the reader's by script
   E4.2 beth-checker, per group of up to 4 cited pages: the claims, the checklist, E3 flags
        -> verdicts with meaning fields
-Everything is written under <run>/untrusted/<paper_id>/; a summary with counts only goes to
+Everything is written under <run>/untrusted/<paper_id>/; every agent call, failed ones too, is
+appended to calls.jsonl there. A summary with counts and token usage only goes to
 <run>/summary_read_<paper_id>.json. Nothing here prints paper text.
 """
 import argparse
@@ -110,7 +111,7 @@ def main(argv=None):
     pages = render(Path(a.pdf), out)
     by_num = {int(f.stem[1:]): f for f in pages}
     qs = questions()
-    log = {"paper_id": a.paper_id, "pages": len(pages), "calls": []}
+    ledger = out / "calls.jsonl"
     t0 = time.time()
 
     def save(name, obj):
@@ -119,6 +120,50 @@ def main(argv=None):
     def load(name):
         f = out / f"{name}.json"
         return json.loads(f.read_text()) if f.exists() else None
+
+    def summary(failed=None):
+        """Counts and token usage only, over every call in the ledger (all invocations); also on failure."""
+        read = load("read") or {"claims": [], "symbols": [], "flags": []}
+        claims = read["claims"]
+        e3 = {r["claim_id"]: r for r in (load("e3") or [])}
+        calls = ac.ledger_calls(ledger)
+        s = {"paper_id": a.paper_id, "pages": len(pages), "claims": len(claims),
+             "claims_by_kind": {}, "conditions": sum(len(c["conditions"]) for c in claims),
+             "symbols": len(read["symbols"]), "flags": len(read["flags"]), "seconds": round(time.time() - t0, 1),
+             "calls": [{k: m.get(k) for k in ("time", "step", "part", "pages", "agent", "seconds", "exit", "num_turns",
+                                              "usage") if k in m} for m in calls],
+             "usage_total": ac.usage_total(calls),
+             "usage_by_step": {st: ac.usage_total([m for m in calls if m["step"] == st])
+                               for st in dict.fromkeys(m["step"] for m in calls)}}
+        for c in claims:
+            s["claims_by_kind"][c["kind"]] = s["claims_by_kind"].get(c["kind"], 0) + 1
+        if e3:
+            s["e3_quotes_ok"] = sum(r["ok"] for r in e3.values())
+            s["e3_on_cited_page"] = sum(r["on_cited_page"] for r in e3.values())
+        if (out / "checklist.json").exists():
+            s["checklist_items"] = len(load("checklist")["items"])
+        if (out / "verdicts.json").exists():
+            v = load("verdicts")
+            s["verdicts"] = {k: sum(1 for x in v if x["text"] == k)
+                             for k in ("supported", "overstated", "unsupported", "not_on_cited_page")}
+            s["verdicts_missing"] = len({c["id"] for c in claims} - {x["claim_id"] for x in v})
+            s["dropped_conditions"] = sum(len(x["dropped_conditions"]) for x in v)
+            s["equation_corrected"] = sum(1 for x in v if x["equation"] == "corrected")
+            s["parameter_corrected"] = sum(1 for x in v if x["parameter"] == "corrected")
+        if (out / "blind_compare.json").exists():
+            bc = load("blind_compare")
+            s["blind_items"] = len(bc)
+            s["blind_agree"] = sum(b["agree"] is True for b in bc)
+            s["blind_unnumbered_not_compared"] = sum(b["agree"] is None for b in bc)
+            s["blind_not_found"] = sum(b["not_found"] for b in bc)
+        if failed:
+            s["failed"] = failed
+        (run / f"summary_read_{a.paper_id}.json").write_text(json.dumps(s, indent=1))
+        print(json.dumps(s, indent=1))
+
+    def fail(msg):
+        summary(msg)
+        raise SystemExit(msg)
 
     if "E1" in a.stages and load("read") is None:
         # A paper over MAX_PAGES is read in parts of about equal size; a fresh reader per part.
@@ -131,10 +176,10 @@ def main(argv=None):
                                            f"{int(part[-1].stem[1:])} of {len(pages)}; another reader covers the rest.")
             with tempfile.TemporaryDirectory() as tmp:
                 files = folder_with(part, tmp) + what
-                r, meta = ac.call(tmp, ac.prompt("reader", files=files, questions=qs), "read", "morty-reader")
-            log["calls"].append({"step": "E1", "part": k + 1, **meta})
+                r, meta = ac.call(tmp, ac.prompt("reader", files=files, questions=qs), "read", "morty-reader",
+                                  ledger=ledger, step="E1", part=k + 1)
             if r is None:
-                raise SystemExit(f"E1 failed: {meta}")
+                fail(f"E1 failed: {meta}")
             for key in res:
                 res[key] += r[key]
         for i, c in enumerate(res["claims"], 1):
@@ -152,10 +197,9 @@ def main(argv=None):
             with tempfile.TemporaryDirectory() as tmp:
                 files = folder_with(pages, tmp)
                 res, meta = ac.call(tmp, ac.prompt("checker_applicability", files=files, questions=qs),
-                                    "checklist", "beth-checker")
-            log["calls"].append({"step": "E4.0", **meta})
+                                    "checklist", "beth-checker", ledger=ledger, step="E4.0")
             if res is None:
-                raise SystemExit(f"E4.0 failed: {meta}")
+                fail(f"E4.0 failed: {meta}")
             save("checklist", res)
         checklist = load("checklist")
 
@@ -175,10 +219,9 @@ def main(argv=None):
                 with tempfile.TemporaryDirectory() as tmp:
                     files = folder_with([by_num[p] for p in sorted(need) if p in by_num][:MAX_IMAGES], tmp)
                     blind, meta = ac.call(tmp, ac.prompt("checker_blind", files=files, items="\n".join(items)),
-                                          "blind", "beth-checker")
-                log["calls"].append({"step": "E4.1", **meta})
+                                          "blind", "beth-checker", ledger=ledger, step="E4.1")
                 if blind is None:
-                    raise SystemExit(f"E4.1 failed: {meta}")
+                    fail(f"E4.1 failed: {meta}")
             save("blind", blind)
         blind = {b["claim_id"]: b for b in load("blind")["items"]}
 
@@ -197,10 +240,10 @@ def main(argv=None):
                     files = folder_with(show, tmp)
                     res, meta = ac.call(tmp, ac.prompt("checker_verdicts", files=files,
                                                        checklist=json.dumps(checklist["items"]),
-                                                       claims=json.dumps(shown)), "verdicts", "beth-checker")
-                log["calls"].append({"step": "E4.2", "pages": g, **meta})
+                                                       claims=json.dumps(shown)), "verdicts", "beth-checker",
+                                         ledger=ledger, step="E4.2", pages=g)
                 if res is None:
-                    raise SystemExit(f"E4.2 failed on pages {g}: {meta}")
+                    fail(f"E4.2 failed on pages {g}: {meta}")
                 verdicts += res["verdicts"]
             save("verdicts", verdicts)
         verdicts = load("verdicts")
@@ -225,34 +268,7 @@ def main(argv=None):
             comp.append({"claim_id": c["id"], "agree": bool(same), "not_found": bool(b.get("not_found"))})
         save("blind_compare", comp)
 
-    # summary: counts only
-    s = {"paper_id": a.paper_id, "pages": len(pages), "claims": len(claims),
-         "claims_by_kind": {}, "conditions": sum(len(c["conditions"]) for c in claims),
-         "symbols": len(read["symbols"]), "flags": len(read["flags"]), "seconds": round(time.time() - t0, 1),
-         "calls": [{k: m.get(k) for k in ("step", "agent", "seconds", "exit", "num_turns")} for m in log["calls"]]}
-    for c in claims:
-        s["claims_by_kind"][c["kind"]] = s["claims_by_kind"].get(c["kind"], 0) + 1
-    if e3:
-        s["e3_quotes_ok"] = sum(r["ok"] for r in e3.values())
-        s["e3_on_cited_page"] = sum(r["on_cited_page"] for r in e3.values())
-    if (out / "checklist.json").exists():
-        s["checklist_items"] = len(load("checklist")["items"])
-    if (out / "verdicts.json").exists():
-        v = load("verdicts")
-        s["verdicts"] = {k: sum(1 for x in v if x["text"] == k)
-                         for k in ("supported", "overstated", "unsupported", "not_on_cited_page")}
-        s["verdicts_missing"] = len({c["id"] for c in claims} - {x["claim_id"] for x in v})
-        s["dropped_conditions"] = sum(len(x["dropped_conditions"]) for x in v)
-        s["equation_corrected"] = sum(1 for x in v if x["equation"] == "corrected")
-        s["parameter_corrected"] = sum(1 for x in v if x["parameter"] == "corrected")
-    if (out / "blind_compare.json").exists():
-        bc = load("blind_compare")
-        s["blind_items"] = len(bc)
-        s["blind_agree"] = sum(b["agree"] is True for b in bc)
-        s["blind_unnumbered_not_compared"] = sum(b["agree"] is None for b in bc)
-        s["blind_not_found"] = sum(b["not_found"] for b in bc)
-    (run / f"summary_read_{a.paper_id}.json").write_text(json.dumps(s, indent=1))
-    print(json.dumps(s, indent=1))
+    summary()
 
 
 if __name__ == "__main__":

@@ -61,7 +61,8 @@ def main(argv=None):
     (outdir / f"{a.question}.v{a.version}.claims.json").write_text(json.dumps(claims, indent=1))
     with tempfile.TemporaryDirectory() as tmp:
         res, meta = ac.call(tmp, ac.prompt("synthesizer", question=q, claims=json.dumps(claims),
-                                           checklists=json.dumps(lists)), "memo", "beth-synthesizer")
+                                           checklists=json.dumps(lists)), "memo", "beth-synthesizer",
+                            ledger=run / "calls.jsonl", step="Y1", question=a.question, version=a.version)
     if res is None:
         raise SystemExit(f"Y1 failed: {meta}")
     memo = outdir / f"{a.question}.v{a.version}.md"
@@ -72,7 +73,7 @@ def main(argv=None):
                "claims_cited": len(cited), "papers_cited": len({c.rsplit("-c", 1)[0] for c in cited}),
                "y2": {k: (len(v) if isinstance(v, list) else v) for k, v in y2.items()},
                "y2_failing_sentences": {k: v for k, v in y2.items() if isinstance(v, list) and v},
-               "seconds": meta["seconds"]}
+               "seconds": meta["seconds"], "usage": meta["usage"]}
     (run / f"summary_memo_{a.question}.v{a.version}.json").write_text(json.dumps(summary, indent=1))
     print(json.dumps(summary, indent=1))
 

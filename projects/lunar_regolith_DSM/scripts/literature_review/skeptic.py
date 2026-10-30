@@ -41,17 +41,22 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as tmp:
         out["support"], m1 = ac.call(tmp, ac.prompt("skeptic_support", memo=memo,
                                                     claims=json.dumps([c for c in used if c["id"] in cited])),
-                                     "skeptic_support", "beth-skeptic")
+                                     "skeptic_support", "beth-skeptic",
+                                     ledger=run / "calls.jsonl", step="Y3.support", question=a.question,
+                                     version=a.version)
     with tempfile.TemporaryDirectory() as tmp:
         out["omissions"], m2 = ac.call(tmp, ac.prompt("skeptic_omissions", question=q, memo=memo,
                                                       claims=json.dumps(allc), checklists=json.dumps(lists)),
-                                       "skeptic_omissions", "beth-skeptic")
+                                       "skeptic_omissions", "beth-skeptic",
+                                       ledger=run / "calls.jsonl", step="Y3.omissions", question=a.question,
+                                       version=a.version)
     if out["support"] is None or out["omissions"] is None:
         raise SystemExit(f"Y3 failed: {m1} {m2}")
     (mdir / f"{a.question}.v{a.version}.y3.json").write_text(json.dumps(out, indent=1))
     s = {"statements": dict(collections.Counter(x["verdict"] for x in out["support"]["statements"])),
          "omissions": dict(collections.Counter((x["kind"], x["importance"]) for x in out["omissions"]["omissions"]))}
     s["omissions"] = {f"{k}/{i}": n for (k, i), n in s["omissions"].items()}
+    s["usage"] = {"support": m1["usage"], "omissions": m2["usage"]}
     (run / f"summary_y3_{a.question}.v{a.version}.json").write_text(json.dumps(s, indent=1))
     print(json.dumps(s, indent=1))
 

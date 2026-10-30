@@ -23,8 +23,11 @@ def prompt(name, **fields):
     return text
 
 
-def call(folder, text, schema_name, agent, timeout=3600):
-    """(structured output or None, meta) for one call run in `folder`."""
+def call(folder, text, schema_name, agent, timeout=3600, ledger=None, **tag):
+    """(structured output or None, meta) for one call run in `folder`.
+
+    With `ledger`, meta (tagged with `tag`, e.g. step=...) is appended to that JSONL file as
+    soon as the call returns, failed calls included, so token usage survives a crash."""
     schema = json.loads((SCHEMAS / f"{schema_name}.schema.json").read_text())
     model = MODELS[agent.split("-")[0]]
     cmd = ["claude", "-p", text, "--model", model, "--output-format", "json",
@@ -34,10 +37,36 @@ def call(folder, text, schema_name, agent, timeout=3600):
            "--json-schema", json.dumps(schema)]
     t0 = time.time()
     p = subprocess.run(cmd, cwd=folder, capture_output=True, text=True, timeout=timeout)
-    meta = {"agent": agent, "model": model, "seconds": round(time.time() - t0, 1), "exit": p.returncode}
-    if p.returncode != 0:
-        return None, meta
-    out = json.loads(p.stdout)
+    meta = {**tag, "agent": agent, "model": model, "seconds": round(time.time() - t0, 1), "exit": p.returncode}
+    try:                                    # a failed call may still print its JSON, with usage
+        out = json.loads(p.stdout)
+    except ValueError:
+        out = {}
     meta.update({"usage": out.get("usage"), "num_turns": out.get("num_turns"),
                  "is_error": out.get("is_error")})
-    return out.get("structured_output"), meta
+    if p.returncode != 0:
+        meta["error"] = (str(out.get("result") or p.stderr or "")).strip()[:300]
+    if ledger is not None:
+        with open(ledger, "a") as f:
+            f.write(json.dumps({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), **meta}) + "\n")
+    return (out.get("structured_output") if p.returncode == 0 else None), meta
+
+
+TOKENS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")
+
+
+def usage_total(metas):
+    """Token counts summed over calls; calls that returned no usage are counted separately."""
+    tot = {k: 0 for k in TOKENS}
+    for m in metas:
+        for k in TOKENS:
+            tot[k] += (m.get("usage") or {}).get(k) or 0
+    tot["calls"] = len(metas)
+    tot["calls_without_usage"] = sum(1 for m in metas if not m.get("usage"))
+    return tot
+
+
+def ledger_calls(ledger):
+    """Every call recorded in a ledger file, oldest first."""
+    ledger = Path(ledger)
+    return [json.loads(l) for l in ledger.read_text().splitlines() if l.strip()] if ledger.exists() else []
