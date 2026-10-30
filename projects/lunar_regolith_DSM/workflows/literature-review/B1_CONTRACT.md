@@ -115,7 +115,7 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 - Label each of the 22 B1 gold statements (Kaempfer & Plapp 12, Li 10) with
   Q1, Q2, Q3 or none; recall is counted only on those labeled. Done 2026-10-30:
   Li 6 [Q1, Q2] and 4 none; Kaempfer & Plapp 1 Q1 and 11 none.
-- Confirm the arXiv v1 copy of Moure & Fu as the copy read (its pages match
+- ~~Confirm the arXiv v1 copy of Moure & Fu as the copy read~~ Confirmed 2026-10-30; the user judges it the same content as the journal version, and any Moure & Fu claim the memo relies on is checked in the journal version before the memo is final (its pages match
   the LaTeX source; the journal PDF has a different layout).
 - ~~Confirm Q2 and Q3 as written.~~ Confirmed by the user, 2026-10-30.
 - `papers.yaml` still lists Li's calibration roles as unset and the Zotero
@@ -124,4 +124,4 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ## Versions
 
 - v1 draft, 2026-10-29.
-- v1 approved by the user, 2026-10-30, except the Moure & Fu copy (open).
+- v1 approved by the user, 2026-10-30, including the arXiv v1 copy of Moure & Fu.
