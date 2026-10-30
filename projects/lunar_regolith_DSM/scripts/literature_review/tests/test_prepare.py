@@ -130,6 +130,16 @@ class LayoutTiles(unittest.TestCase):
                                  and b[0] < c["bbox"][2] * pr.DPI / 72 for c in cols))
 
 
+    def test_margin_stamp_does_not_swallow_the_page(self):
+        img = lines(page(), 300, 2250, 300, 2400)
+        img[100:3200, 2450:2470] = 0                                  # a download stamp down the margin
+        lay = layout(block("Text", 300, 300, 2250, 1200), block("Text", 300, 1250, 2250, 2400))
+        boxes = pr.plan_layout_tiles(img, lay)
+        body = [b for b in boxes if b[0] < 2250]
+        self.assertTrue(all(b[2] <= 2260 for b in body))
+        self.assertEqual(pr.coverage(img, [{"box_px": b} for b in boxes]), 1.0)
+
+
 class MarkerOutput(unittest.TestCase):
     def test_pages_equations_and_headings(self):
         md = ("\n\n{0}" + "-" * 48 + "\n\n# Title\n\ntext\n\n"

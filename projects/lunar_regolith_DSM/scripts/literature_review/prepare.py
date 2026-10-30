@@ -239,6 +239,10 @@ def _gap(a, b):
     return max(dx, dy)
 
 
+def _area(a):
+    return (a[2] - a[0]) * (a[3] - a[1])
+
+
 def _overlap(a, b):
     return max(0, min(a[2], b[2]) - max(a[0], b[0])) * max(0, min(a[3], b[3]) - max(a[1], b[1]))
 
@@ -275,10 +279,28 @@ def layout_atoms(gray, layout):
             box = (xs.start, ys.start, xs.stop, ys.stop)
             near = [(i, _gap(box, a[1])) for i, a in enumerate(atoms)]
             i, d = min(near, key=lambda t: t[1]) if near else (None, None)
-            if i is not None and d <= NEAR:
+            # Join only what barely grows the block (axis labels under a plot); a margin
+            # stamp running down the page would otherwise swallow the page.
+            if i is not None and d <= NEAR and _area(_union(atoms[i][1], box)) <= 1.5 * _area(atoms[i][1]):
                 atoms[i][1] = _union(atoms[i][1], box)
             else:
                 atoms.append(["Ink", box])
+    inside = [i for i, a in enumerate(atoms)                  # blocks nested in another block
+              if any(j != i and _overlap(a[1], b[1]) >= 0.9 * _area(a[1])
+                     and (_area(b[1]) > _area(a[1]) or j < i) for j, b in enumerate(atoms))]
+    atoms = [a for i, a in enumerate(atoms) if i not in inside]
+    # Page furniture (running heads, page numbers, rules) in the top or bottom 15 % of the
+    # page becomes one header and one footer atom, unless that would overlap the body.
+    for kind, band in (("PageHeader", lambda b: b[3] <= 0.15 * H), ("PageFooter", lambda b: b[1] >= 0.85 * H)):
+        group = [i for i, (t, b) in enumerate(atoms) if t in ("PageHeader", "PageFooter", "Ink") and band(b)]
+        if len(group) < 2:
+            continue
+        box = atoms[group[0]][1]
+        for i in group[1:]:
+            box = _union(box, atoms[i][1])
+        if all(_overlap(box, b) == 0 for i, (t, b) in enumerate(atoms) if i not in group):
+            rest = [a for i, a in enumerate(atoms) if i not in group]
+            atoms = [[kind, box]] + rest if kind == "PageHeader" else rest + [[kind, box]]
     merged = []
     for t, box in atoms:
         if t == "Caption" and merged and merged[-1][0] in FLOATS:
@@ -293,13 +315,13 @@ def layout_atoms(gray, layout):
 def plan_layout_tiles(gray, layout):
     """Tile boxes from Marker's layout: whole blocks, packed in reading order.
 
-    Consecutive blocks share a tile when one spans the other's columns, the tile stays under
-    TARGET rows and it overlaps no other block. Tables and figures (with their captions) are
+    Consecutive blocks share a tile when they share columns, the tile stays under TARGET
+    rows (or the blocks overlap, as parts of one figure do) and it overlaps no other block,
+    which keeps a tile inside its column. Tables and figures (with their captions) are
     never cut; a text block taller than MAX_EDGE is cut at blank rows as in plan_tiles.
     """
     atoms = layout_atoms(gray, layout)
     ink = gray < INK
-    tol = DPI // 6
     tiles = []                                              # [box, [atom indices]]
 
     def fits(box, members):
@@ -309,17 +331,18 @@ def plan_layout_tiles(gray, layout):
     for i, (t, box) in enumerate(atoms):
         if tiles:
             cur, members = tiles[-1]
-            nested = ((box[0] >= cur[0] - tol and box[2] <= cur[2] + tol)
-                      or (cur[0] >= box[0] - tol and cur[2] <= box[2] + tol))
+            side = min(cur[2], box[2]) - max(cur[0], box[0]) > 0   # share some columns
             u = _union(cur, box)
-            if nested and u[3] - u[1] <= TARGET and fits(u, members + [i]):
+            touching = _overlap(cur, box) > 0                      # parts of one figure overlap
+            if side and (u[3] - u[1] <= TARGET or touching) and fits(u, members + [i]):
                 tiles[-1] = [u, members + [i]]
                 continue
         tiles.append([box, [i]])
     boxes = []
     for box, members in tiles:
         x0, y0, x1, y1 = box
-        if y1 - y0 > MAX_EDGE and not any(atoms[j][0] in KEEP_WHOLE for j in members):
+        thin = (x1 - x0) * 20 < (y1 - y0)                    # a margin stamp: keep it in one piece
+        if y1 - y0 > MAX_EDGE and not thin and not any(atoms[j][0] in KEEP_WHOLE for j in members):
             boxes += [(x0, a, x1, b) for a, b in cut_band(ink, y0, y1, x0, x1, TARGET)]
         else:
             boxes.append(box)
