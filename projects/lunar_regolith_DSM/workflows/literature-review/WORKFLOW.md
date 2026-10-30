@@ -1129,6 +1129,20 @@ From the user, 2026-10-28 (revision 9):
 
     All seven DOIs resolve in Crossref. Seeds per branch are now 3 to 7.
 39. **Revision 9 approved** for building (user, 2026-10-28).
+40. **Codex review accepted in part** (user, 2026-10-29; `runs/design-critique/20261029-codex/`):
+    - finding 1: a small, timeboxed B1 path; LaTeX/JATS, automated tables
+      and figures, embeddings, the desk and discovery are deferred. To be
+      written up as revision 10;
+    - finding 2: blind transcription (X1) only for equations and values;
+      prose claims get a meaning check and the user's approval when they
+      support a model option;
+    - the other findings await the user's decision.
+41. **B1 memo question** (user, 2026-10-29): how to couple the stationary
+    grains with the evolving ice–vapor interface without a spurious air film.
+    Surface diffusion and other vapor-diffusion paths are secondary.
+42. **Reproducibility for the course** (user, 2026-10-29): the same prompts
+    given to the agents give similar results. A repeat run on one paper,
+    compared claim by claim, is the evidence.
 
 Open:
 24. **Seeds** for B2 to B5, when each branch is taken up.
