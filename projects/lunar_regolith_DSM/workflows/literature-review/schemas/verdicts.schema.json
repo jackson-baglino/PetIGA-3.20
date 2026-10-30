@@ -1,0 +1,32 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdicts"],
+  "properties": {
+    "verdicts": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "required": ["claim_id", "text", "quote_on_page", "equation", "parameter", "dropped_conditions", "reason"],
+      "properties": {
+        "claim_id": {"type": "string"},
+        "text": {"enum": ["supported", "overstated", "unsupported", "not_on_cited_page"]},
+        "corrected_text": {"type": "string"},
+        "quote_on_page": {"type": "boolean"},
+        "equation": {"enum": ["matches", "corrected", "none"]},
+        "corrected_latex": {"type": "string"},
+        "parameter": {"enum": ["match", "corrected", "none"]},
+        "corrected_parameter": {"type": "string"},
+        "dropped_conditions": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+          "required": ["text", "page_pdf"],
+          "properties": {"text": {"type": "string"}, "page_pdf": {"type": "integer"}}}},
+        "meaning": {"type": "object", "additionalProperties": false,
+          "required": ["established", "by_whom", "assumptions", "evidence"],
+          "properties": {
+            "established": {"type": "string"},
+            "by_whom": {"enum": ["this_paper", "cited_work"]},
+            "cited_work": {"type": "string"},
+            "assumptions": {"type": "array", "items": {"type": "string"}},
+            "evidence": {"enum": ["derived", "numerically_tested", "experimentally_tested", "cited", "asserted"]}
+          }},
+        "reason": {"type": "string"}
+      }}}
+  }
+}

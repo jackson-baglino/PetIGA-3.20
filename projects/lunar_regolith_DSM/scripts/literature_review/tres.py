@@ -171,7 +171,7 @@ def page_image(run, paper, p, pdf):
 
 
 def boxes_for(condition, gray):
-    if condition == "page":
+    if condition in ("page", "page2000"):
         return None
     if condition == "tiles_ink":
         return pr.plan_tiles(gray)
@@ -184,7 +184,11 @@ def images_for(condition, img, outdir):
     boxes = boxes_for(condition, gray)
     outdir.mkdir(parents=True, exist_ok=True)
     if boxes is None:
-        shutil.copy(img, outdir / "page.png")
+        page = Image.open(img)
+        if condition == "page2000":                         # as a reader of more than 20 pages gets it
+            s = pr.MAX_EDGE / max(page.size)
+            page = page.resize((round(page.size[0] * s), round(page.size[1] * s)), Image.LANCZOS)
+        page.save(outdir / "page.png")
         return ["page.png"]
     names = []
     for k, (x0, y0, x1, y1) in enumerate(boxes, 1):
@@ -238,7 +242,7 @@ def main(argv=None):
                         continue
                     with tempfile.TemporaryDirectory(dir=os.environ.get("TMPDIR")) as tmp:
                         names = images_for(cond, img, Path(tmp))
-                        eqs, meta = read(tmp, names, "page" if cond == "page" else "tiles", a.model)
+                        eqs, meta = read(tmp, names, "page" if cond.startswith("page") else "tiles", a.model)
                     meta["images"] = len(names)
                     out.write_text(json.dumps({"equations": eqs, "meta": meta}))
                     print(f"read {cond} {paper} p{p} r{r}: {len(eqs) if eqs else 0} equations, "

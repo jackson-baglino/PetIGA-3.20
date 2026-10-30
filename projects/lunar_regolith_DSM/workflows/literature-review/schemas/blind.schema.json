@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "items": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "required": ["claim_id", "not_found"],
+      "properties": {
+        "claim_id": {"type": "string"},
+        "latex": {"type": "string"},
+        "parameter": {"type": "object", "additionalProperties": false, "required": ["quantity", "value", "unit_printed"],
+          "properties": {"quantity": {"type": "string"}, "value": {"type": "string"}, "unit_printed": {"type": "string"}}},
+        "not_found": {"type": "boolean"}
+      }}}
+  }
+}

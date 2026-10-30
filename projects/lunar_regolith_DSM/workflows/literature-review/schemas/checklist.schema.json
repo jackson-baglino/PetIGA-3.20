@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pages_read", "items"],
+  "properties": {
+    "pages_read": {"type": "array", "items": {"type": "integer"}},
+    "items": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "required": ["kind", "text", "page_pdf"],
+      "properties": {
+        "kind": {"enum": ["assumption", "boundary_condition", "field_role", "parameter_limit", "validation_regime"]},
+        "text": {"type": "string"},
+        "page_pdf": {"type": "integer"}
+      }}}
+  }
+}
