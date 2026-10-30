@@ -12,6 +12,8 @@ SAME = [
     (r"\tau\frac{\partial\phi}{\partial t}=W^{2}\nabla^2\phi,", r"\tau \dfrac{\partial \phi}{\partial t} = W^2 \nabla^{2} \phi"),
     (r"{\rm d} x \, \quad y", r"dxy"),
     (r"a = b \tag{3}", r"a=b"),
+    (r"F^{\rm tri} = {\rm exp}(x)", r"F^{tri}=\exp(x)"),
+    (r"x_{i}+{y}", r"x_i+y"),
 ]
 DIFFERENT = [
     (r"\epsilon^{-1}", r"\epsilon^{1}"),
@@ -21,6 +23,8 @@ DIFFERENT = [
     (r"\frac{1+\phi}{2}", r"\frac{1-\phi}{2}"),
     (r"\partial_t u", r"\partial_x u"),
     (r"(a+b)c", r"a+bc"),
+    (r"F^{\rm tri}", r"F^{t}ri"),
+    (r"\frac{a}{b}", r"\frac ab c"),
 ]
 
 

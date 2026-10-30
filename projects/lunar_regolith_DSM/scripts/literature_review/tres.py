@@ -62,8 +62,8 @@ TRANSPARENT = r"\\(?:mathrm|text|textrm|operatorname|rm|ensuremath|mathit|textit
 def _unwrap(s):
     """Drop typographic wrappers whose content is kept: \\mathrm{x} -> x, {\\rm x} -> x."""
     for _ in range(5):
-        s2 = re.sub(r"\{" + TRANSPARENT + r"\s*([^{}]*)\}", r"\1", s)
-        s2 = re.sub(TRANSPARENT + r"\s*\{([^{}]*)\}", r"\1", s2)
+        s2 = re.sub(r"\{" + TRANSPARENT + r"\s*([^{}]*)\}", r"{\1}", s)
+        s2 = re.sub(TRANSPARENT + r"\s*\{([^{}]*)\}", r"{\1}", s2)
         if s2 == s:
             break
         s = s2
@@ -86,7 +86,12 @@ def canon(s):
     s = re.sub(r"\\[dt]frac", r"\\frac", s)
     s = re.sub(r"\\le(?![A-Za-z])", r"\\leq", s)
     s = re.sub(r"\\ge(?![A-Za-z])", r"\\geq", s)
+    s = re.sub(r"\\(exp|ln|log|sin|cos|tan|sinh|cosh|tanh|max|min|det|tr|erf)(?![A-Za-z])", r"\1", s)
     s = re.sub(r"\s+", "", s)
+    for _ in range(3):
+        s = re.sub(r"\{\{([^{}]*)\}\}", r"{\1}", s)          # {{eq}} left by unwrapping
+        s = re.sub(r"(?<![\\A-Za-z}^_])\{([A-Za-z]{2,})\}", r"\1", s)   # ={exp}( -> =exp(                                      # {x} -> x for one token, except as an argument
+        s = re.sub(r"(?<![\\A-Za-z}])\{(\\[A-Za-z]+|[A-Za-z0-9])\}", r"\1", s)
     s = re.sub(r"([_^])\{(\\[A-Za-z]+|[A-Za-z0-9])\}", r"\1\2", s)
     s = re.sub(r"[,.;]+$", "", s)
     s = re.sub(r"\(\d+[a-z]?\)$", "", s)                    # a number written into the equation
@@ -103,7 +108,10 @@ def diff(ref, got):
     out = []
     for op, i0, i1, j0, j1 in difflib.SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes():
         if op != "equal":
-            out.append(("-" + "".join(a[i0:i1]) if i1 > i0 else "") + ("+" + "".join(b[j0:j1]) if j1 > j0 else ""))
+            if i1 - i0 > 6 or j1 - j0 > 6:                  # a long run: report its size, not its text
+                out.append(f"[{i1 - i0} tokens -> {j1 - j0} tokens]")
+            else:
+                out.append(("-" + "".join(a[i0:i1]) if i1 > i0 else "") + ("+" + "".join(b[j0:j1]) if j1 > j0 else ""))
     return out
 
 

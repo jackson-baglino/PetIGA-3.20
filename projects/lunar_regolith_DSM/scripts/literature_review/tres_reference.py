@@ -9,7 +9,8 @@ authors' source, with the source's own macros expanded. Writes a JSON file
     tres_reference.py --tex <main.tex> --pdf <arXiv pdf> --pages 8 14 19 --out <file.json>
 
 Numbering: equation and align environments in document order, one number per equation
-and per align row, none where \\nonumber or \\notag appears. A page's equations are the
+and per align row, none where \\nonumber or \\notag appears; such rows belong to the
+next numbered row, since a multi-line equation carries its number on its last line. A page's equations are the
 "(n)" labels printed in the right quarter of the page (from mutool's structured text).
 """
 import argparse
@@ -88,12 +89,15 @@ def numbered_equations(tex):
     eqs, n = [], 0
     for m in re.finditer(r"\\begin\{(equation|align)\}(.*?)\\end\{\1\}", doc, flags=re.S):
         parts = [m.group(2)] if m.group(1) == "equation" else rows(m.group(2))
+        pending = []                                        # unnumbered rows continue the next number
         for part in parts:
+            part = re.sub(r"\\label\{[^}]*\}", "", part).replace("&", " ").strip()
             if re.search(r"\\(nonumber|notag)\b", part):
+                pending.append(re.sub(r"\\(nonumber|notag)\b", "", part))
                 continue
             n += 1
-            latex = re.sub(r"\\label\{[^}]*\}", "", part).replace("&", " ").strip()
-            eqs.append((n, latex))
+            eqs.append((n, " ".join(pending + [part])))
+            pending = []
     return eqs
 
 
