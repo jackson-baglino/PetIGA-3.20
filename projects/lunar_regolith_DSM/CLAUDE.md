@@ -1,4 +1,8 @@
-# CLAUDE.md — lunar_regolith_DSM
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+# lunar_regolith_DSM
 
 Phase-field model (C, PETSc 3.20 / PetIGA) of sublimation-driven ice
 metamorphism in lunar regolith, plus Python pre- and postprocessing. Layout,
@@ -47,13 +51,60 @@ build and run details are in `README.md`; project goals in
 
 ```bash
 make            # optimized build -> ./lunar_regolith_dsm   (make debug for -g3 -O0)
+                # needs PETSC_DIR, PETSC_ARCH, PETIGA_DIR
 ./scripts/Studio/run_lunar.sh <geometry> <experiment> [tag] [-- extra flags]
-venv_lunar/bin/python -m unittest discover -s preprocess/tests -t .
+./scripts/check_ic_types.sh          # every 2D/3D .opts -ic_type is in the solver dispatch
+bash postprocess/run_postprocess.sh <run_folder>   # regenerate a run's figures
+
+# Python tests (unittest, run from the project root)
+venv_lunar/bin/python -m unittest discover -s preprocess/tests -t .            # comp_eps / mesh_params
+venv_lunar/bin/python -m unittest scripts/flowchart/test_render_flowchart.py
+venv_workflows/bin/python -m unittest discover -s scripts/units_verification/tests
+venv_workflows/bin/python -m unittest discover -s scripts/literature_review/tests
+# one test: venv_lunar/bin/python -m unittest preprocess.tests.test_mesh_params.<Class>.<test>
 ```
 
 Never call the binary or `mpiexec` directly; the run script stages a
 reproducible copy of every run. Two or more runs are chained with `&&`; two or
 more HPC jobs go through `scripts/HPC/submit_batch.sh`.
+
+There is no C unit-test suite. Solver checks are committed driver scripts
+under `studies/*/verification/` (for example
+`studies/contact_angle/verification/verify_wall_bc.sh`). A Jacobian change is
+checked with `-snes_test_jacobian` passed through the run script.
+
+## Architecture
+
+- **Options layering.** A run is `inputs/solver.opts` (numerics and model
+  defaults) + a geometry `.opts` (mesh, domain, `-ic_type`, `-eps`,
+  `-delt_t`) + an experiment `.opts` (`-t_final`, `-temp`, `-humidity`,
+  `-grad_temp0`, output cadence), later files overriding earlier ones, then
+  flags after `--`. Names are bare; `scripts/lib/opts.sh` (`resolve_opts`)
+  finds them in family subfolders and fails on ambiguous names.
+  `scripts/lib/alloc.sh` is the only place rank-sizing constants live; a
+  `-geom_file` opts needs a `# DOF_GRID:` comment or the run drops to 1 rank.
+- **Solver flow (`src/lunar_main.c`).** Parses all options into `AppCtx`
+  (`include/NASA_types.h`), builds the IGA or reads `-geom_file` (igakit mesh
+  from `preprocess/build_geometry_*.py`), dispatches the IC by `-ic_type`
+  (`initial_conditions.c`), and integrates with `TSALPHA`. Three DOFs: ice φ,
+  T, vapor ρ_v (air is 1 − φ). Residual and analytic Jacobian are in
+  `assembly.c` (`Residual` → `Residual_A1`), including the regolith wall
+  boundary (`-wall_faces`, contact angle); constitutive laws in
+  `material_properties.c`; per-DOF SNES convergence in `snes_convergence.c`.
+  `monitoring.c` holds the diagnostics table, field output, interface-CFL
+  adaptive timestep and the bounds-rollback pre-step. `-initial_cond` restarts
+  from a snapshot and adopts its t and dt.
+- **eps and mesh.** `preprocess/comp_eps.py` is a thin front end to
+  `preprocess/mesh_params/` (constants mirror the C source; golden-number
+  tests in `preprocess/tests/`).
+- **Run folders.** The run script builds, sizes ranks, and stages the opts
+  files, `src/`, `include/` and the postprocess tree into
+  `~/SimulationResults/lunar_regolith_DSM/scratch/<geom>/<ts>_<exp>[_tag]/`, so
+  a downloaded run can be re-plotted with no source tree.
+  `postprocess/pplib.py` is the shared loader for figure scripts.
+- **Agentic workflows.** Designs in `workflows/<name>/` (`WORKFLOW.md`,
+  contract, flowchart); their stage scripts in `scripts/<name_with_underscores>/`
+  call agents headless with `claude -p` and run in `venv_workflows`.
 
 ## Reproducibility
 
