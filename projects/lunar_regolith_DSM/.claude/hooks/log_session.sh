@@ -5,6 +5,10 @@
 # Resume any listed session with:  claude --resume <session_id>
 set -u
 dir="$(cd "$(dirname "$0")/.." && pwd)"
+# In a worktree, log to the main checkout so session IDs outlive the worktree.
+common="$(git -C "$dir" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+prefix="$(git -C "$dir" rev-parse --show-prefix 2>/dev/null)"
+[ -n "$common" ] && dir="$(dirname "$common")/${prefix%/}"
 log="$dir/sessions.tsv"
 input="$(cat)"
 field() { printf '%s' "$input" | /usr/bin/python3 -c "import json,sys; print(json.load(sys.stdin).get('$1',''))" 2>/dev/null; }
