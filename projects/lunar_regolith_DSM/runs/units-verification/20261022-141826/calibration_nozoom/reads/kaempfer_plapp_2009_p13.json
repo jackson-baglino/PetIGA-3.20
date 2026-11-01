@@ -1,0 +1,43 @@
+{
+  "page": "kaempfer_plapp_2009_p13",
+  "reads": [
+    {
+      "symbol": "k",
+      "found": false,
+      "printed_as": null,
+      "meaning": null,
+      "value_as_printed": null,
+      "unit_as_printed": null,
+      "location": null
+    },
+    {
+      "symbol": "h",
+      "found": true,
+      "printed_as": "h",
+      "meaning": "spatial resolution of the rectangular grid in the region of the bubble",
+      "value_as_printed": "5 × 10^-7",
+      "unit_as_printed": "m",
+      "location": "left column, paragraph 1, lines 4-6 (also h=5×10^-5 m at boundaries)"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "k",
+        "h"
+      ],
+      "page_png_sha256": "3504b56694f256a94e46a74c090bb31366a54495dde198a89d7b5f73d34f8d30",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "bad34ad8a579c0f6eda261e58168340a67d9c0d0575d0b649f653920b898ec7c",
+      "input_sha256": "b4ef608bf62ba014a5e8b0f17ccbc444842e666be839ec430ad55cb0bd947023",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S2/kaempfer_plapp_2009_p13_fc7235cd_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

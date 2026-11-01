@@ -1,0 +1,79 @@
+{
+  "page": "moure_fu_2024_SI_p9",
+  "reads": [
+    {
+      "symbol": "gamma_ia",
+      "found": true,
+      "printed_as": "σ_ia",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "0.109",
+      "unit_as_printed": "N/m",
+      "location": "Table S3, row 4 (σ_ia)"
+    },
+    {
+      "symbol": "c_p_i",
+      "found": true,
+      "printed_as": "c_{p,i}",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "1.96 × 10^3",
+      "unit_as_printed": "J/(Kg °C)",
+      "location": "Table S3, row \"c_{p,i}\""
+    },
+    {
+      "symbol": "Lambda",
+      "found": true,
+      "printed_as": "Λ",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "1",
+      "unit_as_printed": "N/m",
+      "location": "Table S3, row 2 (Λ)"
+    },
+    {
+      "symbol": "K_w",
+      "found": true,
+      "printed_as": "K_w",
+      "meaning": "Parameter in Table S3 (no description given); listed among parameter values",
+      "value_as_printed": "0.554",
+      "unit_as_printed": "W/(m °C)",
+      "location": "Table S3, row \"K_w\" (after K_a, K_i)"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "gamma_ia",
+        "c_p_i",
+        "Lambda"
+      ],
+      "page_png_sha256": "5d19674185d05f09a84b5f7fd0b5bf35a38b8844eaa01ecc91fcea0bdb3c3969",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "bad34ad8a579c0f6eda261e58168340a67d9c0d0575d0b649f653920b898ec7c",
+      "input_sha256": "aed43a60d0de415f6ff290081524d07366b66e948fb8e47bd5a74d915da6cf04",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S2/moure_fu_2024_SI_p9_94a11d2f_try1.jsonl"
+        }
+      ]
+    },
+    {
+      "symbols": [
+        "K_w"
+      ],
+      "page_png_sha256": "5d19674185d05f09a84b5f7fd0b5bf35a38b8844eaa01ecc91fcea0bdb3c3969",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "bad34ad8a579c0f6eda261e58168340a67d9c0d0575d0b649f653920b898ec7c",
+      "input_sha256": "f24641e6bf256117325d732780924e4921808ff0ddbe081c0f64467127fd0521",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S2/moure_fu_2024_SI_p9_e5e4823d_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

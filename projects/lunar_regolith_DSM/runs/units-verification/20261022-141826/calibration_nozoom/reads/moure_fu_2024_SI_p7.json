@@ -1,0 +1,43 @@
+{
+  "page": "moure_fu_2024_SI_p7",
+  "reads": [
+    {
+      "symbol": "K_w",
+      "found": false,
+      "printed_as": null,
+      "meaning": null,
+      "value_as_printed": null,
+      "unit_as_printed": null,
+      "location": null
+    },
+    {
+      "symbol": "u_j",
+      "found": true,
+      "printed_as": "u_j",
+      "meaning": "typical values estimated based on T and ρ_v distributions during the different phase transitions",
+      "value_as_printed": "~ 10^-3 (solidification), ~ 10^-8 (sublimation), ~ 10^-8 (evaporation)",
+      "unit_as_printed": "(-)",
+      "location": "Table S1, row \"u_j (-)\"; also text lines 112 and 114"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "K_w",
+        "u_j"
+      ],
+      "page_png_sha256": "22527ac606f8bfd3f066fb2ba6c7ce99baf8f479a4074dc0901bbf680564a1db",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "bad34ad8a579c0f6eda261e58168340a67d9c0d0575d0b649f653920b898ec7c",
+      "input_sha256": "f978549a32f5bc5752757046f113bc974fdfad10d0badc9de6c4ec3d10f5a894",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S2/moure_fu_2024_SI_p7_4dd572a7_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

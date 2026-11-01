@@ -1,0 +1,732 @@
+{
+  "S4": {
+    "beta": {
+      "symbol": "beta",
+      "verdict": "read_right",
+      "printed_as": "β",
+      "unit": "s m^-1",
+      "value": "3 × 10^4 < β < 3 × 10^6, in simulations β = 5.5 × 10^5 s m^-1",
+      "meaning": "interface kinetic coefficient",
+      "page": 4,
+      "location": "Table I, row \"β\", Value/unit column",
+      "reason": "Table I prints the unit as s m^-1, with a negative exponent. Eqs. (16) and (17) on page 6 also give s m^-1. The table's \"s m^1\" drops the minus sign.",
+      "consistency": "consistent",
+      "s3_verdict": "DISAGREE",
+      "s3_reasons": [
+        "unit: table m s vs read s m^-1",
+        "marker: unit after the symbol is ['s m^-1', 's m^-1', 's m^-1']"
+      ],
+      "images": [
+        4,
+        5,
+        6
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "30fdfac99c5e081bb2704f47203e58621b8ab63160bb1d42c8ca35f4e29ee90a",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4/beta_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "L_sg": {
+      "symbol": "L_sg",
+      "verdict": "read_right",
+      "printed_as": "L_sg",
+      "unit": "J m^-3",
+      "value": "2.60 × 10^9",
+      "meaning": "latent heat of sublimation of ice per volume",
+      "page": 4,
+      "location": "Table I, row \"L_sg\", \"Value, unit\" column",
+      "reason": "Table I prints \"2.60×10^9 J m^-3\", so the exponent is negative. That fits \"per unit volume\" on page 5. The table's \"J m^3\" has lost the minus sign.",
+      "consistency": "consistent",
+      "s3_verdict": "DISAGREE",
+      "s3_reasons": [
+        "unit: table m^5 kg s^-2 vs read kg m^-1 s^-2",
+        "marker: unit after the symbol is ['J m^-3']"
+      ],
+      "images": [
+        4,
+        5,
+        7
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "dd44c06be5243b34e10b0fa6bc251c8142b38b2ea6ca22662783e9726429aa99",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4/L_sg_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "a": {
+      "symbol": "a",
+      "verdict": "read_right",
+      "printed_as": "a",
+      "unit": "m",
+      "value": "3.19 × 10^-10",
+      "meaning": "mean intermolecular spacing in ice",
+      "page": 4,
+      "location": "Table I, first row \"a\", Value, unit column",
+      "reason": "Table I on page 4 gives the value as \"3.19×10^-10 m\", so the unit is metres, not mm. The blind read is right and the table's unit is wrong.",
+      "consistency": "consistent",
+      "s3_verdict": "DISAGREE",
+      "s3_reasons": [
+        "unit: table 0.001 m vs read m",
+        "marker: unit after the symbol is ['m']"
+      ],
+      "images": [
+        4,
+        3,
+        5
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "fe663a876a637f2129ddffd57bc444e20dd866c2c8d6f10b199a76435c2c7e16",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4/a_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "gamma_ia": {
+      "symbol": "gamma_ia",
+      "verdict": "read_right",
+      "printed_as": "σ_ia",
+      "unit": "N/m",
+      "value": "0.109",
+      "meaning": "Parameter in Table S3 (no description on this page; presumably ice-air surface tension)",
+      "page": 9,
+      "location": "Table S3, row 4 (σ_ia), Value and Units columns",
+      "reason": "Table S3 gives σ_ia = 0.109 in N/m, not mN m^-1. The table's unit is off by a factor of 1000. The blind read and Marker both match the page.",
+      "consistency": "consistent",
+      "s3_verdict": "DISAGREE",
+      "s3_reasons": [
+        "unit: table 0.001 kg s^-2 vs read kg s^-2",
+        "marker: unit after the symbol is ['N/m']"
+      ],
+      "images": [
+        9
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "a4c665204f8d23b86773ae1dac1f939570f9694dccd9522e2059c7e798c90627",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4/gamma_ia_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "kappa_i": {
+      "symbol": "kappa_i",
+      "verdict": "read_right",
+      "printed_as": "κ_i",
+      "unit": "W m^-1 K^-1",
+      "value": "2.29",
+      "meaning": "heat conductivity of ice",
+      "page": 4,
+      "location": "Table I, row \"κ_i, κ_a\", Value, unit column (2.29, 0.02 W m^-1 K^-1)",
+      "reason": "Table I on page 4 gives \"2.29, 0.02 W m^-1 K^-1\" for κ_i, κ_a, so the unit is W m^-1 K^-1. The table's J m^-1 K^-1 is wrong because it leaves out the per-second.",
+      "consistency": "consistent",
+      "s3_verdict": "DISAGREE",
+      "s3_reasons": [
+        "unit: table m kg K^-1 s^-2 vs read m kg K^-1 s^-3",
+        "marker: unit after the symbol is ['W m^-1 K^-1']"
+      ],
+      "images": [
+        4,
+        3,
+        5
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "64df1f486a7f2211c4477143a861f617c93d9be422778da8d49e83af4136ebcb",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4/kappa_i_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "c_p_i": {
+      "symbol": "c_p_i",
+      "verdict": "read_right",
+      "printed_as": "c_{p,i}",
+      "unit": "J/(Kg °C)",
+      "value": "1.96 × 10^3",
+      "meaning": "Parameter in Table S3. The page gives no description; the subscript i suggests specific heat of ice.",
+      "page": 9,
+      "location": "Table S3, row \"c_{p,i}\", Value and Units columns",
+      "reason": "Table S3 prints c_{p,i} = 1.96 × 10^3 with units J/(Kg °C). That is a per-mass specific heat, not the per-volume J m^-3 K^-1 the table gives.",
+      "consistency": "consistent",
+      "s3_verdict": "DISAGREE",
+      "s3_reasons": [
+        "unit: table kg m^-1 K^-1 s^-2 vs read m^2 K^-1 s^-2",
+        "marker: unit after the symbol is ['J/(Kg °C)']"
+      ],
+      "images": [
+        9
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "cb68181443510feae2af12bfa63851b799e2db0696fd505bf5f1c025593e4b26",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4/c_p_i_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "k": {
+      "symbol": "k",
+      "verdict": "read_right",
+      "printed_as": "k",
+      "unit": "J K^-1",
+      "value": "1.38 × 10^-23",
+      "meaning": "Boltzmann's constant",
+      "page": 4,
+      "location": "Page 4, Table I, row \"k\" (third row), Value/unit column",
+      "reason": "Page 4, Table I prints k as Boltzmann's constant, 1.38 × 10^-23 J K^-1. Page 13 never defines k. The table's symbol and unit are correct, but it cites the wrong page.",
+      "consistency": "consistent",
+      "s3_verdict": "DISAGREE",
+      "s3_reasons": [
+        "page: found on p4, not on the cited p13"
+      ],
+      "images": [
+        13,
+        4
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "55f0859f7a2c79caf77c5e1227ccf18631bb7acbf88508e9492208d76c1f56c9",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4/k_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "K_w": {
+      "symbol": "K_w",
+      "verdict": "read_right",
+      "printed_as": "K_w",
+      "unit": "W/(m °C)",
+      "value": "0.554",
+      "meaning": "Parameter listed in Table S3 (Parameter values); the table gives no description, but it is listed with K_a and K_i in W/(m °C), which fits the thermal conductivity of water",
+      "page": 9,
+      "location": "Page 9, Table S3, row \"K_w\" (after K_a and K_i): value 0.554, units W/(m °C)",
+      "reason": "K_w does not appear on the cited page 7, which has only Table S1 and lines 102–116. It is printed on page 9 in Table S3 with value 0.554 and unit W/(m °C), which is the same as the table's W m^-1 K^-1 because a degree Celsius and a kelvin are the same size; the table's unit is fine but its cited page is wrong.",
+      "consistency": "consistent",
+      "s3_verdict": "DISAGREE",
+      "s3_reasons": [
+        "page: found on p9, not on the cited p7"
+      ],
+      "images": [
+        7,
+        9
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "1a3500b5682b507736e5aff06e03024f1343f9555e7881110df105606c55e1a3",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4/K_w_try1.jsonl"
+          }
+        ]
+      }
+    }
+  },
+  "S4m": {
+    "beta": {
+      "symbol": "beta",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "β",
+      "page_wording": "interface kinetic coefficient",
+      "location": "Table I, row \"β\"",
+      "reason": "The page defines β as the interface kinetic coefficient, the same quantity as the table.",
+      "page": 4,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "6a0a3392bb52d5275ca604b2d3adf53671bde4667027f76324d658fc96d782bd",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/kaempfer_plapp_2009_p4_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "L_sg": {
+      "symbol": "L_sg",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "L_sg",
+      "page_wording": "latent heat of sublimation of ice per volume",
+      "location": "Table I, row \"L_sg\"",
+      "reason": "The page defines L_sg as the latent heat of sublimation of ice per volume, the same quantity as the table.",
+      "page": 4,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "6a0a3392bb52d5275ca604b2d3adf53671bde4667027f76324d658fc96d782bd",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/kaempfer_plapp_2009_p4_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "a": {
+      "symbol": "a",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "a",
+      "page_wording": "mean intermolecular spacing in ice",
+      "location": "Table I, first row \"a\"",
+      "reason": "The page defines a as the mean intermolecular spacing in ice, the same quantity as the table.",
+      "page": 4,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "6a0a3392bb52d5275ca604b2d3adf53671bde4667027f76324d658fc96d782bd",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/kaempfer_plapp_2009_p4_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "kappa_i": {
+      "symbol": "kappa_i",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "κ_i",
+      "page_wording": "heat conductivity of ice, (dry) air",
+      "location": "Table I, row \"κ_i, κ_a\"",
+      "reason": "κ_i is the first symbol in the pair, so it is the heat conductivity of ice, as the table says.",
+      "page": 4,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "6a0a3392bb52d5275ca604b2d3adf53671bde4667027f76324d658fc96d782bd",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/kaempfer_plapp_2009_p4_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "rho_i": {
+      "symbol": "rho_i",
+      "meaning_verdict": "table_wrong",
+      "printed_as_on_page": "ρ_i",
+      "page_wording": "density of ice, (dry) air",
+      "location": "Table I, row \"ρ_i, ρ_a\"",
+      "reason": "ρ_i is the density of ice (918.9 kg m^-3); the density of dry air is ρ_a.",
+      "page": 4,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "6a0a3392bb52d5275ca604b2d3adf53671bde4667027f76324d658fc96d782bd",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/kaempfer_plapp_2009_p4_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "kappa_a": {
+      "symbol": "kappa_a",
+      "meaning_verdict": "table_wrong",
+      "printed_as_on_page": "κ_a",
+      "page_wording": "heat conductivity of ice, (dry) air",
+      "location": "Table I, row \"κ_i, κ_a\"",
+      "reason": "κ_a is the heat conductivity of (dry) air (0.02 W m^-1 K^-1), not of ice.",
+      "page": 4,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "6a0a3392bb52d5275ca604b2d3adf53671bde4667027f76324d658fc96d782bd",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/kaempfer_plapp_2009_p4_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "gamma": {
+      "symbol": "gamma",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "γ",
+      "page_wording": "interfacial free energy of ice",
+      "location": "Table I, row \"γ\"",
+      "reason": "The page defines γ as the interfacial free energy of ice, the same quantity as the table.",
+      "page": 4,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "6a0a3392bb52d5275ca604b2d3adf53671bde4667027f76324d658fc96d782bd",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/kaempfer_plapp_2009_p4_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "k": {
+      "symbol": "k",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "k",
+      "page_wording": "Boltzmann's constant, 1.38×10^-23 J K^-1",
+      "location": "kaempfer_plapp_2009_p4.png, Table I, row \"k\" (third row), Description column",
+      "reason": "Table I on page 4 defines k as Boltzmann's constant, which matches the table's meaning; page 13 (the cited page) does not define k.",
+      "page": 13,
+      "pass_": 2,
+      "pages_shown": [
+        "kaempfer_plapp_2009_p4"
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "bffd248cfbf7acd84af1489aa099e5bd5982499c63be977e3c7aa84118982f34",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/k_pass2_try1.jsonl"
+          }
+        ]
+      },
+      "pass1": {
+        "symbol": "k",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": null,
+        "page_wording": null,
+        "location": null,
+        "reason": "The symbol k does not appear on this page and Boltzmann's constant is not defined here, so the page cannot confirm the meaning.",
+        "page": 13,
+        "pass_": 1,
+        "call": {
+          "agent": "beth-unit-checker",
+          "model": "claude-opus-5-5",
+          "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+          "input_sha256": "2346ef9f1ef30edddf3c3c19b517524b61a2d2c924a3948522cc8b057e4822f4",
+          "attempts": [
+            {
+              "attempt": 1,
+              "problems": [],
+              "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/kaempfer_plapp_2009_p13_try1.jsonl"
+            }
+          ]
+        }
+      }
+    },
+    "h": {
+      "symbol": "h",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "h",
+      "page_wording": "rectangular grid with spatial resolution h=5×10^-7 m in the region of the bubble",
+      "location": "Left column, first paragraph below Fig. 6 caption",
+      "reason": "The page defines h as the spatial resolution of the rectangular grid, which matches the table's meaning.",
+      "page": 13,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "2346ef9f1ef30edddf3c3c19b517524b61a2d2c924a3948522cc8b057e4822f4",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/kaempfer_plapp_2009_p13_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "K_w": {
+      "symbol": "K_w",
+      "meaning_verdict": "cannot_tell",
+      "printed_as_on_page": "K_w",
+      "page_wording": null,
+      "location": "moure_fu_2024_SI_p9.png, Table S3, row \"K_w\" (0.554, W/(m °C)); K_w does not appear on cited.png",
+      "reason": "Neither page defines K_w in words. Table S3 lists only its value, 0.554 W/(m °C), alongside K_a and K_i. The unit and value fit the thermal conductivity of water, but the page never states it.",
+      "page": 7,
+      "pass_": 2,
+      "pages_shown": [
+        "moure_fu_2024_SI_p9"
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "3575876c4a0544384277d23aad6bef2438757089fa106da2418413196f1575c6",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/K_w_pass2_try1.jsonl"
+          }
+        ]
+      },
+      "pass1": {
+        "symbol": "K_w",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": null,
+        "page_wording": null,
+        "location": "not found on page 7 (Table S1 and lines 102-116 checked)",
+        "reason": "K_w does not appear anywhere on this page, so the page cannot confirm or refute 'thermal conductivity of water'.",
+        "page": 7,
+        "pass_": 1,
+        "call": {
+          "agent": "beth-unit-checker",
+          "model": "claude-opus-5-5",
+          "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+          "input_sha256": "b5d31ead69f26d1a2cd1862dda71927ee6b4a6a7e1583161fb3538d8a6f289b7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "problems": [],
+              "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/moure_fu_2024_SI_p7_try1.jsonl"
+            }
+          ]
+        }
+      }
+    },
+    "u_j": {
+      "symbol": "u_j",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "u_j",
+      "page_wording": "u_j is the phase-change factor that multiplies the terms α_j φ_l^2 φ_m^2 in the phase-field equations",
+      "location": "moure_fu_2024_SI_p6.png, lines 100-101, below Eq. (12) in Section 2.2",
+      "reason": "Page 6 defines u_j as the phase-change factor multiplying α_j φ_l^2 φ_m^2, which is what the table says. The blind read took its wording from page 7, which only describes how typical u_j values were estimated.",
+      "page": 7,
+      "pass_": 2,
+      "pages_shown": [
+        "moure_fu_2024_SI_p6"
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "e6ba262dec1797227cd4036b52720b1e45b849a0b42b65a3d14a0b291afe6520",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/u_j_pass2_try1.jsonl"
+          }
+        ]
+      },
+      "pass1": {
+        "symbol": "u_j",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "u_j",
+        "page_wording": "We next estimate the typical values of u_j and v_n,j (Table S1), based on T and ρ_v distributions",
+        "location": "Table S1, row 'u_j (-)'; text lines 111-114",
+        "reason": "The page gives u_j as a dimensionless quantity with estimated values but does not define it, so the claimed role as a factor multiplying α_j φ_l² φ_m² cannot be checked here.",
+        "page": 7,
+        "pass_": 1,
+        "call": {
+          "agent": "beth-unit-checker",
+          "model": "claude-opus-5-5",
+          "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+          "input_sha256": "b5d31ead69f26d1a2cd1862dda71927ee6b4a6a7e1583161fb3538d8a6f289b7",
+          "attempts": [
+            {
+              "attempt": 1,
+              "problems": [],
+              "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/moure_fu_2024_SI_p7_try1.jsonl"
+            }
+          ]
+        }
+      }
+    },
+    "gamma_ia": {
+      "symbol": "gamma_ia",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "σ_ia",
+      "page_wording": "surface tensions (σ_lm) between phases l and m",
+      "location": "moure_fu_2024_p3.png, left column, text just above Eq. (6) and Eq. (6); value in cited.png Table S3, row σ_ia (0.109 N/m)",
+      "reason": "The main paper defines σ_lm as the surface tension between phases l and m, so σ_ia is the ice–air surface tension, which is what the table says.",
+      "page": 9,
+      "pass_": 2,
+      "pages_shown": [
+        "moure_fu_2024_p3"
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "78acb5a9a570467150296d556a55768ebb67b02dc4e4c29d844e8d4bd46bfd71",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/gamma_ia_pass2_try1.jsonl"
+          }
+        ]
+      },
+      "pass1": {
+        "symbol": "gamma_ia",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "σ_ia",
+        "page_wording": null,
+        "location": "Table S3, row \"σ_ia\" (value 0.109, units N/m), page 9",
+        "reason": "Table S3 lists σ_ia with only a value and unit (N/m), and no description. The unit and its place beside σ_iw and σ_wa fit an ice-air surface tension, but the page never says so.",
+        "page": 9,
+        "pass_": 1,
+        "call": {
+          "agent": "beth-unit-checker",
+          "model": "claude-opus-5-5",
+          "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+          "input_sha256": "14ea2dfde0561940d27ae8fd535769d6b31422cbf2c71773a1377c9d267c96f3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "problems": [],
+              "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/moure_fu_2024_SI_p9_try1.jsonl"
+            }
+          ]
+        }
+      }
+    },
+    "c_p_i": {
+      "symbol": "c_p_i",
+      "meaning_verdict": "cannot_tell",
+      "printed_as_on_page": "c_{p,i}",
+      "page_wording": null,
+      "location": "Table S3, row \"c_{p,i}\" (value 1.96 × 10^3, units J/(Kg °C)), page 9",
+      "reason": "Table S3 lists c_{p,i} with only a value and unit (J/(Kg °C)), and no description. These fit the specific heat of ice, but the page does not define the symbol.",
+      "page": 9,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "14ea2dfde0561940d27ae8fd535769d6b31422cbf2c71773a1377c9d267c96f3",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/moure_fu_2024_SI_p9_try1.jsonl"
+          }
+        ]
+      },
+      "pass2": "no other page where Marker finds the symbol"
+    },
+    "Lambda": {
+      "symbol": "Lambda",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "Λ",
+      "page_wording": "the Λ-term improves the dynamic consistency of the model to mitigate the spurious effect along phase−phase boundaries",
+      "location": "moure_fu_2024_p3.png, left column, Eq. (5) (term Λφ_i²φ_w²φ_a² in triple-well potential F^tri) and the sentence just below it; value 1 N/m in cited.png Table S3, row Λ",
+      "reason": "The main paper defines Λ as the coefficient of the Λφ_i²φ_w²φ_a² term in the triple-well potential (Eq. 5). The table's 'model parameter Λ' is vague but names that same quantity.",
+      "page": 9,
+      "pass_": 2,
+      "pages_shown": [
+        "moure_fu_2024_p3",
+        "moure_fu_2024_p5"
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "5b2b607344660b1e1b89a1e75ac2884462109e3108e062ac2eb48025067e0376",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/Lambda_pass2_try1.jsonl"
+          }
+        ]
+      },
+      "pass1": {
+        "symbol": "Lambda",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "Λ",
+        "page_wording": null,
+        "location": "Table S3, row \"Λ\" (value 1, units N/m), page 9",
+        "reason": "Table S3 lists Λ with value 1 and unit N/m but gives no description, so this page does not define the parameter.",
+        "page": 9,
+        "pass_": 1,
+        "call": {
+          "agent": "beth-unit-checker",
+          "model": "claude-opus-5-5",
+          "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+          "input_sha256": "14ea2dfde0561940d27ae8fd535769d6b31422cbf2c71773a1377c9d267c96f3",
+          "attempts": [
+            {
+              "attempt": 1,
+              "problems": [],
+              "transcript": "runs/units-verification/20261022-141826/calibration_nozoom/transcripts/C0-S4m/moure_fu_2024_SI_p9_try1.jsonl"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
