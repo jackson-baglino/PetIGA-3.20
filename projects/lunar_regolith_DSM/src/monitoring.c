@@ -294,9 +294,9 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     // if (step > 0 && (step % 25) == 0) PetscPrintf(PETSC_COMM_WORLD, "\n");
   }
 
-  /* SSA_evo.dat gets a row at every time step, whatever -outp and -t_out say:
+  /* SSA_evo.dat gets a row at every time step, whatever -outp and -t_interv say:
    * the row is cheap and we want the full record (the restart path also reads
-   * it). -outp / -t_out govern only the sol_*.dat snapshots (OutputMonitor). */
+   * it). -outp / -t_interv govern only the sol_*.dat snapshots (OutputMonitor). */
   PetscInt print = 1;
 
   /* solver_evo.dat: Newton and Krylov iterations spent on the step just taken.

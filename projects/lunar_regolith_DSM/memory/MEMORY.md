@@ -15,4 +15,4 @@
 - comp_eps.py computes d0 with the solver's formula and constants (1.0152e-9 m at −20 °C). Before 2026-10-22 it used γ·V_m/(R·T) = 1.0166e-9 m, so geometry files made earlier carry an eps about 0.14 % larger than comp_eps now gives (kinetic-bound cases).  (2026-10-22 · user)
 - The wall free-energy term recovers the static (Young) contact angle. It is not fully validated: the implementation does not apply something like a free-flow boundary condition at the contact line; to be discussed. Status in `docs/contact_angle/README.md`.  (2026-10-22 · user)
 - `src/assembly.c` and `src/material_properties.c` differ from `enceladus_DSM`; only `src/snes_convergence.c` is still identical.  (2026-10-22 · cmp)
-- `SSA_evo.dat` gets a row every time step by design; `-outp` / `-t_out` control only the `sol_*.dat` snapshots.  (2026-11-01 · user)
+- `SSA_evo.dat` gets a row every time step by design; `-outp` / `-t_interv` control only the `sol_*.dat` snapshots.  (2026-11-01 · user)
