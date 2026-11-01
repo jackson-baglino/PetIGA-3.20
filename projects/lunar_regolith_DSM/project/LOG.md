@@ -2,6 +2,40 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-11-01 — CLAUDE.md review, linting, plugins, plot_fields fix
+
+- Session: 8a61e2cf-a3f4-46e5-9347-3c087f8a51c9
+- Done: CLAUDE.md gained commands, an architecture section and 8 fixes
+  from an /init review (old test/ suite, HPC --out-root, literature-review
+  agents and review mode, edits that need approval, memory format, tracked
+  settings.local.json). CLAUDE_CODE_NEW_INIT=1 in user settings (mirrored
+  in the committed copy). Linters: ruff 0.17.3 (ruff.toml, check only, now
+  zero findings; legacy igakit folder excluded) with a report-only
+  PostToolUse hook (.claude/hooks/ruff_check.sh); clang-tidy 23.1.4 from
+  the pip wheel via scripts/lint_c.sh (zero findings); --compile-flags
+  writes the git-ignored compile_flags.txt for clangd. Plugins installed at
+  user scope: skill-creator, pyright-lsp (pyright 1.1.414 as a uv tool),
+  math-proof; math-olympiad skipped (competition-tuned, auto-triggers on
+  "verify this proof"). Solver lint: dead -outp test for SSA_evo.dat
+  removed (every-step rows kept, as the user wants), strict strtod parsing
+  of grain files, NOLINT on restart-log sscanf, seed cast. Before/after
+  runs (channel_2D_H31um_eps0.86um, dtlad20_..._dt10tau, tags
+  lintC_before/lintC_after): all outputs byte-identical. plot_fields.py,
+  plot_fields_highres.py and scripts/plot_fields.py matched solver_evo.dat
+  as a snapshot since 2026-10-01 (no pf.pvd, post-processing exit 1);
+  pattern now sol_[0-9]*.dat. Pushed to origin and the course repo.
+- Remaining: triage pyright's 145 errors / 118 warnings in active code
+  (pyright from the project root; much is numpy/matplotlib typing noise).
+  Run folders made before today keep the buggy staged plot_fields.py; to
+  get pf.pvd, replace the folder's postprocess/ and rerun
+  run_postprocess.sh. math-proof needs its env block in a dedicated
+  per-problem folder (not global: it turns background tasks off) once
+  model development starts. This log was last updated 2026-10-22; decide
+  whether the B1 contract's Status section replaces it.
+- Bottlenecks: none. Lessons: rm is aliased to rm -i and ls to eza (use
+  `command rm`, `command ls`); run_postprocess.sh always uses the run
+  folder's staged scripts.
+
 ## 2026-10-22 (5) — Units-verification workflow built and run; units.md verified
 
 - Session: cd3a2de5-fd76-4f3c-8357-c1b9d1164930
