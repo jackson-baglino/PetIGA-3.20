@@ -9,6 +9,9 @@ metamorphism in lunar regolith, plus Python pre- and postprocessing. Layout,
 build and run details are in `README.md`; project goals in
 `project/PILLARS.md`; permissions in `PERMISSIONS.md`; memory design in
 `memory/README.md`.
+Path-scoped rules in `.claude/rules/` load when a session touches matching
+files: `workflows.md` (workflows, their scripts and runs), `solver-c.md`
+(`src/`, `include/`), `inputs.md` (inputs, pre- and postprocessing, studies).
 
 ## Who you work for
 @memory/USER.md
@@ -113,20 +116,15 @@ launches many runs. Never run it.
   `postprocess/pplib.py` is the shared loader for figure scripts.
 - **Agentic workflows.** Designs in `workflows/<name>/`; stage scripts in
   `scripts/<name_with_underscores>/` call agents headless with `claude -p` in
-  `venv_workflows`. Literature-review agents have no `.claude/agents/` file:
-  prompts are in `workflows/literature-review/prompts/`, models in
-  `MODELS` in `scripts/literature_review/agent_call.py`, permissions in
-  `.claude/permissions/literature-review/`. Library and run text is readable
-  only in review mode (`claude --settings
-  .claude/permissions/literature-review/sessions/review-mode.json`). After any
-  permission change run `check_permissions.py` (`--write` regenerates the
-  tables in `PERMISSIONS.md`; never edit them by hand).
+  `venv_workflows`. How a run is organized (the line, phases, freeze):
+  `workflows/TEMPLATE.md`. Working rules: `.claude/rules/workflows.md`.
 
 ## Reproducibility
 
 - Pin the model with a full ID, never an alias such as `opus`: in
-  `.claude/settings.json` for sessions, in the frontmatter of `.claude/agents/`
-  files, and in the driver's model map for script-called agents.
+  `.claude/settings.json` for sessions, in the frontmatter of agent files
+  (`.claude/agents/`, `workflows/<name>/agents/`), and in the driver's model
+  map for script-called agents.
 - Agents, skills, workflow designs, prompts and settings live in git. A
   workflow run uses only committed definitions; commit before running.
 - Every workflow run writes `runs/<workflow>/<run_id>/manifest.json` (git
@@ -184,14 +182,6 @@ transparency) and mirrors `~/.claude/settings.json`; keep the two in step.
   `origin`, mirror `main` and `feat/*` to the course repository with
   `scripts/sync_course.sh`. Never push `archive/*` refs there.
 
-## Code style
-
-- C99. Declare loop variables in the `for` statement. No variable-length
-  arrays; use `PetscMalloc`/`PetscFree`.
-- `CHKERRQ(ierr)` immediately after every PETSc/MPI call.
-- Prefer `PetscMin`, `PetscMax`, `PetscSqrtReal`, `PetscTanhReal` over bare C
-  math.
-
 ## The interface parameter eps
 
 `eps` (`-eps`, `user->eps`) is a decay-length scale, not the visible width of
@@ -199,15 +189,3 @@ the diffuse band. The 1D profile is logistic, so the 5–95 % band is
 2·ln 19·eps ≈ 5.9·eps and the 1–99 % band 2·ln 99·eps ≈ 9.2·eps. Always compute
 eps with the `comp-eps` skill (`preprocess/comp_eps.py`). Never rescale it by
 eye. Details: `docs/interface_width_conventions.md`.
-
-## Input files and quarantine folders
-
-Live inputs are `inputs/solver.opts` plus `inputs/geometry/<family>/` and
-`inputs/experiment/<family>/`; older ones are in `inputs/scratch/`. Before writing a new input file,
-search there (`find inputs/scratch -name '*<name>*'`); if it exists, `git mv`
-it back to `inputs/geometry/<family>/` or `inputs/experiment/<family>/`. The
-same holds for `preprocess/scratch/`, `postprocess/scratch/` and
-`studies/scratch/`: everything in them is pending deletion unless pulled back.
-The root `scratch/` folder is git-ignored local storage (the archived practice
-round, a stashed run, and the HPC output fallback when `$SCRATCH` is unset).
-Never use it as a source for current work.
