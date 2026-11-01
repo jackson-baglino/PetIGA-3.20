@@ -10,8 +10,8 @@ compile_flags.txt
 .DS_Store?
 ._*
 
-# Python virtual environments
-venv_*/
+# Python virtual environments (no trailing slash: worktrees link them)
+venv_*
 venv/
 env/
 __pycache__/
