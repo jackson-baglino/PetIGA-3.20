@@ -37,7 +37,10 @@
     "command": "~/.claude/statusline-account.sh"
   },
   "enabledPlugins": {
-    "clangd-lsp@claude-plugins-official": true
+    "clangd-lsp@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "math-proof@claude-plugins-official": true
   },
   "effortLevel": "high",
   "tui": "fullscreen",
