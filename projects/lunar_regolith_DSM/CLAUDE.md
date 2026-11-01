@@ -54,6 +54,8 @@ make            # optimized build -> ./lunar_regolith_dsm   (make debug for -g3 
                 # needs PETSC_DIR, PETSC_ARCH, PETIGA_DIR
 ./scripts/Studio/run_lunar.sh <geometry> <experiment> [tag] [-- extra flags]
 ./scripts/check_ic_types.sh          # every 2D/3D .opts -ic_type is in the solver dispatch
+venv_lunar/bin/ruff check [paths]    # Python lint (ruff.toml); check only, never `ruff format`
+scripts/lint_c.sh [src/file.c ...]   # C lint (clang-tidy via venv_lunar, .clang-tidy)
 bash postprocess/run_postprocess.sh <run_folder>   # regenerate a run's figures
 
 # Python tests (unittest, run from the project root)
