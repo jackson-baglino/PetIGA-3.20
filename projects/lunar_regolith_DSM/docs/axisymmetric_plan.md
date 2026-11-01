@@ -1,6 +1,6 @@
 # Axisymmetric (r–z) Mode — Implementation Plan
 
-> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented. Predates the renames to `sublimation_pf` (2026-07-21) and `lunar_regolith_DSM` (2026-07-27) — read any `projects/permafrost` or `projects/sublimation_pf` path as `projects/lunar_regolith_DSM`.
+> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented.
 
 
 *2026-07-10. Goal: true 3D two-sphere sintering physics at 2D cost, for the
@@ -81,7 +81,7 @@ azimuthal term is Curvature() (explicit kappa from grad/Hessian for d0_GT)
 ## 2. Code touch points (in implementation order)
 
 1. **`include/NASA_types.h`** — add `PetscBool axisym;` to AppCtx.
-2. **`src/permafrost2.c`** — `-axisym` option (default 0 = planar, fully
+2. **`src/lunar_main.c`** — `-axisym` option (default 0 = planar, fully
    backward compatible); print mode in the parameter header; pass through
    context as usual.
 3. **`src/assembly.c`** (`Residual`, `Jacobian`) — at the top of each point

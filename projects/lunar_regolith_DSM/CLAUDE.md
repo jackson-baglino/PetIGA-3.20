@@ -78,8 +78,9 @@ under `studies/*/verification/` (for example
 `studies/contact_angle/verification/verify_wall_bc.sh`). A Jacobian change is
 checked with `-snes_test_jacobian` passed through the run script.
 
-`test/` is the old Permafrost suite: `run_tests.py` calls `mpiexec` directly on
-a binary that no longer exists and launches many runs. Never run it.
+`test/` is the retired test suite from before the rename to this project:
+`run_tests.py` calls `mpiexec` directly on a binary that no longer exists and
+launches many runs. Never run it.
 
 ## Architecture
 

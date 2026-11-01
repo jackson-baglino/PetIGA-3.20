@@ -16,7 +16,7 @@ extend-exclude = [
     "index",
     "runs",
     "studies/*/campaign_*",
-    "test",                # old Permafrost suite; not maintained
+    "test",                # retired pre-rename test suite; not maintained
     "preprocess/igakit_complexgeocodes",  # legacy igakit mesh scripts; not linted
 ]
 

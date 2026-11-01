@@ -1,11 +1,11 @@
 # Bound-Constrained Newton Solve for the Ice Phase Field
 
-> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented. Predates the renames to `sublimation_pf` (2026-07-21) and `lunar_regolith_DSM` (2026-07-27) — read any `projects/permafrost` or `projects/sublimation_pf` path as `projects/lunar_regolith_DSM`.
+> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented.
 
 
 > **Purpose:** Reference document explaining how the ice phase-field DOF is
 > kept within physical bounds during the nonlinear solve.
-> **Code:** `src/permafrost2.c` (bound setup), `src/snes_convergence.c`
+> **Code:** `src/lunar_main.c` (bound setup), `src/snes_convergence.c`
 > (custom per-DOF convergence test), `inputs/solver.opts` (SNES/KSP options).
 > **Last updated:** 2026-06-23
 
@@ -63,7 +63,7 @@ including between control points. No extra pointwise constraint is needed.
 
 ### Where it's set in code
 
-`src/permafrost2.c`, right after the custom SNES convergence test is wired up:
+`src/lunar_main.c`, right after the custom SNES convergence test is wired up:
 
 ```c
 Vec Xl, Xu;
