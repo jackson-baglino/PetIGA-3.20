@@ -84,6 +84,58 @@ Flowchart: `flowchart.html`, rendered from `flowchart.json` by
 `scripts/flowchart/render_flowchart.py`; it still shows revision 9.
 B1 run contract: `B1_CONTRACT.md`. Decisions: §9. Deferred: §13.
 
+## 0. How B1 runs: the line, phases and freeze
+
+Added 2026-11-01 (user decisions of that day; plan in the session of
+2026-11-01). **Planned, not yet built**, except where marked. It follows
+`workflows/TEMPLATE.md` ("The line", §7). The reason: in the development run
+`b1-dev2` the main session ran each stage's driver by hand, so stages were
+skipped (V1, X1) or run out of order (the memo before the frozen calibration),
+and prompts kept changing during the run.
+
+**Who reports to whom.** Scripts manage; agents work.
+- **The user** approves the gates below, the freeze and the memo.
+- **`beth-foreman`** (`.claude/agents/beth-foreman.md`, started with
+  `claude --agent beth-foreman`) runs the line, reports each station's result
+  and the items waiting for the user, and stops at blocking gates. It may run
+  only `run_b1.py`, `lr_status.py`, `lr_backlog.py`, `git status` and
+  `git log`; it never edits a definition and never reads untrusted text.
+- **`run_b1.py`**, the line script, walks the stage graph in `flowchart.json`
+  (each node's `run` block: station, upstream stages, per-item unit, gate,
+  outputs, done test). It refuses a stage whose upstream stages are not done,
+  and records every call in the run's `runs.db`.
+- **Station scripts** (`read_check.py`, `synthesize.py`, `skeptic.py`, and
+  the ones still to build) write each work order from a fixed template,
+  validate the output against its schema, audit the transcript, retry once,
+  and write `report.json` (counts, failures, gate items).
+- **Workers** are the headless agents of §4, defined in
+  `workflows/literature-review/agents/<agent>.md` (Claude Code subagent
+  format; the body is the system prompt and ends with "Your place in the
+  line"). `prompts/` holds only the per-call work orders.
+
+**Gates.**
+- *Blocking* (the line stops; the user records the decision with
+  `run_b1.py approve`, never the foreman): A2 copy decisions; the freeze; the
+  C0 result; V1 disagreements; U3 approval of each prose claim a model option
+  rests on; U4.
+- *Review* (queued in `review_queue.json`; the line goes on with other
+  papers): disputed claims, E3 quote failures, curator refusals.
+
+**Phases.**
+- **Develop** (now). Anything may change. Runs are tagged `dev` and are not B1
+  results; `b1-dev2` is one.
+- **Freeze.** The user approves `/lr-freeze`, which writes
+  `freeze/b1-vN.json` (hashes of the agent files, prompts, schemas, station
+  scripts, the model map and the parser version) and the git tag
+  `lr-b1-freeze-vN`.
+- **Execute.** `run_b1.py` refuses to start if a frozen hash differs; a hook
+  asks before any edit to a frozen file. Ideas go to `BACKLOG.md` and wait.
+- **The one way back** is §5's repair rule: a real error found in U3, X1 or Y3
+  stops the run, the phase returns to develop, and a new freeze is approved.
+
+**Status** is computed by `lr_status.py` from `runs.db` and the output files
+and written into the contract's Status table; it is not written by hand.
+
 ## 1. Purpose
 
 - **Question.** A reusable workflow for literature reviews of any size. Each
