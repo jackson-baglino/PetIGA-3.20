@@ -2,6 +2,48 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-11-01 — Prompt audit of instruction files, hooks, memory and worktrees
+
+- Session: 8272b16e-7e7f-4c96-bb27-dd1f38bb621c
+- Done: /claude-api prompt-audit of every instruction file that loads into
+  sessions here, then of the hooks, the auto-memory index and the
+  literature-review prompts. Fixes (11 commits, a7af16ed..0260e544):
+  -t_out (no such option) -> -t_interv in memory/MEMORY.md and the
+  monitoring.c comment; Proposals/ read only on request (MEMORY.md old line
+  marked superseded; CLAUDE.local.md matches); morty-unit-reader lost the
+  "zoom by reading again" line, units calibration C0_nozoom on run
+  20261022-141826 passes as before (S3 8/8, S4 8/8, S4m 2/2, 0/4 control
+  false alarms); hooks fixed for worktrees (ruff hook says "skipped" when
+  venv_lunar is missing; session log always goes to the main checkout's
+  sessions.tsv, both tested in a real worktree); flag_classifier.md removed
+  (unused); skeptic_omissions.md takes {n_papers} from the claims (75 tests
+  pass); permafrost references replaced where the code moved
+  (src/permafrost2.c -> src/lunar_main.c, CLAUDE.md, ruff.toml); planning
+  docs 16 and 18 copied back into docs/planning/ with a provenance note;
+  scripts/new_worktree.sh (worktree from local HEAD or a named branch,
+  linked venvs and CLAUDE.local.md, per-worktree make; tested create, lint,
+  venv, remove) and .gitignore venv_*/ -> venv_*; effort decision added to
+  memory/MEMORY.md. Not in git: CLAUDE.local.md (account entry removed,
+  artifact spelling), auto-memory index cut from 78 to 41 lines (enceladus
+  carry-overs and practice-round entries dropped from the index, files kept;
+  push rule now "ask first"; seven files reworded off permafrost; backup of
+  the old folder in the session scratchpad).
+- Remaining: (1) CLAUDE.md "Sessions and housekeeping" still says parallel
+  work uses `claude -w <name>`; propose pointing it at
+  scripts/new_worktree.sh (plain `claude -w` branches from origin/main and
+  misses unpushed commits). Needs user approval (CLAUDE.md edit).
+  (2) Push: main is 13 commits ahead of origin; ask the user, then
+  scripts/sync_course.sh. (3) -thin_iface_corr help text in
+  src/lunar_main.c says "Default 0" but the code default is on; offer to fix
+  the string. (4) docs/model_description.md and docs/material_parameters.md
+  describe the retired three-phase model (gamma_iv/im/mv not in src/); mark
+  or archive them. (5) ~/.claude/skills/.trash kept for now (user's call).
+  (6) Lab Report 2 is written tonight; update the deadline line in
+  CLAUDE.local.md once submitted.
+- Bottlenecks: cp and rm are aliased with -i, so they stall in tool calls;
+  use `command cp -f` / `command rm`. Reading runs/literature-review/*/untrusted
+  is denied outside review mode, as designed.
+
 ## 2026-11-01 — CLAUDE.md review, linting, plugins, plot_fields fix
 
 - Session: 8a61e2cf-a3f4-46e5-9347-3c087f8a51c9
