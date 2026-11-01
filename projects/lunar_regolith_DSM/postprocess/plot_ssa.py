@@ -210,7 +210,7 @@ def main(argv=None):
     print(f"  surface: {area[0]:.6g} → {area[-1]:.6g} {unit_label}")
     if fit is not None:
         lo_u = in_time_unit(np.array([fit["t_lo"], fit["t_hi"]]), unit)
-        print(f"  power-law fit  S ~ C t^n   (OLS on log S vs log t)")
+        print("  power-law fit  S ~ C t^n   (OLS on log S vs log t)")
         print(f"    exponent n = {fit['n']:+.4f} ± {fit['stderr']:.4f}"
               f"   (R² = {fit['r2']:.4f})")
         print(f"    window     = {lo_u[0]:.4g} → {lo_u[1]:.4g} {unit}"

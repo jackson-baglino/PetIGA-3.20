@@ -98,7 +98,6 @@ from pplib import (                                    # noqa: E402
     crossings,
     in_time_unit,
     opt_float,
-    read_opts,
     read_vts,
     refine_tanh,
     rho_vs,

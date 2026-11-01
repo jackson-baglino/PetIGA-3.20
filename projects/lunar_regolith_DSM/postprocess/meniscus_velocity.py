@@ -191,7 +191,7 @@ def main():
     print(f"    ice area      {A[0]:.6e} -> {A[-1]:.6e} m^2  ({100*(A[-1]-A[0])/A[0]:+.3f} %)")
     print(f"    contact line  {xwr[0]-xwl[0]:.4e} -> {xwr[-1]-xwl[-1]:.4e} m wide")
     print(f"    mid-plane     {xmr[0]-xml[0]:.4e} -> {xmr[-1]-xml[-1]:.4e} m wide")
-    print(f"\n    second half of the run:")
+    print("\n    second half of the run:")
     print(f"      v_mean  (dA/dt / L)   {v_mean[sel].mean():+.4e} m/s   <-- the growth velocity")
     print(f"      v_wall  (contact line){v_wall[sel].mean():+.4e} m/s")
     print(f"      v_mid   (mid-plane)   {v_mid[sel].mean():+.4e} m/s")

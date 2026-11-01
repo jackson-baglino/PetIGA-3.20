@@ -11,7 +11,6 @@ images and Marker reading (S0, S1 and S1b must have passed). Scores (WORKFLOW.md
 Writes <run>/calibration.json and the C0 entry of the manifest.
 """
 import argparse
-import json
 import os
 import sys
 from pathlib import Path

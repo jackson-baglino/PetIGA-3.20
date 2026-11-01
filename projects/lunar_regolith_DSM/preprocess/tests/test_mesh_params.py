@@ -1,6 +1,5 @@
 """Tests for the mesh_params tool. Run from the project root:  python -m unittest discover -s preprocess/tests -t . -v"""
 import json
-import math
 import unittest
 from pathlib import Path
 

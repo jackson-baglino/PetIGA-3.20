@@ -1,7 +1,6 @@
 """Tests for the stage scripts (S0, S1, S1b helpers, S3) on synthetic inputs. Run from the project root:
     venv_workflows/bin/python -m unittest discover -s scripts/units_verification/tests -v
 """
-import json
 import shutil
 import subprocess
 import sys

@@ -329,7 +329,7 @@ def main():
     src = 0 if report[0]["kappa"] > report[1]["kappa"] else 1
     drive = D0 * abs(report[0]["kappa"] - report[1]["kappa"])
     print(f"\n  DRIVE |d0*dkappa| = {drive:.3e}")
-    print(f"  Convex menisci -> HIGHER curvature = HIGHER equilibrium vapor density,")
+    print("  Convex menisci -> HIGHER curvature = HIGHER equilibrium vapor density,")
     print(f"  so throat {src} (gap {report[src]['gap']:.1e}, "
           f"{'NARROW' if report[src]['gap'] < report[1-src]['gap'] else 'WIDE'}) is the "
           f"SOURCE and throat {1-src} is the SINK.")

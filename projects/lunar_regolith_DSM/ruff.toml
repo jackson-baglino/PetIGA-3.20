@@ -17,6 +17,7 @@ extend-exclude = [
     "runs",
     "studies/*/campaign_*",
     "test",                # old Permafrost suite; not maintained
+    "preprocess/igakit_complexgeocodes",  # legacy igakit mesh scripts; not linted
 ]
 
 [lint]
@@ -33,7 +34,3 @@ ignore = [
     "E402",  # import after sys.path setup (preprocess/comp_eps.py and others)
     "B905",  # zip() without strict=
 ]
-
-[lint.per-file-ignores]
-# Older igakit mesh scripts written with `from igakit.cad import *`.
-"preprocess/igakit_complexgeocodes/*" = ["F403", "F405"]

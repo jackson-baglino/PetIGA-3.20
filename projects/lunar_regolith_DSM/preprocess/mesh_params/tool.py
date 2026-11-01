@@ -7,7 +7,7 @@ It is pure and deterministic (no files, no printing); writing input files is the
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 from typing import Optional
 
 from .constants import CONSTANTS as C, VERSION
