@@ -67,11 +67,17 @@ venv_workflows/bin/python -m unittest discover -s scripts/literature_review/test
 Never call the binary or `mpiexec` directly; the run script stages a
 reproducible copy of every run. Two or more runs are chained with `&&`; two or
 more HPC jobs go through `scripts/HPC/submit_batch.sh`.
+Runs that must survive use `--out-root <group dir>` (`$SCRATCH` is purged).
+No script fetches results; after a manual download, re-plot with
+`bash <batch>/run_batch_postprocess.sh` or `bash <run>/postprocess/run_postprocess.sh`.
 
 There is no C unit-test suite. Solver checks are committed driver scripts
 under `studies/*/verification/` (for example
 `studies/contact_angle/verification/verify_wall_bc.sh`). A Jacobian change is
 checked with `-snes_test_jacobian` passed through the run script.
+
+`test/` is the old Permafrost suite: `run_tests.py` calls `mpiexec` directly on
+a binary that no longer exists and launches many runs. Never run it.
 
 ## Architecture
 
@@ -102,14 +108,22 @@ checked with `-snes_test_jacobian` passed through the run script.
   `~/SimulationResults/lunar_regolith_DSM/scratch/<geom>/<ts>_<exp>[_tag]/`, so
   a downloaded run can be re-plotted with no source tree.
   `postprocess/pplib.py` is the shared loader for figure scripts.
-- **Agentic workflows.** Designs in `workflows/<name>/` (`WORKFLOW.md`,
-  contract, flowchart); their stage scripts in `scripts/<name_with_underscores>/`
-  call agents headless with `claude -p` and run in `venv_workflows`.
+- **Agentic workflows.** Designs in `workflows/<name>/`; stage scripts in
+  `scripts/<name_with_underscores>/` call agents headless with `claude -p` in
+  `venv_workflows`. Literature-review agents have no `.claude/agents/` file:
+  prompts are in `workflows/literature-review/prompts/`, models in
+  `MODELS` in `scripts/literature_review/agent_call.py`, permissions in
+  `.claude/permissions/literature-review/`. Library and run text is readable
+  only in review mode (`claude --settings
+  .claude/permissions/literature-review/sessions/review-mode.json`). After any
+  permission change run `check_permissions.py` (`--write` regenerates the
+  tables in `PERMISSIONS.md`; never edit them by hand).
 
 ## Reproducibility
 
-- Pin the model: `.claude/settings.json` for sessions, a full model ID in every
-  agent's frontmatter. Never use an alias such as `opus` in an agent file.
+- Pin the model with a full ID, never an alias such as `opus`: in
+  `.claude/settings.json` for sessions, in the frontmatter of `.claude/agents/`
+  files, and in the driver's model map for script-called agents.
 - Agents, skills, workflow designs, prompts and settings live in git. A
   workflow run uses only committed definitions; commit before running.
 - Every workflow run writes `runs/<workflow>/<run_id>/manifest.json` (git
@@ -119,7 +133,7 @@ checked with `-snes_test_jacobian` passed through the run script.
   their inputs as arguments or files and print what they used.
 - Python dependencies are pinned in `requirements.txt` (pre/post-processing,
   `venv_lunar`; do not bump numpy or scipy, the HPC caps Python at 3.11) and
-  in `requirements-workflows.txt` / `.lock` (workflow tools such as Marker,
+  in `requirements-workflows.txt` and `requirements-workflows.lock` (workflow tools,
   `venv_workflows`). Never mix the two environments.
 
 ## Agent names
@@ -151,6 +165,11 @@ agent's model means a new name, so old run logs still say which model ran.
 
 Commit after every meaningful change without asking (code, fixes, scripts,
 docs). A one-parameter opts tweak usually does not need its own commit.
+Exceptions: ask before editing `CLAUDE.md`, `PERMISSIONS.md`, `.claude/` or
+`memory/USER.md`. Lines in `memory/MEMORY.md` and `USER.md` carry a date and
+source; propose them, the user accepts, and superseded lines are marked, not
+deleted. `.claude/settings.local.json` is tracked on purpose (course
+transparency) and mirrors `~/.claude/settings.json`; keep the two in step.
 
 - Check `git status` and `git diff` first; stage only files from this task.
 - One logical change per commit. Message: imperative summary of 72 characters
@@ -180,11 +199,12 @@ eye. Details: `docs/interface_width_conventions.md`.
 
 ## Input files and quarantine folders
 
-`inputs/` holds `solver.opts` and `README.md`. Geometry and experiment files
-from earlier work are in `inputs/scratch/`. Before writing a new input file,
+Live inputs are `inputs/solver.opts` plus `inputs/geometry/<family>/` and
+`inputs/experiment/<family>/`; older ones are in `inputs/scratch/`. Before writing a new input file,
 search there (`find inputs/scratch -name '*<name>*'`); if it exists, `git mv`
 it back to `inputs/geometry/<family>/` or `inputs/experiment/<family>/`. The
 same holds for `preprocess/scratch/`, `postprocess/scratch/` and
 `studies/scratch/`: everything in them is pending deletion unless pulled back.
-The root `scratch/` folder is git-ignored local storage holding the archived
-practice round; treat it as gone.
+The root `scratch/` folder is git-ignored local storage (the archived practice
+round, a stashed run, and the HPC output fallback when `$SCRATCH` is unset).
+Never use it as a source for current work.
