@@ -6,7 +6,8 @@
 ## Project
 
 - The agentic workflow was restarted from a clean slate; the first attempt is archived under `scratch/2026-10-21_practice_round/` and the `archive/2026-10-21/*` tags.  (2026-10-21 · user)
-- Research-folder use is limited to `Literature/` and `Proposals/` in iCloud; everything else is saved in this project or the course folder.  (2026-10-22 · user)
+- Research-folder use is limited to `Literature/` and `Proposals/` in iCloud; everything else is saved in this project or the course folder.  (2026-10-22 · superseded 2026-11-01 · user)
+- Sessions read only `Literature/` in the iCloud research folder; `Proposals/` only when the user directly asks. Everything else is saved in this project or the course folder.  (2026-11-01 · user)
 - `memory/semantic/units.md` verified 2026-10-22 by the units-verification workflow (run 20261022-155335): 54 literature rows checked against page images; the value column is the printed value.  (2026-10-22 · workflow; user-approved)
 
 ## Solver
