@@ -2,6 +2,8 @@
 obj/
 *.o
 lunar_regolith_dsm
+# clangd flags with this machine's paths; regenerate: scripts/lint_c.sh --compile-flags
+compile_flags.txt
 
 # macOS metadata
 .DS_Store

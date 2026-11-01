@@ -3,6 +3,9 @@
 #
 #   scripts/lint_c.sh                 # every src/*.c
 #   scripts/lint_c.sh src/assembly.c  # chosen files
+#   scripts/lint_c.sh --compile-flags # write compile_flags.txt for clangd (clangd-lsp
+#                                     # plugin) from the same flags; git-ignored,
+#                                     # since the paths are this machine's
 #
 # Report only: nothing is changed. clang-tidy comes from the pip wheel in
 # venv_lunar (requirements.txt), so Homebrew and the compilers are untouched.
@@ -14,9 +17,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 : "${PETSC_DIR:?set PETSC_DIR}" "${PETSC_ARCH:?set PETSC_ARCH}" "${PETIGA_DIR:?set PETIGA_DIR}"
 
-TIDY="$ROOT/venv_lunar/bin/clang-tidy"
-[[ -x "$TIDY" ]] || { echo "clang-tidy missing: venv_lunar/bin/pip install -r requirements.txt" >&2; exit 1; }
-
 FLAGS=(
     -I"$PETSC_DIR/include" -I"$PETSC_DIR/include/petsc/private"
     -I"$PETSC_DIR/$PETSC_ARCH/include"
@@ -24,6 +24,15 @@ FLAGS=(
     -I"$ROOT/include"
 )
 [[ "$(uname)" == Darwin ]] && FLAGS+=(-isysroot "$(xcrun --show-sdk-path)")
+
+if [[ "${1:-}" == --compile-flags ]]; then
+    printf '%s\n' "${FLAGS[@]}" > "$ROOT/compile_flags.txt"
+    echo "wrote $ROOT/compile_flags.txt (${#FLAGS[@]} lines)"
+    exit 0
+fi
+
+TIDY="$ROOT/venv_lunar/bin/clang-tidy"
+[[ -x "$TIDY" ]] || { echo "clang-tidy missing: venv_lunar/bin/pip install -r requirements.txt" >&2; exit 1; }
 
 if [[ $# -gt 0 ]]; then FILES=("$@"); else FILES=(src/*.c); fi
 echo "clang-tidy $("$TIDY" --version | sed -n 's/.*LLVM version //p'), config $ROOT/.clang-tidy"
