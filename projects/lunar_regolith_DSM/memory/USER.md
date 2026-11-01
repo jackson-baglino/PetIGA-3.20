@@ -10,3 +10,4 @@
 - The user launches all simulations and HPC jobs; Claude prepares the command.  (2026-10-21 · superseded 2026-10-22 · user)
 - Claude may launch at most one simulation without specific instructions; anything more, the user launches or explicitly asks for. Expect this to loosen further.  (2026-10-22 · active · user)
 - When the user says they are closing or clearing the session, run the `wrap-up` skill first.  (2026-10-22 · active · user)
+- Weigh a strong, capable workflow above a strict reading of the syllabus. Keep making work reproducible; but where reproducibility and a better or updated model or tool part ways, proceed with the updated one and record its version.  (2026-11-01 · active · user)
