@@ -50,3 +50,7 @@ pyvista==0.48.4
 # run those with pvpython, not this venv. `paraview` is therefore deliberately
 # not listed. The `vtk` present here comes in as a pyvista dependency and is
 # not a substitute for the ParaView build.
+
+# --- linting -----------------------------------------------------------------
+# Static checker only (no imports, no reformatting); config in ruff.toml.
+ruff==0.17.3

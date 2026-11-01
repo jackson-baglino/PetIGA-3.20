@@ -31,3 +31,5 @@ marker-pdf==1.10.2          # PDF page -> Markdown with LaTeX math (local OCR)
 surya-ocr==0.17.1           # Marker's OCR and layout models
 torch==2.14.1               # Marker's runtime
 markdown2==2.5.5            # scripts/transcripts/short_transcript.py (Markdown replies -> HTML)
+
+ruff==0.17.3                # linter for scripts/ (ruff.toml); static, imports nothing
