@@ -76,7 +76,9 @@ static PetscBool RestartStateFromLog(const char *sol_path, PetscReal *t_out,
     dir[0] = '.'; dir[1] = '\0';
     base = sol_path;
   }
-  if (sscanf(base, "sol_%d.dat", &want) != 1) return PETSC_FALSE;
+  /* The file name and SSA_evo.dat below are written by this solver, so
+   * sscanf with a field count is enough; strtol-style checks add nothing. */
+  if (sscanf(base, "sol_%d.dat", &want) != 1) return PETSC_FALSE;  // NOLINT(bugprone-unchecked-string-to-number-conversion)
 
   if (PetscSNPrintf(logpath, sizeof(logpath), "%s/SSA_evo.dat", dir)) return PETSC_FALSE;
   fp = fopen(logpath, "r");
@@ -85,7 +87,7 @@ static PetscBool RestartStateFromLog(const char *sol_path, PetscReal *t_out,
   while (fgets(line, sizeof(line), fp)) {
     double ssa, ice, t, dt, air, rhov, mass;
     int    step;
-    if (sscanf(line, "%lf %lf %lf %d %lf %lf %lf %lf",
+    if (sscanf(line, "%lf %lf %lf %d %lf %lf %lf %lf",  // NOLINT(bugprone-unchecked-string-to-number-conversion)
                &ssa, &ice, &t, &step, &dt, &air, &rhov, &mass) != 8) continue;
     if (step == want) {
       *t_out = (PetscReal)t;
@@ -1894,7 +1896,7 @@ int main(int argc, char *argv[]) {
         for (PetscInt k = 0; k < 5; k++) {
             PetscReal nd_f, nj_f, nd_b, nj_b;
 
-            ierr = PetscRandomSetSeed(rnd, (unsigned long)(12345 + k)); CHKERRQ(ierr);
+            ierr = PetscRandomSetSeed(rnd, 12345UL + (unsigned long)k); CHKERRQ(ierr);
             ierr = PetscRandomSeed(rnd); CHKERRQ(ierr);
             ierr = VecSetRandom(v, rnd); CHKERRQ(ierr);
 

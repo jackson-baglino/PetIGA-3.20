@@ -1,5 +1,7 @@
 #include "initial_conditions.h"
 #include "material_properties.h"
+#include <errno.h>
+#include <stdlib.h>
 
 
 /* =========================================================================
@@ -928,6 +930,33 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
  * 6. PACKING LOADER
  * =========================================================================*/
 
+/* Read up to `max` whitespace-separated numbers from one grain-file row.
+ * Unlike sscanf("%lf"), a field must be a whole finite number: "3e-6x",
+ * "nan", "inf" and out-of-range values are errors, not silently accepted.
+ * Reading stops at the end of the line or at a '#' comment, and after `max`
+ * fields (as the old sscanf did). Returns the number of fields read, or -1
+ * with *bad set to the 1-based field that failed. */
+static PetscInt ParseGrainRow(const char *s, PetscReal v[], PetscInt max, PetscInt *bad)
+{
+    PetscInt n = 0;
+    while (n < max) {
+        while (*s == ' ' || *s == '\t') s++;
+        if (*s == '\0' || *s == '\n' || *s == '\r' || *s == '#') break;
+        char *end = NULL;
+        errno = 0;
+        const double x = strtod(s, &end);
+        const char   c = *end;
+        if (end == s || errno == ERANGE || PetscIsInfOrNanReal((PetscReal)x) ||
+            !(c == '\0' || c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '#')) {
+            *bad = n + 1;
+            return -1;
+        }
+        v[n++] = (PetscReal)x;
+        s = end;
+    }
+    return n;
+}
+
 
 /* =========================================================================
  * ReadGrainsFromFile
@@ -984,8 +1013,14 @@ PetscErrorCode ReadGrainsFromFile(AppCtx *user)
             if (*s == '\0' || *s == '\n' || *s == '\r' || *s == '#') continue;
 
             PetscReal v[4];
-            PetscInt  nf = (PetscInt)sscanf(s, "%lf %lf %lf %lf",
-                                            &v[0], &v[1], &v[2], &v[3]);
+            PetscInt  bad = 0;
+            PetscInt  nf  = ParseGrainRow(s, v, 4, &bad);
+            if (nf < 0) {
+                fclose(fp);
+                SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_UNEXPECTED,
+                        "%s:%d: field %d is not a valid finite number",
+                        user->grains_file, (int)lineno, (int)bad);
+            }
 
             /* A leading 2-token line is the "Lx Ly" domain header. */
             if (nf == 2) {
