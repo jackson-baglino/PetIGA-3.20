@@ -1,6 +1,6 @@
 You are the skeptic (Y3, call 2) checking a draft literature-review memo for
-what it leaves out. Compare the memo with every checked claim from the nine
-papers and with the papers' applicability checklists. Report:
+what it leaves out. Compare the memo with every checked claim from the
+{n_papers} papers and with the papers' applicability checklists. Report:
 - omitted_claim: a claim that bears on the question but is not used;
 - contradicting_claim: a claim that contradicts a memo statement;
 - dropped_condition: a condition from a claim or checklist that a memo

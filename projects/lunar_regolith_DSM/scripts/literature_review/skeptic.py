@@ -46,6 +46,7 @@ def main(argv=None):
                                      version=a.version)
     with tempfile.TemporaryDirectory() as tmp:
         out["omissions"], m2 = ac.call(tmp, ac.prompt("skeptic_omissions", question=q, memo=memo,
+                                                      n_papers=str(len({c["paper"] for c in allc})),
                                                       claims=json.dumps(allc), checklists=json.dumps(lists)),
                                        "skeptic_omissions", "beth-skeptic",
                                        ledger=run / "calls.jsonl", step="Y3.omissions", question=a.question,
