@@ -252,9 +252,9 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
 
     nrb = PetIGA().read(iga_path)
 
-    sol_files = sorted(glob.glob(os.path.join(run_dir, "sol*.dat")))
+    sol_files = sorted(glob.glob(os.path.join(run_dir, "sol_[0-9]*.dat")))  # not solver_evo.dat
     if not sol_files:
-        print(f"No sol*.dat files found in '{run_dir}'")
+        print(f"No sol_*.dat files found in '{run_dir}'")
         return
 
     # Build step → time mapping from outp.txt.

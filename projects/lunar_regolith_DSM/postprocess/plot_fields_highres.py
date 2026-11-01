@@ -167,16 +167,16 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
           f"({n_per_elem} per element, vs {nrb.points.shape[0]} x "
           f"{nrb.points.shape[1]} control points)")
 
-    sol_files = sorted(glob.glob(os.path.join(run_dir, "sol*.dat")))
+    sol_files = sorted(glob.glob(os.path.join(run_dir, "sol_[0-9]*.dat")))  # not solver_evo.dat
     if not sol_files:
-        print(f"No sol*.dat files found in '{run_dir}'")
+        print(f"No sol_*.dat files found in '{run_dir}'")
         return
     if steps is not None:
         steps = set(steps)
         sol_files = [f for f in sol_files
                      if int(os.path.splitext(os.path.basename(f))[0].split("_")[1]) in steps]
         if not sol_files:
-            print(f"No sol*.dat files match --steps {sorted(steps)}")
+            print(f"No sol_*.dat files match --steps {sorted(steps)}")
             return
 
     time_map = _load_time_map(os.path.join(run_dir, "outp.txt"))

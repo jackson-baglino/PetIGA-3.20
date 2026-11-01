@@ -10,7 +10,7 @@ AirPhase = 1 - IcePhase - Sediment is computed and embedded automatically.
 Usage:
     python makevtk.py [--sol-pattern SOL_PATTERN] [--vtk-dir VTK_DIR] [--force]
 
-    --sol-pattern : glob pattern for solution files  (default: sol*.dat)
+    --sol-pattern : glob pattern for solution files  (default: sol_[0-9]*.dat)
     --vtk-dir     : output directory                 (default: vtkOut)
     --force       : overwrite existing VTK files     (default: skip)
 """
@@ -130,8 +130,8 @@ def parse_args():
         description="Convert PetIGA .dat files to VTK, embedding AirPhase."
     )
     parser.add_argument(
-        "--sol-pattern", default="sol*.dat",
-        help="Glob pattern for time-series solution files (default: sol*.dat)"
+        "--sol-pattern", default="sol_[0-9]*.dat",
+        help="Glob pattern for time-series solution files (default: sol_[0-9]*.dat; not solver_evo.dat)"
     )
     parser.add_argument(
         "--vtk-dir", default="vtkOut",
