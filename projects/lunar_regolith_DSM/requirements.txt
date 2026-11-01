@@ -52,5 +52,6 @@ pyvista==0.48.4
 # not a substitute for the ParaView build.
 
 # --- linting -----------------------------------------------------------------
-# Static checker only (no imports, no reformatting); config in ruff.toml.
+# Static checkers only; nothing is reformatted. Configs: ruff.toml, .clang-tidy.
 ruff==0.17.3
+clang-tidy==23.1.4     # C static checks via scripts/lint_c.sh (.clang-tidy); avoids Homebrew llvm
