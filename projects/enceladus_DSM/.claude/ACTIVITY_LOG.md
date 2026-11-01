@@ -1,3 +1,10 @@
+## 2026-11-01 — /init: commands and architecture in CLAUDE.md
+
+- Added the standard header, a Commands section (make, check_ic_types.sh, run script, postprocess, venv, verification drivers) and an Architecture section (opts layering, solver flow, AppCtx, in-line k_eff, sibling project, run folder staging, HPC) to CLAUDE.md.
+- Corrected the branch note (single main branch) and flagged that the lunar shared files are no longer byte-identical.
+
+---
+
 ## 2026-10-27 — Wrap-up: manuscript review design paused
 
 - Session: 8ded93c7-dad8-457a-b0fd-18014ad28e91

@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Claude Code Instructions — enceladus_DSM
 
 ## Git Workflow
@@ -44,9 +48,67 @@ Never force-push to `main`. Feature branches are fine.
 
 ## Project context
 
-- Language: C (PETSc / PetIGA framework), Python (post-processing)
+- Language: C (PETSc 3.20 / PetIGA framework), Python (pre/post-processing)
 - Build system: Make (via PetIGA)
-- Main branch: `main`; active development on feature branches
+- Main branch: `main` (single branch; older work lives under `archive/*` tags)
+- Phase-field model of sublimation-driven ice metamorphism (dry snow on
+  Enceladus); `README.md` has the physics summary. Parts of its layout section
+  are stale (e.g. `studies/snow_thermal/` is now `studies/keff_*`).
+
+## Commands
+
+```bash
+make                         # optimized build -> ./enceladus_dsm (needs PETSC_DIR, PETSC_ARCH, PETIGA_DIR)
+make debug                   # -g3 -O0; same warnings (-Wall -Wextra -Wshadow)
+./scripts/check_ic_types.sh  # every 2D/3D .opts -ic_type is in the solver dispatch; -geom_file opts carry "# DOF_GRID:"
+./scripts/Studio/run_enceladus.sh <geom> <exp> [tag] [-- -flag val ...]   # local run (see rules below)
+bash postprocess/run_postprocess.sh <run_folder>                          # regenerate a run's figures
+source venv_enceladus/bin/activate   # Python env for preprocess/ and postprocess/ (requirements.txt)
+```
+
+There is no unit-test suite. Correctness gates are the committed driver
+scripts under `studies/*/verification/` (e.g.
+`studies/restart/verification/verify_restart.sh`,
+`studies/keff_sharp_limit/verification/verify_keff_sharp_limit.sh`), each
+with a README. A Jacobian change must be checked with `-snes_test_jacobian`
+passed through the run script.
+
+## Architecture
+
+- **Options layering.** Every run is `inputs/solver.opts` (numerics/model
+  defaults) + a geometry `.opts` (mesh, domain, `-ic_type`, `-eps`,
+  `-delt_t`) + an experiment `.opts` (`-t_final`, `-temp`, `-humidity`,
+  `-grad_temp0`, output cadence), later files overriding earlier ones, then
+  any flags after `--`. Scripts take bare names; `scripts/lib/opts.sh`
+  (`resolve_opts`) finds them in family subdirectories and refuses ambiguous
+  names. `scripts/lib/alloc.sh` is the only place rank-sizing constants live.
+- **Solver flow (`src/enceladus_main.c`).** Reads options, builds the IGA
+  (or loads `-geom_file`), dispatches the IC by `-ic_type` (implementations in
+  `initial_conditions.c`), and integrates with `TSALPHA`. Residual and
+  analytic Jacobian are in `assembly.c`; constitutive laws in
+  `material_properties.c`; the per-DOF SNES convergence test in
+  `snes_convergence.c`. Monitors (`monitoring.c`) handle the interface-CFL
+  adaptive timestep, the diagnostics table, field output, and k_eff
+  sampling; a pre-step hook does phase-field bounds rollback. Restart in
+  place resumes from a snapshot (`scripts/HPC/resume_batch.sh`).
+- **AppCtx** (`include/enceladus_types.h`) carries all parameters and state;
+  new options are parsed in `enceladus_main.c` and stored there.
+- **In-line k_eff** (`-keff 1`, `keff*.c`, `keff_` options prefix): solves
+  the periodic cell problem on the current phi and appends to
+  `k_eff.csv`; `-keff_replay <run_dir>` recomputes it for a finished run.
+  Hard-errors on non-periodic meshes, `-geom_file`, `-axisym`, `dim < 2`.
+- **Sibling project.** `../lunar_regolith_DSM` was split from the same
+  codebase. `assembly.c`, `material_properties.c` and `snes_convergence.c`
+  started identical but have since diverged (lunar has the three-phase
+  solver). When fixing a bug in shared physics, check whether the sibling
+  needs the same fix and ask before changing it.
+- **Run folder contents.** The run script stages the three opts files,
+  `src/` and the postprocess tree into the run folder, so a downloaded run
+  can be re-plotted with `run_postprocess.sh` and no source tree.
+  `postprocess/pplib.py` is the shared loading library for figure scripts.
+- **HPC.** SLURM scripts in `scripts/HPC/`; two or more jobs go through
+  `submit_batch.sh` (not chained single submits). Results are pulled back
+  with `fetch_runs.sh` / `fetch_stage.sh`.
 
 ## Activity log
 
