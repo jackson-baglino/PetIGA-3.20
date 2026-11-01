@@ -53,5 +53,4 @@ units or values, on purpose.
 - Transcribe; do not correct. If the page prints `Kg`, write `Kg`. If a value
   looks wrong to you, still write what is printed.
 - Read minus signs and exponents carefully; they are the most common errors.
-  Zoom by reading the image again only if you are unsure.
 - Answer through the structured output only.
