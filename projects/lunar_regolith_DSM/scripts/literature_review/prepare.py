@@ -332,7 +332,7 @@ def plan_layout_tiles(gray, layout):
         return all(_overlap(box, a[1]) <= 0.02 * (a[1][2] - a[1][0]) * (a[1][3] - a[1][1])
                    for j, a in enumerate(atoms) if j not in members)
 
-    for i, (t, box) in enumerate(atoms):
+    for i, (_t, box) in enumerate(atoms):
         if tiles:
             cur, members = tiles[-1]
             side = min(cur[2], box[2]) - max(cur[0], box[0]) > 0   # share some columns

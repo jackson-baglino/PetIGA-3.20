@@ -192,7 +192,6 @@ def compute_masses(run_dir: str):
     # nrb.points has shape (*shape, sdim) where sdim >= dim
     ctrl = nrb.points[..., :dim]               # physical coordinates
     shape = nrb.points.shape[:-1]              # (Nx,) or (Nx, Ny) or (Nx, Ny, Nz)
-    N_total = int(np.prod(shape))
     #
     # The control net is NOT a uniform Cartesian grid, so a single scalar
     # dV = prod(bounding-box extents)/N_total is wrong on two counts: open
@@ -216,7 +215,6 @@ def compute_masses(run_dir: str):
             J[..., d, k] = gd[k]
 
     cellV = np.abs(np.linalg.det(J)).reshape(-1)   # per-node volume [m^dim]
-    V_domain = float(cellV.sum())
 
     # ── Time axis: match each sol_NNNNN.dat to its SSA_evo.dat row by step ──
     if ssa is not None:

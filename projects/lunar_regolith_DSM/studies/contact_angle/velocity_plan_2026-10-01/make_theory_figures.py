@@ -288,7 +288,7 @@ def fig_pore_channel():
     for k, xc in enumerate(sorted(lenses)):
         xa, xb = xc - half[k], xc + half[k]
         t = np.linspace(0, 1, 40)
-        sag = lambda xm: 0.16 * width(xm) * 4 * t * (1 - t)      # concave (wetting) menisci
+        sag = lambda xm: 0.16 * width(xm) * 4 * t * (1 - t)  # concave (wetting) menisci  # noqa: B023 (used in this pass only)
         left = np.c_[xa + sag(xa), bot(xa) + t * width(xa)]
         xs = np.linspace(xa, xb, 40)
         right = np.c_[xb - sag(xb), bot(xb) + t * width(xb)][::-1]
@@ -324,7 +324,7 @@ def fig_pore_channel():
             ax.plot(xs, surf, color=BLUE, lw=1.8)
         return out
 
-    up = pockets(top, +1, 3, (60, 50, 45))
+    pockets(top, +1, 3, (60, 50, 45))     # draws; only the lower positions are reused
     dn = pockets(bot, -1, 3, (60, 45, 50))
 
     ax.plot(x, top(x), color=INK, lw=2)
@@ -447,7 +447,7 @@ def fig_wedge():
     ax.plot(np.degrees(th), v_channel(th, 0.0) * NM_DAY, color=GREY, lw=1.6, ls=":",
             label="channel, H = 125 µm")
     ax.legend(loc="upper right", fontsize=14)
-    for x0, lab in ((90 + np.degrees(ALPHA), r"$90°+\alpha$"),
+    for x0, _lab in ((90 + np.degrees(ALPHA), r"$90°+\alpha$"),
                     (90 - np.degrees(ALPHA), r"$90°-\alpha$")):
         ax.plot([x0], [0], "o", color=INK, ms=7, zorder=5)
     ax.annotate(r"$90°-\alpha$", (90 - np.degrees(ALPHA), 0), (38, -75), fontsize=14,

@@ -128,7 +128,7 @@ def split(plants, heldout_size, seed):
         key = (p["paper"], p["from_statement"]) if p.get("from_statement") is not None else p["id"]
         groups[key].append(p)
     rest = collections.defaultdict(list)
-    for key, g in sorted(groups.items(), key=lambda kv: str(kv[0])):
+    for _key, g in sorted(groups.items(), key=lambda kv: str(kv[0])):
         pages = {(p["paper"], main_page(p.get("correct_page", p.get("planted_page")))) for p in g}
         pages |= {(p["paper"], main_page(p.get("planted_page"))) for p in g}
         if pages & user_pages:

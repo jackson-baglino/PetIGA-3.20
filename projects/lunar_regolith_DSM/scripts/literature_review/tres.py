@@ -243,7 +243,7 @@ def main(argv=None):
     plist = pages(run)
     if not a.score_only:
         for cond in a.conditions:
-            for paper, p, pdf, items in plist:
+            for paper, p, pdf, _items in plist:
                 img = page_image(run, paper, p, pdf)
                 for r in range(1, a.repeats + 1):
                     out = reads / f"{cond}__{paper}__p{p:03d}__r{r}.json"
@@ -271,7 +271,7 @@ def main(argv=None):
             if r_["result"] != "exact":
                 s["errors"].append({"page": f"{paper} p{p} {rep}", "label": r_["label"],
                                     "result": r_["result"], "diff": r_.get("diff")})
-    for cond, s in summary.items():
+    for _cond, s in summary.items():
         s["pass"] = s["exact"] == s["items"]
     (run / "summary_tres.json").write_text(json.dumps(summary, indent=1))
     for cond, s in summary.items():

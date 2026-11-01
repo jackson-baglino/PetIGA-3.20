@@ -64,7 +64,7 @@ def main(argv=None):
             if src not in sources or not pg.isdigit() or not 1 <= int(pg) <= sources[src]["pages"]:
                 raise uvlib.StageError(f"--add {item}: unknown source or page out of range")
             want.add((src, int(pg)))
-        for src, v in sources.items():
+        for _src, v in sources.items():
             if uvlib.sha256(uvlib.abspath(v["path"])) != v["sha256"]:
                 raise uvlib.StageError(f"{v['path']} changed since S0 (sha256 differs)")
         pages = dict(old.get("pages", {}))

@@ -368,7 +368,7 @@ def place_labels(spec, svg, lane_titles):
         col = T["edge-" + e.get("kind", "flow")]
         tag = (f'<text class="elabel" x="{best[0]:.1f}" y="{best[3] - 0.22 * LABEL_FS:.1f}" '
                f'font-size="{LABEL_FS:g}" font-weight="600" text-anchor="start" fill="{col}">{esc(txt)}</text>')
-        svg = re.sub(rf'(<g id="{gid}" class="edge">.*?)(</g>)', lambda m: m.group(1) + tag + "\n" + m.group(2),
+        svg = re.sub(rf'(<g id="{gid}" class="edge">.*?)(</g>)', lambda m: m.group(1) + tag + "\n" + m.group(2),  # noqa: B023 (called at once)
                      svg, count=1, flags=re.S)
     return svg
 
@@ -421,8 +421,8 @@ def lint(svg, spec, lane_titles):
         for tb in lane_titles:
             if _hit(_pad(bb, 2), tb):
                 issues.append({"type": "label_over_lane_title", "edge": e, "label": txt})
-    for i, (e, txt, bb) in enumerate(labels):
-        for (e2, txt2, bb2) in labels[i + 1:]:
+    for i, (_e, txt, bb) in enumerate(labels):
+        for (_e2, txt2, bb2) in labels[i + 1:]:
             if _hit(_pad(bb, 2), bb2):
                 issues.append({"type": "label_over_label", "labels": [txt, txt2]})
     for e, (_, lines) in edges.items():

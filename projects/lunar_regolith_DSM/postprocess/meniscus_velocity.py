@@ -146,7 +146,6 @@ def main():
 
     rows = []
     for run in args.dir:
-        o = read_opts(run)
         times = step_times(run)
         for step, x1d, y1d, phi in snapshots(run, args.nu, args.nv):
             g = measure(x1d, y1d, phi, eps, H)
