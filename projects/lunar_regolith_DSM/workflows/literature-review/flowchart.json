@@ -34,7 +34,14 @@
    "details": [
     "Versioned: each wave records its brief version",
     "Tier S skips discovery and screening"
-   ]
+   ],
+   "run": {
+    "per": "once",
+    "requires": [],
+    "station": null,
+    "gate": "blocking",
+    "ask": "Confirm the B1 contract (questions, papers, roles) this run reads"
+   }
   },
   {
    "id": "RB",
@@ -115,7 +122,48 @@
     "Gates SC1 and E1: no real wave until it passes",
     "Every fake quote, wrong page, sign error caught; 3 of 4 of each other kind; 90 % overall",
     "Confirmed real errors join the set; rerun after agent, prompt, model or tool changes"
-   ]
+   ],
+   "run": {
+    "per": "once",
+    "requires": [
+     "U0"
+    ],
+    "station": "check_plants.py",
+    "gate": "blocking",
+    "steps": [
+     [
+      "check_plants.py",
+      "--run",
+      "{run}",
+      "--set",
+      "heldout"
+     ],
+     [
+      "calibrate.py",
+      "score",
+      "--results",
+      "{run}/plants_heldout.jsonl",
+      "--prompt-version",
+      "{freeze}",
+      "--out",
+      "{run}/calibration_heldout.json"
+     ],
+     [
+      "open_gate.py",
+      "--run",
+      "{run}",
+      "--stage",
+      "C0",
+      "--what",
+      "Accept the frozen calibration result"
+     ]
+    ],
+    "done": [
+     {
+      "path": "calibration_heldout.json"
+     }
+    ]
+   }
   },
   {
    "id": "SC1",
@@ -204,7 +252,34 @@
     "Source comparison flags equations and numbers that disagree",
     "Tables: headers carried to every row, cells compared across extractors",
     "Marker, Surya, extractor weights and flags pinned"
-   ]
+   ],
+   "run": {
+    "per": "paper",
+    "requires": [
+     "A2"
+    ],
+    "station": "prepare.py",
+    "gate": "none",
+    "steps": [
+     [
+      "prepare.py",
+      "--run",
+      "{run}",
+      "--paper-id",
+      "{paper}",
+      "--pdf",
+      "{pdf}"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_prepare_{paper}.json",
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "RG",
@@ -232,7 +307,40 @@
     "Reads tiles on demand for every equation, number, symbol",
     "Fresh per paper; no web",
     "Instructions found in a paper are flagged to the user"
-   ]
+   ],
+   "run": {
+    "per": "paper",
+    "requires": [
+     "P1",
+     "C0"
+    ],
+    "station": "read_check.py",
+    "gate": "none",
+    "steps": [
+     [
+      "read_check.py",
+      "--run",
+      "{run}",
+      "--paper-id",
+      "{paper}",
+      "--pdf",
+      "{pdf}",
+      "--stages",
+      "E1"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_read_{paper}.json",
+      "has": [
+       "claims"
+      ],
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "RR",
@@ -252,7 +360,39 @@
    "details": [
     "Quote: 8+ words or a whole sentence",
     "Same claim: same page and kind, quotes overlap by half"
-   ]
+   ],
+   "run": {
+    "per": "paper",
+    "requires": [
+     "E1"
+    ],
+    "station": "read_check.py",
+    "gate": "review",
+    "steps": [
+     [
+      "read_check.py",
+      "--run",
+      "{run}",
+      "--paper-id",
+      "{paper}",
+      "--pdf",
+      "{pdf}",
+      "--stages",
+      "E3"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_read_{paper}.json",
+      "has": [
+       "e3_quotes_ok"
+      ],
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "E4",
@@ -269,7 +409,39 @@
     "Step 1 blind: sees only the quantity name and position",
     "Its own corrections go back through E3, E3b, X1 and a fresh E4",
     "Never sees Marker text or the reader's reasoning"
-   ]
+   ],
+   "run": {
+    "per": "paper",
+    "requires": [
+     "E3"
+    ],
+    "station": "read_check.py",
+    "gate": "none",
+    "steps": [
+     [
+      "read_check.py",
+      "--run",
+      "{run}",
+      "--paper-id",
+      "{paper}",
+      "--pdf",
+      "{pdf}",
+      "--stages",
+      "E4"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_read_{paper}.json",
+      "has": [
+       "verdicts"
+      ],
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "RV",
@@ -292,7 +464,34 @@
    "job": "Rewrites a failed claim from the page and the checker's reason; the rewrite is checked again.",
    "details": [
     "Still failing after 2 rounds: goes to U3"
-   ]
+   ],
+   "run": {
+    "per": "paper",
+    "requires": [
+     "E4"
+    ],
+    "station": "revise.py",
+    "gate": "review",
+    "steps": [
+     [
+      "revise.py",
+      "--run",
+      "{run}",
+      "--paper-id",
+      "{paper}",
+      "--pdf",
+      "{pdf}"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_revise_{paper}.json",
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "U3a",
@@ -304,7 +503,16 @@
    "details": [
     "Every claim on a read page is checked",
     "Missed statements: human measure of reader recall"
-   ]
+   ],
+   "run": {
+    "per": "once",
+    "requires": [
+     "Y1"
+    ],
+    "station": null,
+    "gate": "blocking",
+    "ask": "Review the prose claims the draft memo's model options rest on (u3_review.py), and the disputed claims"
+   }
   },
   {
    "id": "L1",
@@ -318,7 +526,33 @@
     "Sandbox blocks any other write to library/",
     "Snapshot to the course folder after each publish",
     "Retraction only by the user, with a reason"
-   ]
+   ],
+   "run": {
+    "per": "paper",
+    "requires": [
+     "E5"
+    ],
+    "station": "curator.py",
+    "gate": "review",
+    "steps": [
+     [
+      "curator.py",
+      "publish",
+      "--run",
+      "{run}",
+      "--paper-id",
+      "{paper}"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_publish_{paper}.json",
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "LB",
@@ -357,7 +591,34 @@
     "INFERENCE cites the claims it is drawn from",
     "Script checks every claim reached some part",
     "May write: library silent"
-   ]
+   ],
+   "run": {
+    "per": "once",
+    "requires": [
+     "L1"
+    ],
+    "station": "synthesize.py",
+    "gate": "none",
+    "steps": [
+     [
+      "synthesize.py",
+      "--run",
+      "{run}",
+      "--question",
+      "Q1",
+      "--version",
+      "1"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_memo_Q1.v1.json",
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "Y2",
@@ -369,7 +630,35 @@
    "details": [
     "Failures go back to Y1 with the list",
     "Claims on papers flagged as retracted fail until the user rules"
-   ]
+   ],
+   "run": {
+    "per": "once",
+    "requires": [
+     "X1",
+     "U3a"
+    ],
+    "station": "check_citations.py",
+    "gate": "none",
+    "steps": [
+     [
+      "check_citations.py",
+      "--run",
+      "{run}",
+      "--question",
+      "Q1",
+      "--version",
+      "1"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_y2_Q1.v1.json",
+      "has": [
+       "pass"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "Y3",
@@ -383,7 +672,31 @@
    "details": [
     "A relevant passage with no claim goes back to E1",
     "Gaps: API and passage queries, then a challenge; worded as not found by queries"
-   ]
+   ],
+   "run": {
+    "per": "once",
+    "requires": [
+     "Y2"
+    ],
+    "station": "skeptic.py",
+    "gate": "review",
+    "steps": [
+     [
+      "skeptic.py",
+      "--run",
+      "{run}",
+      "--question",
+      "Q1",
+      "--version",
+      "1"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_y3_Q1.v1.json"
+     }
+    ]
+   }
   },
   {
    "id": "RM",
@@ -402,7 +715,16 @@
    "job": "Reads memos, checker report, gaps and tag proposals; accepts or marks remaining statements; closes, expands or retracts the review.",
    "details": [
     "Pillar 1: memo ends with model options"
-   ]
+   ],
+   "run": {
+    "per": "once",
+    "requires": [
+     "Y3"
+    ],
+    "station": null,
+    "gate": "blocking",
+    "ask": "Approve the memo, or ask for a new brief version"
+   }
   },
   {
    "id": "A2",
@@ -415,7 +737,34 @@
     "Copy kind recorded on every claim read from it",
     "Title or authors differ: user decides at U2",
     "Published version later: claims rechecked"
-   ]
+   ],
+   "run": {
+    "per": "paper",
+    "requires": [
+     "U0"
+    ],
+    "station": "check_copy.py",
+    "gate": "blocking",
+    "steps": [
+     [
+      "check_copy.py",
+      "--run",
+      "{run}",
+      "--paper-id",
+      "{paper}",
+      "--pdf",
+      "{pdf}"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_copy_{paper}.json",
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "U3b",
@@ -435,7 +784,35 @@
    "row": 14,
    "kind": "record",
    "title": "ME295/library_archive/ (content-addressed)",
-   "job": "Every file stored once under its hash, with a dated manifest per publish and wave; hashes checked by L2; never in git."
+   "job": "Every file stored once under its hash, with a dated manifest per publish and wave; hashes checked by L2; never in git.",
+   "run": {
+    "per": "once",
+    "requires": [
+     "U4"
+    ],
+    "station": "backup.py",
+    "gate": "none",
+    "steps": [
+     [
+      "backup.py",
+      "--run",
+      "{run}"
+     ],
+     [
+      "restore_test.py",
+      "--run",
+      "{run}"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_backup.json",
+      "has": [
+       "restore_ok"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "R1",
@@ -531,7 +908,43 @@
     "Scope: memo-cited, model-critical, random 20 % of other important claims",
     "Author LaTeX or XML is the reference when it exists",
     "Content disagreement to the user; formatting only to E4"
-   ]
+   ],
+   "run": {
+    "per": "once",
+    "requires": [
+     "Y1"
+    ],
+    "station": "blind_read.py",
+    "gate": "blocking",
+    "steps": [
+     [
+      "blind_read.py",
+      "--run",
+      "{run}",
+      "--question",
+      "Q1",
+      "--version",
+      "1"
+     ],
+     [
+      "compare_reads.py",
+      "--run",
+      "{run}",
+      "--question",
+      "Q1",
+      "--version",
+      "1"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_x1_Q1.v1.json",
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "Z1",

@@ -123,6 +123,19 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 
 ## Status
 
+### Line status (generated)
+
+<!-- BEGIN GENERATED: lr_status.py -->
+No B1 run yet (`run_b1.py init`).
+<!-- END GENERATED -->
+
+The line status above is computed by `scripts/literature_review/lr_status.py`
+from the run folder of the newest run made with `run_b1.py`; it is not edited
+by hand. The table below is the development history, written by hand up to
+2026-11-01, and is kept until the first run under `run_b1.py` replaces it.
+
+### Development history (hand-written, to 2026-11-01)
+
 Where B1 stands, one row per node of `flowchart.json` (every node, so the
 progress chart can be drawn from this table) and one row per contract output
 that has no node. Read at the start of every session; updated in the same
