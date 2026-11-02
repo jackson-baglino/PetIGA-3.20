@@ -6,6 +6,7 @@ check_copy.py       offline
 prepare.py          offline
 open_gate.py        offline
 check_plants.py     anthropic
+baseline.py         offline
 calibrate.py        offline-plus  calibration
 read_check.py       anthropic
 revise.py           anthropic

@@ -376,16 +376,16 @@ Generated from `.claude/permissions/literature-review/` and the project settings
 
 | Agent or session | Allowed tools | Network | Inputs | Untrusted text | Way out | Private data |
 |---|---|---|---|---|---|---|
-| `beth-checker` | `Read` | none | untrusted | yes | no | no |
+| `beth-checker` | `Read(./**)` | none | untrusted | yes | no | no |
 | `beth-memo-checker` | none | none | untrusted, user_private | yes | no | yes |
-| `beth-planter` | `Read` | none | untrusted | yes | no | no |
+| `beth-planter` | `Read(./**)` | none | untrusted | yes | no | no |
 | `beth-recall-judge` | none | none | untrusted, user_private | yes | no | yes |
 | `beth-skeptic` | none | none | untrusted, user_private | yes | no | yes |
 | `beth-synthesizer` | none | none | untrusted, user_private | yes | no | yes |
 | `jerry-screener` | none | none | untrusted | yes | no | no |
-| `morty-blind-reader` | `Read` | none | untrusted | yes | no | no |
+| `morty-blind-reader` | `Read(./**)` | none | untrusted | yes | no | no |
 | `morty-desk` | `Bash(venv_workflows/bin/python scripts/literature_review/library_query.py passages *)` | none | untrusted | yes | no | no |
-| `morty-reader` | `Read` | none | untrusted | yes | no | no |
+| `morty-reader` | `Read(./**)` | none | untrusted | yes | no | no |
 | `morty-scout` | `WebSearch` | web search | public | yes | yes | no |
 | `review-mode` | all but web tools | api.openalex.org, api.crossref.org, api.semanticscholar.org, export.arxiv.org, api.adsabs.harvard.edu, ntrs.nasa.gov, www.osti.gov | user_private | no | yes | yes |
 | `review-session` | `Read`, `Grep`, `Glob` | none | untrusted, user_private | yes | no | yes |
@@ -1177,6 +1177,21 @@ build log with the date. The tests B1 needs:
   (`calib-baseline-dev`, `t-det-dev`, `t_det.py`): 181 of 181 files identical
   (page images, page text, equations, tiles), once the timing fields of P1's
   manifest (`made`, seconds per page) are left out.
+- T-sandbox, 2026-11-01: passed (`t_security.py sandbox`). The offline
+  profile refuses network and writes to `library/` and allows writes in the
+  run folder; the curator's profile can write `library/`; every agent
+  permission file has the sandbox on, fails if it is unavailable and allows
+  no unsandboxed commands. Recorded limits: the `anthropic` profile reaches
+  any HTTPS host (profiles cannot filter by host); a sandboxed process
+  cannot apply a second profile (`sandbox_apply: Operation not permitted`).
+- T-perm, 2026-11-01: failed, fixed, passed (`t_security.py perm`, live).
+  The reader, checker and blind reader (and the planter) allowed `Read` with
+  no path and read the project README from outside their clean folder; only
+  the transcript audit caught it. With the user's approval their permission
+  files now allow `Read(./**)`: the outside read is denied, the agent still
+  reads its own folder, the audit still flags the attempt. Agents with no
+  tools attempted nothing. The review session refused a Read outside its
+  listed paths (`t_security.py session`). `check_permissions.py` passes.
 
 T-units is deferred with the units check it tests (E3b, `check_units.py`,
 §13), which B1 does not run (user decision 2026-11-01); unit and exponent
