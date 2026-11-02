@@ -2,6 +2,39 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-11-01 — Lab Report 2; beth-writer; README; pushed
+
+- Session: bd0b31b7-3240-4887-9a00-1fe467db9be6
+- Done: Lab Report 2 written and built in the course folder
+  (`ME295/LabReport2/`, not committed): report.md, facts.py (every number
+  with its source; refuses hand-typed numbers), build_report.py (HTML ->
+  docx/pdf via soffice), four simplified Graphviz flowcharts, motivation
+  from Johnson et al. 2025 (Zotero 7VPUC8G4), generic agent names, Pillar 2
+  = derivation, Pillar 3 = implementation and testing. New agent
+  `.claude/agents/beth-writer.md` (Opus; Read/Grep/Glob/Write; approved,
+  d9dddd20) reviewed the report twice (34 then 17 findings; all applied
+  except those left to the user); reviews in `LabReport2/review/`. README
+  updated with the workflows, layout and tests (d6f6f8f7). Pushed origin and
+  synced the course repository (course main 482a1760); the 35 unpushed
+  commits are now on both.
+- Remaining:
+  1. User: fill the "[AUTHOR: ...]" line in the report's AI Use
+     Declaration (or ask to have the proposed text inserted), read the PDF,
+     submit; then update the deadline line in CLAUDE.local.md.
+  2. User decisions left open by the report: an abstention rule and
+     temperature note in WORKFLOW.md §5; adding the script-only checker
+     baseline to §5 before the freeze; related-work claims from read papers.
+  3. project/PILLARS.md still has the old Pillar 2/3 framing; update it to
+     Pillar 2 = model derivation, Pillar 3 = implementation and testing
+     (needs the user's OK).
+  4. Freeze hashes omit the parser version and venv_docparse has no lock
+     file (found by the review).
+  5. Resume the B1 build from the 2026-11-01 line session
+     (47a4c410-b4fb-46dc-9c25-6c04ed2b31e1): its Remaining list above.
+- Bottlenecks: headless agents' file writes need an `Edit(//abs/path/**)`
+  allow rule; `Write(...)` rules were denied twice (findings recovered from
+  the denied calls in run JSON).
+
 ## 2026-11-01 — Literature review as a line: foreman, stations, hooks, sandbox
 
 - Session: 47a4c410-b4fb-46dc-9c25-6c04ed2b31e1
