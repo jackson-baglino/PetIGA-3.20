@@ -126,7 +126,7 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ### Line status (generated)
 
 <!-- BEGIN GENERATED: lr_status.py -->
-Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · next: U3a · 1 gate(s) waiting · 1 review item(s)
+Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · next: X1 · 1 gate(s) waiting · 1 review item(s)
 
 | Stage | Station | Done | Gate | Waiting |
 |---|---|---|---|---|

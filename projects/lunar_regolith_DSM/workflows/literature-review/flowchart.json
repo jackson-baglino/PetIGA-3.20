@@ -507,7 +507,8 @@
    "run": {
     "per": "once",
     "requires": [
-     "Y1"
+     "Y1",
+     "X1"
     ],
     "station": null,
     "gate": "blocking",
@@ -1184,6 +1185,11 @@
    "to": "X1",
    "kind": "flow",
    "label": "important"
+  },
+  {
+   "from": "X1",
+   "to": "U3a",
+   "kind": "flow"
   },
   {
    "from": "X1",

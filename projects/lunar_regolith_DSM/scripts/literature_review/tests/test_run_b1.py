@@ -196,6 +196,7 @@ class RealGraph(unittest.TestCase):
         by = {s["id"]: s for s in run_b1.stages()}
         self.assertIn("C0", by["E1"]["requires"])
         self.assertEqual(set(by["Y2"]["requires"]), {"X1", "U3a"})
+        self.assertIn("X1", by["U3a"]["requires"])      # the user's U3 pass includes X1's disagreements
         self.assertEqual(by["Y1"]["requires"], ["L1"])
         self.assertEqual(by["BK"]["requires"], ["U4"])
         for gate in ("U0", "C0", "A2", "X1", "U3a", "U4"):
