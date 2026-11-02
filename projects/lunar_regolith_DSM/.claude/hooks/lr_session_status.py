@@ -3,7 +3,6 @@
 import lr_hook_lib as h
 
 try:
-    import lr_status
     run = h.run_b1().current_run()
     print("Literature review: " + h.run_b1().brief(run) +
           ". Rules: .claude/rules/workflows.md; details: run_b1.py status.")
