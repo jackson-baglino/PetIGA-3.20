@@ -1,6 +1,6 @@
 Work order: draft.
 
-Question:
+Questions (the memo answers the first; the others are secondary):
 {question}
 
 Checked claims (JSON):

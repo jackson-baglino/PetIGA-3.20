@@ -1,6 +1,6 @@
 Work order: revise.
 
-Question:
+Questions (the memo answers the first; the others are secondary):
 {question}
 
 Your draft:

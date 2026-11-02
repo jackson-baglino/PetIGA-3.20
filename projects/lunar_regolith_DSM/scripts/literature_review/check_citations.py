@@ -2,8 +2,9 @@
 """Y2: check a draft memo's citations against the claims (WORKFLOW.md §3, §5).
 
     check_citations.py --memo <memo.md> --claims <claims.json>
+    check_citations.py --run <run folder> [--question Q1]     the line's Y2 (revises once on failure)
 
-Per sentence outside the exempt sections (Model options, Library silent, Gaps): at least one
+Per sentence outside the exempt sections (Model options, Library silent, Gaps, Leads): at least one
 [claim_id] citation, every cited id a known checked claim. Every number in a cited sentence
 must be followed by a tag [claim_id quantity] whose claim contains that number in its text,
 equation or parameter. Prints counts and the failing sentence numbers, never memo text.
@@ -11,8 +12,10 @@ equation or parameter. Prints counts and the failing sentence numbers, never mem
 import argparse
 import json
 import re
+import sys
+from pathlib import Path
 
-EXEMPT = re.compile(r"^#+\s*(\d+\.\s*)?\**\s*(model options|library silent|gaps)", re.I)
+EXEMPT = re.compile(r"^#+\s*(\d+\.\s*)?\**\s*(model options|library silent|gaps|leads)", re.I)
 CITE = re.compile(r"\[([a-z0-9_]+-c\d{3})(?:@v\d+)?(?:\s+([^\]]*))?\]")
 LABEL = re.compile(r"^\s*\*\*[^*]+\*\*\s*$")             # a bold lead-in line, a subheading in effect
 INTERVAL = re.compile(r"\[\s*[-−]?\d+(?:\.\d+)?\s*,\s*[-−]?\d+(?:\.\d+)?\s*\]")   # math such as [0,1]
@@ -73,15 +76,53 @@ def check(md, claims):
     return res
 
 
+def latest_version(memos, question):
+    vs = [int(f.name[len(question) + 2:-3]) for f in memos.glob(f"{question}.v*.md")]
+    if not vs:
+        raise SystemExit(f"no memo {question}.v*.md in {memos}")
+    return max(vs)
+
+
+def run_mode(run, question, revise=True):
+    """The line's Y2 station: check the latest memo; on failure have Y1 revise it once and check again.
+    Claims the user rejected (u3_decisions.json) do not count as checked claims. Returns the summary."""
+    import synthesize
+    run = Path(run).resolve()
+    memos = run / "untrusted" / "memos"
+    revised = False
+    while True:
+        k = latest_version(memos, question)
+        rejected = synthesize.user_rejected(run)
+        claims = [c for c in json.loads((memos / f"{question}.v{k}.claims.json").read_text())
+                  if c["id"] not in rejected]
+        r = check((memos / f"{question}.v{k}.md").read_text(), claims)
+        if r["pass"] or revised or not revise:
+            break
+        synthesize.main(["--run", str(run), "--question", question, "--version", str(k + 1), "--revise"])
+        revised = True
+    s = {"question": question, "version": k, "revised_here": revised, "rejected_claims_excluded": len(rejected),
+         **{key: (len(v) if isinstance(v, list) else v) for key, v in r.items()},
+         "failing_sentences": {key: v for key, v in r.items() if isinstance(v, list) and v}}
+    (run / f"summary_y2_{question}.json").write_text(json.dumps(s, indent=1))
+    return s
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--memo", required=True)
-    ap.add_argument("--claims", required=True)
+    ap.add_argument("--memo")
+    ap.add_argument("--claims")
+    ap.add_argument("--run", help="the line's Y2: check the run's latest memo, revise once on failure")
+    ap.add_argument("--question", default="Q1")
     a = ap.parse_args(argv)
+    if a.run:
+        s = run_mode(a.run, a.question)
+        print(json.dumps({k: v for k, v in s.items() if k != "failing_sentences"}))
+        return 0 if s["pass"] else 1
     r = check(open(a.memo).read(), json.load(open(a.claims)))
     print(json.dumps({k: (len(v) if isinstance(v, list) else v) for k, v in r.items()}))
     print("failing sentence numbers:", {k: v for k, v in r.items() if isinstance(v, list) and v})
+    return 0 if r["pass"] else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

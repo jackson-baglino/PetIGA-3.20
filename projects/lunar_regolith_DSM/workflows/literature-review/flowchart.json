@@ -645,14 +645,12 @@
       "--run",
       "{run}",
       "--question",
-      "Q1",
-      "--version",
-      "1"
+      "Q1"
      ]
     ],
     "done": [
      {
-      "path": "summary_y2_Q1.v1.json",
+      "path": "summary_y2_Q1.json",
       "has": [
        "pass"
       ]
@@ -686,14 +684,12 @@
       "--run",
       "{run}",
       "--question",
-      "Q1",
-      "--version",
-      "1"
+      "Q1"
      ]
     ],
     "done": [
      {
-      "path": "summary_y3_Q1.v1.json"
+      "path": "summary_y3_Q1.json"
      }
     ]
    }
@@ -922,23 +918,19 @@
       "--run",
       "{run}",
       "--question",
-      "Q1",
-      "--version",
-      "1"
+      "Q1"
      ],
      [
       "compare_reads.py",
       "--run",
       "{run}",
       "--question",
-      "Q1",
-      "--version",
-      "1"
+      "Q1"
      ]
     ],
     "done": [
      {
-      "path": "summary_x1_Q1.v1.json",
+      "path": "summary_x1_Q1.json",
       "absent": [
        "failed"
       ]

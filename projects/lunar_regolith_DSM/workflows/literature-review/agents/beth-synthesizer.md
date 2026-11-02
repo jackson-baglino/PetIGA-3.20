@@ -52,9 +52,15 @@ Write the memo in Markdown with these sections:
    needs no citations, but it may cite claims.
 4. **Library silent**: what the question needs that no claim covers.
 5. **Gaps and disagreements** between papers.
+6. **Q2** and 7. **Q3**: a short answer to each secondary question in the
+   work order, from the claims tagged with it; if no claim bears on it, say so
+   in one sentence.
+8. **Leads**: works the papers cite that look essential to the question but
+   were not read, each with the claim that cites it as [claim_id]. A lead is a
+   pointer, not a finding.
 
 Rules, checked by a script afterward:
-- Every sentence outside sections 3, 4 and 5 cites at least one claim as
+- Every sentence outside sections 3, 4, 5 and 8 cites at least one claim as
   [claim_id], using only ids from the list.
 - Every number you state is followed by a tag naming the claim it comes from
   and the quantity: 0.5 [li_2009-c014 interface width]. State no number that is
