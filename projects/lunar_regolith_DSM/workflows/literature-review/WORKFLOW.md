@@ -1173,6 +1173,12 @@ build log with the date. The tests B1 needs:
 | T-restore | one paper, its claims and the memo's citations restored from the dated backup into an empty folder; Y2 rerun | hashes match; Y2 passes |
 | T-repeat | E1 to E4 twice on one paper with the same prompts (§8) | agreement reported |
 
+**Results.**
+- T-det, 2026-11-01: passed. P1 run twice on Kaempfer & Plapp
+  (`calib-baseline-dev`, `t-det-dev`, `t_det.py`): 181 of 181 files identical
+  (page images, page text, equations, tiles), once the timing fields of P1's
+  manifest (`made`, seconds per page) are left out.
+
 Deferred tests (T-table, T-ret, T-blind with a separate math OCR model,
 T-retract, T-key, T-backup, T-zotero) are in §13 with their original rows.
 
