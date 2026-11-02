@@ -6,7 +6,9 @@
 For each claim the latest memo cites that has an equation or a parameter (from the library's latest version of
 the claim), morty-blind-reader gets only the claim ID, the equation's printed number or the quantity's name, and
 the page; never the claimed LaTeX or value. One fresh call per paper, with that paper's cited pages (P1's images,
-as the reader saw them). Reads go to <run>/untrusted/x1/<paper>.json; compare_reads.py compares them.
+as the reader saw them). Reads go to <run>/untrusted/x1/<paper>.json; compare_reads.py compares them. Calls go to
+the run's ledger (<run>/calls.jsonl); a read already made for the same memo version is reused, and
+<run>/summary_x1_reads_<question>.json counts the calls made and the reads reused, by paper.
 """
 import argparse
 import json
@@ -50,23 +52,26 @@ def main(argv=None):
     by_paper = {}
     for paper, c in items:
         by_paper.setdefault(paper, []).append(c)
-    n = 0
+    n, reused = 0, []
     for paper, cs in sorted(by_paper.items()):
         f = out / f"{paper}.json"
-        if f.exists():
+        if f.exists() and json.loads(f.read_text()).get("memo_version") == version:
+            reused.append(paper)                    # an earlier read of this memo version: counted, not hidden
             continue
         pages = {int(p.stem[1:]): p for p in (run / "untrusted" / paper / "pages").glob("p*.png")}
         show = [pages[p] for p in sorted({c["page_pdf"] for c in cs}) if p in pages][:rc.MAX_IMAGES]
         with tempfile.TemporaryDirectory() as tmp:
             files = rc.folder_with(show, tmp)
             res, meta = ac.call(tmp, ac.prompt("blind_reader", files=files, items="\n".join(map(item_line, cs))),
-                                "blind", "morty-blind-reader", ledger=out / "calls.jsonl", step="X1", paper=paper)
+                                "blind", "morty-blind-reader", ledger=run / "calls.jsonl", step="X1", paper=paper)
         if res is None:
             raise SystemExit(f"X1 blind read failed for {paper}: {meta.get('error')}")
         f.write_text(json.dumps({"memo_version": version, **res}, indent=1))
         n += 1
-    print(json.dumps({"question": a.question, "memo_version": version, "items": len(items),
-                      "papers": len(by_paper), "calls": n}))
+    summary = {"question": a.question, "memo_version": version, "items": len(items), "papers": len(by_paper),
+               "calls": n, "reused": len(reused), "reused_papers": reused}
+    (run / f"summary_x1_reads_{a.question}.json").write_text(json.dumps(summary, indent=1))
+    print(json.dumps(summary))
     return 0
 
 
