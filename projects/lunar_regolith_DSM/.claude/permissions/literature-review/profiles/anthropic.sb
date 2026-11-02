@@ -1,10 +1,15 @@
-;; Scripts that call a web API: outbound TCP 443 and DNS only; writes only to the run folder and temp.
-;; macOS sandbox profiles cannot filter by host name, so the host list is enforced by the
-;; script's own HTTP client (an allow-list checked before each request) and recorded in the manifest.
+;; Agent stations (scripts that call `claude -p`): HTTPS and DNS out only; no writes into the project, the research
+;; folder or the course folder, except the run folder.
+;; A write allow-list (the other profiles' form) breaks Claude Code's login: with writes limited to the run folder,
+;; temp, ~/.claude and the Keychain folder, every call failed with "OAuth access token has expired"; with this
+;; deny-list it authenticates (tested 2026-11-01, Claude Code 2.1.316). So this profile protects the places the
+;; pipeline must not change, and leaves Claude Code's own state writable.
+;; macOS sandbox profiles cannot filter by host name; the host is the model provider's, set by Claude Code.
+;; Used by wf_launch as: sandbox-exec -f anthropic.sb -D RUN_DIR=... -D PROJECT=... -D RESEARCH=... -D COURSES=...
 (version 1)
 (allow default)
 (deny network*)
 (allow network* (local unix-socket))
 (allow network-outbound (remote tcp "*:443") (remote udp "*:53") (remote tcp "*:53"))
-(deny file-write*)
-(allow file-write* (subpath (param "RUN_DIR")) (subpath (param "TMP")) (literal "/dev/null"))
+(deny file-write* (subpath (param "PROJECT")) (subpath (param "RESEARCH")) (subpath (param "COURSES")))
+(allow file-write* (subpath (param "RUN_DIR")))

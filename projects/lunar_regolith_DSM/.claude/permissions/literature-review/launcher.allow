@@ -1,21 +1,34 @@
-# Scripts wf_launch may run, one per line: <script under scripts/literature_review/> <profile in profiles/>
-# Nothing else can be launched; arguments are fixed by wf_launch (the run ID), never free text.
-# acquire.py and curator.py are not here: they run outside the sandbox and ask each time.
+# The scripts wf_launch may run, one per line: <script under scripts/literature_review/> <profile> [extra write]
+# The extra write names one place outside the run folder (wf_launch.py, EXTRA): library, calibration or archive.
+# run_b1.py starts every station through wf_launch; a script not listed here cannot run in the line.
+# B1 stations
+check_copy.py       offline
+prepare.py          offline
+open_gate.py        offline
+check_plants.py     anthropic
+calibrate.py        offline-plus  calibration
+read_check.py       anthropic
+revise.py           anthropic
+curator.py          offline-plus  library
+synthesize.py       anthropic
+blind_read.py       anthropic
+compare_reads.py    offline
+check_citations.py  anthropic
+skeptic.py          anthropic
+backup.py           offline-plus  archive
+restore_test.py     offline
+# Outside the line
+zotero_pull.py      zotero-local
+# Deferred stages (WORKFLOW.md §13); kept so their profiles stay checked
 discover.py         api
 resolve.py          api
 screen_baseline.py  offline
 compare_screens.py  offline
-prepare.py          offline
 build_index.py      offline
 ocr_math.py         offline
 check_extraction.py offline
 check_units.py      offline
 compare_sources.py  offline
-compare_reads.py    offline
-check_citations.py  offline
-calibrate.py        offline
 library_query.py    offline
 audit.py            api
-zotero_pull.py      zotero-local
 zotero_add.py       zotero-web
-drive_agents.py     anthropic

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "WebFetch",
+      "WebSearch",
+      "Bash",
+      "Edit",
+      "Write",
+      "NotebookEdit",
+      "Agent",
+      "Skill",
+      "PushNotification",
+      "RemoteTrigger",
+      "SendMessage",
+      "Workflow",
+      "PublishPlugin",
+      "ShareOnboardingGuide",
+      "DesignSync",
+      "CronCreate",
+      "ScheduleWakeup",
+      "EnterWorktree",
+      "ListAgents",
+      "TaskStop",
+      "ToolSearch"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/permissions/literature-review/hooks/review_session_allowlist.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowedDomains": []
+    }
+  }
+}

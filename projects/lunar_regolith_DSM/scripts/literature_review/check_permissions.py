@@ -126,24 +126,51 @@ def normal_entry(project, local, classes):
 
 
 def launcher_faults(perm_dir):
+    """Every launcher entry names an existing profile (and offline-plus one known extra place). A profile starts
+    from no network, and either from no writes, or (agent stations) denies writes into the project, research and
+    course folders."""
     faults = []
     path = os.path.join(perm_dir, "launcher.allow")
     with open(path) as f:
         lines = f.readlines()
     for ln in lines:
-        ln = ln.split("#")[0].strip()
-        if not ln:
+        parts = ln.split("#")[0].split()
+        if not parts:
             continue
-        script, profile = ln.split()
+        script, profile = parts[0], parts[1]
+        extra = parts[2] if len(parts) > 2 else None
         sb = os.path.join(perm_dir, "profiles", profile + ".sb")
         if not os.path.exists(sb):
             faults.append(f"launcher.allow: {script} names missing profile {profile}")
             continue
+        if profile == "offline-plus" and extra not in ("library", "archive", "calibration"):
+            faults.append(f"launcher.allow: {script} uses offline-plus without a known extra place")
         with open(sb) as f:
             text = f.read()
-        if "(deny network*)" not in text or "(deny file-write*)" not in text:
-            faults.append(f"profiles/{profile}.sb: must start from no network and no writes")
+        no_writes = "(deny file-write*)" in text
+        deny_list = all(f'(subpath (param "{p}"))' in text for p in ("PROJECT", "RESEARCH", "COURSES")) \
+            and "(deny file-write* (subpath" in text
+        if "(deny network*)" not in text or not (no_writes or deny_list):
+            faults.append(f"profiles/{profile}.sb: must start from no network, and no writes or a deny-list of "
+                          "the project, research and course folders")
     return faults
+
+
+def review_session_entry(s, classes):
+    deny = set(s.get("permissions", {}).get("deny", []))
+    faults = sandbox_faults(s.get("sandbox", {}), "review-session")
+    for r in ("WebFetch", "WebSearch", "Bash", "Edit", "Write", "NotebookEdit", "Agent", "PushNotification",
+              "RemoteTrigger", "SendMessage", "Workflow", "PublishPlugin", "ShareOnboardingGuide"):
+        if r not in deny:
+            faults.append(f"review-session: missing deny {r}")
+    hooks = json.dumps(s.get("hooks", {}).get("PreToolUse", []))
+    if "review_session_allowlist.py" not in hooks or "Read|Grep|Glob" not in hooks:
+        faults.append("review-session: the Read/Grep/Glob allow-list hook is not registered")
+    net = s.get("sandbox", {}).get("network", {}).get("allowedDomains", [])
+    way_out = bool(net) or not {"WebFetch", "WebSearch", "Bash"} <= deny
+    return {"name": "review-session", "kind": "session", "tools": ["Read", "Grep", "Glob"],
+            "network": ", ".join(net) or "none", "inputs": classes,
+            "legs": ("untrusted" in classes, way_out, "user_private" in classes), "faults": faults}
 
 
 def definition_faults(root, adir):
@@ -204,6 +231,9 @@ def collect(root):
                             "faults": [f"{name}: listed in inputs.json but has no settings file"]})
     entries.append(review_entry(load(os.path.join(perm, "sessions", "review-mode.json")),
                                 inputs["sessions"]["review-mode"]))
+    rs = os.path.join(perm, "sessions", "review-session.json")
+    if os.path.exists(rs):
+        entries.append(review_session_entry(load(rs), inputs["sessions"].get("review-session", [])))
     cdir = os.path.join(root, ".claude")
     local = os.path.join(cdir, "settings.local.json")
     entries.append(normal_entry(load(os.path.join(cdir, "settings.json")),

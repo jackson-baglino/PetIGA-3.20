@@ -10,6 +10,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import run_b1  # noqa: E402
+import wf_launch  # noqa: E402
 
 STUBS = {
     "s_ok.py": "import sys, json, pathlib\na = sys.argv\nrun = pathlib.Path(a[a.index('--run') + 1])\n"
@@ -50,13 +51,20 @@ class Line(unittest.TestCase):
         self.contract = root / "B1_CONTRACT.md"
         self.contract.write_text("# c\n\n## Papers\n\n| ID | DOI | File | Pages | sha256 | Status | Role |\n"
                                  "|---|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n\n## Outputs\n")
+        self.perm = root / "perm"
+        (self.perm / "profiles").mkdir(parents=True)
+        (self.perm / "launcher.allow").write_text("s_ok.py offline\ns_fail.py offline\ns_quiet.py offline\n"
+                                                  "s_gate.py offline\n")
+        real = Path(wf_launch.PROJECT) / ".claude/permissions/literature-review/profiles/offline.sb"
+        (self.perm / "profiles" / "offline.sb").write_text(real.read_text())
         self.spec = root / "flowchart.json"
         self.run = root / "run"
         self.patches = [mock.patch.object(run_b1, "HERE", self.here), mock.patch.object(run_b1, "SPEC", self.spec),
                         mock.patch.object(run_b1, "CONTRACT", self.contract),
                         mock.patch.object(run_b1, "RESEARCH", research),
                         mock.patch.object(run_b1, "PYTHON", Path(sys.executable)),
-                        mock.patch.object(run_b1, "FREEZE", root / "freeze")]
+                        mock.patch.object(run_b1, "FREEZE", root / "freeze"),
+                        mock.patch.object(wf_launch, "PERM", self.perm)]
         for p in self.patches:
             p.start()
         stages_ = [
@@ -117,6 +125,26 @@ class Line(unittest.TestCase):
         d["nodes"][1]["run"]["steps"] = [["s_quiet.py"]]                         # exit 0, no output
         self.spec.write_text(json.dumps(d))
         self.assertEqual(self.cli("run", "--run", run), run_b1.FAILED)
+
+    def test_station_not_on_the_allow_list_is_refused(self):
+        with self.assertRaises(wf_launch.LaunchError):
+            wf_launch.command("missing.py", [], self.run)
+        cmd = wf_launch.command("s_ok.py", ["--run", "x"], self.run)
+        self.assertEqual(cmd[:2], ["sandbox-exec", "-f"])
+        self.assertTrue(cmd[2].endswith("offline.sb"))
+
+    def test_sandbox_blocks_writes_outside_the_run(self):
+        d = json.loads(self.spec.read_text())
+        out_dir = Path(tempfile.mkdtemp(dir="/private/tmp"))              # outside the run and the temp folder
+        self.addCleanup(lambda: (out_dir / "outside.json").unlink(missing_ok=True) or out_dir.rmdir())
+        outside = out_dir / "outside.json"
+        d["nodes"][1]["run"]["steps"] = [["s_ok.py", "--run", str(outside.parent), "--out", "outside.json"]]
+        self.spec.write_text(json.dumps(d))
+        run = str(self.run)
+        self.cli("init", "--run", run, "--dev")
+        self.cli("approve", "--run", run, "U", "--decision", "yes")
+        self.assertEqual(self.cli("run", "--run", run), run_b1.FAILED)
+        self.assertFalse(outside.exists())
 
     def test_execute_run_needs_a_freeze(self):
         with self.assertRaises(SystemExit):

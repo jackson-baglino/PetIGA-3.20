@@ -1,0 +1,9 @@
+;; Offline scripts that also write one named place outside the run folder (EXTRA): curator.py (library/),
+;; backup.py (the course archive), calibrate.py (calibration/generated/). No network at all.
+;; Used by wf_launch as: sandbox-exec -f offline-plus.sb -D RUN_DIR=... -D TMP=... -D EXTRA=...
+(version 1)
+(allow default)
+(deny network*)
+(allow network* (local unix-socket))
+(deny file-write*)
+(allow file-write* (subpath (param "RUN_DIR")) (subpath (param "TMP")) (subpath (param "EXTRA")) (literal "/dev/null"))

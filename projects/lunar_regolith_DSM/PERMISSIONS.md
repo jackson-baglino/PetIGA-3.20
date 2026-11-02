@@ -71,6 +71,7 @@ Generated from `.claude/permissions/literature-review/` and the project settings
 | `morty-reader` | `Read` | none | untrusted | yes | no | no |
 | `morty-scout` | `WebSearch` | web search | public | yes | yes | no |
 | `review-mode` | all but web tools | api.openalex.org, api.crossref.org, api.semanticscholar.org, export.arxiv.org, api.adsabs.harvard.edu, ntrs.nasa.gov, www.osti.gov | user_private | no | yes | yes |
+| `review-session` | `Read`, `Grep`, `Glob` | none | untrusted, user_private | yes | no | yes |
 | `normal` (accepted risk) | all | WebFetch(domain:api.crossref.org); WebFetch(domain:code.claude.com); WebFetch(domain:doi.org); others ask | user_private, untrusted | yes | yes | yes |
 <!-- END GENERATED -->
 

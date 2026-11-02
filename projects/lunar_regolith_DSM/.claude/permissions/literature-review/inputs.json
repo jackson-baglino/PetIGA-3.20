@@ -46,6 +46,10 @@
     "normal": [
       "user_private",
       "untrusted"
+    ],
+    "review-session": [
+      "untrusted",
+      "user_private"
     ]
   }
 }

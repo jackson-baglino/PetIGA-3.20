@@ -17,7 +17,8 @@ Papers table in B1_CONTRACT.md; each file's sha256 must start with the hash prin
 `run` repeats: pick the first stage (in graph order) whose required stages are done and that is not done itself;
 stop at a blocking gate, at a station that is not built, at a station that fails, or at --until / --max. A run
 that is not --dev requires the execute phase and an unchanged freeze. Station output (which may quote papers) goes
-to <run>/untrusted/logs/; this script prints only stage names, items, counts and exit codes.
+to <run>/untrusted/logs/; this script prints only stage names, items, counts and exit codes. Every station runs
+through wf_launch.py: only scripts on launcher.allow, each under its sandbox profile.
 Exit codes: 0 all done or stopped at --until/--max; 3 waiting at a gate; 4 a station is not built; 1 a failure.
 """
 import argparse
@@ -30,6 +31,9 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import wf_launch  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parents[1]
@@ -345,7 +349,8 @@ def cmd_run(a):
         t0, rc = datetime.datetime.now(), 0
         with open(log, "w") as lf:
             for step in s["steps"]:
-                cmd = [str(PYTHON), str(HERE / step[0])] + [fill(x, run, i, plist, m["freeze"]) for x in step[1:]]
+                args = [fill(x, run, i, plist, m["freeze"]) for x in step[1:]]
+                cmd = wf_launch.command(step[0], args, run, python=PYTHON, here=HERE)   # sandboxed, allow-listed
                 lf.write("$ " + " ".join(cmd) + "\n")
                 lf.flush()
                 rc = subprocess.run(cmd, cwd=PROJECT, stdout=lf, stderr=subprocess.STDOUT).returncode
