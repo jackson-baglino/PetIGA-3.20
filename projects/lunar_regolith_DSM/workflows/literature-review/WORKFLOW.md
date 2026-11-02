@@ -126,7 +126,8 @@ and prompts kept changing during the run.
   results; `b1-dev2` is one.
 - **Freeze.** The user approves `/lr-freeze`, which writes
   `freeze/b1-vN.json` (hashes of the agent files, prompts, schemas, station
-  scripts, the model map and the parser version) and the git tag
+  scripts, the model map and the parser: `requirements-docparse.lock`, the
+  packages installed in `venv_docparse` and the MinerU model snapshot) and the git tag
   `lr-b1-freeze-vN`.
 - **Execute.** `run_b1.py` refuses to start if a frozen hash differs; a hook
   asks before any edit to a frozen file. Ideas go to `BACKLOG.md` and wait.

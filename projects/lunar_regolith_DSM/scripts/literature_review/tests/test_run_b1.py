@@ -190,6 +190,21 @@ class Freeze(unittest.TestCase):
             self.assertEqual(run_b1.freeze_diff(), ["b"])
 
 
+class ParserInFreeze(unittest.TestCase):
+    def test_parser_state_in_snapshot_and_missing_env_is_named(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ref = Path(tmp) / "main"
+            ref.write_text("abc123\n")
+            with mock.patch.object(run_b1, "DOCPARSE_PY", Path(tmp) / "no_python"), \
+                    mock.patch.object(run_b1, "PARSER_MODEL", ref):
+                st = run_b1.parser_state()
+                self.assertEqual(st, {"venv_docparse#installed": "missing", "parser_model#snapshot": "abc123"})
+                self.assertEqual(run_b1.snapshot()["parser_model#snapshot"], "abc123")
+                ref.write_text("def456\n")                  # a new model snapshot changes the freeze record
+                self.assertEqual(run_b1.snapshot()["parser_model#snapshot"], "def456")
+        self.assertIn("requirements-docparse.lock", run_b1.FROZEN)
+
+
 class RealGraph(unittest.TestCase):
     def test_b1_graph_order_matches_the_contract(self):
         """In the real flowchart: calibration before reading; V1 (X1, U3a) before Y2; U4 before the backup."""

@@ -91,7 +91,8 @@ venv_workflows/bin/pip install -r requirements-workflows.lock
 `requirements-workflows.txt` lists the non-Python tools too (Claude Code,
 Graphviz, MuPDF, Chrome). The literature review's PDF parser, MinerU2.5-Pro,
 runs offline in a third environment, `venv_docparse/` (called by
-`scripts/literature_review/prepare.py`); it has no lock file yet. Marker, the
+`scripts/literature_review/prepare.py`); its packages and model snapshot are
+pinned in `requirements-docparse.lock`, and a freeze records what is installed. Marker, the
 earlier parser, is still used by the units-verification workflow.
 
 ## Agentic workflows

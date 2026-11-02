@@ -45,7 +45,10 @@ RESEARCH = Path.home() / "Library/Mobile Documents/com~apple~CloudDocs/Documents
 PYTHON = PROJECT / "venv_workflows" / "bin" / "python"
 FROZEN = ["workflows/literature-review/agents/*.md", "workflows/literature-review/prompts/*.md",
           "workflows/literature-review/schemas/*.json", "workflows/literature-review/flowchart.json",
-          "scripts/agentlib.py", "scripts/literature_review/*.py", "requirements-workflows.lock"]
+          "scripts/agentlib.py", "scripts/literature_review/*.py", "requirements-workflows.lock",
+          "requirements-docparse.lock"]
+DOCPARSE_PY = PROJECT / "venv_docparse" / "bin" / "python"
+PARSER_MODEL = Path.home() / ".cache/huggingface/hub/models--opendatalab--MinerU2.5-Pro-2605-1.2B/refs/main"
 WAITING, NOT_BUILT, FAILED = 3, 4, 1
 
 
@@ -208,9 +211,24 @@ def contract_papers_hash():
     return hashlib.sha256(sec.encode()).hexdigest()
 
 
+def parser_state():
+    """What P1's parser really is, not only what its lock file says: the packages installed in venv_docparse
+    (hash of the sorted name==version list) and the model snapshot the parser loads (Hugging Face refs/main)."""
+    code = ("import importlib.metadata as m; print('\\n'.join(sorted({d.metadata['Name'].lower() + '==' + d.version "
+            "for d in m.distributions()})))")
+    try:
+        out = subprocess.run([str(DOCPARSE_PY), "-c", code], capture_output=True, text=True, check=True).stdout
+        installed = hashlib.sha256(out.encode()).hexdigest()
+    except (OSError, subprocess.CalledProcessError):
+        installed = "missing"
+    model = PARSER_MODEL.read_text().strip() if PARSER_MODEL.exists() else "missing"
+    return {"venv_docparse#installed": installed, "parser_model#snapshot": model}
+
+
 def snapshot():
     files = {str(p.relative_to(PROJECT)): sha256(p) for p in frozen_files()}
     files["B1_CONTRACT.md#Papers"] = contract_papers_hash()
+    files.update(parser_state())
     return files
 
 
