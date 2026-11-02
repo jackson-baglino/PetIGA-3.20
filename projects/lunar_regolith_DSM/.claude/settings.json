@@ -7,7 +7,10 @@
       "Bash(*scripts/Studio/run_*)",
       "Bash(*scripts/HPC/submit_*)",
       "Bash(sbatch *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(*run_b1.py approve*)",
+      "Bash(*run_b1.py freeze*)",
+      "Bash(*run_b1.py thaw*)"
     ],
     "deny": [
       "Bash(git push --force *)",
@@ -32,6 +35,14 @@
       "Edit(/library/**)",
       "Edit(/library_practice/**)",
       "Edit(/index/**)"
+    ],
+    "allow": [
+      "Bash(venv_workflows/bin/python scripts/literature_review/run_b1.py status*)",
+      "Bash(venv_workflows/bin/python scripts/literature_review/run_b1.py run *)",
+      "Bash(venv_workflows/bin/python scripts/literature_review/run_b1.py init *)",
+      "Bash(venv_workflows/bin/python scripts/literature_review/run_b1.py verify)",
+      "Bash(venv_workflows/bin/python scripts/literature_review/lr_status.py *)",
+      "Bash(venv_workflows/bin/python scripts/literature_review/lr_backlog.py *)"
     ]
   },
   "hooks": {
@@ -41,6 +52,11 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/log_session.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lr_session_status.py",
             "timeout": 10
           }
         ]
@@ -54,6 +70,61 @@
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/ruff_check.sh",
             "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lr_prompt_status.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lr_phase_guard.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lr_line_guard.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lr_stop_check.py",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/notify.sh",
+            "timeout": 10
           }
         ]
       }

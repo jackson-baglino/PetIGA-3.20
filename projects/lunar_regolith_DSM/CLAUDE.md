@@ -149,10 +149,10 @@ agent's model means a new name, so old run logs still say which model ran.
 
 - Session IDs are logged to `.claude/sessions.tsv` by a SessionStart hook.
   Resume with `claude --resume <id>`.
-- At the start of every session on a workflow run, read the "Status" section
-  of its run contract (for B1, `workflows/literature-review/B1_CONTRACT.md`)
-  and check the planned work against it. Update it, and redraw the progress
-  chart (`render_flowchart.py ... --progress`), in the same commit as the work.
+- A SessionStart hook prints where the B1 line stands (phase, run, next
+  stage, gates waiting); `/lr-status` gives the details. Check planned work
+  against it. Refresh the contract's generated line status
+  (`lr_status.py --write`) in the same commit as the work it records.
 - When the user says they are closing, clearing or compacting, run the
   `wrap-up` skill first: log, commit, stop background work, print the resume
   line.

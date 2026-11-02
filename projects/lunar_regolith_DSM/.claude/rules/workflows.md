@@ -11,10 +11,11 @@ paths:
 # Agentic workflows
 
 - **The line.** Scripts manage; agents work (`workflows/TEMPLATE.md`, "The
-  line"). Stages run in the order of the workflow's stage graph. Once a line
-  script exists (literature review: `run_b1.py`), never run a station driver by
-  hand. Until then, run stages only in the run contract's order, and say so
-  when you do.
+  line"). Stages run in the order of the workflow's stage graph, through the
+  line script (literature review: `run_b1.py`; the foreman session is
+  `claude --agent beth-foreman`). In the develop phase a station may be run by
+  hand only to test it, in a dev run folder; in the execute phase never (a
+  hook blocks it).
 - **Phases** (`workflows/TEMPLATE.md` §7). Before editing an agent file,
   prompt, schema, station script or model map, look for
   `workflows/<name>/freeze/`. No freeze file means develop. In execute, do not
