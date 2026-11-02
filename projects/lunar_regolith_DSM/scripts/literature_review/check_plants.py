@@ -12,7 +12,10 @@ missing).
 
 A plant is caught when its verdict is not "supported", or its equation or value is
 corrected, or (for a dropped-condition plant) a dropped condition is named. A control is
-flagged on the same rule, without the last clause. Results go to
+flagged on the same rule, without the last clause. An item left without a verdict (a failed
+call, or a verdict the checker did not return) counts against the checker: a miss on a
+plant and a flag on a control, so declining to answer cannot raise the score. Rerun to
+resume first; saved verdicts are reused. Results go to
 <run>/plants_<set>.jsonl in calibrate.py's format; for the tuning set a report with
 per-kind counts is printed; for the held-out set only the totals, and calibrate.py score
 is the one that records it.
@@ -159,8 +162,13 @@ def main(argv=None):
             print(f"{paper}: {len(missing)} items without a verdict (failed calls); rerun to resume", flush=True)
         for x in items:
             v = verdicts.get(x["id"])
-            if v is None:
-                continue                                    # no result is not a miss
+            if v is None:                                   # abstention counts against the checker (WORKFLOW §5):
+                if x["role"] == "plant":                    # a miss on a plant, a flag on a control;
+                    results.append({"plant_id": x["id"], "caught_by": None, "no_verdict": True})
+                else:                                       # a rerun resumes from the saved verdicts first
+                    results.append({"control_id": x["id"], "flagged": True, "no_verdict": True, "paper": paper,
+                                    "verdict": None})
+                continue
             if x["role"] == "plant":
                 results.append({"plant_id": x["id"], "caught_by": ("E4" if v and caught(v, x) else None)})
                 by_item[x["id"]] = (x, v)

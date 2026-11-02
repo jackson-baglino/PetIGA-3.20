@@ -16,6 +16,8 @@ Two subcommands:
           Each kind's catch rate is reported with its interval but is not a gate: n of n caught
           gives a bound of 0.05^(1/n), below 85 % for any n under 19 (revision 10, Codex finding 8).
           - at most 10 % of the controls flagged.
+          An item without a verdict ("no_verdict": true) counts as a miss on a plant and as a
+          flag on a control (abstention cannot raise the score); the report gives their count.
           A held-out set is scored once per prompt version, and a set that has failed is never
           scored again: the next prompt version needs a fresh held-out set. The ledger records
           every attempt, and the report gives the number of attempts with the bound. Misses on
@@ -193,6 +195,8 @@ def score(plants, held_ids, results):
                      for kind, (kk, nn) in sorted(per_kind.items())},
         "by_source": {}, "by_copy_kind": {},
         "misses_per_kind": dict(collections.Counter(p["kind"] for p, c in rows if not c)),
+        "no_verdict": {"plants": sum(1 for r in results if r.get("no_verdict") and "plant_id" in r),
+                       "controls": sum(1 for r in results if r.get("no_verdict") and "control_id" in r)},
     }
     for key, field in (("by_source", "source"), ("by_copy_kind", "copy_kind")):
         groups = collections.defaultdict(lambda: [0, 0])

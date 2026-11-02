@@ -661,6 +661,15 @@ No new planted errors are written for B1 (§9, item 43).
 - **User plants and script plants** are reported separately. If the user's
   plants are caught clearly less often, the rate on the user's plants is the
   one that counts.
+- **Abstention** (user decision 2026-11-01, from the Lab Report 2 review). A
+  plant or control left without a verdict (a failed call, or a claim the
+  checker returned no verdict for) counts against the checker: a miss on a
+  plant, a flag on a control. Declining to answer cannot raise the score.
+  Failed calls are rerun first (saved verdicts are reused); the report gives
+  the number of items without a verdict.
+- **Sampling temperature.** Claude Code (2.1.316) has no option to set it
+  (`claude --help`, checked 2026-11-01), so run-to-run variation is measured
+  by repeat runs (T-repeat, §8) instead of being fixed.
 - **After a real failure** (an error found in U3, X1 or Y3): no automatic
   redraw of a fresh held-out set, and no rerun of the whole branch. The
   prompt is repaired, the affected claim family (claims of that kind on those

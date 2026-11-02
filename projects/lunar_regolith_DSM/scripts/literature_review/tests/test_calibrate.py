@@ -95,6 +95,17 @@ class Score(unittest.TestCase):
         rep = cal.score(self.ps, self.held, self.results())
         self.assertFalse(rep["passed"])
 
+    def test_abstention_cannot_raise_the_score(self):
+        """A plant or control without a verdict counts against the checker (a miss, a flag)."""
+        r = self.results()
+        r = [dict(x, caught_by=None, no_verdict=True) if x.get("plant_id") == "P003" else x for x in r]
+        self.controls = [{"control_id": f"C{i}", "flagged": i == 0 or i == 1, **({"no_verdict": True} if i == 1
+                                                                                   else {})} for i in range(10)]
+        r = [x for x in r if "control_id" not in x] + self.controls
+        rep = cal.score(self.ps, self.held, r)
+        self.assertFalse(rep["passed"])                    # one miss in 21 fails the bound; 2 of 10 controls fail
+        self.assertEqual(rep["no_verdict"], {"plants": 1, "controls": 1})
+
     def test_misses_reported_only_as_counts(self):
         rep = cal.score(self.ps, self.held, self.results(missed={"P003"}))
         self.assertEqual(rep["misses_per_kind"], {"dropped_condition": 1})
