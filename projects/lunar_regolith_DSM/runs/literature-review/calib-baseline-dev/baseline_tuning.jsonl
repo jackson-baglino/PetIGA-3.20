@@ -1,0 +1,60 @@
+{"plant_id": "S-9961d2d2", "caught_by": null, "checks": {}}
+{"plant_id": "S-c3a40f6f", "caught_by": null, "checks": {}}
+{"plant_id": "S-9e80b75b", "caught_by": "script", "checks": {"numbers": false, "units": false}}
+{"plant_id": "S-bfc4996d", "caught_by": "script", "checks": {"numbers": false, "units": false}}
+{"plant_id": "S-4b1e1a00", "caught_by": "script", "checks": {"numbers": false, "units": false}}
+{"plant_id": "S-5282f6a6", "caught_by": "script", "checks": {"numbers": false, "units": false}}
+{"plant_id": "S-f7efa1d7", "caught_by": null, "checks": {}}
+{"plant_id": "S-17b52569", "caught_by": "script", "checks": {"numbers": false}}
+{"plant_id": "S-2ca2a2a3", "caught_by": "script", "checks": {"numbers": false}}
+{"plant_id": "S-64643eb5", "caught_by": null, "checks": {}}
+{"control_id": "G033", "flagged": false, "checks": {}}
+{"control_id": "G034", "flagged": true, "checks": {"numbers": false}}
+{"control_id": "G035", "flagged": false, "checks": {}}
+{"control_id": "G036", "flagged": true, "checks": {"numbers": false, "units": false}}
+{"control_id": "G037", "flagged": true, "checks": {"numbers": true, "units": false}}
+{"control_id": "G038", "flagged": false, "checks": {}}
+{"control_id": "G039", "flagged": true, "checks": {"numbers": false}}
+{"control_id": "G040", "flagged": false, "checks": {}}
+{"plant_id": "S-0428dc28", "caught_by": null, "checks": {}}
+{"plant_id": "S-b735b7af", "caught_by": "script", "checks": {"numbers": false, "units": false}}
+{"plant_id": "S-74ec5bd8", "caught_by": "script", "checks": {"numbers": false, "units": false}}
+{"plant_id": "S-9e329726", "caught_by": "script", "checks": {"numbers": false}}
+{"plant_id": "S-4a2ce265", "caught_by": null, "checks": {"numbers": true}}
+{"control_id": "G001", "flagged": true, "checks": {"equations": false}}
+{"control_id": "G002", "flagged": true, "checks": {"numbers": true, "units": false}}
+{"control_id": "G003", "flagged": false, "checks": {}}
+{"control_id": "G004", "flagged": false, "checks": {}}
+{"control_id": "G005", "flagged": false, "checks": {"numbers": true}}
+{"control_id": "G006", "flagged": false, "checks": {}}
+{"control_id": "G007", "flagged": false, "checks": {}}
+{"control_id": "G008", "flagged": false, "checks": {}}
+{"control_id": "G009", "flagged": false, "checks": {}}
+{"control_id": "G010", "flagged": false, "checks": {}}
+{"control_id": "G011", "flagged": true, "checks": {"numbers": true, "units": false}}
+{"control_id": "G012", "flagged": false, "checks": {"numbers": true}}
+{"plant_id": "S-8aa375ef", "caught_by": "script", "checks": {"numbers": false}}
+{"plant_id": "S-36f5f774", "caught_by": null, "checks": {"numbers": true}}
+{"plant_id": "S-89796be7", "caught_by": null, "checks": {}}
+{"plant_id": "S-20e7e5aa", "caught_by": null, "checks": {"numbers": true}}
+{"plant_id": "S-998ba166", "caught_by": null, "checks": {"numbers": true}}
+{"plant_id": "S-2bff96d0", "caught_by": null, "checks": {}}
+{"plant_id": "S-96cf0e42", "caught_by": null, "checks": {}}
+{"plant_id": "S-13a574a5", "caught_by": "script", "checks": {"equations": false}}
+{"plant_id": "S-1c20e183", "caught_by": "script", "checks": {"equations": false}}
+{"plant_id": "S-b8367b6f", "caught_by": "script", "checks": {"equations": false}}
+{"plant_id": "S-ce47d7c0", "caught_by": "script", "checks": {"equations": false}}
+{"plant_id": "S-80e46a19", "caught_by": "script", "checks": {"equations": false}}
+{"plant_id": "S-6829c884", "caught_by": "script", "checks": {"equations": false}}
+{"plant_id": "S-1ad02fed", "caught_by": "script", "checks": {"equations": false}}
+{"plant_id": "S-a3d32759", "caught_by": "script", "checks": {"equations": false}}
+{"control_id": "G013", "flagged": false, "checks": {"numbers": true}}
+{"control_id": "G014", "flagged": false, "checks": {}}
+{"control_id": "G015", "flagged": false, "checks": {"numbers": true}}
+{"control_id": "G016", "flagged": false, "checks": {}}
+{"control_id": "G017", "flagged": false, "checks": {}}
+{"control_id": "G018", "flagged": true, "checks": {"equations": false}}
+{"control_id": "G019", "flagged": true, "checks": {"equations": false}}
+{"control_id": "G020", "flagged": false, "checks": {"equations": true}}
+{"control_id": "G021", "flagged": false, "checks": {"equations": true}}
+{"control_id": "G022", "flagged": true, "checks": {"equations": false}}

@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "li_2009",
+ "copy_sha256": "6c8ca5bbb242338c53052e92ee5943a40947785fc26646351cf49beaed3b4928",
+ "pages": 27,
+ "tiles": 125,
+ "tiles_per_page_max": 13,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 2,
+ "min_tile_dpi": 274.7,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 111,
+ "numbered_equations": 58,
+ "headings": 20,
+ "page_map_offset": 80,
+ "manifest_sha256": "f6c051d487d025c80149249520b733b983037d9ac53f6faffb2c3e48a0f25d75",
+ "seconds": 269.2
+}

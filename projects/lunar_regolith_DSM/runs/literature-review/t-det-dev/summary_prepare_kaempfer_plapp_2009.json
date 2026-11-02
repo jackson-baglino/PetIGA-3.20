@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "kaempfer_plapp_2009",
+ "copy_sha256": "2141892c2e9cbf862ed22420ba4cf6f4ef91872c216b2ce57c678b9c701130b0",
+ "pages": 17,
+ "tiles": 141,
+ "tiles_per_page_max": 17,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 19,
+ "min_tile_dpi": 215.0,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 58,
+ "numbered_equations": 58,
+ "headings": 17,
+ "page_map_offset": 0,
+ "manifest_sha256": "6fcc373cd81ffd97a794ec00162c032b43f36a3aed5711898690bcad2e6eb4f2",
+ "seconds": 260.3
+}
