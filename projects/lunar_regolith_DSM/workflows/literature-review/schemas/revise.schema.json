@@ -1,0 +1,175 @@
+{
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "revisions"
+ ],
+ "properties": {
+  "revisions": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "claim_id",
+     "action",
+     "reason"
+    ],
+    "properties": {
+     "claim_id": {
+      "type": "string"
+     },
+     "action": {
+      "type": "string",
+      "enum": [
+       "revised",
+       "withdrawn"
+      ]
+     },
+     "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "text",
+       "kind",
+       "quote",
+       "page_pdf",
+       "location",
+       "questions",
+       "basis",
+       "conditions"
+      ],
+      "properties": {
+       "text": {
+        "type": "string"
+       },
+       "kind": {
+        "enum": [
+         "method",
+         "equation",
+         "parameter",
+         "result",
+         "limitation",
+         "attribution",
+         "definition"
+        ]
+       },
+       "quote": {
+        "type": "string"
+       },
+       "page_pdf": {
+        "type": "integer"
+       },
+       "location": {
+        "type": "string"
+       },
+       "equation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "latex",
+         "number"
+        ],
+        "properties": {
+         "latex": {
+          "type": "string"
+         },
+         "number": {
+          "type": "string"
+         }
+        }
+       },
+       "parameter": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "quantity",
+         "value",
+         "unit_printed"
+        ],
+        "properties": {
+         "quantity": {
+          "type": "string"
+         },
+         "value": {
+          "type": "string"
+         },
+         "unit_printed": {
+          "type": "string"
+         },
+         "uncertainty": {
+          "type": "string"
+         }
+        }
+       },
+       "table_cell": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "table",
+         "row",
+         "column"
+        ],
+        "properties": {
+         "table": {
+          "type": "string"
+         },
+         "row": {
+          "type": "string"
+         },
+         "column": {
+          "type": "string"
+         }
+        }
+       },
+       "questions": {
+        "type": "array",
+        "items": {
+         "enum": [
+          "Q1",
+          "Q2",
+          "Q3"
+         ]
+        }
+       },
+       "basis": {
+        "enum": [
+         "derived",
+         "numerically_tested",
+         "experimentally_tested",
+         "cited",
+         "asserted"
+        ]
+       },
+       "cited_work": {
+        "type": "string"
+       },
+       "conditions": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "text",
+          "page_pdf"
+         ],
+         "properties": {
+          "text": {
+           "type": "string"
+          },
+          "page_pdf": {
+           "type": "integer"
+          }
+         }
+        }
+       }
+      }
+     },
+     "reason": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ }
+}
