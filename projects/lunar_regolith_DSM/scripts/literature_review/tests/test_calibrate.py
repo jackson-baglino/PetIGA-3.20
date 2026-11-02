@@ -95,6 +95,14 @@ class Score(unittest.TestCase):
         rep = cal.score(self.ps, self.held, self.results())
         self.assertFalse(rep["passed"])
 
+    def test_fewer_than_19_reaching_e4_is_reported_not_certified(self):
+        ps = [plant(i) for i in range(10)]
+        rep = cal.score(ps, [p["id"] for p in ps], [{"plant_id": p["id"], "caught_by": "E4"} for p in ps]
+                        + self.controls)
+        self.assertEqual(rep["e4"], {"caught": 10, "n": 10, "lower_bound": round(cal.cp_lower(10, 10), 4),
+                                     "certified": False})
+        self.assertNotIn("lower bound", " ".join(g["rule"] for g in rep["gates"]))
+
     def test_abstention_cannot_raise_the_score(self):
         """A plant or control without a verdict counts against the checker (a miss, a flag)."""
         r = self.results()

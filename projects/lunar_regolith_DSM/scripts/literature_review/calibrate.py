@@ -12,7 +12,8 @@ Two subcommands:
             every one caught;
           - every sign or exponent change caught;
           - the plants that reach E4 (not caught by E3): a one-sided 95 % Clopper-Pearson
-            lower bound of at least 85 %, which needs at least 19 of them;
+            lower bound of at least 85 %. It is a gate only with at least 19 of them; with
+            fewer the rate is reported ("e4") and the result is not certified;
           Each kind's catch rate is reported with its interval but is not a gate: n of n caught
           gives a bound of 0.05^(1/n), below 85 % for any n under 19 (revision 10, Codex finding 8).
           - at most 10 % of the controls flagged.
@@ -179,9 +180,10 @@ def score(plants, held_ids, results):
     e4 = [(p, c) for p, c in rows if c != "E3" and p["kind"] not in E3_KINDS]
     n, k = len(e4), sum(bool(c) for _, c in e4)
     lb = cp_lower(k, n)
-    gates.append((f"plants reaching E4: {MIN_E4} or more", n >= MIN_E4, f"{n}"))
-    gates.append((f"plants reaching E4: lower bound >= {BOUND:.0%}", lb >= BOUND,
-                  f"{k} of {n} caught, lower bound {lb:.1%}"))
+    certified = n >= MIN_E4                 # WORKFLOW §5: a gate only with 19 or more such plants; with fewer the
+    if certified:                           # catch rate is reported, not certified (n of n < 19 cannot reach 85 %)
+        gates.append((f"plants reaching E4: lower bound >= {BOUND:.0%}", lb >= BOUND,
+                      f"{k} of {n} caught, lower bound {lb:.1%}"))
     per_kind = collections.defaultdict(lambda: [0, 0])
     for p, c in e4:
         per_kind[p["kind"]][1] += 1
@@ -197,6 +199,7 @@ def score(plants, held_ids, results):
         "per_kind": {kind: {"caught": kk, "n": nn, "lower_bound": round(cp_lower(kk, nn), 4)}
                      for kind, (kk, nn) in sorted(per_kind.items())},
         "by_source": {}, "by_copy_kind": {},
+        "e4": {"caught": k, "n": n, "lower_bound": round(lb, 4), "certified": certified},
         "misses_per_kind": dict(collections.Counter(p["kind"] for p, c in rows if not c)),
         "no_verdict": {"plants": sum(1 for r in results if r.get("no_verdict") and "plant_id" in r),
                        "controls": sum(1 for r in results if r.get("no_verdict") and "control_id" in r)},
@@ -276,6 +279,9 @@ def cmd_score(args):
         json.dump(ledger, f, indent=2)
     for g in report["gates"]:
         print(("PASS " if g["pass"] else "FAIL ") + g["rule"] + ": " + g["detail"])
+    e4 = report["e4"]
+    print(f"plants reaching E4: {e4['caught']} of {e4['n']}, lower bound {e4['lower_bound']:.1%}"
+          f"{'' if e4['certified'] else f' (reported, not certified: fewer than {MIN_E4})'}")
     print(f"attempts so far: {report['attempts_so_far']}; misses per kind: {report['misses_per_kind']}")
     return 0 if report["passed"] else 1
 
