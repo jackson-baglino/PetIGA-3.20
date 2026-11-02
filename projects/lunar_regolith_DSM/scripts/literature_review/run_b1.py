@@ -440,8 +440,9 @@ def main(argv=None):
     a = ap.parse_args(argv)
     if a.cmd == "status" and a.run is None:
         a.run = os.environ.get("LR_RUN") or current_run()
-        if a.run is None and not a.brief:
-            raise SystemExit("no run: give --run")
+        if a.run is None:                       # no run yet: say so, with the command that starts one
+            print(brief(None) + ". Start one with: run_b1.py init --run runs/literature-review/b1/<run_id> [--dev]")
+            return 0
     return {"init": cmd_init, "status": cmd_status, "run": cmd_run, "approve": cmd_approve, "freeze": cmd_freeze,
             "thaw": cmd_thaw, "verify": cmd_verify}[a.cmd](a) or 0
 

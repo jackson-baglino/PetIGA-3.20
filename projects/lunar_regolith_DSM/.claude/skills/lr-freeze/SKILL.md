@@ -21,4 +21,4 @@ Then show the user what the freeze will hold and give the command for them to ru
 `! venv_workflows/bin/python scripts/literature_review/run_b1.py freeze --approved-by-user`
 
 After they run it: commit `workflows/literature-review/freeze/b1-vN.json`, tag it `lr-b1-vN`
-(`git tag lr-b1-vN`), and tell them to start the run with `claude --agent beth-foreman`.
+(`git tag lr-b1-vN`), and tell them to start the run with `venv_workflows/bin/python scripts/literature_review/foreman.py`.

@@ -164,6 +164,14 @@ def definition_faults(root, adir):
         except (agentlib.AgentError, KeyError) as e:
             faults.append(f"{name}: definition: {e}")
             continue
+        if a["session"]:
+            # The foreman: a session agent started by foreman.py. Its limits are its Bash hook and the project
+            # settings, not a worker settings file; it must not edit or delegate.
+            if not {"Edit", "Write", "Agent"} <= set(a["disallowed"]):
+                faults.append(f"{name}: session agent must disallow Edit, Write and Agent")
+            if "foreman_bash_guard.py" not in json.dumps(a["hooks"] or {}):
+                faults.append(f"{name}: session agent has no foreman_bash_guard.py hook")
+            continue
         sp = os.path.join(adir, name + ".settings.json")
         if not os.path.exists(sp):
             faults.append(f"{name}: definition has no settings file")

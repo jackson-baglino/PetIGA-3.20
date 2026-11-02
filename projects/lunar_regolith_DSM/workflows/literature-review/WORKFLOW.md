@@ -95,8 +95,8 @@ and prompts kept changing during the run.
 
 **Who reports to whom.** Scripts manage; agents work.
 - **The user** approves the gates below, the freeze and the memo.
-- **`beth-foreman`** (`.claude/agents/beth-foreman.md`, started with
-  `claude --agent beth-foreman`) runs the line, reports each station's result
+- **`beth-foreman`** (`agents/beth-foreman.md`, started with
+  `venv_workflows/bin/python scripts/literature_review/foreman.py`) runs the line, reports each station's result
   and the items waiting for the user, and stops at blocking gates. It may run
   only `run_b1.py`, `lr_status.py`, `lr_backlog.py`, `git status` and
   `git log`; it never edits a definition and never reads untrusted text.

@@ -19,10 +19,13 @@ One row per stage. Each stage ends in a file that something can check.
 
 ## 3. Agents
 
-One block per agent. A worker that a script calls headless is defined in
-`workflows/<name>/agents/<agent>.md`; an agent the user starts or talks to in a
-session (a foreman, an interactive helper) is defined in
-`.claude/agents/<agent>.md`. Both use the Claude Code subagent format: YAML
+One block per agent. Every agent of a workflow, its workers and its foreman,
+is defined in `workflows/<name>/agents/<agent>.md`, one folder per workflow.
+Workers are called headless by station scripts (`permissionMode: dontAsk`);
+the foreman is a session the user starts through the workflow's launcher,
+which passes the definition to `claude --agents ... --agent <foreman>`.
+`.claude/agents/` holds only general helpers that belong to no workflow.
+All use the Claude Code subagent format: YAML
 frontmatter (`name`, `description`, `tools`, `disallowedTools`, `model`,
 `permissionMode`, `maxTurns`) and the system prompt as the body. The body has a
 short "Your place in the line" section: who sends the work order, what
@@ -46,7 +49,7 @@ Who reports to whom. Scripts manage; agents work.
 
 ```
 user (owner)            approves gates, the freeze and the final output
-  foreman agent         a session started with `claude --agent <foreman>`; runs the line,
+  foreman agent         a session started with the workflow's launcher; runs the line,
                         reports, stops at blocking gates; never edits definitions
     line script         walks the stage graph in `flowchart.json`; refuses a stage whose
                         upstream stages are not done; records every call in runs.db

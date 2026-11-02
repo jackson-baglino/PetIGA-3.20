@@ -1,6 +1,6 @@
 ---
 name: new-agent
-description: Create a new agent definition in this project's house format - a headless workflow worker in workflows/<name>/agents/ or a session agent in .claude/agents/ - with the naming rule, a pinned model ID, a "Your place in the line" section, and (for literature-review workers) a permission file. Use when an agent is added or its model changes.
+description: Create a new agent definition in this project's house format - a workflow's headless worker or foreman in workflows/<name>/agents/, or a general helper in .claude/agents/ - with the naming rule, a pinned model ID, a "Your place in the line" section, and (for literature-review workers) a permission file. Use when an agent is added or its model changes.
 argument-hint: "<workflow> <purpose> <model family>"
 ---
 
@@ -9,9 +9,11 @@ inputs, output schema, tools, who sends it work and who checks it.
 
 1. **Name:** `<character>-<purpose>` from the model family (CLAUDE.md, "Agent names"): Fable → `rick`, Opus →
    `beth`, Sonnet → `morty`, Haiku → `jerry`. A model change means a new name.
-2. **Where:** a worker that a script calls headless goes in `workflows/<workflow>/agents/<name>.md`; a session
-   agent (started with `claude --agent`, or interactive) goes in `.claude/agents/<name>.md` (ask first: edits to
-   `.claude/` need the user's approval).
+2. **Where:** every agent of a workflow (headless workers and the foreman) goes in
+   `workflows/<workflow>/agents/<name>.md`. A foreman is started by the workflow's launcher (for the literature
+   review, `scripts/literature_review/foreman.py`, which passes the definition with `claude --agents`). Only a
+   general helper that belongs to no workflow goes in `.claude/agents/<name>.md` (ask first: edits to `.claude/`
+   need the user's approval).
 3. **Frontmatter**, in this order: `name` (same as the file), `description` (what it does, the stage, who runs
    it), `tools` (the minimum; empty for none), `disallowedTools`, `model` (a full pinned ID such as
    `claude-opus-5-5`, never an alias), `permissionMode: dontAsk` for workers, `maxTurns`. No `memory` for

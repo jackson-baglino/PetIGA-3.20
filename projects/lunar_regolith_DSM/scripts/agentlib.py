@@ -49,20 +49,23 @@ def rel(path):
 
 
 def _frontmatter(text, path):
+    """(frontmatter dict, body). The frontmatter is YAML (nested fields such as hooks are allowed)."""
+    import yaml
     if not text.startswith("---\n"):
         raise AgentError(f"{path}: no frontmatter")
     head, body = text[4:].split("\n---\n", 1)
-    meta = {}
-    for line in head.splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        k, _, v = line.partition(":")
-        meta[k.strip()] = v.strip()
+    meta = yaml.safe_load(head) or {}
+    if not isinstance(meta, dict):
+        raise AgentError(f"{path}: frontmatter is not a mapping")
     return meta, body
 
 
 def _list(value):
-    return [t.strip() for t in (value or "").split(",") if t.strip()]
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(t).strip() for t in value if str(t).strip()]
+    return [t.strip() for t in str(value).split(",") if t.strip()]
 
 
 def load_agent(path, name=None):
@@ -73,7 +76,7 @@ def load_agent(path, name=None):
     aname = meta.get("name")
     if aname != path.stem or (name is not None and aname != name):
         raise AgentError(f"{path}: name {aname!r} does not match the file")
-    model = meta.get("model", "")
+    model = str(meta.get("model") or "")
     fam = next((k for k in FAMILY_PREFIX if model.startswith(k)), None)
     if fam is None or not model[len(fam):].replace("-", "").isdigit():
         raise AgentError(f"{path}: model {model!r} is not a full pinned ID")
@@ -84,8 +87,9 @@ def load_agent(path, name=None):
     max_turns = meta.get("maxTurns")
     return {"name": aname, "model": model, "description": meta["description"], "tools": _list(meta.get("tools")),
             "disallowed": _list(meta.get("disallowedTools")), "max_turns": int(max_turns) if max_turns else None,
-            "permission_mode": meta.get("permissionMode", "dontAsk"), "system_prompt": body.strip(),
-            "path": rel(path), "sha256": sha256(path)}
+            "permission_mode": meta.get("permissionMode", "dontAsk"), "skills": _list(meta.get("skills")),
+            "hooks": meta.get("hooks"), "system_prompt": body.strip(), "path": rel(path), "sha256": sha256(path),
+            "session": meta.get("permissionMode", "dontAsk") != "dontAsk"}
 
 
 def validate(obj, schema, where="$"):

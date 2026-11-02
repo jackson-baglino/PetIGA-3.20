@@ -50,6 +50,18 @@ class Definitions(unittest.TestCase):
                 self.assertIn("## Your place in the line", a["system_prompt"])
                 self.assertTrue((ac.AGENTS / f"{name}.settings.json").exists(), "no permission file")
 
+    def test_foreman_is_a_session_agent_with_its_guard(self):
+        a = ac.load("beth-foreman")
+        self.assertTrue(a["session"])
+        self.assertIn("foreman_bash_guard.py", json.dumps(a["hooks"]))
+        self.assertTrue({"Edit", "Write", "Agent"} <= set(a["disallowed"]))
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        import foreman
+        d = foreman.definition()["beth-foreman"]
+        self.assertEqual(d["model"], ac.MODELS["beth"])
+        self.assertIn("hooks", d)
+        self.assertEqual(d["skills"], ["lr-status"])
+
     def test_work_orders_have_no_job_text(self):
         """prompts/ holds only work orders: each starts 'Work order:' and is short."""
         for p in ac.PROMPTS.glob("*.md"):

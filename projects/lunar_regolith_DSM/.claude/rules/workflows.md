@@ -13,7 +13,7 @@ paths:
 - **The line.** Scripts manage; agents work (`workflows/TEMPLATE.md`, "The
   line"). Stages run in the order of the workflow's stage graph, through the
   line script (literature review: `run_b1.py`; the foreman session is
-  `claude --agent beth-foreman`). In the develop phase a station may be run by
+  `venv_workflows/bin/python scripts/literature_review/foreman.py`). In the develop phase a station may be run by
   hand only to test it, in a dev run folder; in the execute phase never (a
   hook blocks it).
 - **Phases** (`workflows/TEMPLATE.md` §7). Before editing an agent file,
@@ -24,9 +24,9 @@ paths:
   planned work, write it in `BACKLOG.md` with the date and the reason, finish
   the task, and raise the idea with the user at the end. Do not redesign in
   the middle of a task.
-- **Where agents live.** Headless workers: `workflows/<name>/agents/<agent>.md`.
-  Session agents (a foreman, an interactive helper): `.claude/agents/`. Both
-  use the subagent format (frontmatter + a system-prompt body with a "Your place
+- **Where agents live.** Every agent of a workflow, workers and foreman, in
+  `workflows/<name>/agents/<agent>.md`; `.claude/agents/` only for general
+  helpers that belong to no workflow. All use the subagent format (frontmatter + a system-prompt body with a "Your place
   in the line" section). `prompts/` holds only per-call work orders.
 - **Literature review.** Models are pinned in `MODELS` in
   `scripts/literature_review/agent_call.py`; permissions are in
