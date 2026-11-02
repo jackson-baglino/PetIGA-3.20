@@ -80,6 +80,36 @@ class Publish(unittest.TestCase):
         events = (self.lib / "events.jsonl").read_text().splitlines()
         self.assertEqual(len(events), 3)
 
+    def decide(self, **verdicts):
+        (self.run / "u3_decisions.json").write_text(json.dumps(
+            {cid.replace("_", "-"): {"verdict": v, "kind": "disputed", "note": "", "by": "user"}
+             for cid, v in verdicts.items()}))
+
+    def test_user_decisions_publish_disputed_right_and_refuse_wrong(self):
+        self.approve_copy()
+        self.final.append(final_rec("pa-c006", "disputed", ok=False, text="unsupported"))   # quote not placed
+        (self.run / "untrusted" / "pa" / "final.json").write_text(json.dumps(self.final))
+        self.decide(pa_c003="right", pa_c001="wrong", pa_c002="unsure", pa_c006="right")
+        c = curator.publish(self.run, "pa", self.lib)
+        self.assertEqual((c["published"], c["by_user_decision"], c["refused_user_wrong"], c["refused_user_unsure"],
+                          c["refused_unchecked"], c["refused_disputed"]), (1, 1, 1, 1, 2, 0))
+        claims = sorted(p.name for p in (self.lib / "papers" / "pa" / "claims").glob("*.json"))
+        self.assertEqual(claims, ["pa-c003.v1.json"])                    # c006: right, but E3 failed
+        rec = json.loads((self.lib / "papers" / "pa" / "claims" / "pa-c003.v1.json").read_text())
+        self.assertEqual((rec["status"], rec["user_decision"]["verdict"]), ("disputed", "right"))
+
+    def test_after_u3_needs_the_u3a_gate(self):
+        self.approve_copy()
+        self.assertEqual(curator.main(["publish", "--run", str(self.run), "--paper-id", "pa", "--after-u3"]), 1)
+        out = json.loads((self.run / "summary_publish_u3_pa.json").read_text())
+        self.assertIn("U3a", out["failed"])
+        (self.run / "gates" / "U3a.json").write_text(json.dumps({"status": "approved"}))
+        self.decide(pa_c003="right")
+        with mock.patch.object(curator, "LIBRARY", self.lib):
+            self.assertEqual(curator.main(["publish", "--run", str(self.run), "--paper-id", "pa", "--after-u3"]), 0)
+        out = json.loads((self.run / "summary_publish_u3_pa.json").read_text())
+        self.assertEqual((out["published"], out["by_user_decision"]), (3, 1))
+
 
 if __name__ == "__main__":
     unittest.main()

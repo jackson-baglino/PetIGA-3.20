@@ -578,6 +578,46 @@
    }
   },
   {
+   "id": "L1b",
+   "lane": "script",
+   "row": 13.5,
+   "kind": "script",
+   "title": "L1b curator.py: publish the U3 decisions",
+   "job": "After U3a, publishes each paper again with the user's decisions: a disputed claim marked right is published.",
+   "details": [
+    "Marked wrong or unsure: refused",
+    "Each decided claim's record carries the decision",
+    "E3 must still have placed the quote"
+   ],
+   "run": {
+    "per": "paper",
+    "requires": [
+     "U3a"
+    ],
+    "station": "curator.py",
+    "gate": "none",
+    "steps": [
+     [
+      "curator.py",
+      "publish",
+      "--run",
+      "{run}",
+      "--paper-id",
+      "{paper}",
+      "--after-u3"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_publish_u3_{paper}.json",
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
+  },
+  {
    "id": "LB",
    "lane": "record",
    "row": 13,
@@ -658,7 +698,8 @@
     "per": "once",
     "requires": [
      "X1",
-     "U3a"
+     "U3a",
+     "L1b"
     ],
     "station": "check_citations.py",
     "gate": "none",
@@ -1239,6 +1280,16 @@
    "from": "A2",
    "to": "Z1",
    "kind": "data"
+  },
+  {
+   "from": "U3a",
+   "to": "L1b",
+   "kind": "flow"
+  },
+  {
+   "from": "L1b",
+   "to": "Y2",
+   "kind": "flow"
   }
  ]
 }

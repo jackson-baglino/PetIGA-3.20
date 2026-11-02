@@ -30,11 +30,12 @@ QUESTIONS = ("Q1", "Q2", "Q3")
 
 
 def user_rejected(run):
-    """Claim IDs the user rejected in U3 or X1 (u3_decisions.json, written by u3_review.py)."""
+    """Claim IDs the user rejected (wrong) or left unsure in U3 or X1 (u3_decisions.json, written by u3_review.py).
+    u3_review.py: unsure is kept out of the memo too."""
     f = Path(run) / "u3_decisions.json"
     if not f.exists():
         return set()
-    return {k for k, d in json.loads(f.read_text()).items() if d.get("verdict") == "wrong"}
+    return {k for k, d in json.loads(f.read_text()).items() if d.get("verdict") in ("wrong", "unsure")}
 
 
 def library_claims(run, library=None):
@@ -63,7 +64,8 @@ def library_claims(run, library=None):
                         "questions": c.get("questions", []), "page_pdf": c["page_pdf"], "kind": c["kind"],
                         "basis": c["basis"], "cited_work": c.get("cited_work"), "equation": c.get("equation"),
                         "parameter": c.get("parameter"), "conditions": c.get("conditions", []),
-                        "meaning": vd.get("meaning")})
+                        "meaning": vd.get("meaning"),
+                        "user_verdict": (rec.get("user_decision") or {}).get("verdict")})
         counts[paper["id"]] = {"published": len(latest), "given": kept}
         chk = pdir / "analysis" / Path(run).name / "applicability.json"
         if chk.exists():

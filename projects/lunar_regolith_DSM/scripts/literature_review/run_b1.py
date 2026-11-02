@@ -340,9 +340,27 @@ def next_item(run, plist, fv, skip=()):
     return None, None
 
 
+def review_items(run):
+    """The review queue, each item marked decided or not. E5 and X1 items are claims the user decides in U3
+    (u3_decisions.json); Y3 items are the memo's, decided when the user decides U4."""
+    run = Path(run)
+    f, d = run / "review_queue.json", run / "u3_decisions.json"
+    decided = json.loads(d.read_text()) if d.exists() else {}
+    u4 = run / "gates" / "U4.json"
+    u4_done = u4.exists() and json.loads(u4.read_text()).get("status") == "approved"
+    out = []
+    for x in (json.loads(f.read_text()) if f.exists() else []):
+        if x.get("stage") in ("E5", "X1"):
+            dec = (decided.get(x.get("claim_id")) or {}).get("verdict")
+        else:
+            dec = "U4 approved" if x.get("stage") == "Y3" and u4_done else None
+        out.append({**x, "decided": dec})
+    return out
+
+
 def review_count(run):
-    f = Path(run) / "review_queue.json"
-    return len(json.loads(f.read_text())) if f.exists() else 0
+    """Review items not yet decided."""
+    return sum(1 for x in review_items(run) if not x["decided"])
 
 
 def brief(run):
@@ -356,7 +374,7 @@ def brief(run):
     gates = sum(r["waiting"] for r in status_rows(run, plist))
     nxt = "all stages done" if s is None else f"next: {s['id']}{' ' + i if i else ''}" + \
         ("" if built(s) else " (not built)")
-    return f"{head} · run {Path(run).name} · {nxt} · {gates} gate(s) waiting · {review_count(run)} review item(s)"
+    return f"{head} · run {Path(run).name} · {nxt} · {gates} gate(s) waiting · {review_count(run)} review item(s) undecided"
 
 
 def cmd_status(a):
@@ -374,10 +392,9 @@ def cmd_status(a):
         rec = json.loads(g.read_text())
         if rec.get("status") == "waiting":
             print(f"  gate waiting: {g.stem}: {rec.get('what', '')}")
-    rq = Path(a.run) / "review_queue.json"
-    for item in (json.loads(rq.read_text()) if rq.exists() else []):
+    for item in review_items(a.run):
         print(f"  review: {item.get('stage', '?')} {item.get('item') or ''} {item.get('claim_id') or ''} "
-              f"{item.get('kind', '')}".rstrip())
+              f"{item.get('kind', '')}".rstrip() + (f"  (decided: {item['decided']})" if item["decided"] else ""))
 
 
 def cmd_run(a):

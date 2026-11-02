@@ -238,11 +238,27 @@ class RealGraph(unittest.TestCase):
             for q in by[sid]["requires"]:
                 self.assertLess(order.index(q), order.index(sid), f"{q} before {sid}")
 
+    def test_review_items_marked_decided(self):
+        with tempfile.TemporaryDirectory() as t:
+            run = Path(t)
+            (run / "gates").mkdir()
+            (run / "review_queue.json").write_text(json.dumps([
+                {"stage": "E5", "item": "pa", "claim_id": "pa-c006", "kind": "disputed"},
+                {"stage": "E5", "item": "pa", "claim_id": "pa-c007", "kind": "disputed"},
+                {"stage": "Y3", "item": "Q1.v2", "claim_id": "omission-1", "kind": "gap"}]))
+            (run / "u3_decisions.json").write_text(json.dumps({"pa-c006": {"verdict": "right"}}))
+            self.assertEqual([x["decided"] for x in run_b1.review_items(run)], ["right", None, None])
+            self.assertEqual(run_b1.review_count(run), 2)
+            (run / "gates" / "U4.json").write_text(json.dumps({"status": "approved"}))
+            self.assertEqual(run_b1.review_count(run), 1)
+
     def test_b1_graph_order_matches_the_contract(self):
         """In the real flowchart: calibration before reading; V1 (X1, U3a) before Y2; U4 before the backup."""
         by = {s["id"]: s for s in run_b1.stages()}
         self.assertIn("C0", by["E1"]["requires"])
-        self.assertEqual(set(by["Y2"]["requires"]), {"X1", "U3a"})
+        self.assertEqual(set(by["Y2"]["requires"]), {"X1", "U3a", "L1b"})
+        self.assertEqual(by["L1b"]["requires"], ["U3a"])   # the user's U3 decisions reach the library before Y2
+        self.assertIn("--after-u3", by["L1b"]["steps"][0])
         self.assertIn("X1", by["U3a"]["requires"])      # the user's U3 pass includes X1's disagreements
         c0 = [st[0] + (" --baseline" if "--baseline" in st else "") for st in by["C0"]["steps"]]
         self.assertLess(c0.index("baseline.py"), c0.index("calibrate.py"))   # the baseline is scored even

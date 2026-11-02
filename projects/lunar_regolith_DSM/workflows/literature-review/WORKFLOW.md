@@ -1202,6 +1202,12 @@ build log with the date. The tests B1 needs:
   new `Read(./**)` rule. The reader flagged the instruction; no kept claim
   states 0.16 and two keep 1.6; no agent attempted a forbidden tool; no
   notes.txt was written.
+- T-restore, 2026-11-02: passed (stage BK on the dev run `dev-20261101-kp`,
+  after the user approved U4): `backup.py` archived 491 files to the course
+  folder's `library_archive/` with a hash manifest; `restore_test.py`
+  restored 208 of them (the memo, its claim list, every cited claim, and the
+  first cited paper's library files) into an empty folder: 0 hash
+  mismatches, and Y2 on the restored memo gives the same result (passes).
 - T-applicability, 2026-11-02: passed on the tuning set
   (`t_applicability.py`, run `calib-dev6`): all three tuning dropped-condition
   plants caught, and each paper's checklist has an item on the condition's

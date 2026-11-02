@@ -207,23 +207,24 @@ frozen final evaluation comes before the nine papers and the memo.
 | E3b | check_units.py | outside | |
 | E4 | beth-checker | dev | 9/9, steps 0-2 (last four 2026-10-30) |
 | RV | verdicts.json | dev | b1-dev2 |
-| X1 | blind re-read (V1) | not-built | V1 should run before Y2; skipped in b1-dev2 |
-| E5 | revise failed claims | not-built | failed claims are dropped by Y1 instead (e.g. Yu: 1 overstated, 1 unsupported) |
-| U3a | guided reading (U3) | not-run | |
+| X1 | blind re-read (V1) | dev | dev-20261101-kp: 6/6 agree; U3a requires X1 |
+| E5 | revise failed claims | dev | dev-20261101-kp: one claim disputed (c006), sent to U3 |
+| U3a | guided reading (U3) | dev | dev-20261101-kp: u3_review.py, 6 decisions by the user 2026-11-02 (model-option claims and the disputed claim; not the full guided reading) |
 | U3b | random audit | outside | B1 runs only U3's cited-claims part, not the random 60 |
-| L1 | curator.py | not-built | |
+| L1 | curator.py | dev | dev-20261101-kp |
+| L1b | curator.py --after-u3 | not-run | publishes the user's U3 decisions (2026-11-02); added after the dev run's Y2 |
 | LB | library/ | not-built | |
 | L2 | audit.py | outside | |
-| BK | backup archive | not-built | contract output 6, with the restore test |
+| BK | backup archive | dev | dev-20261101-kp: 491 files, restore test passed |
 | R1 | retag reader | outside | |
 | Y1 | beth-synthesizer | dev | Q1 v1, v2 (revise step); Q2/Q3 sections and leads missing |
 | Y2 | check_citations.py | dev | v2 passes |
 | Y3 | skeptic | dev | v2: 88 supported, 12 overstated, 1 unsupported; 12 omissions (1 high) |
 | RM | memos | dev | in b1-dev2/untrusted/memos, not `memos/b1/` |
-| U4 | user decides | not-run | |
+| U4 | user decides | dev | dev-20261101-kp: approved (dev run) 2026-11-02 |
 | — | run manifests (output 6) | not-built | no manifest.json in b1-dev2 or calib-dev*; per-call usage is in calls.jsonl |
 | — | repeat-run comparison (output 5) | not-run | |
-| — | restore test (output 6) | not-built | |
+| — | restore test (output 6) | dev | T-restore passed 2026-11-02: 208 files restored, 0 hash mismatches, Y2 unchanged |
 
 ## Versions
 
