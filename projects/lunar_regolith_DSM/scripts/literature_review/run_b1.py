@@ -310,11 +310,15 @@ def status_rows(run, plist=None):
     return rows
 
 
-def next_item(run, plist, fv):
+def next_item(run, plist, fv, skip=()):
+    """The first item not done whose requirements are done; items in `skip` (gates already waiting in this
+    pass) are passed over, so a gate on one paper holds only that paper."""
     spec = stages()
     by_id = {s["id"]: s for s in spec}
     for s in spec:
         for i in items(s, plist):
+            if (s["id"], i) in skip:
+                continue
             if not item_done(run, s, i, plist, fv) and ready(run, s, i, by_id, plist, fv):
                 return s, i
     return None, None
@@ -363,9 +367,13 @@ def cmd_run(a):
             raise SystemExit(f"frozen files changed: {d[:5]}")
     plist = run_papers(run, check_hash=True)
     count = 0
+    held = set()                        # gates waiting in this pass: that item waits, the line goes on with others
     while True:
-        s, i = next_item(run, plist, m["freeze"])
+        s, i = next_item(run, plist, m["freeze"], skip=held)
         if s is None:
+            if held:
+                print(f"WAITING: {len(held)} gate(s) need the user; nothing else can run")
+                return WAITING
             print("all stages done")
             return 0
         label = s["id"] + (f" {i}" if i else "")
@@ -382,10 +390,12 @@ def cmd_run(a):
                 gate.write_text(json.dumps({"stage": s["id"], "item": i, "status": "waiting", "opened": now(),
                                             "what": s.get("ask", s["title"])}, indent=1))
             print(f"WAITING at user gate {label}: {s.get('ask', s['title'])}")
-            return WAITING
+            held.add((s["id"], i))
+            continue
         if gate_state(run, s, i) == "waiting":
             print(f"WAITING at gate {label}: see {gate_files(run, s, i).relative_to(run)}")
-            return WAITING
+            held.add((s["id"], i))
+            continue
         if not built(s):
             missing = [st[0] for st in s["steps"] if not (HERE / st[0]).exists()]
             print(f"NOT BUILT: {label} needs {', '.join(missing)}")

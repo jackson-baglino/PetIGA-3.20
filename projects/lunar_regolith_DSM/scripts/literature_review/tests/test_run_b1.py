@@ -17,6 +17,10 @@ STUBS = {
                "name = a[a.index('--out') + 1]\n(run / name).write_text(json.dumps({'n': 1}))\n",
     "s_fail.py": "import sys\nsys.exit(2)\n",
     "s_quiet.py": "pass\n",
+    "s_gatep.py": "import sys, json, pathlib\na = sys.argv\nrun = pathlib.Path(a[a.index('--run') + 1])\n"
+                  "p = a[a.index('--paper') + 1]\n(run / f'g_{p}.json').write_text('{}')\n"
+                  "(run / 'gates').mkdir(exist_ok=True)\n"
+                  "if p == 'pa':\n    (run / 'gates' / 'G_pa.json').write_text(json.dumps({'status': 'waiting'}))\n",
     "s_gate.py": "import sys, json, pathlib\na = sys.argv\nrun = pathlib.Path(a[a.index('--run') + 1])\n"
                  "(run / 'c.json').write_text('{}')\n(run / 'gates').mkdir(exist_ok=True)\n"
                  "(run / 'gates' / 'C.json').write_text(json.dumps({'status': 'waiting'}))\n",
@@ -54,7 +58,7 @@ class Line(unittest.TestCase):
         self.perm = root / "perm"
         (self.perm / "profiles").mkdir(parents=True)
         (self.perm / "launcher.allow").write_text("s_ok.py offline\ns_fail.py offline\ns_quiet.py offline\n"
-                                                  "s_gate.py offline\n")
+                                                  "s_gate.py offline\ns_gatep.py offline\n")
         real = Path(wf_launch.PROJECT) / ".claude/permissions/literature-review/profiles/offline.sb"
         (self.perm / "profiles" / "offline.sb").write_text(real.read_text())
         self.spec = root / "flowchart.json"
@@ -102,6 +106,27 @@ class Line(unittest.TestCase):
         rows = {r["stage"]: r for r in run_b1.status_rows(run)}
         self.assertEqual((rows["A"]["done"], rows["A"]["total"]), (2, 2))
         self.assertFalse(rows["D"]["built"])
+
+    def test_a_gate_on_one_paper_holds_only_that_paper(self):
+        d = json.loads(self.spec.read_text())
+        d["nodes"][1:] = [
+            {"id": "G", "title": "G", "lane": "script", "kind": "script",
+             "run": {"per": "paper", "requires": ["U"], "station": "s_gatep.py", "gate": "blocking",
+                     "steps": [["s_gatep.py", "--run", "{run}", "--paper", "{paper}"]],
+                     "done": [{"path": "g_{paper}.json"}]}},
+            {"id": "H", "title": "H", "lane": "script", "kind": "script",
+             "run": {"per": "paper", "requires": ["G"], "station": "s_ok.py", "gate": "none",
+                     "steps": ok("h_{paper}.json"), "done": [{"path": "h_{paper}.json"}]}}]
+        self.spec.write_text(json.dumps(d))
+        run = str(self.run)
+        self.cli("init", "--run", run, "--dev")
+        self.cli("approve", "--run", run, "U", "--decision", "yes")
+        self.assertEqual(self.cli("run", "--run", run), run_b1.WAITING)          # G pa waits for the user ...
+        self.assertTrue((self.run / "h_pb.json").exists())                        # ... while pb goes on
+        self.assertFalse((self.run / "h_pa.json").exists())
+        self.cli("approve", "--run", run, "G", "--item", "pa", "--decision", "read this copy")
+        self.assertEqual(self.cli("run", "--run", run), 0)
+        self.assertTrue((self.run / "h_pa.json").exists())
 
     def test_requires_are_enforced(self):
         run = str(self.run)

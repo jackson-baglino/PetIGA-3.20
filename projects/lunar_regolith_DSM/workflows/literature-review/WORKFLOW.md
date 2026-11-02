@@ -114,8 +114,10 @@ and prompts kept changing during the run.
   line" section). `prompts/` holds only the per-call work orders.
 
 **Gates.**
-- *Blocking* (the line stops; the user records the decision with
-  `run_b1.py approve`, never the foreman): A2 copy decisions; the freeze; the
+- *Blocking* (the item waits for the user's decision, recorded with
+  `run_b1.py approve`, never by the foreman; a per-paper gate holds only that
+  paper and what depends on it, and the line goes on with everything else it
+  can run, stopping when nothing else can): A2 copy decisions; the freeze; the
   C0 result; V1 disagreements; U3 approval of each prose claim a model option
   rests on; U4.
 - *Review* (queued in `review_queue.json`; the line goes on with other
