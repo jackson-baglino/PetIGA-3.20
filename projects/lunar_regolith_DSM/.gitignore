@@ -65,6 +65,7 @@ _neck_csv/
 # Paper library: only the DOI list is committed; papers, texts and records stay local
 /library/*
 !/library/references.bib
+!/library/events.jsonl
 # Practice-round library, frozen read-only 2026-10-23; used only as seeds
 /library_practice/*
 !/library_practice/references.bib
