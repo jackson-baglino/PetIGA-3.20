@@ -104,6 +104,8 @@ def main(argv=None):
     ap.add_argument("--question", default="Q1")
     ap.add_argument("--version", type=int, default=1)
     ap.add_argument("--revise", action="store_true")
+    ap.add_argument("--skeptic", action="store_true",
+                    help="with --revise: fix the statements Y3 found overstated or unsupported, not Y2's failures")
     ap.add_argument("--source", choices=["library", "run"], default="library",
                     help="library: the published claims (the line); run: read.json and verdicts.json (development)")
     a = ap.parse_args(argv)
@@ -122,12 +124,20 @@ def main(argv=None):
         claims = [c for c in json.loads((outdir / f"{prev}.claims.json").read_text())   # the user rejected since
                   if c["id"] not in rejected]
         draft = (outdir / f"{prev}.md").read_text()
-        y2 = cx.check(draft, claims)
-        text = {i: t for i, _, t in cx.sentences(draft)}
-        failures = [f"- {k}: {text[i]}" for k in ("uncited", "unknown_ids", "untagged_numbers", "tag_mismatch")
-                    for i in dict.fromkeys(y2[k])]
-        if not failures:
-            raise SystemExit(f"v{a.version - 1} already passes Y2; nothing to revise")
+        if a.skeptic:                                   # Y3 found statements the cited claims do not support
+            y3 = json.loads((outdir / f"{prev}.y3.json").read_text())
+            failures = [f"- {x['verdict']} (section {x['section']}; cites {', '.join(x.get('claim_ids', []))}): "
+                        f"{x['summary']} Reason: {x['reason']}"
+                        for x in y3["support"]["statements"] if x["verdict"] != "supported"]
+            if not failures:
+                raise SystemExit(f"Y3 found every statement of v{a.version - 1} supported; nothing to revise")
+        else:
+            y2 = cx.check(draft, claims)
+            text = {i: t for i, _, t in cx.sentences(draft)}
+            failures = [f"- {k}: {text[i]}" for k in ("uncited", "unknown_ids", "untagged_numbers", "tag_mismatch")
+                        for i in dict.fromkeys(y2[k])]
+            if not failures:
+                raise SystemExit(f"v{a.version - 1} already passes Y2; nothing to revise")
         text = ac.prompt("synthesizer_revise", question=q, memo=draft, failures="\n".join(failures),
                          claims=json.dumps(claims), checklists=json.dumps(lists))
     else:
@@ -135,7 +145,7 @@ def main(argv=None):
     (outdir / f"{a.question}.v{a.version}.claims.json").write_text(json.dumps(claims, indent=1))
     with tempfile.TemporaryDirectory() as tmp:
         res, meta = ac.call(tmp, text, "memo", "beth-synthesizer", ledger=run / "calls.jsonl",
-                            step="Y1.revise" if a.revise else "Y1", question=a.question, version=a.version)
+                            step=("Y1.revise_y3" if a.skeptic else "Y1.revise") if a.revise else "Y1", question=a.question, version=a.version)
     if res is None:
         raise SystemExit(f"Y1 failed: {meta}")
     memo = outdir / f"{a.question}.v{a.version}.md"

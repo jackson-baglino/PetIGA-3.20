@@ -82,6 +82,11 @@ How to fix each failure:
 - tag_mismatch or untagged_number: state the number exactly as the cited
   claim gives it (with its precision and qualifiers, such as "of order"),
   followed by [claim_id quantity]; if no claim gives the number, remove it.
+- overstated or unsupported (found by the skeptic, Y3, with its reason):
+  narrow the statement to what the cited claims state, with their
+  conditions, or cite a claim in the list that does state it; if no claim
+  supports it, move it to Model options or Gaps and disagreements if it is
+  your inference, or delete it.
 
 Change only what the failures need; keep every other sentence, the section
 structure and the citations as they are. The rules of the draft still hold.

@@ -6,7 +6,7 @@ Questions (the memo answers the first; the others are secondary):
 Your draft:
 {memo}
 
-Failures found by the script, each with the sentence as the script read it:
+Failures found by the citation script (Y2), each with the sentence as it read it, or by the skeptic (Y3), each with its summary of the statement and its reason:
 {failures}
 
 Checked claims (JSON):
