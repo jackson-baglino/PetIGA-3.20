@@ -31,6 +31,9 @@ calibration/generated/*_plants.yaml entries the user approved (source script or 
     venv_workflows/bin/python scripts/literature_review/calibrate.py score --results <results.jsonl> \\
         --prompt-version <v> --out <run folder>
 
+  score --baseline  Scores the script-only baseline (baseline.py) on the same held-out items: the same
+          rules are reported next to the checker's, but nothing is written to the ledger.
+
 A results file has one JSON object per line: a plant {"plant_id", "caught_by": "E3"|"E4"|"X1"|null}
 or a control {"control_id", "flagged": true|false}.
 """
@@ -240,6 +243,18 @@ def cmd_score(args):
     with open(args.split) as f:
         sp = yaml.safe_load(f)
     held, sid = sp["heldout"], sp["heldout_set"]
+    if args.baseline:                       # the script-only baseline: reported next to the checker, never a gate,
+        with open(args.results) as f:       # and never an attempt on the held-out set
+            results = [json.loads(l) for l in f if l.strip()]
+        report = score(load_plants(), held, results)
+        report.update({"heldout_set": sid, "baseline": "scripts only (baseline.py)",
+                       "date": datetime.date.today().isoformat()})
+        os.makedirs(args.out, exist_ok=True)
+        with open(os.path.join(args.out, "baseline.json"), "w") as f:
+            json.dump(report, f, indent=2)
+        for g in report["gates"]:
+            print(("met   " if g["pass"] else "unmet ") + g["rule"] + ": " + g["detail"])
+        return 0
     ledger = load_ledger(args.ledger)
     same = [e for e in ledger if e["heldout_set"] == sid]
     if any(e["prompt_version"] == args.prompt_version for e in same):
@@ -276,6 +291,8 @@ def main(argv=None):
     t.add_argument("--results", required=True)
     t.add_argument("--prompt-version", required=True)
     t.add_argument("--out", required=True)
+    t.add_argument("--baseline", action="store_true",
+                   help="score baseline.py's results: report only, no ledger entry, never a gate")
     for p in (s, t):
         p.add_argument("--split", default=SPLIT)
         p.add_argument("--ledger", default=LEDGER)
