@@ -1,0 +1,72 @@
+{"plant_id": "M-13d99a79", "caught_by": "E4"}
+{"plant_id": "M-24d886e3", "caught_by": "E4"}
+{"plant_id": "S-c3a40f6f", "caught_by": "E4"}
+{"plant_id": "S-9e80b75b", "caught_by": "E4"}
+{"plant_id": "S-bfc4996d", "caught_by": "E4"}
+{"plant_id": "S-4b1e1a00", "caught_by": "E4"}
+{"plant_id": "S-5282f6a6", "caught_by": "E4"}
+{"plant_id": "S-f7efa1d7", "caught_by": "E4"}
+{"plant_id": "S-17b52569", "caught_by": "E4"}
+{"plant_id": "S-2ca2a2a3", "caught_by": "E4"}
+{"plant_id": "S-64643eb5", "caught_by": "E4"}
+{"control_id": "G033", "flagged": false, "paper": "blackford_2007", "verdict": "supported"}
+{"control_id": "G034", "flagged": false, "paper": "blackford_2007", "verdict": "supported"}
+{"control_id": "G035", "flagged": false, "paper": "blackford_2007", "verdict": "supported"}
+{"control_id": "G036", "flagged": true, "paper": "blackford_2007", "verdict": "unsupported"}
+{"control_id": "G037", "flagged": false, "paper": "blackford_2007", "verdict": "supported"}
+{"control_id": "G038", "flagged": false, "paper": "blackford_2007", "verdict": "supported"}
+{"control_id": "G039", "flagged": true, "paper": "blackford_2007", "verdict": "unsupported"}
+{"control_id": "G040", "flagged": false, "paper": "blackford_2007", "verdict": "supported"}
+{"plant_id": "M-ca6f0f40", "caught_by": "E4"}
+{"plant_id": "S-0428dc28", "caught_by": "E4"}
+{"plant_id": "S-b735b7af", "caught_by": "E4"}
+{"plant_id": "S-74ec5bd8", "caught_by": "E4"}
+{"plant_id": "S-9e329726", "caught_by": "E4"}
+{"plant_id": "S-4a2ce265", "caught_by": "E4"}
+{"control_id": "G001", "flagged": true, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"control_id": "G002", "flagged": false, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"control_id": "G003", "flagged": false, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"control_id": "G004", "flagged": true, "paper": "kaempfer_plapp_2009", "verdict": "overstated"}
+{"control_id": "G005", "flagged": false, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"control_id": "G006", "flagged": false, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"control_id": "G007", "flagged": true, "paper": "kaempfer_plapp_2009", "verdict": "unsupported"}
+{"control_id": "G008", "flagged": false, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"control_id": "G009", "flagged": false, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"control_id": "G010", "flagged": false, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"control_id": "G011", "flagged": false, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"control_id": "G012", "flagged": false, "paper": "kaempfer_plapp_2009", "verdict": "supported"}
+{"plant_id": "S-8aa375ef", "caught_by": "E4"}
+{"plant_id": "S-36f5f774", "caught_by": "E4"}
+{"plant_id": "S-20e7e5aa", "caught_by": "E4"}
+{"plant_id": "S-998ba166", "caught_by": "E4"}
+{"plant_id": "S-96cf0e42", "caught_by": "E4"}
+{"plant_id": "S-13a574a5", "caught_by": "E4"}
+{"plant_id": "S-1c20e183", "caught_by": "E4"}
+{"plant_id": "S-b8367b6f", "caught_by": "E4"}
+{"plant_id": "S-ce47d7c0", "caught_by": "E4"}
+{"plant_id": "S-80e46a19", "caught_by": "E4"}
+{"plant_id": "S-6829c884", "caught_by": "E4"}
+{"plant_id": "S-bbc98f79", "caught_by": "E4"}
+{"plant_id": "S-1ad02fed", "caught_by": "E4"}
+{"plant_id": "S-a3d32759", "caught_by": "E4"}
+{"control_id": "G013", "flagged": false, "paper": "li_2009", "verdict": "supported"}
+{"control_id": "G014", "flagged": true, "paper": "li_2009", "verdict": "unsupported"}
+{"control_id": "G015", "flagged": false, "paper": "li_2009", "verdict": "supported"}
+{"control_id": "G016", "flagged": false, "paper": "li_2009", "verdict": "supported"}
+{"control_id": "G017", "flagged": false, "paper": "li_2009", "verdict": "supported"}
+{"control_id": "G018", "flagged": true, "paper": "li_2009", "verdict": "supported"}
+{"control_id": "G019", "flagged": false, "paper": "li_2009", "verdict": "supported"}
+{"control_id": "G020", "flagged": false, "paper": "li_2009", "verdict": "supported"}
+{"control_id": "G021", "flagged": false, "paper": "li_2009", "verdict": "supported"}
+{"control_id": "G022", "flagged": false, "paper": "li_2009", "verdict": "supported"}
+{"plant_id": "S-eba44e55", "caught_by": "E4"}
+{"control_id": "G023", "flagged": false, "paper": "molaro_2019", "verdict": "supported"}
+{"control_id": "G024", "flagged": false, "paper": "molaro_2019", "verdict": "supported"}
+{"control_id": "G025", "flagged": false, "paper": "molaro_2019", "verdict": "supported"}
+{"control_id": "G026", "flagged": false, "paper": "molaro_2019", "verdict": "supported"}
+{"control_id": "G027", "flagged": false, "paper": "molaro_2019", "verdict": "supported"}
+{"control_id": "G028", "flagged": false, "paper": "molaro_2019", "verdict": "supported"}
+{"control_id": "G029", "flagged": false, "paper": "molaro_2019", "verdict": "supported"}
+{"control_id": "G030", "flagged": false, "paper": "molaro_2019", "verdict": "supported"}
+{"control_id": "G031", "flagged": true, "paper": "molaro_2019", "verdict": "unsupported"}
+{"control_id": "G032", "flagged": true, "paper": "molaro_2019", "verdict": "unsupported"}

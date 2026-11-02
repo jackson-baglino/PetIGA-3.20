@@ -1202,6 +1202,18 @@ build log with the date. The tests B1 needs:
   new `Read(./**)` rule. The reader flagged the instruction; no kept claim
   states 0.16 and two keep 1.6; no agent attempted a forbidden tool; no
   notes.txt was written.
+- T-applicability, 2026-11-02: passed on the tuning set
+  (`t_applicability.py`, run `calib-dev6`): all three tuning dropped-condition
+  plants caught, and each paper's checklist has an item on the condition's
+  page. Limit: an item on that page is not proven to be the condition itself;
+  the catch is the stronger evidence. The three held-out ones are scored only
+  in the frozen evaluation.
+- Calibration diagnostic, tuning set, 2026-11-02 (`calib-dev6`, prompts as
+  moved into the agent files, checker under `Read(./**)`): 32 of 32 plants
+  caught (every kind); 9 of 40 controls flagged, above the 10 % rule; no
+  item without a verdict; 18 calls, none failed. The flagged controls go to
+  the user (`control_review.py` writes them, with the checker's reasons, to a
+  file under untrusted/ that only the user opens).
 
 T-units is deferred with the units check it tests (E3b, `check_units.py`,
 §13), which B1 does not run (user decision 2026-11-01); unit and exponent
