@@ -35,15 +35,15 @@ is `~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/l
 
 | ID | DOI | File (under *Research*) | Pages | sha256 (first 12) | Status | Role (proposed) |
 |---|---|---|---|---|---|---|
-| li_2009 | 10.4310/cms.2009.v7.n1.a4 | `Literature/li_2009.pdf` (publisher, pp. 81–107) | 27 | 6c8ca5bbb242 | on disk; P1 run in development | core |
-| lervag_lowengrub_2015 | 10.4310/cms.2015.v13.n6.a6 | `Literature/incoming/b1/zotero_CGTLZK54/10.4310_cms.2015.v13.n6.a6.pdf` | 32 | accd72942c5e | pulled from Zotero 2026-10-29; copy kind not checked (A2) | core |
-| yu_chen_thornton_2012 | 10.1088/0965-0393/20/7/075008 | `Literature/incoming/b1/zotero_FPFXFI8J/10.1088_0965-0393_20_7_075008.pdf` | 42 | b3e677615fcc | published copy, added to Zotero by the user 2026-11-01 (replaces Z4WZUXEG); A2 to recheck | core |
-| folch_plapp_2005 | 10.1103/physreve.72.011602 | `Literature/incoming/b1/zotero_9QQPQWFH/10.1103_physreve.72.011602.pdf` | 27 | 06d68698a9d2 | published copy, added 2026-11-01 (replaces FVY8URBB); A2 to recheck | core |
-| joshi_jaiman_2018 | 10.1002/nme.5961 | `Literature/incoming/b1/zotero_C66WP9T7/10.1002_nme.5961.pdf` | 25 | f80cfd405907 | published copy, added 2026-11-01 (replaces 8BJ7Y9VL); A2 to recheck | core |
-| steinbach_2009 | 10.1088/0965-0393/17/7/073001 | `Literature/incoming/b1/zotero_57KIMZAG/10.1088_0965-0393_17_7_073001.pdf` | 32 | 87e43331819a | pulled from Zotero; copy kind not checked | context (review) |
-| plapp_2011 | 10.1103/physreve.84.031601 | `Literature/incoming/b1/zotero_8LSUVADQ/10.1103_physreve.84.031601.pdf` | 15 | 0713491c5dd2 | published copy, added 2026-11-01 (replaces XCWNQ9Q7); A2 to recheck | context |
-| kaempfer_plapp_2009 | 10.1103/PhysRevE.79.031502 | `Literature/kaempfer_plapp_2009.pdf` | 17 | 2141892c2e9c | on disk; P1 run in development | context (the base model; calibration paper) |
-| moure_fu_2024 | 10.1021/acs.cgd.4c00539 | `Literature/incoming/b1/zotero_7663PFVQ/10.1021_acs.cgd.4c00539.pdf` | 14 | 61268456ef25 | published copy (user decision 2026-11-01; replaces the arXiv v1 copy, whose LaTeX source stays on disk; it was used in T-res and is not yet compared in X1); A2 to recheck | context (the group's model) |
+| li_2009 | 10.4310/cms.2009.v7.n1.a4 | `Literature/li_2009.pdf` (publisher, pp. 81–107) | 27 | 6c8ca5bbb242 | on disk; A2 2026-11-01: no DOI on pp. 1–2, publisher line found (kind unknown; user decides at A2) | core |
+| lervag_lowengrub_2015 | 10.4310/cms.2015.v13.n6.a6 | `Literature/incoming/b1/zotero_CGTLZK54/10.4310_cms.2015.v13.n6.a6.pdf` | 32 | accd72942c5e | pulled from Zotero 2026-10-29; arXiv, the only copy (user decides at A2) | core |
+| yu_chen_thornton_2012 | 10.1088/0965-0393/20/7/075008 | `Literature/incoming/b1/zotero_FPFXFI8J/10.1088_0965-0393_20_7_075008.pdf` | 42 | b3e677615fcc | published copy, added to Zotero by the user 2026-11-01 (replaces Z4WZUXEG); A2 2026-11-01 (dev-20261101-a2): publisher, DOI found | core |
+| folch_plapp_2005 | 10.1103/physreve.72.011602 | `Literature/incoming/b1/zotero_9QQPQWFH/10.1103_physreve.72.011602.pdf` | 27 | 06d68698a9d2 | published copy, added 2026-11-01 (replaces FVY8URBB); A2 2026-11-01 (dev-20261101-a2): publisher, DOI found | core |
+| joshi_jaiman_2018 | 10.1002/nme.5961 | `Literature/incoming/b1/zotero_C66WP9T7/10.1002_nme.5961.pdf` | 25 | f80cfd405907 | published copy, added 2026-11-01 (replaces 8BJ7Y9VL); A2 2026-11-01 (dev-20261101-a2): publisher, DOI found | core |
+| steinbach_2009 | 10.1088/0965-0393/17/7/073001 | `Literature/incoming/b1/zotero_57KIMZAG/10.1088_0965-0393_17_7_073001.pdf` | 32 | 87e43331819a | pulled from Zotero; A2 2026-11-01 (dev-20261101-a2): publisher, DOI found | context (review) |
+| plapp_2011 | 10.1103/physreve.84.031601 | `Literature/incoming/b1/zotero_8LSUVADQ/10.1103_physreve.84.031601.pdf` | 15 | 0713491c5dd2 | published copy, added 2026-11-01 (replaces XCWNQ9Q7); A2 2026-11-01 (dev-20261101-a2): publisher, DOI found | context |
+| kaempfer_plapp_2009 | 10.1103/PhysRevE.79.031502 | `Literature/kaempfer_plapp_2009.pdf` | 17 | 2141892c2e9c | on disk; A2 2026-11-01: publisher, DOI found | context (the base model; calibration paper) |
+| moure_fu_2024 | 10.1021/acs.cgd.4c00539 | `Literature/incoming/b1/zotero_7663PFVQ/10.1021_acs.cgd.4c00539.pdf` | 14 | 61268456ef25 | published copy (user decision 2026-11-01; replaces the arXiv v1 copy, whose LaTeX source stays on disk; it was used in T-res and is not yet compared in X1); A2 2026-11-01 (dev-20261101-a2): publisher, DOI found | context (the group's model) |
 
 *Core* papers are read with the user's review of key pages (U3); *context*
 papers are read and checked the same way, but the user reviews only the claims
@@ -127,26 +127,26 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ### Line status (generated)
 
 <!-- BEGIN GENERATED: lr_status.py -->
-Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · next: U3a · 1 gate(s) waiting · 1 review item(s)
+Run `dev-20261101-a2`. B1 · DEVELOP · run dev-20261101-a2 · next: P1 yu_chen_thornton_2012 · 1 gate(s) waiting · 0 review item(s)
 
 | Stage | Station | Done | Gate | Waiting |
 |---|---|---|---|---|
 | U0 | built | 1/1 | blocking |  |
 | C0 | built | 1/1 | blocking |  |
-| P1 | built | 1/1 | none |  |
-| E1 | built | 1/1 | none |  |
-| E3 | built | 1/1 | review |  |
-| E4 | built | 1/1 | none |  |
-| E5 | built | 1/1 | review |  |
-| U3a | built | 0/1 | blocking | 1 |
-| L1 | built | 1/1 | review |  |
-| Y1 | built | 1/1 | none |  |
+| P1 | built | 0/8 | none |  |
+| E1 | built | 0/8 | none |  |
+| E3 | built | 0/8 | review |  |
+| E4 | built | 0/8 | none |  |
+| E5 | built | 0/8 | review |  |
+| U3a | built | 0/1 | blocking |  |
+| L1 | built | 0/8 | review |  |
+| Y1 | built | 0/1 | none |  |
 | Y2 | built | 0/1 | none |  |
 | Y3 | built | 0/1 | review |  |
 | U4 | built | 0/1 | blocking |  |
-| A2 | built | 1/1 | blocking |  |
+| A2 | built | 7/8 | blocking | 1 |
 | BK | built | 0/1 | none |  |
-| X1 | built | 1/1 | blocking |  |
+| X1 | built | 0/1 | blocking |  |
 <!-- END GENERATED -->
 
 The line status above is computed by `scripts/literature_review/lr_status.py`
