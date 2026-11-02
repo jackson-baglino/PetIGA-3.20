@@ -15,7 +15,10 @@ files allow:
 It fails if an entry holds all three and is not in accepted_risks.json, and
 on structural faults: an agent that may edit or write, a sandbox that can fail
 open, a review mode or normal profile missing a store deny or the read hook,
-a launcher script without its profile.
+a launcher script without its profile, or an agent definition in
+workflows/literature-review/agents/ whose tools, model or name disagree with
+its settings file, MODELS or the naming rule (a definition is required only
+for agents that have a work-order prompt in use; deferred agents have none).
 
     venv_workflows/bin/python scripts/literature_review/check_permissions.py           # check
     venv_workflows/bin/python scripts/literature_review/check_permissions.py --write   # also refresh the tables
@@ -143,6 +146,34 @@ def launcher_faults(perm_dir):
     return faults
 
 
+def definition_faults(root, adir):
+    """Each agent definition loads (pinned model, name prefix from the model family), has a settings file, and
+    its tools are exactly the tools that file allows."""
+    sys.path.insert(0, os.path.join(root, "scripts"))
+    sys.path.insert(0, os.path.join(root, "scripts", "literature_review"))
+    import agent_call
+    import agentlib
+    faults = []
+    ddir = os.path.join(root, "workflows", "literature-review", "agents")
+    for fn in sorted(os.listdir(ddir)) if os.path.isdir(ddir) else []:
+        if not fn.endswith(".md"):
+            continue
+        name = fn[:-3]
+        try:
+            a = agent_call.load(name)
+        except (agentlib.AgentError, KeyError) as e:
+            faults.append(f"{name}: definition: {e}")
+            continue
+        sp = os.path.join(adir, name + ".settings.json")
+        if not os.path.exists(sp):
+            faults.append(f"{name}: definition has no settings file")
+            continue
+        allowed = set(tool_names(load(sp).get("permissions", {}).get("allow", [])))
+        if set(a["tools"]) != allowed:
+            faults.append(f"{name}: definition tools {sorted(a['tools'])} differ from settings allow {sorted(allowed)}")
+    return faults
+
+
 def collect(root):
     perm = os.path.join(root, ".claude", "permissions", "literature-review")
     inputs = load(os.path.join(perm, "inputs.json"))
@@ -170,7 +201,7 @@ def collect(root):
     entries.append(normal_entry(load(os.path.join(cdir, "settings.json")),
                                 load(local) if os.path.exists(local) else {},
                                 inputs["sessions"]["normal"]))
-    faults = launcher_faults(perm)
+    faults = launcher_faults(perm) + definition_faults(root, adir)
     for e in entries:
         faults += e["faults"]
         if all(e["legs"]):

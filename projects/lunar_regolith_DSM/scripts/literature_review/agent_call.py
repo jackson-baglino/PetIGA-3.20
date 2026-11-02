@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
-"""One headless Claude Code call in a clean folder (WORKFLOW.md §4).
+"""One headless Claude Code call in a clean folder (WORKFLOW.md §0 and §4).
 
-The agent sees only the files copied into the folder, may use only Read, writes nothing
-and returns JSON checked against a schema. Its settings file denies every other tool.
+The agent is defined in workflows/literature-review/agents/<agent>.md (subagent format: frontmatter with the pinned
+model and tools; the body is the system prompt). The work order is a template in prompts/<name>.md with {fields}.
+The call runs through scripts/agentlib.py: the agent sees only the files in the folder, may use only its own tools,
+writes nothing and returns JSON checked against a schema; its settings file in
+.claude/permissions/literature-review/agents/ adds the deny rules and the sandbox. The transcript is audited, a
+failed attempt is retried once, and every attempt is a row in runs.db next to the ledger.
 """
 import json
-import subprocess
-import time
+import sys
+import uuid
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT / "scripts"))
+import agentlib  # noqa: E402
+
+DEFS = PROJECT / "workflows" / "literature-review" / "agents"
 AGENTS = PROJECT / ".claude" / "permissions" / "literature-review" / "agents"
 SCHEMAS = PROJECT / "workflows" / "literature-review" / "schemas"
 PROMPTS = PROJECT / "workflows" / "literature-review" / "prompts"
@@ -23,33 +31,41 @@ def prompt(name, **fields):
     return text
 
 
-def call(folder, text, schema_name, agent, timeout=3600, ledger=None, **tag):
-    """(structured output or None, meta) for one call run in `folder`.
+def load(agent):
+    """The agent's definition; its model must be the one MODELS pins for its name prefix."""
+    a = agentlib.load_agent(DEFS / f"{agent}.md", agent)
+    if a["model"] != MODELS[agent.split("-")[0]]:
+        raise agentlib.AgentError(f"{agent}: model {a['model']} differs from MODELS")
+    return a
 
-    With `ledger`, meta (tagged with `tag`, e.g. step=...) is appended to that JSONL file as
-    soon as the call returns, failed calls included, so token usage survives a crash."""
+
+def call(folder, text, schema_name, agent, timeout=3600, ledger=None, **tag):
+    """(structured output or None, meta) for one call run in `folder`, retried once on failure.
+
+    With `ledger`, meta (tagged with `tag`, e.g. step=...) is appended to that JSONL file as soon as the call
+    returns, failed calls included, so token usage survives a crash; runs.db and the transcripts go in the
+    ledger's folder."""
     schema = json.loads((SCHEMAS / f"{schema_name}.schema.json").read_text())
-    model = MODELS[agent.split("-")[0]]
-    cmd = ["claude", "-p", text, "--model", model, "--output-format", "json",
-           "--tools", "Read", "--allowedTools", "Read", "--permission-mode", "dontAsk",
-           "--setting-sources", "", "--strict-mcp-config", "--no-session-persistence",
-           "--disable-slash-commands", "--settings", str(AGENTS / f"{agent}.settings.json"),
-           "--json-schema", json.dumps(schema)]
-    t0 = time.time()
-    p = subprocess.run(cmd, cwd=folder, capture_output=True, text=True, timeout=timeout)
-    meta = {**tag, "agent": agent, "model": model, "seconds": round(time.time() - t0, 1), "exit": p.returncode}
-    try:                                    # a failed call may still print its JSON, with usage
-        out = json.loads(p.stdout)
-    except ValueError:
-        out = {}
-    meta.update({"usage": out.get("usage"), "num_turns": out.get("num_turns"),
-                 "is_error": out.get("is_error")})
-    if p.returncode != 0:
-        meta["error"] = (str(out.get("result") or p.stderr or "")).strip()[:300]
+    a = load(agent)
+    stage = str(tag.get("step", "call"))
+    label = "_".join(f"{k}{v}" for k, v in tag.items() if k != "step").replace("/", "-").replace(" ", "")[:80] \
+        or "call"
+    label = f"{label}_{uuid.uuid4().hex[:8]}"
+    rdir = Path(ledger).parent if ledger is not None else None
+    try:
+        out, info = agentlib.call_agent(rdir, stage, a, label, text, schema, folder=folder,
+                                        settings=AGENTS / f"{agent}.settings.json", timeout=timeout)
+    except agentlib.AgentError as e:
+        out, info = None, e.info
+    meta = {**tag, "agent": agent, "model": a["model"], "seconds": info.get("seconds"),
+            "exit": 0 if out is not None else 1, "usage": info.get("usage"), "num_turns": info.get("num_turns"),
+            "is_error": info.get("is_error"), "attempts": len(info.get("attempts", []))}
+    if out is None:
+        meta["error"] = info.get("error")
     if ledger is not None:
         with open(ledger, "a") as f:
-            f.write(json.dumps({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), **meta}) + "\n")
-    return (out.get("structured_output") if p.returncode == 0 else None), meta
+            f.write(json.dumps({"time": agentlib._now()[:19], **meta}) + "\n")
+    return out, meta
 
 
 TOKENS = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")

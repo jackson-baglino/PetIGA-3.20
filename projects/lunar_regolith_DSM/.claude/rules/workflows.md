@@ -25,8 +25,8 @@ paths:
   the middle of a task.
 - **Where agents live.** Headless workers: `workflows/<name>/agents/<agent>.md`.
   Session agents (a foreman, an interactive helper): `.claude/agents/`. Both
-  use the subagent format (frontmatter + system-prompt body ending with "Your
-  place in the line"). `prompts/` holds only per-call work orders.
+  use the subagent format (frontmatter + a system-prompt body with a "Your place
+  in the line" section). `prompts/` holds only per-call work orders.
 - **Literature review.** Models are pinned in `MODELS` in
   `scripts/literature_review/agent_call.py`; permissions are in
   `.claude/permissions/literature-review/`. After any permission change run

@@ -24,8 +24,8 @@ One block per agent. A worker that a script calls headless is defined in
 session (a foreman, an interactive helper) is defined in
 `.claude/agents/<agent>.md`. Both use the Claude Code subagent format: YAML
 frontmatter (`name`, `description`, `tools`, `disallowedTools`, `model`,
-`permissionMode`, `maxTurns`) and the system prompt as the body. The body ends
-with a short "Your place in the line" section: who sends the work order, what
+`permissionMode`, `maxTurns`) and the system prompt as the body. The body has a
+short "Your place in the line" section: who sends the work order, what
 it returns, who checks it next, and what it must never do.
 
 ```

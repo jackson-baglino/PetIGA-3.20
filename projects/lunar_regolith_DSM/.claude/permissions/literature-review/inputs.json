@@ -33,6 +33,10 @@
     ],
     "morty-desk": [
       "untrusted"
+    ],
+    "beth-recall-judge": [
+      "untrusted",
+      "user_private"
     ]
   },
   "sessions": {

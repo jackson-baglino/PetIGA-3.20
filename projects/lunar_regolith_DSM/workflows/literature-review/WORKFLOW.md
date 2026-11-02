@@ -110,8 +110,8 @@ and prompts kept changing during the run.
   and write `report.json` (counts, failures, gate items).
 - **Workers** are the headless agents of §4, defined in
   `workflows/literature-review/agents/<agent>.md` (Claude Code subagent
-  format; the body is the system prompt and ends with "Your place in the
-  line"). `prompts/` holds only the per-call work orders.
+  format; the body is the system prompt and has a "Your place in the
+  line" section). `prompts/` holds only the per-call work orders.
 
 **Gates.**
 - *Blocking* (the line stops; the user records the decision with
@@ -378,6 +378,7 @@ Generated from `.claude/permissions/literature-review/` and the project settings
 | `beth-checker` | `Read` | none | untrusted | yes | no | no |
 | `beth-memo-checker` | none | none | untrusted, user_private | yes | no | yes |
 | `beth-planter` | `Read` | none | untrusted | yes | no | no |
+| `beth-recall-judge` | none | none | untrusted, user_private | yes | no | yes |
 | `beth-skeptic` | none | none | untrusted, user_private | yes | no | yes |
 | `beth-synthesizer` | none | none | untrusted, user_private | yes | no | yes |
 | `jerry-screener` | none | none | untrusted | yes | no | no |

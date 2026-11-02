@@ -36,7 +36,7 @@ def main(argv=None):
              for c in claims]
     with tempfile.TemporaryDirectory() as tmp:
         res, meta = ac.call(tmp, ac.prompt("recall_judge", gold=json.dumps(gold_in, indent=1),
-                                           claims=json.dumps(shown)), "recall", "beth-checker",
+                                           claims=json.dumps(shown)), "recall", "beth-recall-judge",
                             ledger=out / "calls.jsonl", step="recall")
     if res is None:
         raise SystemExit(f"judge failed: {meta}")

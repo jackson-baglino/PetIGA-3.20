@@ -62,6 +62,7 @@ Generated from `.claude/permissions/literature-review/` and the project settings
 | `beth-checker` | `Read` | none | untrusted | yes | no | no |
 | `beth-memo-checker` | none | none | untrusted, user_private | yes | no | yes |
 | `beth-planter` | `Read` | none | untrusted | yes | no | no |
+| `beth-recall-judge` | none | none | untrusted, user_private | yes | no | yes |
 | `beth-skeptic` | none | none | untrusted, user_private | yes | no | yes |
 | `beth-synthesizer` | none | none | untrusted, user_private | yes | no | yes |
 | `jerry-screener` | none | none | untrusted | yes | no | no |
