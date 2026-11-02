@@ -631,8 +631,9 @@ No new planted errors are written for B1 (§9, item 43).
   - equations, against the user's transcription and the authors' source
     (T-res).
 - **Fixtures the set must contain:** a condition stated on a different page
-  from its result (the user's dropped-condition plants, with their condition
-  page); a paper discussing another paper's result (a wrong-attribution
+  from its result (six dropped-condition plants drafted by a
+  Claude subagent from the three calibration papers and approved by the user
+  on 2026-11-01, `generated/model_plants.yaml`, each with its condition page); a paper discussing another paper's result (a wrong-attribution
   plant); a symbol-sensitive equation (the sign and exponent script plants);
   an important statement left out entirely (a gold statement, recalled or
   not); and at least 10 unchanged claims as controls.

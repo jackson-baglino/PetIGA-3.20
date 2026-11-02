@@ -1,0 +1,138 @@
+# Dropped-condition plants drafted by a Claude subagent on 2026-11-01 (the user chose "I draft, you approve").
+# Each result is printed on page (planted_page) and its condition on condition_page; both quotes were found on
+# their pages by script. Set approved to true for each plant you accept; only approved plants are used.
+plants:
+- paper: kaempfer_plapp_2009
+  from_statement: 9
+  location: Sec. V (summary); condition Sec. II D
+  kind_of_claim: result
+  correct_claim: The time-scaling procedure lets the simulations run up to four orders of magnitude faster while
+    keeping the relevant physics, provided the scaled problem stays quasisteady, i.e. t_D/(xi t_n) << 1 (and xi
+    rho_i >> rho_vs still holds).
+  planted_claim: The time-scaling procedure lets the simulations run up to four orders of magnitude faster while
+    keeping the relevant physics of the problem.
+  correct_page: 15
+  planted_page: 15
+  condition_page: 10
+  note: Dropped the quasisteady requirement t_D/(xi t_n) << 1 stated on p.10; p.15 cites Sec. II D but does not
+    restate it.
+  result_quote: Our analysis as well as all our numerical results show that we can accelerate the simulations by
+    up to four orders of magnitude while maintaining the relevant physics of the problem.
+  condition_quote: First, the solution to the scaled problem has to remain quasisteady, which implies that we must
+    have
+  kind: dropped_condition
+  correct_value: null
+  correct_unit: null
+  approved: true
+  id: M-ca6f0f40
+- paper: kaempfer_plapp_2009
+  from_statement: null
+  location: Eq. (48); condition Table I caption
+  kind_of_claim: parameter
+  correct_claim: With properties evaluated at the reference temperature T0 = -10 C (263 K), keeping the hypothesis
+    rho_i >> rho_vs valid after scaling limits the time-scaling factor to xi > 1e-5 (Eq. 48).
+  planted_claim: Keeping the hypothesis rho_i >> rho_vs valid after scaling limits the time-scaling factor to xi
+    > 1e-5 (Eq. 48); this is the more severe of the two constraints on xi.
+  correct_page: 10
+  planted_page: 10
+  condition_page: 4
+  note: Dropped the reference temperature (Table I caption, p.4); rho_vs depends strongly on temperature, so the
+    bound 1e-5 belongs near -10 C (drafter's inference, medium confidence).
+  result_quote: used during the model development must remain valid. This sets a limit for the value of the scaling
+    factor of
+  condition_quote: Unless stated otherwise, the constants used for the phase-field computations were evaluated at
+    a reference temperature of
+  kind: dropped_condition
+  correct_value: null
+  correct_unit: null
+  approved: true
+  id: M-5750aea1
+- paper: li_2009
+  from_statement: 16
+  location: Neumann Approximation 3; condition after Eq. (2.1) discussion
+  kind_of_claim: method
+  correct_claim: Neumann Approximation 3, div(phi grad u) + eps g |grad phi|^2 = phi f, recovers the Neumann condition
+    at leading order because the integral of (dz Phi0)^2 over z equals 1; this holds when phi is the tanh profile
+    of Eq. (2.1), and for any other profile the eps|grad phi|^2 term must be rescaled.
+  planted_claim: Matched asymptotics show that Neumann Approximation 3, div(phi grad u) + eps g |grad phi|^2 = phi
+    f, recovers the Neumann boundary condition at leading order, using the fact that the integral of (dz Phi0)^2
+    over z equals 1.
+  correct_page: 89
+  planted_page: 89
+  condition_page: 88
+  note: Dropped the requirement that phi be the profile of Eq. (2.1); p.88 says the lower-order terms of Approximations
+    3 and 4 must be rescaled otherwise.
+  result_quote: using the matching conditions, and the fact that
+  condition_quote: is not given by equation (2.1), then the lower order terms in Approximations 3 and 4 need to
+    be rescaled
+  kind: dropped_condition
+  correct_value: null
+  correct_unit: null
+  approved: true
+  id: M-9dac30cf
+- paper: li_2009
+  from_statement: null
+  location: Sec. 2 summary; condition Remark 2.3
+  kind_of_claim: method
+  correct_claim: To approximate a PDE in a complex geometry on a larger regular domain, one restricts the differential
+    operators with phi, adds a lower-order term for the boundary condition, and regularizes phi to phi + delta so
+    the reformulated equations are well posed where phi = 0.
+  planted_claim: The analyses show that all that is needed to approximate a PDE in a complex geometry by a PDE on
+    a larger regular domain is to restrict the differential operators using the phase field phi and add a lower-order
+    term for the boundary conditions.
+  correct_page: 91
+  planted_page: 91
+  condition_page: 93
+  note: Dropped the phi -> phi + delta regularization (Remark 2.3, p.93) needed for well-posedness where phi = 0.
+  result_quote: The preceding analyses show that all that is needed to approximate a PDE in a complex geometry by
+    a PDE on a larger regular domain is
+  condition_quote: we ensure that the reformulated equations are well posed in
+  kind: dropped_condition
+  correct_value: null
+  correct_unit: null
+  approved: true
+  id: M-54edef29
+- paper: blackford_2007
+  from_statement: null
+  location: Sec. 4, two-sphere models; condition p.369
+  kind_of_claim: result
+  correct_claim: In the Frenkel-Kuczynski two-sphere law (X/D)^n = Bt/D^m, vapour transport gives n = 3, m = 2 only
+    under the original model's assumption that the mean free path of water molecules is large compared with the
+    neck radius; otherwise (ice in air at atmospheric pressure) n = 5, m = 3.
+  planted_claim: In the Frenkel-Kuczynski two-sphere sintering law (X/D)^n = Bt/D^m, neck growth by vapour transport
+    has exponents n = 3 and m = 2.
+  correct_page: 367
+  planted_page: 367
+  condition_page: 369
+  note: Dropped the free-molecular assumption (mean free path >> neck radius) printed on p.369; outside it the vapour
+    exponents become n = 5, m = 3.
+  result_quote: have different values depending on the dominant mechanism (surface diffusion, n = 7, m = 4; lattice
+    diffusion, n = 5, m = 3; vapour transport, n = 3, m = 2
+  condition_quote: The original model assumed the mean free path (MFP) of water molecules at atmospheric pressure
+    in air to be large compared with the neck radius
+  kind: dropped_condition
+  correct_value: null
+  correct_unit: null
+  approved: true
+  id: M-13d99a79
+- paper: blackford_2007
+  from_statement: null
+  location: pressure sintering of ice cores; condition p.371
+  kind_of_claim: result
+  correct_claim: Using pressure sintering maps for densification stages 2 and 3 (firn to ice and bubbly ice, under
+    overburden pressure), Maeno and Ebinuma conclude that ice-core densification is mainly by dislocation creep,
+    with some lattice and grain-boundary creep contribution.
+  planted_claim: Maeno and Ebinuma conclude that the densification of ice cores is predominantly by dislocation
+    creep, with some contribution expected from lattice and grain boundary creep.
+  correct_page: 372
+  planted_page: 372
+  condition_page: 371
+  note: Dropped the restriction to pressure sintering stages 2 and 3 (p.371); stage 1 proceeds by packing and grain
+    boundary sliding, and pressureless sintering is vapour dominated.
+  result_quote: conclude that the densification of ice cores is predominantly by dislocation creep
+  condition_quote: Maeno and Ebinuma (1983) have plotted pressure sintering maps for stages 2 and 3
+  kind: dropped_condition
+  correct_value: null
+  correct_unit: null
+  approved: true
+  id: M-24d886e3
