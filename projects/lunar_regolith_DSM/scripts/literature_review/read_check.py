@@ -3,8 +3,8 @@
 
     read_check.py --run <run folder> --paper-id <id> --pdf <file> [--stages E1 E3 E4]
 
-Pages are given to the agents as whole-page images scaled to 2,000 px on the long edge
-(T-res, §9 item 45). Steps, each a fresh headless call:
+Pages are P1's 300 dpi images (<run>/untrusted/content/<paper>/<copy hash>/images), given to the
+agents scaled to 2,000 px on the long edge (T-res, §9 item 45). Steps, each a fresh headless call:
   E1   morty-reader: the whole paper and the brief's questions -> claims, symbols
   E3   script: each quote found on its cited page in the PDF's text layer, unique, >= 8 words
   E4.0 beth-checker: the whole paper, no claims -> applicability checklist (in parts, as E1,
@@ -18,6 +18,7 @@ appended to calls.jsonl there. A summary with counts and token usage only goes t
 <run>/summary_read_<paper_id>.json. Nothing here prints paper text.
 """
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -50,15 +51,29 @@ def questions():
     return "\n".join(out)
 
 
-def render(pdf, outdir):
-    """Pages at 300 dpi, scaled to EDGE px on the long edge; and the text layer per page."""
+def p1_images(run, paper_id, pdf):
+    """The 300 dpi page images P1 wrote for this copy (<run>/untrusted/content/<paper>/<copy hash>/images), or None."""
+    h = hashlib.sha256(Path(pdf).read_bytes()).hexdigest()[:16]
+    d = Path(run) / "untrusted" / "content" / paper_id / h / "images"
+    return d if d.is_dir() and any(d.glob("p*.png")) else None
+
+
+def render(pdf, outdir, source=None):
+    """Pages at 300 dpi, scaled to EDGE px on the long edge; and the text layer per page.
+
+    source: P1's images folder; the images are copied from there, so the reads use the content P1 recorded.
+    Without it (development only, --own-render) the pages are rendered here with the same mutool command."""
     img, txt = outdir / "pages", outdir / "text"
     if img.exists():
         return sorted(img.glob("p*.png"))
     img.mkdir(parents=True)
     txt.mkdir(parents=True)
-    subprocess.run(["mutool", "draw", "-q", "-r", "300", "-c", "gray", "-o", str(img / "p%03d.png"), str(pdf)],
-                   check=True)
+    if source is not None:
+        for f in sorted(Path(source).glob("p*.png")):
+            shutil.copyfile(f, img / f.name)
+    else:
+        subprocess.run(["mutool", "draw", "-q", "-r", "300", "-c", "gray", "-o", str(img / "p%03d.png"),
+                        str(pdf)], check=True)
     for f in sorted(img.glob("p*.png")):
         im = Image.open(f)
         s = EDGE / max(im.size)
@@ -130,11 +145,16 @@ def main(argv=None):
     ap.add_argument("--paper-id", required=True)
     ap.add_argument("--pdf", required=True)
     ap.add_argument("--stages", nargs="+", default=["E1", "E3", "E4"])
+    ap.add_argument("--own-render", action="store_true",
+                    help="development only: render the pages here instead of taking P1's images")
     a = ap.parse_args(argv)
     run = Path(a.run).resolve()
     out = run / "untrusted" / a.paper_id
     out.mkdir(parents=True, exist_ok=True)
-    pages = render(Path(a.pdf), out)
+    source = None if a.own_render else p1_images(run, a.paper_id, a.pdf)
+    if source is None and not a.own_render and not (out / "pages").exists():
+        raise SystemExit(f"no P1 content for {a.paper_id} in this run: run P1 first (or --own-render in development)")
+    pages = render(Path(a.pdf), out, source)
     by_num = {int(f.stem[1:]): f for f in pages}
     qs = questions()
     ledger = out / "calls.jsonl"
