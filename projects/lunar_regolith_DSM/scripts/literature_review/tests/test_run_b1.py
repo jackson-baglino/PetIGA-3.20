@@ -146,6 +146,21 @@ class Line(unittest.TestCase):
         self.assertEqual(self.cli("run", "--run", run), run_b1.FAILED)
         self.assertFalse(outside.exists())
 
+    def test_dev_run_on_one_paper_with_a_skipped_stage(self):
+        run = str(self.run)
+        self.cli("init", "--run", run, "--dev", "--papers", "pb", "--skip", "C")
+        self.cli("approve", "--run", run, "U", "--decision", "yes")
+        self.assertEqual(self.cli("run", "--run", run), run_b1.NOT_BUILT)        # past C (skipped) to D
+        self.assertTrue((self.run / "a_pb.json").exists())
+        self.assertFalse((self.run / "a_pa.json").exists())
+        self.assertFalse((self.run / "c.json").exists())
+        rows = {r["stage"]: r for r in run_b1.status_rows(run)}
+        self.assertEqual((rows["A"]["total"], rows["C"]["skipped"]), (1, True))
+
+    def test_papers_and_skip_only_in_dev(self):
+        with self.assertRaises(SystemExit):
+            self.cli("init", "--run", str(self.run), "--papers", "pa")
+
     def test_execute_run_needs_a_freeze(self):
         with self.assertRaises(SystemExit):
             self.cli("init", "--run", str(self.run))

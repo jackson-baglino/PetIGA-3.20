@@ -100,6 +100,21 @@ def papers(contract=None, research=None, check_hash=True):
     return rows
 
 
+def run_papers(run, check_hash=False):
+    """The contract's papers this run covers (a development run may cover fewer; manifest "papers")."""
+    plist = papers(check_hash=check_hash)
+    m = Path(run) / "manifest.json"
+    if m.exists():
+        ids = {p["id"] for p in json.loads(m.read_text())["papers"]}
+        plist = [p for p in plist if p["id"] in ids]
+    return plist
+
+
+def skipped(run):
+    m = Path(run) / "manifest.json"
+    return set(json.loads(m.read_text()).get("skip", [])) if m.exists() else set()
+
+
 def items(stage, plist):
     return [p["id"] for p in plist] if stage.get("per") == "paper" else [None]
 
@@ -142,6 +157,8 @@ def outputs_done(run, stage, item, plist, freeze_version):
 
 
 def item_done(run, stage, item, plist, freeze_version):
+    if stage["id"] in skipped(run):                          # a development run that leaves this stage out
+        return True
     if stage.get("station") is None:                         # a user gate
         return gate_state(run, stage, item) == "approved"
     if not outputs_done(run, stage, item, plist, freeze_version):
@@ -233,6 +250,15 @@ def cmd_init(a):
         if d:
             raise SystemExit(f"frozen files changed since {ver}: {d[:5]}")
     plist = papers()
+    if a.papers or a.skip:
+        if not a.dev:
+            raise SystemExit("--papers and --skip are for development runs only (--dev)")
+        unknown = set(a.papers or []) - {p["id"] for p in plist}
+        bad = set(a.skip or []) - {s["id"] for s in stages()}
+        if unknown or bad:
+            raise SystemExit(f"unknown papers {sorted(unknown)} or stages {sorted(bad)}")
+        if a.papers:
+            plist = [p for p in plist if p["id"] in a.papers]
     run.mkdir(parents=True, exist_ok=True)
     git = subprocess.run(["git", "rev-parse", "HEAD"], cwd=PROJECT, capture_output=True, text=True).stdout.strip()
     dirty = bool(subprocess.run(["git", "status", "--porcelain", "--", "workflows/literature-review", "scripts"],
@@ -244,6 +270,7 @@ def cmd_init(a):
     manifest = {"run_id": run.name, "created": now(), "dev": a.dev, "phase": ph, "freeze": ver,
                 "git_commit": git, "git_dirty": dirty, "claude_code": cc, "models": models,
                 "papers": [{"id": p["id"], "sha256": sha256(p["pdf"]), "role": p["role"]} for p in plist],
+                "skip": sorted(a.skip or []),
                 "files": snapshot()}
     (run / "manifest.json").write_text(json.dumps(manifest, indent=1) + "\n")
     print(f"initialized {run} ({'dev' if a.dev else 'execute ' + str(ver)}; {len(plist)} papers)")
@@ -252,7 +279,7 @@ def cmd_init(a):
 def status_rows(run, plist=None):
     run = Path(run)
     spec = stages()
-    plist = plist if plist is not None else papers(check_hash=False)
+    plist = plist if plist is not None else run_papers(run)
     fv = json.loads((run / "manifest.json").read_text()).get("freeze") if (run / "manifest.json").exists() else None
     rows = []
     for s in spec:
@@ -260,6 +287,7 @@ def status_rows(run, plist=None):
         done = sum(item_done(run, s, i, plist, fv) for i in its)
         waiting = sum(gate_state(run, s, i) == "waiting" for i in its)
         rows.append({"stage": s["id"], "built": built(s), "done": done, "total": len(its),
+                     "skipped": s["id"] in skipped(run),
                      "gate": s.get("gate", "none"), "waiting": waiting if s.get("gate") == "blocking" else 0})
     return rows
 
@@ -284,7 +312,7 @@ def brief(run):
     head = f"B1 · {ph.upper()}{' ' + str(ver) if ver else ''}"
     if run is None or not (Path(run) / "manifest.json").exists():
         return head + " · no run open"
-    plist = papers(check_hash=False)
+    plist = run_papers(run)
     fv = json.loads((Path(run) / "manifest.json").read_text()).get("freeze")
     s, i = next_item(Path(run), plist, fv)
     gates = sum(r["waiting"] for r in status_rows(run, plist))
@@ -299,6 +327,7 @@ def cmd_status(a):
         return
     for r in status_rows(a.run):
         print(f"{r['stage']:5} {'built' if r['built'] else 'NOT BUILT':9} {r['done']}/{r['total']}"
+              f"{'  SKIPPED (dev)' if r['skipped'] else ''}"
               f"{'  gate ' + r['gate'] if r['gate'] != 'none' else ''}"
               f"{'  waiting ' + str(r['waiting']) if r['waiting'] else ''}")
     print(brief(a.run))
@@ -314,7 +343,7 @@ def cmd_run(a):
         d = freeze_diff()
         if d:
             raise SystemExit(f"frozen files changed: {d[:5]}")
-    plist = papers()
+    plist = run_papers(run, check_hash=True)
     count = 0
     while True:
         s, i = next_item(run, plist, m["freeze"])
@@ -425,6 +454,9 @@ def main(argv=None):
     p = sub.add_parser("init")
     p.add_argument("--run", required=True)
     p.add_argument("--dev", action="store_true")
+    p.add_argument("--papers", nargs="+", help="development only: the papers this run covers")
+    p.add_argument("--skip", nargs="+", help="development only: stages left out (e.g. C0, whose held-out set is "
+                                              "scored once, after the freeze)")
     p = sub.add_parser("status")
     p.add_argument("--run")
     p.add_argument("--brief", action="store_true")
