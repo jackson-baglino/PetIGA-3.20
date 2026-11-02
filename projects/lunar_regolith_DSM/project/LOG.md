@@ -2,6 +2,49 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-11-01 — Literature review as a line: foreman, stations, hooks, sandbox
+
+- Session: 47a4c410-b4fb-46dc-9c25-6c04ed2b31e1
+- Done: plan to keep agents on task (plan file in ~/.claude/plans/), then
+  built it (8d4ae5d5..HEAD, ~27 commits, 112 tests). Develop/freeze/execute
+  phases and "the line" in workflows/TEMPLATE.md and WORKFLOW.md §0;
+  .claude/rules/ (workflows, solver-c, inputs), CLAUDE.md trimmed;
+  scripts/agentlib.py shared runner (audit, schema, retry, runs.db); all
+  literature-review agents in workflows/literature-review/agents/ (6 workers
+  + beth-foreman, started by scripts/literature_review/foreman.py);
+  run_b1.py (stage graph = run blocks in flowchart.json; gates; freeze/thaw;
+  --dev --papers --skip), lr_status.py, lr_backlog.py, BACKLOG.md; hooks
+  H1-H7 and skills lr-status, lr-freeze, lr-backlog, new-agent; stations
+  check_copy (A2), P1 link in read_check, revise (E5), curator (L1),
+  library-based Y1/Y2/Y3 with Q2/Q3/Leads and the one Y3 revision,
+  blind_read + compare_reads (X1), u3_review, backup + restore_test;
+  wf_launch (sandbox per station; agent stations need a deny-list profile,
+  a write allow-list broke Claude Code's login and raised a keychain
+  dialog) and the review session (Read/Grep/Glob only, tested live).
+  A2 found 5 arXiv copies; the user put published copies in Zotero and
+  ran zotero_pull. Dev run runs/literature-review/b1/dev-20261101-kp
+  (Kaempfer & Plapp, C0 skipped): 23 claims, E3 18/23, E5 10 confirmed,
+  12 revised, 1 disputed (c006), 22 published; memo v1 fails Y2 (9 uncited
+  sentences), as Y2's revision step expects.
+- Remaining:
+  1. Answer: Moure & Fu, published copy or arXiv v1? Then update the
+     B1_CONTRACT.md Papers table to the new Zotero copies (paths and hashes
+     in Literature/incoming/b1/zotero_pull.json; Lervag arXiv only; Li and
+     Folch & Plapp published) and rerun A2.
+  2. Dev run: the U3a gate opened before X1 ran (backlog item: make U3a
+     require X1). Fix that, then resume: run_b1.py run --run
+     runs/literature-review/b1/dev-20261101-kp (or the foreman); U3 with
+     u3_review.py in a terminal of the user's own; then Y2, Y3, U4, BK.
+  3. Open question: should U3 "missed statements" become claims through a
+     fresh reader, E3 and E4? LaTeX-source comparison dropped (user).
+  4. Step 6 build tests (T-det, T-units, T-applicability, T-perm,
+     T-sandbox, T-trifecta); step 7 calibration diagnostic rerun (prompts
+     changed form) and /lr-freeze; step 8 the nine-paper run with T-repeat.
+  5. Leftover test folder runs/literature-review/b1/_review_test/ (two
+     dummy files) for the user to delete.
+- Bottlenecks: token budget before the 2026-11-01 deadlines (Lab Report 2,
+  weekly homework); agent stations share the session's usage limit.
+
 ## 2026-11-01 — Prompt audit of instruction files, hooks, memory and worktrees
 
 - Session: 8272b16e-7e7f-4c96-bb27-dd1f38bb621c

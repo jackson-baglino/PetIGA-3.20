@@ -126,7 +126,26 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ### Line status (generated)
 
 <!-- BEGIN GENERATED: lr_status.py -->
-No B1 run yet (`run_b1.py init`).
+Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · next: U3a · 1 gate(s) waiting · 1 review item(s)
+
+| Stage | Station | Done | Gate | Waiting |
+|---|---|---|---|---|
+| U0 | built | 1/1 | blocking |  |
+| C0 | built | 1/1 | blocking |  |
+| P1 | built | 1/1 | none |  |
+| E1 | built | 1/1 | none |  |
+| E3 | built | 1/1 | review |  |
+| E4 | built | 1/1 | none |  |
+| E5 | built | 1/1 | review |  |
+| U3a | built | 0/1 | blocking | 1 |
+| L1 | built | 1/1 | review |  |
+| Y1 | built | 1/1 | none |  |
+| Y2 | built | 0/1 | none |  |
+| Y3 | built | 0/1 | review |  |
+| U4 | built | 0/1 | blocking |  |
+| A2 | built | 1/1 | blocking |  |
+| BK | built | 0/1 | none |  |
+| X1 | built | 0/1 | blocking |  |
 <!-- END GENERATED -->
 
 The line status above is computed by `scripts/literature_review/lr_status.py`
