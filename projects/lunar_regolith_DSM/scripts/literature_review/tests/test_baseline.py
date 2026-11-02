@@ -20,6 +20,9 @@ class Numbers(unittest.TestCase):
             self.assertAlmostEqual(v, 1.0152e-9, delta=1e-20, msg=text)
             self.assertEqual(u, "m", text)
 
+    def test_unit_exponents_are_not_numbers(self):
+        self.assertEqual(b.numbers("0.02 W m^-1 K^-1"), [(0.02, "w")])
+
     def test_units_and_unicode(self):
         self.assertEqual(b.numbers("−6 ◦C and 2 microns"), [(-6.0, "degc"), (2.0, "um")])
         self.assertEqual(b.numbers(b.plain("$-6^\\circ$C and $2\\,\\mu$m")), [(-6.0, "degc"), (2.0, "um")])

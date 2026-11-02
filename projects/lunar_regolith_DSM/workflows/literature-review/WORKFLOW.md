@@ -670,6 +670,20 @@ No new planted errors are written for B1 (§9, item 43).
 - **Sampling temperature.** Claude Code (2.1.316) has no option to set it
   (`claude --help`, checked 2026-11-01), so run-to-run variation is measured
   by repeat runs (T-repeat, §8) instead of being fixed.
+- **Script-only baseline** (user decision 2026-11-01; `baseline.py`). The
+  same held-out plants and controls, on the same cited pages, judged with no
+  model: every number in the claim (notations normalized) must be on the
+  page, a number with a unit must keep its unit, and each displayed equation
+  must match P1's LaTeX for that page after `tres.canon`. Prose without
+  numbers or equations is not judged. It is scored with `calibrate.py score
+  --baseline`: the same rules, reported next to the checker's, never a gate
+  and never an attempt in the held-out ledger. The comparison the course
+  asks for is the checker against this baseline: catches per kind and false
+  flags on controls. Tuning trial (2026-11-01, `calib-baseline-dev`, P1 on
+  Li, Kaempfer & Plapp and Blackford): 18 of 30 plants caught (changed digit
+  10 of 11, sign or exponent 2 of 2, wrong unit 1 of 1, wrong page 5 of 16),
+  10 of 30 controls flagged (figure numbers, values printed in other units,
+  and the user's LaTeX written differently from the parser's).
 - **After a real failure** (an error found in U3, X1 or Y3): no automatic
   redraw of a fresh held-out set, and no rerun of the whole branch. The
   prompt is repaired, the affected claim family (claims of that kind on those

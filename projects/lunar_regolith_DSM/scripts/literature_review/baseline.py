@@ -2,6 +2,7 @@
 """C0 baseline: the calibration plants and controls judged by scripts alone, no model (WORKFLOW.md §5).
 
     baseline.py --run <run folder> --set tuning|heldout [--papers ...] [--content-run <run with P1 content>]
+                [--prepare]
 
 The same items check_plants.py gives the checker (check_plants.items_for), on the same cited PDF page. A claim is
 flagged when any of these deterministic checks fails on that page:
@@ -56,6 +57,8 @@ def numbers(text):
     t = norm_text(text)
     out = []
     for m in NUM.finditer(t):
+        if m.start() > 0 and t[m.start() - 1] == "^":         # a unit's exponent (m^-1, K^-1), not a number
+            continue
         exp = m.group(2) or m.group(3)
         try:
             v = float(m.group(1)) * (10.0 ** int(exp) if exp else 1.0)
@@ -88,10 +91,11 @@ def page_equations(content, page):
             if e.get("page_pdf") == page]
 
 
-def plain(text):
-    """The claim as plain text for the number check: displayed equations removed (the equation check covers
-    them), inline math such as $-6^\\circ$C turned into -6°C."""
-    text = EQ.sub(" ", text)
+def plain(text, drop_equations=True):
+    """Text for the number check, inline math such as $-6^\\circ$C turned into -6°C. For a claim, displayed
+    equations are dropped (the equation check covers them); for a page (P1's Markdown) they are kept."""
+    if drop_equations:
+        text = EQ.sub(" ", text)
 
     def inline(m):
         t = m.group(1).replace("^\\circ", "°").replace("\\circ", "°").replace("\\times", "×")
@@ -103,7 +107,7 @@ def plain(text):
 def judge(item, text, equations):
     """{flag, checks: {numbers, units, equations}} for one claim on its page text."""
     claim = plain(item["text"]) + " " + " ".join(str(v) for v in (item.get("parameter") or {}).values())
-    on_page = numbers(text)
+    on_page = numbers(plain(text, drop_equations=False))
     checks = {}
     nums = numbers(claim)
     if nums:
@@ -132,6 +136,8 @@ def main(argv=None):
     ap.add_argument("--set", choices=["tuning", "heldout"], required=True)
     ap.add_argument("--papers", nargs="*")
     ap.add_argument("--content-run", help="a run folder holding P1 content for these papers (default: --run)")
+    ap.add_argument("--prepare", action="store_true",
+                    help="run P1 (prepare.py, in this process and sandbox) for any paper without P1 content")
     a = ap.parse_args(argv)
     run = Path(a.run).resolve()
     split = yaml.safe_load(open(cal.SPLIT))
@@ -143,6 +149,11 @@ def main(argv=None):
         pdf = cp.pdf_of(paper)
         offset = cc.PageMap(str(pdf)).offset
         content = content_dir(a.content_run or run, paper, pdf)
+        if content is None and a.prepare:
+            import prepare
+            if prepare.main(["--run", str(run), "--paper-id", paper, "--pdf", str(pdf)]):
+                raise SystemExit(f"P1 failed for {paper}")
+            content = content_dir(run, paper, pdf)
         for x in cp.items_for(paper, ids, plants, offset):
             j = judge(x, page_text(pdf, x["page_pdf"], content), page_equations(content, x["page_pdf"]))
             for k, v in j["checks"].items():
