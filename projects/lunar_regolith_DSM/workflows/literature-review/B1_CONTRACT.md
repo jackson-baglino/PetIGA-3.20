@@ -28,21 +28,22 @@ papers say on the way):
 
 Nine papers: the seven seeds (WORKFLOW.md §9, item 38), Kaempfer & Plapp 2009
 (the model the project builds on, and a calibration paper), and Moure & Fu
-2024 in its arXiv v1 copy (the group's own model; its LaTeX source is
-available). Hashes are sha256 of the files on disk on 2026-10-29. *Research*
+2024 in its published copy (the group's own model; the arXiv v1 LaTeX source
+stays on disk; X1 does not compare it yet). Hashes are sha256 of the files on disk (v2,
+2026-11-01). *Research*
 is `~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/`.
 
 | ID | DOI | File (under *Research*) | Pages | sha256 (first 12) | Status | Role (proposed) |
 |---|---|---|---|---|---|---|
 | li_2009 | 10.4310/cms.2009.v7.n1.a4 | `Literature/li_2009.pdf` (publisher, pp. 81–107) | 27 | 6c8ca5bbb242 | on disk; P1 run in development | core |
 | lervag_lowengrub_2015 | 10.4310/cms.2015.v13.n6.a6 | `Literature/incoming/b1/zotero_CGTLZK54/10.4310_cms.2015.v13.n6.a6.pdf` | 32 | accd72942c5e | pulled from Zotero 2026-10-29; copy kind not checked (A2) | core |
-| yu_chen_thornton_2012 | 10.1088/0965-0393/20/7/075008 | `Literature/incoming/b1/zotero_Z4WZUXEG/10.1088_0965-0393_20_7_075008.pdf` | 59 | df13f8d53001 | pulled from Zotero; copy kind not checked | core |
-| folch_plapp_2005 | 10.1103/physreve.72.011602 | `Literature/incoming/b1/zotero_FVY8URBB/10.1103_physreve.72.011602.pdf` | 37 | 62caf0861949 | pulled from Zotero; copy kind not checked | core |
-| joshi_jaiman_2018 | 10.1002/nme.5961 | `Literature/incoming/b1/zotero_8BJ7Y9VL/10.1002_nme.5961.pdf` | 25 | 01bbc5a8132d | pulled from Zotero; copy kind not checked | core |
+| yu_chen_thornton_2012 | 10.1088/0965-0393/20/7/075008 | `Literature/incoming/b1/zotero_FPFXFI8J/10.1088_0965-0393_20_7_075008.pdf` | 42 | b3e677615fcc | published copy, added to Zotero by the user 2026-11-01 (replaces Z4WZUXEG); A2 to recheck | core |
+| folch_plapp_2005 | 10.1103/physreve.72.011602 | `Literature/incoming/b1/zotero_9QQPQWFH/10.1103_physreve.72.011602.pdf` | 27 | 06d68698a9d2 | published copy, added 2026-11-01 (replaces FVY8URBB); A2 to recheck | core |
+| joshi_jaiman_2018 | 10.1002/nme.5961 | `Literature/incoming/b1/zotero_C66WP9T7/10.1002_nme.5961.pdf` | 25 | f80cfd405907 | published copy, added 2026-11-01 (replaces 8BJ7Y9VL); A2 to recheck | core |
 | steinbach_2009 | 10.1088/0965-0393/17/7/073001 | `Literature/incoming/b1/zotero_57KIMZAG/10.1088_0965-0393_17_7_073001.pdf` | 32 | 87e43331819a | pulled from Zotero; copy kind not checked | context (review) |
-| plapp_2011 | 10.1103/physreve.84.031601 | `Literature/incoming/b1/zotero_XCWNQ9Q7/10.1103_physreve.84.031601.pdf` | 36 | 74b1c5c05d1f | pulled from Zotero; copy kind not checked | context |
+| plapp_2011 | 10.1103/physreve.84.031601 | `Literature/incoming/b1/zotero_8LSUVADQ/10.1103_physreve.84.031601.pdf` | 15 | 0713491c5dd2 | published copy, added 2026-11-01 (replaces XCWNQ9Q7); A2 to recheck | context |
 | kaempfer_plapp_2009 | 10.1103/PhysRevE.79.031502 | `Literature/kaempfer_plapp_2009.pdf` | 17 | 2141892c2e9c | on disk; P1 run in development | context (the base model; calibration paper) |
-| moure_fu_2024_arxiv_v1 | 10.48550/arXiv.2407.21213 | `Literature/moure_fu_2024_arxiv_v1/moure_fu_2024_arxiv_v1.pdf`; source `source_2407.21213v1.tar.gz` (f1e3e9fa94cd) | 48 | e265eb8a28ac | on disk with LaTeX source | context (the group's model) |
+| moure_fu_2024 | 10.1021/acs.cgd.4c00539 | `Literature/incoming/b1/zotero_7663PFVQ/10.1021_acs.cgd.4c00539.pdf` | 14 | 61268456ef25 | published copy (user decision 2026-11-01; replaces the arXiv v1 copy, whose LaTeX source stays on disk; it was used in T-res and is not yet compared in X1); A2 to recheck | context (the group's model) |
 
 *Core* papers are read with the user's review of key pages (U3); *context*
 papers are read and checked the same way, but the user reviews only the claims
@@ -115,7 +116,7 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 - Label each of the 22 B1 gold statements (Kaempfer & Plapp 12, Li 10) with
   Q1, Q2, Q3 or none; recall is counted only on those labeled. Done 2026-10-30:
   Li 6 [Q1, Q2] and 4 none; Kaempfer & Plapp 1 Q1 and 11 none.
-- ~~Confirm the arXiv v1 copy of Moure & Fu as the copy read~~ Confirmed 2026-10-30; the user judges it the same content as the journal version, and any Moure & Fu claim the memo relies on is checked in the journal version before the memo is final (its pages match
+- ~~Confirm the arXiv v1 copy of Moure & Fu as the copy read~~ Confirmed 2026-10-30, then replaced by the published copy on 2026-11-01 (v2); the user judges it the same content as the journal version, and any Moure & Fu claim the memo relies on is checked in the journal version before the memo is final (its pages match
   the LaTeX source; the journal PDF has a different layout).
 - ~~Confirm Q2 and Q3 as written.~~ Confirmed by the user, 2026-10-30.
 - `papers.yaml` still lists Li's calibration roles as unset and the Zotero
@@ -126,7 +127,7 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ### Line status (generated)
 
 <!-- BEGIN GENERATED: lr_status.py -->
-Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · next: X1 · 1 gate(s) waiting · 1 review item(s)
+Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · next: U3a · 1 gate(s) waiting · 1 review item(s)
 
 | Stage | Station | Done | Gate | Waiting |
 |---|---|---|---|---|
@@ -145,7 +146,7 @@ Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · next: X1 · 1 gat
 | U4 | built | 0/1 | blocking |  |
 | A2 | built | 1/1 | blocking |  |
 | BK | built | 0/1 | none |  |
-| X1 | built | 0/1 | blocking |  |
+| X1 | built | 1/1 | blocking |  |
 <!-- END GENERATED -->
 
 The line status above is computed by `scripts/literature_review/lr_status.py`
@@ -228,3 +229,4 @@ frozen final evaluation comes before the nine papers and the memo.
 
 - v1 draft, 2026-10-29.
 - v1 approved by the user, 2026-10-30, including the arXiv v1 copy of Moure & Fu.
+- v2, 2026-11-01: the user chose the published copy of Moure & Fu (ID `moure_fu_2024`) and published copies of Yu, Chen & Thornton, Folch & Plapp, Joshi & Jaiman and Plapp, which the user added to Zotero after A2 found preprint copies; Lervåg & Lowengrub stays the arXiv copy (the only one available). Rows recomputed from the Zotero originals; `run_b1.py` checks each path and hash.

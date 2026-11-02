@@ -213,8 +213,8 @@ are in §9, item 38. Seeds are read first. In later branches they also steer
 discovery and screening (§13); in B1 they are the whole set.
 
 **B1 is a fixed-paper review.** It reads nine papers: the seven seeds, Kaempfer
-& Plapp 2009 and Moure & Fu 2024 (the arXiv v1 copy, whose LaTeX source is
-available). There is no discovery, screening or tier. The run contract,
+& Plapp 2009 and Moure & Fu 2024 (the published copy since contract v2,
+2026-11-01; the arXiv v1 LaTeX source stays on disk). There is no discovery, screening or tier. The run contract,
 `B1_CONTRACT.md`, lists each paper with its copy's hash, its role (core or
 context), the questions, the outputs, the stages that run, and who approves
 what. A citation found while reading that looks essential is listed in the
