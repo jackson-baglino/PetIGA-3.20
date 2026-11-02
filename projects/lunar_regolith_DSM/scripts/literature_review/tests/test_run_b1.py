@@ -212,6 +212,9 @@ class RealGraph(unittest.TestCase):
         self.assertIn("C0", by["E1"]["requires"])
         self.assertEqual(set(by["Y2"]["requires"]), {"X1", "U3a"})
         self.assertIn("X1", by["U3a"]["requires"])      # the user's U3 pass includes X1's disagreements
+        c0 = [st[0] + (" --baseline" if "--baseline" in st else "") for st in by["C0"]["steps"]]
+        self.assertLess(c0.index("baseline.py"), c0.index("calibrate.py"))   # the baseline is scored even
+        self.assertLess(c0.index("calibrate.py --baseline"), c0.index("calibrate.py"))  # if the checker fails
         self.assertEqual(by["Y1"]["requires"], ["L1"])
         self.assertEqual(by["BK"]["requires"], ["U4"])
         for gate in ("U0", "C0", "A2", "X1", "U3a", "U4"):

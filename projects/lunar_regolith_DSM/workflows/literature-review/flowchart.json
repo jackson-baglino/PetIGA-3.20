@@ -139,6 +139,25 @@
       "heldout"
      ],
      [
+      "baseline.py",
+      "--run",
+      "{run}",
+      "--set",
+      "heldout",
+      "--prepare"
+     ],
+     [
+      "calibrate.py",
+      "score",
+      "--baseline",
+      "--results",
+      "{run}/baseline_heldout.jsonl",
+      "--prompt-version",
+      "{freeze}",
+      "--out",
+      "{run}/baseline_heldout"
+     ],
+     [
       "calibrate.py",
       "score",
       "--results",
@@ -161,6 +180,9 @@
     "done": [
      {
       "path": "calibration_heldout.json"
+     },
+     {
+      "path": "baseline_heldout/baseline.json"
      }
     ]
    }
