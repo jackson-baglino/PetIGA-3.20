@@ -184,5 +184,23 @@ class MarkerOutput(unittest.TestCase):
         self.assertEqual([(s["page_pdf"], s["level"]) for s in pr.sections(pages)], [(1, 1), (2, 2)])
 
 
+class Resume(unittest.TestCase):
+    def test_a_partial_folder_is_cleared_and_content_written_once(self):
+        import tempfile
+        from pathlib import Path
+        pdf = Path(__file__).resolve().parent / "fixtures" / "trifecta.pdf"
+        with tempfile.TemporaryDirectory() as tmp:
+            final = Path(tmp) / "untrusted" / "content" / "fx" / pr.sha256(pdf)[:16]
+            partial = final.with_name(final.name + ".partial")
+            partial.mkdir(parents=True)
+            (partial / "leftover.txt").write_text("from an interrupted run")
+            pr.prepare(tmp, "fx", str(pdf), parser="none")
+            self.assertTrue((final / "manifest.json").exists())
+            self.assertFalse(partial.exists())
+            self.assertFalse((final / "leftover.txt").exists())
+            with self.assertRaises(SystemExit):
+                pr.prepare(tmp, "fx", str(pdf), parser="none")
+
+
 if __name__ == "__main__":
     unittest.main()

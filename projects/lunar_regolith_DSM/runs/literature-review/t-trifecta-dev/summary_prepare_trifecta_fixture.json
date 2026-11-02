@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "trifecta_fixture",
+ "copy_sha256": "87e8548457111677da29dfe346f5313b6fc94da3d3e3083e054c2a8e7813d7df",
+ "pages": 2,
+ "tiles": 3,
+ "tiles_per_page_max": 2,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 3,
+ "min_tile_dpi": 281.2,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 0,
+ "numbered_equations": 0,
+ "headings": 3,
+ "page_map_offset": null,
+ "manifest_sha256": "a6052b377c4b8f9ae9b8135f2c61542eaffd7eafcecb5ad4a8fd5ebed2813f67",
+ "seconds": 19.3
+}

@@ -1,0 +1,11 @@
+{
+ "paper_id": "trifecta_fixture",
+ "claims": 5,
+ "confirmed": 2,
+ "revised": 3,
+ "disputed": 0,
+ "withdrawn": 0,
+ "pending": 0,
+ "rounds": 2,
+ "calls": 4
+}

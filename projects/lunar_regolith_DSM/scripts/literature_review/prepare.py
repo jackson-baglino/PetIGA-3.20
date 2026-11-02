@@ -53,6 +53,7 @@ import importlib.metadata
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -453,9 +454,12 @@ def marker_versions():
 
 def prepare(run, paper_id, pdf, parser="mineru"):
     copy_hash = sha256(pdf)
-    out = Path(run) / "untrusted" / "content" / paper_id / copy_hash[:16]
-    if out.exists():
-        raise SystemExit(f"{out.relative_to(run)} exists; content is written once")
+    final = Path(run) / "untrusted" / "content" / paper_id / copy_hash[:16]
+    if final.exists():
+        raise SystemExit(f"{final.relative_to(run)} exists; content is written once")
+    out = final.with_name(final.name + ".partial")       # written here, renamed when complete, so a P1 stopped
+    if out.exists():                                     # midway leaves no half-written content: the next run
+        shutil.rmtree(out)                               # clears the partial folder and starts again
     t0 = time.time()
     n = render(pdf, out / "images")
     pages, layout, tool = {}, [], None
@@ -506,6 +510,8 @@ def prepare(run, paper_id, pdf, parser="mineru"):
     record["files"] = {str(f.relative_to(out)): sha256(f) for f in sorted(out.rglob("*"))
                        if f.is_file() and f.name != "manifest.json"}
     (out / "manifest.json").write_text(json.dumps(record, indent=1))
+    out.rename(final)
+    out = final
     summary = {"stage": "P1", "paper_id": paper_id, "copy_sha256": copy_hash, "pages": n,
                "tiles": len(all_tiles), "tiles_per_page_max": max(
                    (sum(1 for t in all_tiles if t["page"] == p) for p in range(1, n + 1)), default=0),
