@@ -6,6 +6,7 @@ next develop phase, not acted on when written. One entry each: date, source
 (session, stage or run), the idea, and why.
 
 ## Open
+- 2026-11-02 · dev-20261101-kp, U3 decisions 2026-11-02 · curator.py (L1) does not read u3_decisions.json, so a disputed claim the user marks right (c006) is still refused and never published; and the E5 review-queue item stays listed after the user decided it. L1 should publish a disputed claim on the user's 'right' (recording the decision), and status should show decided review items as decided Why: WORKFLOW §3 L1 publishes claims with passing verdicts or a user decision; today the user's decision is recorded but has no effect on the library
 
 ## Decided
 - 2026-11-01 · DONE 2026-11-01 (U3a requires X1; edge X1→U3a; test in test_run_b1.py) · dev-20261101-kp · Make U3a require X1 in flowchart.json, so X1's disagreements are in the user's U3 pass; in node order the U3a gate opened before X1 ran. Why: u3_review.py reviews X1 disagreements together with the model-option claims; with U3a first, the user would review twice.
