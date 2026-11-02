@@ -1165,7 +1165,6 @@ build log with the date. The tests B1 needs:
 | T-res | equations and numbers on 4 dense pages (Moure & Fu arXiv v1 pp. 8, 14, 19, against the authors' LaTeX; Kaempfer & Plapp p. 7, against the user's transcription), read from whole pages, from tiles and from whole pages with zoom crops | the method with no symbol errors on these pages is chosen; the canonicalizer's false disagreement and false agreement reported |
 | T-parser | the PDF parser candidates on Li et al. (58 numbered equations) and Kaempfer & Plapp p. 7 (the user's transcription), on this machine | the chosen parser finds every numbered equation; its LaTeX error rate on p. 7 reported; run time and disk use recorded |
 | T-det | P1 twice on one paper | identical hashes, or the differences listed |
-| T-units | Pint and SymPy on the verified units table and on the plants with unit and exponent errors | every planted error flagged; no verified row flagged |
 | T-applicability | the checker's step 0 on the user's dropped-condition plants, whose condition is on a different page from the result | the condition appears in the checklist and the plant is caught |
 | T-perm | `check_permissions.py` passes; each agent's forbidden actions are refused (reader WebSearch, Read outside its folder, any Bash write to `library/`, an offline script reaching the network, a script name not on the launcher's list); the review session's WebFetch, Write, Edit, a `curl`, and a Read outside its listed paths are refused, live; the transcript audit catches a planted violation | all refused and caught |
 | T-sandbox | sandbox on: Bash writes to `library/` refused; `curator.py` runs; with the sandbox made unavailable, Claude Code exits instead of running unsandboxed; whether a sandboxed process can apply a second profile | all; the nesting result recorded |
@@ -1178,6 +1177,11 @@ build log with the date. The tests B1 needs:
   (`calib-baseline-dev`, `t-det-dev`, `t_det.py`): 181 of 181 files identical
   (page images, page text, equations, tiles), once the timing fields of P1's
   manifest (`made`, seconds per page) are left out.
+
+T-units is deferred with the units check it tests (E3b, `check_units.py`,
+§13), which B1 does not run (user decision 2026-11-01); unit and exponent
+plants are still scored by the checker and the script-only baseline. Its row:
+| T-units | Pint and SymPy on the verified units table and on the plants with unit and exponent errors | every planted error flagged; no verified row flagged |
 
 Deferred tests (T-table, T-ret, T-blind with a separate math OCR model,
 T-retract, T-key, T-backup, T-zotero) are in §13 with their original rows.
