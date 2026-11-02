@@ -4,5 +4,11 @@
   "item": "kaempfer_plapp_2009",
   "claim_id": "kaempfer_plapp_2009-c006",
   "kind": "disputed"
+ },
+ {
+  "stage": "Y3",
+  "item": "Q1.v2",
+  "claim_id": "omission-1",
+  "kind": "gap"
  }
 ]

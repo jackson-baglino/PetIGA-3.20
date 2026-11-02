@@ -1,0 +1,15 @@
+{
+ "question": "Q1",
+ "version": 2,
+ "revised_here": true,
+ "rejected_claims_excluded": 0,
+ "sentences": 98,
+ "exempt": 41,
+ "uncited": 0,
+ "unknown_ids": 0,
+ "numbers": 6,
+ "untagged_numbers": 0,
+ "tag_mismatch": 0,
+ "pass": true,
+ "failing_sentences": {}
+}

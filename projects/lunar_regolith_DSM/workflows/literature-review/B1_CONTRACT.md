@@ -127,22 +127,23 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ### Line status (generated)
 
 <!-- BEGIN GENERATED: lr_status.py -->
-Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · next: U3a · 1 gate(s) waiting · 1 review item(s)
+Run `dev-20261101-a2`. B1 · DEVELOP · run dev-20261101-a2 · next: P1 yu_chen_thornton_2012 · 1 gate(s) waiting · 0 review item(s) undecided
 
 | Stage | Station | Done | Gate | Waiting |
 |---|---|---|---|---|
 | U0 | built | 1/1 | blocking |  |
 | C0 | built | 1/1 | blocking |  |
-| A2 | built | 1/1 | blocking |  |
-| P1 | built | 1/1 | none |  |
-| E1 | built | 1/1 | none |  |
-| E3 | built | 1/1 | review |  |
-| E4 | built | 1/1 | none |  |
-| E5 | built | 1/1 | review |  |
-| L1 | built | 1/1 | review |  |
-| Y1 | built | 1/1 | none |  |
-| X1 | built | 1/1 | blocking |  |
-| U3a | built | 0/1 | blocking | 1 |
+| A2 | built | 7/8 | blocking | 1 |
+| P1 | built | 0/8 | none |  |
+| E1 | built | 0/8 | none |  |
+| E3 | built | 0/8 | review |  |
+| E4 | built | 0/8 | none |  |
+| E5 | built | 0/8 | review |  |
+| L1 | built | 0/8 | review |  |
+| Y1 | built | 0/1 | none |  |
+| X1 | built | 0/1 | blocking |  |
+| U3a | built | 0/1 | blocking |  |
+| L1b | built | 0/8 | none |  |
 | Y2 | built | 0/1 | none |  |
 | Y3 | built | 0/1 | review |  |
 | U4 | built | 0/1 | blocking |  |

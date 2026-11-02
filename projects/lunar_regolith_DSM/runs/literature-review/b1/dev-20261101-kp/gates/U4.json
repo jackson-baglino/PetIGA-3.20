@@ -1,0 +1,10 @@
+{
+ "stage": "U4",
+ "item": null,
+ "status": "approved",
+ "opened": "2026-11-02T12:45:54-08:00",
+ "what": "Approve the memo, or ask for a new brief version",
+ "decision": "approved (dev run)",
+ "decided": "2026-11-02T15:49:07-08:00",
+ "decided_by": "user"
+}
