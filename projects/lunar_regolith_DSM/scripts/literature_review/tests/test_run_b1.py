@@ -231,6 +231,13 @@ class ParserInFreeze(unittest.TestCase):
 
 
 class RealGraph(unittest.TestCase):
+    def test_status_lists_stages_after_what_they_require(self):
+        order = [x["id"] for x in run_b1.dependency_order(run_b1.stages())]
+        by = {x["id"]: x for x in run_b1.stages()}
+        for sid in order:
+            for q in by[sid]["requires"]:
+                self.assertLess(order.index(q), order.index(sid), f"{q} before {sid}")
+
     def test_b1_graph_order_matches_the_contract(self):
         """In the real flowchart: calibration before reading; V1 (X1, U3a) before Y2; U4 before the backup."""
         by = {s["id"]: s for s in run_b1.stages()}

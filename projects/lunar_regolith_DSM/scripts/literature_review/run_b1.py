@@ -294,9 +294,25 @@ def cmd_init(a):
     print(f"initialized {run} ({'dev' if a.dev else 'execute ' + str(ver)}; {len(plist)} papers)")
 
 
+def dependency_order(spec):
+    """The stages in an order where each comes after every stage it requires (ties keep the graph's order)."""
+    out, done, left = [], set(), list(spec)
+    while left:
+        for s_ in left:
+            if all(q in done for q in s_.get("requires", [])):
+                out.append(s_)
+                done.add(s_["id"])
+                left.remove(s_)
+                break
+        else:                                   # a cycle cannot be ordered: keep the rest as given
+            out += left
+            break
+    return out
+
+
 def status_rows(run, plist=None):
     run = Path(run)
-    spec = stages()
+    spec = dependency_order(stages())
     plist = plist if plist is not None else run_papers(run)
     fv = json.loads((run / "manifest.json").read_text()).get("freeze") if (run / "manifest.json").exists() else None
     rows = []
@@ -353,6 +369,15 @@ def cmd_status(a):
               f"{'  gate ' + r['gate'] if r['gate'] != 'none' else ''}"
               f"{'  waiting ' + str(r['waiting']) if r['waiting'] else ''}")
     print(brief(a.run))
+    gates = sorted((Path(a.run) / "gates").glob("*.json")) if (Path(a.run) / "gates").exists() else []
+    for g in gates:
+        rec = json.loads(g.read_text())
+        if rec.get("status") == "waiting":
+            print(f"  gate waiting: {g.stem}: {rec.get('what', '')}")
+    rq = Path(a.run) / "review_queue.json"
+    for item in (json.loads(rq.read_text()) if rq.exists() else []):
+        print(f"  review: {item.get('stage', '?')} {item.get('item') or ''} {item.get('claim_id') or ''} "
+              f"{item.get('kind', '')}".rstrip())
 
 
 def cmd_run(a):
