@@ -110,6 +110,17 @@ class Publish(unittest.TestCase):
         out = json.loads((self.run / "summary_publish_u3_pa.json").read_text())
         self.assertEqual((out["published"], out["by_user_decision"]), (3, 1))
 
+    def test_claim_rejected_after_publishing_gets_a_marked_version(self):
+        self.approve_copy()
+        curator.publish(self.run, "pa", self.lib)
+        self.decide(pa_c001="wrong")
+        c = curator.publish(self.run, "pa", self.lib)
+        self.assertEqual((c["refused_user_wrong"], c["marked_rejected"]), (1, 1))
+        rec = json.loads((self.lib / "papers" / "pa" / "claims" / "pa-c001.v2.json").read_text())
+        self.assertEqual((rec["status"], rec["user_decision"]["verdict"]), ("rejected_by_user", "wrong"))
+        self.assertTrue((self.lib / "papers" / "pa" / "claims" / "pa-c001.v1.json").exists())   # nothing deleted
+        self.assertEqual(curator.publish(self.run, "pa", self.lib)["marked_rejected"], 0)      # once
+
 
 if __name__ == "__main__":
     unittest.main()

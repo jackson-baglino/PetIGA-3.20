@@ -43,6 +43,30 @@ class Review(unittest.TestCase):
                         u3.main(["--run", str(run)])
                     self.assertEqual(u3.main(["--run", str(run), "--list"]), 0)     # counts only: allowed
 
+    def test_redo_keeps_the_earlier_answer_and_reopens_l1b(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            m = run / "untrusted" / "memos"
+            m.mkdir(parents=True)
+            (m / "Q1.v1.md").write_text(MEMO)
+            (run / "untrusted" / "a").mkdir()
+            (run / "untrusted" / "a" / "final.json").write_text("[]")
+            (run / "review_queue.json").write_text(json.dumps([{"stage": "E5", "kind": "disputed",
+                                                                "claim_id": "a-c007"}]))
+            (run / "u3_decisions.json").write_text(json.dumps({"a-c007": {"verdict": "right", "kind": "disputed"}}))
+            (run / "summary_publish_u3_a.json").write_text("{}")
+            env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+            with mock.patch.object(u3.sy, "library_claims", return_value=([], {}, {})), \
+                    mock.patch.dict(os.environ, env, clear=True), \
+                    mock.patch("builtins.input", side_effect=["w", "mislabeled", "n"]), \
+                    mock.patch("builtins.print"):
+                with self.assertRaises(SystemExit):
+                    u3.main(["--run", str(run), "--redo", "a-c999"])            # not decided: refused
+                u3.main(["--run", str(run), "--redo", "a-c007"])
+            d = json.loads((run / "u3_decisions.json").read_text())["a-c007"]
+            self.assertEqual((d["verdict"], d["previous"][0]["verdict"]), ("wrong", "right"))
+            self.assertFalse((run / "summary_publish_u3_a.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

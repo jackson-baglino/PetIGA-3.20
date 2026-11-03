@@ -57,7 +57,8 @@ def library_claims(run, library=None):
         for cid, (v, f) in sorted(latest.items()):
             rec = json.loads(f.read_text())
             c, vd = rec["claim"], rec["verdict"]
-            if cid in rejected or not set(c.get("questions", [])) & set(QUESTIONS):
+            if cid in rejected or rec.get("status") == "rejected_by_user" or \
+                    not set(c.get("questions", [])) & set(QUESTIONS):
                 continue
             kept += 1
             out.append({"id": cid, "version": v, "paper": paper["id"], "verdict": vd["text"], "text": c["text"],

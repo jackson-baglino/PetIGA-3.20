@@ -9,8 +9,8 @@ It publishes a claim only if its status is confirmed or revised (the checker fou
 quote on the cited page); a disputed or withdrawn claim is refused and counted. The user's U3 decisions
 (<run>/u3_decisions.json, u3_review.py) take part: a disputed claim the user marked right is published (E3 must
 still have placed its quote), a claim marked wrong or unsure is refused, and every decided claim's record carries
-the decision (user_decision). A record published before the user marked it wrong stays (retraction is not built);
-synthesize.py leaves it out of the memo. U3 comes after L1 in the line, so stage L1b runs this again with
+the decision (user_decision). A claim published before the user marked it wrong or unsure is not deleted: it gets a
+next version with status rejected_by_user, which synthesize.py leaves out. U3 comes after L1 in the line, so stage L1b runs this again with
 --after-u3 once U3a is approved. Records are written once:
 - library/papers/<paper>/card.vN.json        bibliographic data, copies with kind and the user's A2 decision
 - library/papers/<paper>/source/<copy>/      the PDF read
@@ -116,13 +116,22 @@ def publish(run, paper_id, library=None):
         (adir / "symbols.json").write_text(json.dumps(json.loads((u / "read.json").read_text())["symbols"],
                                                       indent=1, ensure_ascii=False))
     counts = {"published": 0, "same": 0, "next_version": 0, "refused_disputed": 0, "refused_withdrawn": 0,
-              "refused_unchecked": 0, "refused_user_wrong": 0, "refused_user_unsure": 0, "by_user_decision": 0}
+              "refused_unchecked": 0, "refused_user_wrong": 0, "refused_user_unsure": 0, "by_user_decision": 0, "marked_rejected": 0}
     decisions = user_decisions(run)
     published = []
     for f in final:
         st, dec = f["status"], decisions.get(f["claim_id"])
         if dec and dec.get("verdict") in ("wrong", "unsure"):
             counts["refused_user_" + dec["verdict"]] += 1
+            if list((pdir / "claims").glob(f"{f['claim_id']}.v*.json")):   # published earlier: mark it, keep it
+                vs = sorted((pdir / "claims").glob(f"{f['claim_id']}.v*.json"),
+                            key=lambda q: int(q.name.rsplit(".v", 1)[1].split(".")[0]))
+                last = json.loads(vs[-1].read_text())
+                if last.get("status") != "rejected_by_user" or last.get("user_decision") != dec:
+                    write_versioned(pdir / "claims", f["claim_id"],
+                                    {**last, "status": "rejected_by_user", "user_decision": dec,
+                                     "run": run.name, "published": now()})
+                    counts["marked_rejected"] += 1
             continue
         by_user = st == "disputed" and (dec or {}).get("verdict") == "right"
         if st not in PUBLISHABLE and not by_user:

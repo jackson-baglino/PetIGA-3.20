@@ -19,6 +19,9 @@ wrong is left out of the memo when Y1 redrafts; unsure is kept out too, and note
 statements the claims missed (paper, PDF page, statement); they are recorded in u3_missed.json (turning them into
 claims through E3 and E4 is not built yet).
 
+--redo CLAIM_ID ... asks again about claims already decided (a mislabeled answer); the earlier answer is kept in the
+decision's "previous" list, and stage L1b is marked not done so the line publishes again with the new answer.
+
 Decisions go to <run>/u3_decisions.json and <run>/u3_missed.json. When every item is decided, the tool prints the
 run_b1.py approve commands for the U3a and X1 gates; you run them.
 """
@@ -109,11 +112,16 @@ def main(argv=None):
     ap.add_argument("--run", required=True)
     ap.add_argument("--question", default="Q1")
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--redo", nargs="+", default=[], metavar="CLAIM_ID",
+                    help="ask again about these decided claims; the earlier answer is kept under 'previous'")
     a = ap.parse_args(argv)
     run = Path(a.run).resolve()
     dfile, mfile = run / "u3_decisions.json", run / "u3_missed.json"
     decisions = load(dfile, {})
-    todo = [(k, c) for k, c in items(run, a.question) if c not in decisions]
+    unknown = [c for c in a.redo if c not in decisions]
+    if unknown:
+        raise SystemExit(f"--redo: not decided yet, nothing to redo: {unknown}")
+    todo = [(k, c) for k, c in items(run, a.question) if c not in decisions or c in a.redo]
     if a.list:
         print(json.dumps({"waiting": len(todo), "decided": len(decisions),
                           "by_kind": {k: sum(1 for x, _ in todo if x == k) for k in ("x1", "model_option", "disputed")}}))
@@ -131,8 +139,14 @@ def main(argv=None):
         if ans == "s":
             continue
         note = input("note (optional): ").strip()
-        decisions[cid] = {"verdict": ANSWERS[ans], "kind": kind, "note": note, "by": "user",
-                          "decided": datetime.datetime.now().astimezone().isoformat(timespec="seconds")}
+        rec = {"verdict": ANSWERS[ans], "kind": kind, "note": note, "by": "user",
+               "decided": datetime.datetime.now().astimezone().isoformat(timespec="seconds")}
+        if cid in decisions:                                        # --redo: keep the earlier answer
+            prev = decisions[cid]
+            rec["previous"] = prev.get("previous", []) + [{k: v for k, v in prev.items() if k != "previous"}]
+            for f in run.glob("summary_publish_u3_*.json"):           # L1b publishes again with the new answer
+                f.unlink()
+        decisions[cid] = rec
         dfile.write_text(json.dumps(decisions, indent=1, ensure_ascii=False))
     missed = load(mfile, [])
     while input("\nAdd a statement the claims missed? [y/N]: ").strip().lower().startswith("y"):
