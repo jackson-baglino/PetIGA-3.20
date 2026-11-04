@@ -106,6 +106,12 @@ class Ledger(unittest.TestCase):
         self.assertEqual([r[0] for r in rows], ["ok", "failed", "ok", "failed", "failed"])
         self.assertEqual(len(list((self.run / "transcripts" / "X1").glob("*.jsonl"))), 5)
 
+    def test_worker_runs_with_auto_memory_off(self):
+        m = ac.MODELS["morty"]
+        with fake(ok(m, {"items": []})) as run:
+            ac.call(self.folder, "x", "blind", "morty-blind-reader", ledger=self.ledger, step="X1")
+        self.assertEqual(run.call_args.kwargs["env"]["CLAUDE_CODE_DISABLE_AUTO_MEMORY"], "1")
+
     def test_wrong_model_or_schema_fails(self):
         with fake(ok("claude-opus-5-5", {"items": []}), ok("claude-opus-5-5", {"items": []})):
             r, meta = ac.call(self.folder, "x", "blind", "morty-blind-reader", ledger=self.ledger, step="X1")

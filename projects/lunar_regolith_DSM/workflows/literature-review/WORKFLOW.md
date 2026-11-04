@@ -1209,6 +1209,17 @@ build log with the date. The tests B1 needs:
   restored 208 of them (the memo, its claim list, every cited claim, and the
   first cited paper's library files) into an empty folder: 0 hash
   mismatches, and Y2 on the restored memo gives the same result (passes).
+- Worker isolation canary, 2026-11-03 (Claude Code 2.1.317, by hand from the
+  project folder): marker words planted in the three auto memory folders
+  (project setting, project key, repository root). A worker with no
+  isolation saw CLAUDE.md, CLAUDE.local.md and memory (positive control).
+  With our flags (`--setting-sources ""` and the rest), it saw no CLAUDE.md
+  but **did load the repository-root memory index**. With
+  `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`, or with `--safe-mode`, it saw nothing.
+  Under `--safe-mode`, a `--settings` deny rule still blocked a Read. Fix:
+  `agentlib.py` and `tres.py` start workers with auto memory off. Workers
+  start in a temporary folder outside the repository, so earlier runs probably
+  did not load it. That is inferred: those runs were not tested.
 - T-applicability, 2026-11-02: passed on the tuning set
   (`t_applicability.py`, run `calib-dev6`): all three tuning dropped-condition
   plants caught, and each paper's checklist has an item on the condition's

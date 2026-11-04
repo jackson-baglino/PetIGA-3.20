@@ -32,6 +32,9 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import prepare as pr  # noqa: E402
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+import agentlib  # noqa: E402
+
 PROJECT = Path(__file__).resolve().parents[2]
 CAL = PROJECT / "workflows" / "literature-review" / "calibration"
 DOCS = Path.home() / "Library" / "Mobile Documents" / "com~apple~CloudDocs" / "Documents"
@@ -219,7 +222,8 @@ def read(files_dir, names, kind, model):
            "--setting-sources", "", "--strict-mcp-config", "--no-session-persistence",
            "--disable-slash-commands", "--json-schema", json.dumps(SCHEMA)]
     t0 = time.time()
-    p = subprocess.run(cmd, cwd=files_dir, capture_output=True, text=True, timeout=900)
+    p = subprocess.run(cmd, cwd=files_dir, capture_output=True, text=True, timeout=900,
+                       env=agentlib.worker_env())
     if p.returncode != 0:
         return None, {"error": f"exit {p.returncode}", "seconds": round(time.time() - t0, 1)}
     out = json.loads(p.stdout)

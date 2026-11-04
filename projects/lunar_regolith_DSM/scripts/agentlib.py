@@ -10,7 +10,9 @@ call_agent() runs one task as
            --strict-mcp-config --no-session-persistence --disable-slash-commands --system-prompt <body>
            --output-format stream-json --verbose --json-schema <schema> [--settings <file>] [--allowedTools ...]
 
-from a clean folder that holds only the agent's inputs. `--tools ""` leaves only the StructuredOutput tool
+from a clean folder that holds only the agent's inputs, with CLAUDE_CODE_DISABLE_AUTO_MEMORY=1:
+`--setting-sources ""` keeps CLAUDE.md out but not auto memory, and a worker started inside the
+repository loaded its memory index (canary test, 2026-11-03). `--tools ""` leaves only the StructuredOutput tool
 (checked with Claude Code 2.1.316 on 2026-11-01). The transcript is audited: the session model must be the pinned
 one, every tool call must be one the agent may use, and every Read must be of a file in the clean folder. The
 output is validated against the schema. A failed attempt is retried once, then reported. With a run folder, each
@@ -19,6 +21,7 @@ attempt is a row in <rdir>/runs.db and its transcript is <rdir>/transcripts/<sta
 import datetime
 import hashlib
 import json
+import os
 import shutil
 import sqlite3
 import subprocess
@@ -155,6 +158,11 @@ def audit(events, agent, clean, readable):
     return problems, result
 
 
+def worker_env():
+    """The environment of a headless worker: ours, with Claude Code's auto memory off."""
+    return dict(os.environ, CLAUDE_CODE_DISABLE_AUTO_MEMORY="1")
+
+
 def command(agent, task, schema, settings=None, allow=()):
     cmd = ["claude", "-p", task, "--model", agent["model"], "--tools", ",".join(agent["tools"]),
            "--permission-mode", agent["permission_mode"], "--setting-sources", "", "--strict-mcp-config",
@@ -219,7 +227,7 @@ def call_agent(rdir, stage, agent, label, task, schema, files=None, folder=None,
             readable = _files_in(clean)
             try:
                 p = subprocess.run(command(agent, task, schema, settings, allow), cwd=clean, capture_output=True,
-                                   text=True, timeout=timeout)
+                                   text=True, timeout=timeout, env=worker_env())
                 out_text, err_text = p.stdout, p.stderr
             except subprocess.TimeoutExpired as e:
                 out_text = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
