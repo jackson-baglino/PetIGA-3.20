@@ -1,12 +1,13 @@
 {
  "paper_id": "kaempfer_plapp_2009",
- "published": 1,
- "same": 17,
- "next_version": 5,
+ "published": 0,
+ "same": 22,
+ "next_version": 1,
  "refused_disputed": 0,
  "refused_withdrawn": 0,
  "refused_unchecked": 0,
  "refused_user_wrong": 0,
  "refused_user_unsure": 0,
- "by_user_decision": 1
+ "by_user_decision": 1,
+ "marked_rejected": 0
 }

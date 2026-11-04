@@ -37,8 +37,31 @@
  "kaempfer_plapp_2009-c006": {
   "verdict": "right",
   "kind": "disputed",
-  "note": "",
+  "note": "Right. The quote supports only the Gibbs-Thomson part; Eq. (6) is a boundary condition by its form (it gives the sharp-interface velocity), though the paper doesn't call it one.",
   "by": "user",
-  "decided": "2026-11-02T12:41:52-08:00"
+  "decided": "2026-11-03T17:44:32-08:00",
+  "previous": [
+   {
+    "verdict": "right",
+    "kind": "disputed",
+    "note": "",
+    "by": "user",
+    "decided": "2026-11-02T12:41:52-08:00"
+   },
+   {
+    "verdict": "wrong",
+    "kind": "disputed",
+    "note": "",
+    "by": "user",
+    "decided": "2026-11-03T17:26:23-08:00"
+   },
+   {
+    "verdict": "right",
+    "kind": "disputed",
+    "note": "",
+    "by": "user",
+    "decided": "2026-11-03T17:43:55-08:00"
+   }
+  ]
  }
 }
