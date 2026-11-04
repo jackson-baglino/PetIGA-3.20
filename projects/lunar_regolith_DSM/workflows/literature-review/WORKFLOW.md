@@ -1049,8 +1049,9 @@ Open:
     against the user's transcription (Marker 7 of 10); Molaro 41 of 41
     numbered equations (Marker 37 of 42); about 10 to 15 s per page.
     PaddleOCR-VL-1.6 was not installed: on this Mac it needs a separate
-    model server, which the no-network sandbox blocks. Marker stays as a
-    fallback (`--parser marker`).
+    model server, which the no-network sandbox blocks. Marker was kept as a
+    fallback until 2026-11-03, then removed with its environment (it pinned
+    `anthropic` below 1.0).
 45. **Page tiling:** whole pages, tiles, or zoom crops; chosen by T-res.
     Result (2026-10-29, `runs/literature-review/tres/summary_tres.json`):
     on the four T-res pages (20 numbered equations, Sonnet 5.5 reader,

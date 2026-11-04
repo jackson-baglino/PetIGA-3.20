@@ -40,16 +40,15 @@ Parser. MinerU2.5-Pro (docparse_run.py, in venv_docparse) reads the 300 dpi page
 through MLX on this machine: a layout pass, then each block read as LaTeX, HTML or text.
 Chosen over Marker on 2026-10-29: it read all 10 equations of Kaempfer & Plapp p. 7 exactly
 as the user transcribed them (Marker 7) and finds the printed equation numbers as blocks.
-Marker (marker_run.py, `--parser marker`) is kept as a fallback, never with --use_llm. Both
-run offline from local weights; nothing leaves the machine.
+Marker, the earlier fallback, was removed on 2026-11-03. MinerU runs offline from local
+weights; nothing leaves the machine.
 
     venv_workflows/bin/python scripts/literature_review/prepare.py --run <run folder> \\
-        --paper-id <id> --pdf <file> [--parser mineru|marker|none] [--allow-dirty]
+        --paper-id <id> --pdf <file> [--parser mineru|none] [--allow-dirty]
 """
 import argparse
 import datetime
 import hashlib
-import importlib.metadata
 import json
 import os
 import re
@@ -73,10 +72,6 @@ OVERLAP = DPI                   # 1 inch, where a tile must be cut without a gap
 INK = 200                       # gray level below which a pixel is ink
 MIN_GAP = 6                     # px of blank rows that count as a gap between lines (0.5 pt)
 GUTTER = int(0.12 * DPI)        # a column gutter is at least this wide
-MARKER_FLAGS = ["--paginate_output", "--output_format", "markdown", "--disable_image_extraction",
-                "--disable_tqdm"]
-PAGE_SEP = re.compile(r"^\{(\d+)\}-{48}\s*$", flags=re.M)
-MODEL_CACHE = Path.home() / "Library" / "Caches" / "datalab" / "models"     # Marker's weights
 DOCPARSE_PY = Path(__file__).resolve().parents[2] / "venv_docparse" / "bin" / "python"
 DEFINITIONS = ["scripts/literature_review", "workflows/literature-review", ".claude/permissions"]
 
@@ -385,24 +380,6 @@ def coverage(gray, tiles):
 
 # ---- parsers ----
 
-def split_pages(md):
-    """{page (1-based): markdown} from Marker's paginated output ({0}----... separators, 0-based)."""
-    parts = PAGE_SEP.split(md)
-    return {int(parts[i]) + 1: parts[i + 1].strip("\n") + "\n" for i in range(1, len(parts) - 1, 2)}
-
-
-def run_marker(pdf):
-    """Marker's pages {page: Markdown} and layout [{bbox, blocks}] (marker_run.py, one pass)."""
-    env = dict(os.environ, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
-    with tempfile.TemporaryDirectory() as tmp:
-        env["MPLCONFIGDIR"] = tmp
-        p = subprocess.run([sys.executable, str(Path(__file__).with_name("marker_run.py")), str(pdf), tmp],
-                           capture_output=True, text=True, env=env)
-        if p.returncode != 0:
-            raise RuntimeError(f"Marker failed with exit code {p.returncode}")
-        return split_pages((Path(tmp) / "marker.md").read_text()), json.loads((Path(tmp) / "layout.json").read_text())
-
-
 def run_mineru(images):
     """MinerU2.5-Pro's pages {page: Markdown}, layout [{bbox, blocks}] and tool record (docparse_run.py)."""
     env = dict(os.environ, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
@@ -443,13 +420,6 @@ def sections(pages):
             for p in sorted(pages) for m in HEADING.finditer(pages[p])]
 
 
-def marker_versions():
-    v = {p: importlib.metadata.version(p) for p in ("marker-pdf", "surya-ocr", "torch")}
-    v["model_files"] = {str(f.relative_to(MODEL_CACHE)): f.stat().st_size
-                        for f in sorted(MODEL_CACHE.rglob("*")) if f.is_file()} if MODEL_CACHE.exists() else None
-    return v
-
-
 # ---- driver ----
 
 def prepare(run, paper_id, pdf, parser="mineru"):
@@ -465,9 +435,6 @@ def prepare(run, paper_id, pdf, parser="mineru"):
     pages, layout, tool = {}, [], None
     if parser == "mineru":
         pages, layout, tool = run_mineru(out / "images")
-    elif parser == "marker":
-        pages, layout = run_marker(pdf)
-        tool = {"flags": MARKER_FLAGS, **marker_versions()}
     if layout:
         (out / "layout.json").write_text(json.dumps(layout, indent=1))
     (out / "tiles").mkdir()
@@ -531,8 +498,8 @@ def main(argv=None):
     ap.add_argument("--run", required=True, help="run folder, runs/literature-review/<review>/<run_id>")
     ap.add_argument("--paper-id", required=True)
     ap.add_argument("--pdf", required=True)
-    ap.add_argument("--parser", choices=["mineru", "marker", "none"], default="mineru",
-                    help="mineru (default); marker (fallback); none: images and tiles only")
+    ap.add_argument("--parser", choices=["mineru", "none"], default="mineru",
+                    help="mineru (default); none: images and tiles only")
     ap.add_argument("--allow-dirty", action="store_true", help="development only")
     a = ap.parse_args(argv)
     print(f"P1 prepare: run={a.run} paper={a.paper_id} pdf={os.path.basename(a.pdf)} dpi={DPI} "

@@ -4,11 +4,11 @@
 #
 #   requirements.txt            solver pre/post-processing; pinned to match the
 #                               HPC (Python 3.11, numpy/scipy held back).
-#   requirements-workflows.txt  this file: the workflow tools. They pull in
-#                               PyTorch and ~90 packages the HPC never needs,
-#                               so they live in their own environment.
+#   requirements-workflows.txt  this file: the workflow tools.
 #   requirements-workflows.lock exact versions of every package, for an
-#                               identical environment (pip freeze, 2026-10-22).
+#                               identical environment (pip freeze, 2026-11-03).
+#   requirements-docparse.lock  the paper parser (MinerU2.5-Pro), its own
+#                               environment venv_docparse.
 #
 # Set up (macOS, Homebrew python@3.11):
 #   python3.11 -m venv venv_workflows
@@ -21,15 +21,19 @@
 #   Google Chrome (any recent)  headless screenshots for flowchart review
 #   LibreOffice   26.8.0.3      `soffice`, .docx output of scripts/transcripts/short_transcript.py
 #
-# Marker is held below 2.0: Marker 2 does its OCR through a separate
-# llama.cpp `llama-server` binary. 1.10.2 runs entirely in PyTorch.
-# Never run Marker with --use_llm: it sends page content to an external API.
-# Marker's model weights have their own license (free for research use).
+# 2026-11-03: Marker (marker-pdf, surya-ocr, torch) removed. The literature
+# review parses papers with MinerU (venv_docparse) since 2026-10-29, and
+# Marker pinned anthropic below 1.0. numpy, scipy, pillow and PyYAML were
+# Marker's dependencies before; they are listed here now at the same versions.
+# scripts/units_verification still calls Marker (marker_extract.py); reinstall
+# or replace it when that workflow is used again.
 # ---------------------------------------------------------------------------
 
-marker-pdf==1.10.2          # PDF page -> Markdown with LaTeX math (local OCR)
-surya-ocr==0.17.1           # Marker's OCR and layout models
-torch==2.14.1               # Marker's runtime
+anthropic==2.4.0            # Claude API client (the call module's back end A)
+numpy==2.4.6                # prepare.py (tiles), tres.py
+scipy==1.17.1               # calibrate.py, prepare.py
+pillow==10.4.0              # page images and tiles; flowchart screenshots
+PyYAML==6.0.3               # agent frontmatter (agentlib.py) and calibration files
 markdown2==2.5.5            # scripts/transcripts/short_transcript.py (Markdown replies -> HTML)
 
 ruff==0.17.3                # linter for scripts/ (ruff.toml); static, imports nothing

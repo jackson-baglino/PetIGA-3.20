@@ -1,4 +1,4 @@
-"""Tests for prepare.py (P1): tiles on synthetic page images, and Marker output parsing.
+"""Tests for prepare.py (P1): tiles on synthetic page images, and parsed-text helpers.
 
     venv_workflows/bin/python -m unittest discover -s scripts/literature_review/tests
 """
@@ -86,7 +86,7 @@ class Tiles(unittest.TestCase):
 
 
 def block(kind, x0, y0, x1, y1):
-    """A Marker block from a box in pixels (the layout is in points, 72 per inch)."""
+    """A layout block from a box in pixels (the layout is in points, 72 per inch)."""
     k = 72 / pr.DPI
     return {"type": kind, "bbox": [x0 * k, y0 * k, x1 * k, y1 * k]}
 
@@ -173,12 +173,10 @@ class MinerUOutput(unittest.TestCase):
         self.assertEqual(types - set(dp.TYPES), set())
 
 
-class MarkerOutput(unittest.TestCase):
-    def test_pages_equations_and_headings(self):
-        md = ("\n\n{0}" + "-" * 48 + "\n\n# Title\n\ntext\n\n"
-              "{1}" + "-" * 48 + "\n\n## 2. Model\n\n$$a = b \\tag{3}$$\n\n$$c = d$$ (4)\n\n$$e$$\n\n$$f$$ (2.14)\n\n$$g$$ (A.3)\n\n$$h$$\n in $\\Omega$ , (2.21)\n\n$$k$$\n\nsee the results in (2.5) and the text that follows it\n")
-        pages = pr.split_pages(md)
-        self.assertEqual(sorted(pages), [1, 2])
+class ParsedText(unittest.TestCase):
+    def test_equations_and_headings(self):
+        pages = {1: "# Title\n\ntext\n",
+                 2: "## 2. Model\n\n$$a = b \\tag{3}$$\n\n$$c = d$$ (4)\n\n$$e$$\n\n$$f$$ (2.14)\n\n$$g$$ (A.3)\n\n$$h$$\n in $\\Omega$ , (2.21)\n\n$$k$$\n\nsee the results in (2.5) and the text that follows it\n"}
         eqs = pr.equations(pages)
         self.assertEqual([(e["page_pdf"], e["number"]) for e in eqs], [(2, "3"), (2, "4"), (2, None), (2, "2.14"), (2, "A.3"), (2, "2.21"), (2, None)])
         self.assertEqual([(s["page_pdf"], s["level"]) for s in pr.sections(pages)], [(1, 1), (2, 2)])
