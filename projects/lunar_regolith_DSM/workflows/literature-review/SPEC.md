@@ -4,7 +4,7 @@ The design for agents and scripts, agreed with the user on 2026-11-03 (`docs/pla
 version is `STORY.md`.
 
 **Status: designed, not built.** `WORKFLOW.md` (v1) describes the pilot line as it is built and frozen; it governs
-the nine-paper pilot run. This file replaces `WORKFLOW.md` when build step B10 (§13) lands, and `WORKFLOW.md` is then
+the nine-paper pilot run. This file replaces `WORKFLOW.md` when build step 10 (§13) lands, and `WORKFLOW.md` is then
 archived. Until then, this file is the target and must not be cited as describing current behavior.
 
 Contents:
@@ -395,7 +395,7 @@ active design file with dates.
 
 ## 13. Build order
 
-Before B1–B10, the **pilot** (v1 line, `WORKFLOW.md`) runs to completion:
+Before Build 1–10, the **pilot** (v1 line, `WORKFLOW.md`) runs to completion:
 1. the c006 redo (user);
 2. the 9 control rulings (user);
 3. the gold fixes or prompt change, then the tuning rerun;
@@ -407,22 +407,22 @@ Before B1–B10, the **pilot** (v1 line, `WORKFLOW.md`) runs to completion:
 The target is about 8 November. Model development (Pillar 2) starts from that memo.
 
 The v2 build runs alongside model work:
-- **B1** call module for single calls in `agentlib` (mechanism from T-input); usage events in the ledger; T-input.
-- **B2** usage cap and pause report in the runner, `--parallel`, `--continuous`; T-cap.
-- **B3** paragraph IDs in `prepare.py`; R2 per paragraph; T-paragraph.
-- **B4** foreman guard H8 and the session role message (user approves the `.claude/` change); T-guard.
-- **B5** stage codes and names in `flowchart.json`, the runner and the status display (v2 codes; Appendix).
-- **B6** R stages as single calls: reader, checker (R3a and R3 with condition labels), blind reader, reviser; the
+- **Build 1** call module for single calls in `agentlib` (mechanism from T-input); usage events in the ledger; T-input.
+- **Build 2** usage cap and pause report in the runner, `--parallel`, `--continuous`; T-cap.
+- **Build 3** paragraph IDs in `prepare.py`; R2 per paragraph; T-paragraph.
+- **Build 4** foreman guard H8 and the session role message (user approves the `.claude/` change); T-guard.
+- **Build 5** stage codes and names in `flowchart.json`, the runner and the status display (v2 codes; Appendix).
+- **Build 6** R stages as single calls: reader, checker (R3a and R3 with condition labels), blind reader, reviser; the
   schemas of §5; C1 rerun.
-- **B7** Get: `fetch.py` (G1), G2 extended to retraction status; `index.py` with FTS5 + embedding (G4); T-embed.
-- **B8** Find:
+- **Build 7** Get: `fetch.py` (G1), G2 extended to retraction status; `index.py` with FTS5 + embedding (G4); T-embed.
+- **Build 8** Find:
   - `search.py` (F3, OpenAlex and Semantic Scholar, chaining and stop rule);
   - `beth-searcher`, `morty-screener`, `beth-scout` definitions (user approves);
   - the coverage ledger;
   - the F6 report;
   - T-recall, T-coverage.
-- **B9** T-pilot: v2 on the nine pilot papers, compared with the pilot.
-- **B10** this file replaces `WORKFLOW.md` (archived); `TEMPLATE.md`, the contract format and the foreman's
+- **Build 9** T-pilot: v2 on the nine pilot papers, compared with the pilot.
+- **Build 10** this file replaces `WORKFLOW.md` (archived); `TEMPLATE.md`, the contract format and the foreman's
   definition are updated; freeze v2. Then numerical methods: a 40-paper pilot, the hand check, T-single, scale-up.
 
 ## 14. Open and deferred
