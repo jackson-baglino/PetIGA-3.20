@@ -31,7 +31,10 @@ cmocean==4.0.3
 # --- IGA geometry + PetIGA binary I/O ---------------------------------------
 # Built from source (f2py); needs a Fortran compiler on PATH.
 # On the HPC load a gcc module first -- match the one PETSc was built with.
-igakit @ https://github.com/dalcinl/igakit/archive/refs/heads/master.zip#sha256=195dcf30ac1608d75601c112768cbabd3b88f1561152fc967af221bb004bc6a0
+# Pinned to upstream commit 92ee0975 (2026-07-24), the code venv_lunar has run since
+# 2026-08-24 (all nine modules match its install RECORD). The old pin, refs/heads/master.zip,
+# broke when master moved on 2026-10-14 (2a0c9ee8 changes cad.py, io.py, nurbs.py).
+igakit @ https://github.com/dalcinl/igakit/archive/92ee0975d7089e813c1171bd7dbf35a179cf31a4.zip#sha256=5f6ee8a4fa60afc481c9f59f800c82ee96cff57c3040782a6c416208a1a55943
 
 # --- preprocessing / geometry generation ------------------------------------
 geomdl==5.4.0          # preprocess/igakit_complexgeocodes/2dspine*.py
