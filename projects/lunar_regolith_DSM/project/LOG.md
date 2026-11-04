@@ -2,6 +2,87 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-11-02/03: Pilot line closed out; literature review v2 designed; isolation fix
+
+- Session: bd0b31b7-3240-4887-9a00-1fe467db9be6 (continued after compaction; still open)
+- Done, 2026-11-02 (B1 line, develop phase):
+  - Build tests passed:
+    - T-trifecta (9dcf731d, 89c9aa89);
+    - T-applicability;
+    - T-restore (491 archived, 208 restored, 0 mismatches).
+  - Line fixes:
+    - a waiting gate holds only its item (2513649b);
+    - X1 calls go to the ledger (518f4297);
+    - status shown in dependency order (e9d4f737);
+    - C0 with fewer than 19 plants is reported, not failed (54c3e90f).
+  - Tuning diagnostic `calib-dev6`: 32/32 plants caught, **9/40 controls flagged**, against the rule of at most 4
+    (d2296ac2).
+  - The user's U3 decisions now reach the library:
+    - new stage L1b (142657d2);
+    - `u3_review.py --redo` (35e56cfd).
+  - Dev run `dev-20261101-kp` complete end to end, U4 approved (c73554b1).
+- Done, 2026-11-03:
+  - **v2 design agreed** with the user over four rounds.
+    - Planning notes `docs/planning/19`–`22` are uncommitted on purpose, because they discuss course examples
+      (Lecture 10, Scenario C).
+    - Result: `workflows/literature-review/STORY.md` (the user's version) and `SPEC.md` (the agent spec; replaces
+      WORKFLOW.md at Build 10) (7fccc572, d8ce3290).
+    - `TODO.md`: six phases from today to a working library, with "⟂ depends" branches (27367234).
+  - Key decisions:
+    - Claude Code on the user's login only (no API key, no Agent SDK);
+    - judgments as single schema-checked calls;
+    - only the scout loops, run through agentlib;
+    - usage cap at 90 % of the five-hour window (no weekly limit);
+    - two library layers;
+    - paragraph IDs;
+    - condition labels: necessary, scope, unnecessary;
+    - stage codes F/G/R/L/M/K/C, written "code: name";
+    - the foreman stays as the run interface, with a planned guard hook (H8).
+  - **Marker removed**; `venv_workflows` rebuilt (90 → 22 packages, `anthropic` 2.4.0); weights cache deleted
+    (0eff0689).
+  - **Worker isolation canary test:**
+    - our flags kept CLAUDE.md out but loaded the repo-root auto memory index;
+    - fixed with `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` in agentlib and tres (61446b41);
+    - `--safe-mode` tested as an equivalent; `--bare` needs an API key.
+  - **c006:**
+    - our premise was wrong: the checker had called the statement supported;
+    - `u3_review` now shows why a claim is disputed (3892163f);
+    - the user kept "right" (the quote supports only the stated half; the other half is an inference);
+    - L1b republished (34437223);
+    - backlog item: a form for inferred facts (6b13e453).
+  - Memories added (auto memory):
+    - long answers go to markdown;
+    - account limits;
+    - v2 design;
+    - descriptive stage names;
+    - say why for user tasks.
+- Remaining:
+  1. **User: TODO 1.3**, the nine control rulings (G001 G004 G007 G014 G018 G031 G032 G036 G039) in
+     `runs/literature-review/calib-dev6/untrusted/control_review_tuning.md`. Judge whether the paper establishes
+     the statement (the c006 lesson), not whether it is quoted word for word. Then TODO 1.4–1.11 (gold fixes or
+     prompt change, tuning rerun, backlog decision, close dev run `dev-20261101-a2`, pin Claude Code 2.1.317, the
+     freeze), then Phase 2, the nine-paper pilot run.
+  2. The v2 build (TODO Phase 3) after the pilot. The `.claude/` hook (Build 4) and three new agent definitions need
+     the user's approval.
+  3. `project/PILLARS.md` Pillar 2/3 framing is still old (from 2026-11-01).
+- **For a slides session (class share, 2026-11-04).** Sources, verified this session:
+  - `STORY.md` (the whole design in plain words) and `SPEC.md` §3 (roles table) and §4 (stage table);
+  - `flowchart.html` (the v1 line);
+  - the Lab Report 2 figures in the course folder.
+
+  Numbers you can cite, each with its source:
+  - one-paper trial: about 12 min machine time per paper (`runs/literature-review/b1/dev-20261101-kp/runs.db`);
+  - calibration tuning: 32/32 plants, 9/40 controls (d2296ac2);
+  - T-restore: 0 mismatches;
+  - canary test: control leaked everything; our flags leaked auto memory; fixed (WORKFLOW §12);
+  - the D/R audit and the four reasons for a separate agent (STORY §2).
+
+  Course material and slides stay in the course folder, never committed.
+- Bottlenecks:
+  - Untrusted run files can't be read in a normal session (by design), so c006's failed test had to be found from
+    code. The review tool's display was the real gap.
+  - The auto-mode classifier denies reading `untrusted/` even for label-only scripts.
+
 ## 2026-11-01 — Lab Report 2; beth-writer; README; pushed
 
 - Session: bd0b31b7-3240-4887-9a00-1fe467db9be6
