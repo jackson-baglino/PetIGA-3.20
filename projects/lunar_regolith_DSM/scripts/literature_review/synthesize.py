@@ -2,6 +2,7 @@
 """Y1: draft the memo from the published claims, and check its citations (WORKFLOW.md §3).
 
     synthesize.py --run <run folder> [--question Q1] [--version 1] [--revise] [--source library|run]
+    synthesize.py --run <run folder> [--question Q1] --after-u3        stage Y1b
 
 In the line (--source library, the default) the claims are the latest published version of every claim on the
 contract's papers (curator.py), for Q1 to Q3, minus any the user rejected in U3 or X1 (u3_decisions.json); the
@@ -12,6 +13,15 @@ and verdicts.json: supported, or overstated with a corrected text, and tagged wi
 With --revise, version k is a revision of version k-1: the synthesizer gets its own draft, the sentences Y2
 failed and the same claims, and fixes only those (WORKFLOW.md §3, Y2 failure -> Y1). The memo goes to
 <run>/untrusted/memos/<question>.v<k>.md; Y2's result (counts only) is printed and saved.
+
+With --after-u3 (stage Y1b, after L1b has published the user's claim review): the latest memo is compared with the
+library. A claim the memo cites that the user rejected (wrong or unsure) is withdrawn; a disputed claim the user
+marked right, which the draft never had, is confirmed. If there is neither, nothing is called. Otherwise the
+synthesizer revises the latest version into the next one, fixing only those, from the claims the draft cited plus
+the confirmed ones (so the revision brings in no claim that X1 or the user has not seen). Then: a prose claim the
+revision now cites for a model option that the user has not reviewed opens the Y1b gate (u3_review.py lists it); an
+equation or value claim cited that X1 did not read and the user did not decide fails the stage. Counts go to
+<run>/summary_redraft_<question>.json.
 """
 import argparse
 import json
@@ -111,8 +121,12 @@ def main(argv=None):
                     help="with --revise: fix the statements Y3 found overstated or unsupported, not Y2's failures")
     ap.add_argument("--source", choices=["library", "run"], default="library",
                     help="library: the published claims (the line); run: read.json and verdicts.json (development)")
+    ap.add_argument("--after-u3", action="store_true",
+                    help="stage Y1b: revise the latest memo for the user's claim review (withdrawn, confirmed claims)")
     a = ap.parse_args(argv)
     run = Path(a.run).resolve()
+    if a.after_u3:
+        return after_u3(run, a.question)
     if a.source == "library":
         claims, lists, counts = library_claims(run)
         q = rc.questions()
@@ -145,25 +159,79 @@ def main(argv=None):
                          claims=json.dumps(claims), checklists=json.dumps(lists))
     else:
         text = ac.prompt("synthesizer", question=q, claims=json.dumps(claims), checklists=json.dumps(lists))
-    (outdir / f"{a.question}.v{a.version}.claims.json").write_text(json.dumps(claims, indent=1))
+    step = ("Y1.revise_y3" if a.skeptic else "Y1.revise") if a.revise else "Y1"
+    print(json.dumps(write_memo(run, a.question, a.version, text, claims, counts, a.revise, step), indent=1))
+
+
+def cited_ids(memo_md):
+    return sorted(set(re.findall(r"\[([a-z0-9_]+-c\d{3})", memo_md)))
+
+
+def write_memo(run, question, version, text, claims, counts, revise, step):
+    """Call the synthesizer, save memo version `version` and its claims, check it (Y2), save and return the summary."""
+    outdir = run / "untrusted" / "memos"
+    (outdir / f"{question}.v{version}.claims.json").write_text(json.dumps(claims, indent=1))
     with tempfile.TemporaryDirectory() as tmp:
         res, meta = ac.call(tmp, text, "memo", "beth-synthesizer", ledger=run / "calls.jsonl",
-                            step=("Y1.revise_y3" if a.skeptic else "Y1.revise") if a.revise else "Y1", question=a.question, version=a.version)
+                            step=step, question=question, version=version)
     if res is None:
         raise SystemExit(f"Y1 failed: {meta}")
-    memo = outdir / f"{a.question}.v{a.version}.md"
-    memo.write_text(res["memo"])
+    (outdir / f"{question}.v{version}.md").write_text(res["memo"])
     y2 = cx.check(res["memo"], claims)
-    cited = sorted(set(re.findall(r"\[([a-z0-9_]+-c\d{3})", res["memo"])))
-    summary = {"question": a.question, "version": a.version, "revision_of": a.version - 1 if a.revise else None,
+    cited = cited_ids(res["memo"])
+    summary = {"question": question, "version": version, "revision_of": version - 1 if revise else None,
                "claims_given": len(claims), "per_paper": counts,
                "claims_cited": len(cited), "papers_cited": len({c.rsplit("-c", 1)[0] for c in cited}),
                "y2": {k: (len(v) if isinstance(v, list) else v) for k, v in y2.items()},
                "y2_failing_sentences": {k: v for k, v in y2.items() if isinstance(v, list) and v},
                "seconds": meta["seconds"], "usage": meta["usage"]}
-    (run / f"summary_memo_{a.question}.v{a.version}.json").write_text(json.dumps(summary, indent=1))
-    print(json.dumps(summary, indent=1))
+    (run / f"summary_memo_{question}.v{version}.json").write_text(json.dumps(summary, indent=1))
+    return summary
+
+
+def after_u3(run, question):
+    """Stage Y1b: revise the latest memo for the user's claim review, if it changed what the memo may cite."""
+    import open_gate
+    import u3_review
+    outdir = run / "untrusted" / "memos"
+    k = cx.latest_version(outdir, question)
+    memo = (outdir / f"{question}.v{k}.md").read_text()
+    given = json.loads((outdir / f"{question}.v{k}.claims.json").read_text())
+    current, lists, counts = library_claims(run)
+    cur = {c["id"]: c for c in current}
+    df = run / "u3_decisions.json"
+    decisions = json.loads(df.read_text()) if df.exists() else {}
+    cited, given_ids = cited_ids(memo), {c["id"] for c in given}
+    withdrawn = [c for c in cited if c in given_ids and c not in cur]
+    confirmed = sorted(c for c in cur if c not in given_ids and (decisions.get(c) or {}).get("verdict") == "right")
+    out = {"question": question, "from_version": k, "withdrawn": len(withdrawn), "confirmed": len(confirmed),
+           "redrafted": False}
+    if withdrawn or confirmed:
+        pool = [cur[c] for c in cited if c in cur] + [cur[c] for c in confirmed]
+        failures = [f"- withdrawn [{c}]: the user rejected this claim in review; it is no longer a checked claim."
+                    for c in withdrawn]
+        failures += [f"- confirmed [{c}]: the user confirmed this claim in review; you did not have it when you "
+                     "drafted." for c in confirmed]
+        text = ac.prompt("synthesizer_revise", question=rc.questions(), memo=memo, failures="\n".join(failures),
+                         claims=json.dumps(pool), checklists=json.dumps(lists))
+        s = write_memo(run, question, k + 1, text, pool, counts, True, "Y1b")
+        new = cited_ids((outdir / f"{question}.v{k + 1}.md").read_text())
+        comp = run / "untrusted" / "x1" / "compare.json"
+        read = {r["claim_id"] for r in json.loads(comp.read_text())} if comp.exists() else set()
+        unread = [c for c in new if c in cur and (cur[c].get("equation") or cur[c].get("parameter"))
+                  and c not in read and c not in decisions]
+        waiting = [c for _, c in u3_review.items(run, question) if c not in decisions]
+        out.update({"redrafted": True, "version": k + 1, "claims_cited": s["claims_cited"], "y2_pass": s["y2"]["pass"],
+                    "x1_unread": len(unread), "u3_waiting": len(waiting)})
+        if unread:
+            out["failed"] = f"the revision cites {len(unread)} equation or value claim(s) that X1 did not read"
+        elif waiting:
+            open_gate.open_gate(run, "Y1b", f"The revised memo cites {len(waiting)} claim(s) you have not reviewed: "
+                                "run u3_review.py, then approve Y1b", count=len(waiting))
+    (run / f"summary_redraft_{question}.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps(out))
+    return 1 if out.get("failed") else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

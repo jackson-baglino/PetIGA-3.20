@@ -61,7 +61,7 @@ Goal: a line that passes its own rules, frozen, so that the nine-paper result be
 - [ ] **1.5 Me: rerun the tuning diagnostic** (`check_plants.py --set tuning`). **⟂ depends:** if controls flagged
       ≤ 4/40 and the plant rules hold, go on; if not, back to 1.4 (a prompt change), at most two more rounds, then we
       decide together whether the rule or the checker gives way.
-- [ ] **1.6 You: decide the open backlog item** (a claim review decision that changes what the memo cites should
+- [x] **1.6 You: decide the open backlog item** (Done 2026-11-04: build it; stage Y1b.) (a claim review decision that changes what the memo cites should
       send the memo back to be redrafted). Why: today your "right" on a disputed claim reaches the library but not
       the memo. v2 adopts the redraft (`SPEC.md` §4). **⟂ depends on your choice:** build it into v1 now (I add a
       runner rule, small), or accept the gap for the pilot and check the memo by hand at memo approval.

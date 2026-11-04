@@ -270,8 +270,10 @@ class RealGraph(unittest.TestCase):
         """In the real flowchart: calibration before reading; V1 (X1, U3a) before Y2; U4 before the backup."""
         by = {s["id"]: s for s in run_b1.stages()}
         self.assertIn("C0", by["E1"]["requires"])
-        self.assertEqual(set(by["Y2"]["requires"]), {"X1", "U3a", "L1b"})
+        self.assertEqual(set(by["Y2"]["requires"]), {"X1", "U3a", "Y1b"})
         self.assertEqual(by["L1b"]["requires"], ["U3a"])   # the user's U3 decisions reach the library before Y2
+        self.assertEqual(by["Y1b"]["requires"], ["L1b"])   # and the memo is redrafted for them (TODO 1.6)
+        self.assertIn("--after-u3", by["Y1b"]["steps"][0])
         self.assertIn("--after-u3", by["L1b"]["steps"][0])
         self.assertIn("X1", by["U3a"]["requires"])      # the user's U3 pass includes X1's disagreements
         c0 = [st[0] + (" --baseline" if "--baseline" in st else "") for st in by["C0"]["steps"]]
@@ -279,7 +281,7 @@ class RealGraph(unittest.TestCase):
         self.assertLess(c0.index("calibrate.py --baseline"), c0.index("calibrate.py"))  # if the checker fails
         self.assertEqual(by["Y1"]["requires"], ["L1"])
         self.assertEqual(by["BK"]["requires"], ["U4"])
-        for gate in ("U0", "C0", "A2", "X1", "U3a", "U4"):
+        for gate in ("U0", "C0", "A2", "X1", "U3a", "Y1b", "U4"):
             self.assertEqual(by[gate]["gate"], "blocking", gate)
 
 

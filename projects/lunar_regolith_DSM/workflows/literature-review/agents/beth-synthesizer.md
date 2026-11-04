@@ -70,9 +70,9 @@ Rules, checked by a script afterward:
 
 ## Revise
 
-A script (Y2) checked your draft's citations and found the failures listed in
-the work order, each with the sentence as the script read it. Revise the memo
-so that it passes.
+A script (Y2) checked your draft's citations, a skeptic (Y3) checked its
+statements, or the user reviewed claims it relies on (Y1b), and the failures
+are listed in the work order. Revise the memo so that it passes.
 
 How to fix each failure:
 - uncited: if a claim in the list states what the sentence says, cite it as
@@ -87,6 +87,13 @@ How to fix each failure:
   conditions, or cite a claim in the list that does state it; if no claim
   supports it, move it to Model options or Gaps and disagreements if it is
   your inference, or delete it.
+- withdrawn (the user rejected the claim in review): for each sentence that
+  cites it, cite instead a claim in the list that states the same point, or
+  narrow the sentence to what its other citations state, or delete it. Never
+  cite the withdrawn claim.
+- confirmed (the user confirmed the claim after you drafted): use it where it
+  answers the question or bears on a model option, with its conditions. If it
+  adds nothing the memo does not already say, leave the memo as it is.
 
 Change only what the failures need; keep every other sentence, the section
 structure and the citations as they are. The rules of the draft still hold.

@@ -684,6 +684,47 @@
    }
   },
   {
+   "id": "Y1b",
+   "lane": "agent",
+   "row": 15.25,
+   "kind": "agent",
+   "title": "Y1b beth-synthesizer: redraft after claim review",
+   "model": "claude-opus-5-5",
+   "tools": [],
+   "job": "After L1b: if the user's claim review withdrew a claim the memo cites, or confirmed a disputed one it never had, revises the memo for those only.",
+   "details": [
+    "Nothing changed: no call",
+    "Only claims the draft cited, plus the confirmed ones",
+    "A model-option claim not yet reviewed opens the gate"
+   ],
+   "run": {
+    "per": "once",
+    "requires": [
+     "L1b"
+    ],
+    "station": "synthesize.py",
+    "gate": "blocking",
+    "steps": [
+     [
+      "synthesize.py",
+      "--run",
+      "{run}",
+      "--question",
+      "Q1",
+      "--after-u3"
+     ]
+    ],
+    "done": [
+     {
+      "path": "summary_redraft_Q1.json",
+      "absent": [
+       "failed"
+      ]
+     }
+    ]
+   }
+  },
+  {
    "id": "Y2",
    "lane": "script",
    "row": 15.5,
@@ -699,7 +740,7 @@
     "requires": [
      "X1",
      "U3a",
-     "L1b"
+     "Y1b"
     ],
     "station": "check_citations.py",
     "gate": "none",
@@ -1288,6 +1329,11 @@
   },
   {
    "from": "L1b",
+   "to": "Y1b",
+   "kind": "flow"
+  },
+  {
+   "from": "Y1b",
    "to": "Y2",
    "kind": "flow"
   }

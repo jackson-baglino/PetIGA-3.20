@@ -73,7 +73,7 @@ is named on every claim.
 ## Stages that run, and exceptions to the full design
 
 Run: U0, A2, P1, E1, E3, E4 (steps 0, 1 and 2), E5, L1, Y1, V1 (X1 and U3),
-Y2, Y3, U3, U4 (WORKFLOW.md §3).
+L1b, Y1b (redraft after U3), Y2, Y3, U4 (WORKFLOW.md §3).
 
 Not run in B1 (WORKFLOW.md §13): discovery and screening (D1, D2, D2c, D3,
 SC0 to SC2, U1, D2g, R1); acquisition by script and Zotero upload (A1, Z1;
@@ -127,7 +127,7 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ### Line status (generated)
 
 <!-- BEGIN GENERATED: lr_status.py -->
-Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · all stages done · 0 gate(s) waiting · 0 review item(s) undecided
+Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · next: Y1b · 0 gate(s) waiting · 0 review item(s) undecided
 
 | Stage | Station | Done | Gate | Waiting |
 |---|---|---|---|---|
@@ -144,6 +144,7 @@ Run `dev-20261101-kp`. B1 · DEVELOP · run dev-20261101-kp · all stages done �
 | X1 | built | 1/1 | blocking |  |
 | U3a | built | 1/1 | blocking |  |
 | L1b | built | 1/1 | none |  |
+| Y1b | built | 0/1 | blocking |  |
 | Y2 | built | 1/1 | none |  |
 | Y3 | built | 1/1 | review |  |
 | U4 | built | 1/1 | blocking |  |
@@ -214,6 +215,7 @@ frozen final evaluation comes before the nine papers and the memo.
 | U3b | random audit | outside | B1 runs only U3's cited-claims part, not the random 60 |
 | L1 | curator.py | dev | dev-20261101-kp |
 | L1b | curator.py --after-u3 | not-run | publishes the user's U3 decisions (2026-11-02); added after the dev run's Y2 |
+| Y1b | synthesize.py --after-u3 | not-run | redrafts the memo when U3 withdraws a cited claim or confirms a disputed one (2026-11-04, TODO 1.6); opens its gate for model-option claims not yet reviewed |
 | LB | library/ | not-built | |
 | L2 | audit.py | outside | |
 | BK | backup archive | dev | dev-20261101-kp: 491 files, restore test passed |

@@ -20,7 +20,8 @@ statements the claims missed (paper, PDF page, statement); they are recorded in 
 claims through E3 and E4 is not built yet).
 
 --redo CLAIM_ID ... asks again about claims already decided (a mislabeled answer); the earlier answer is kept in the
-decision's "previous" list, and stage L1b is marked not done so the line publishes again with the new answer.
+decision's "previous" list, and stages L1b and Y1b are marked not done so the line publishes again with the new answer
+and redrafts the memo if the answer changes what it may cite.
 
 Decisions go to <run>/u3_decisions.json and <run>/u3_missed.json. When every item is decided, the tool prints the
 run_b1.py approve commands for the U3a and X1 gates; you run them.
@@ -172,8 +173,8 @@ def main(argv=None):
         if cid in decisions:                                        # --redo: keep the earlier answer
             prev = decisions[cid]
             rec["previous"] = prev.get("previous", []) + [{k: v for k, v in prev.items() if k != "previous"}]
-            for f in run.glob("summary_publish_u3_*.json"):           # L1b publishes again with the new answer
-                f.unlink()
+            for f in [*run.glob("summary_publish_u3_*.json"), *run.glob("summary_redraft_*.json")]:
+                f.unlink()                                  # L1b publishes again, Y1b redrafts if it must
         decisions[cid] = rec
         dfile.write_text(json.dumps(decisions, indent=1, ensure_ascii=False))
     missed = load(mfile, [])
