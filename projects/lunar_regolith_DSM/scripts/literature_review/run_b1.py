@@ -13,6 +13,7 @@ Papers table in B1_CONTRACT.md; each file's sha256 must start with the hash prin
     run_b1.py freeze  --approved-by-user           write freeze/b1-vN.json and start the execute phase
     run_b1.py thaw    --reason TEXT                end the execute phase (WORKFLOW.md §5 repair rule)
     run_b1.py verify                               do the frozen files still match the latest freeze?
+    run_b1.py close   --run <dir> --reason TEXT    development only: retire a dev run (kept, no longer current)
 
 `run` repeats: pick the first stage (in graph order) whose required stages are done and that is not done itself;
 stop at a blocking gate, at a station that is not built, at a station that fails, or at --until / --max. A run
@@ -397,9 +398,22 @@ def cmd_status(a):
               f"{item.get('kind', '')}".rstrip() + (f"  (decided: {item['decided']})" if item["decided"] else ""))
 
 
+def cmd_close(a):
+    """Retire a dev run: the manifest records when and why; the folder is kept, but the run is no longer current."""
+    f = Path(a.run) / "manifest.json"
+    m = json.loads(f.read_text())
+    if not m["dev"]:
+        raise SystemExit("only a dev run can be closed; an execute run ends at its last stage or by a thaw")
+    m["closed"] = {"date": datetime.date.today().isoformat(), "reason": a.reason}
+    f.write_text(json.dumps(m, indent=1) + "\n")
+    print(f"closed {Path(a.run).name}")
+
+
 def cmd_run(a):
     run = Path(a.run)
     m = json.loads((run / "manifest.json").read_text())
+    if m.get("closed"):
+        raise SystemExit(f"run closed on {m['closed']['date']}: {m['closed']['reason']}")
     if not m["dev"]:
         ph, ver = phase()
         if ph != "execute" or ver != m["freeze"]:
@@ -544,6 +558,9 @@ def main(argv=None):
     p = sub.add_parser("thaw")
     p.add_argument("--reason", required=True)
     sub.add_parser("verify")
+    p = sub.add_parser("close")
+    p.add_argument("--run", required=True)
+    p.add_argument("--reason", required=True)
     a = ap.parse_args(argv)
     if a.cmd == "status" and a.run is None:
         a.run = os.environ.get("LR_RUN") or current_run()
@@ -551,14 +568,14 @@ def main(argv=None):
             print(brief(None) + ". Start one with: run_b1.py init --run runs/literature-review/b1/<run_id> [--dev]")
             return 0
     return {"init": cmd_init, "status": cmd_status, "run": cmd_run, "approve": cmd_approve, "freeze": cmd_freeze,
-            "thaw": cmd_thaw, "verify": cmd_verify}[a.cmd](a) or 0
+            "thaw": cmd_thaw, "verify": cmd_verify, "close": cmd_close}[a.cmd](a) or 0
 
 
-def current_run():
-    """The most recently created run folder under runs/literature-review/b1/, or None."""
-    root = PROJECT / "runs" / "literature-review" / "b1"
-    runs = sorted((p for p in root.glob("*") if (p / "manifest.json").exists()),
-                  key=lambda p: json.loads((p / "manifest.json").read_text())["created"]) if root.exists() else []
+def current_run(root=None):
+    """The most recently created run folder under runs/literature-review/b1/ that is not closed, or None."""
+    root = Path(root) if root else PROJECT / "runs" / "literature-review" / "b1"
+    ms = {p: json.loads((p / "manifest.json").read_text()) for p in root.glob("*") if (p / "manifest.json").exists()}
+    runs = sorted((p for p, m in ms.items() if not m.get("closed")), key=lambda p: ms[p]["created"])
     return str(runs[-1]) if runs else None
 
 

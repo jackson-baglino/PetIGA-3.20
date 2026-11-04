@@ -182,6 +182,20 @@ class Line(unittest.TestCase):
         rows = {r["stage"]: r for r in run_b1.status_rows(run)}
         self.assertEqual((rows["A"]["total"], rows["C"]["skipped"]), (1, True))
 
+    def test_a_closed_dev_run_is_kept_but_not_current_and_not_run(self):
+        root = Path(self.tmp.name) / "b1"
+        old, new = root / "old", root / "new"
+        self.cli("init", "--run", str(old), "--dev")
+        self.cli("init", "--run", str(new), "--dev")
+        m = json.loads((old / "manifest.json").read_text())        # "created" is to the second: make the order sure
+        (old / "manifest.json").write_text(json.dumps(dict(m, created="2000-01-01T00:00:00+00:00")))
+        self.assertEqual(run_b1.current_run(root), str(new))
+        self.cli("close", "--run", str(new), "--reason", "copy-check test")
+        self.assertEqual(run_b1.current_run(root), str(old))
+        self.assertTrue((new / "manifest.json").exists())
+        with self.assertRaises(SystemExit):
+            self.cli("run", "--run", str(new))
+
     def test_papers_and_skip_only_in_dev(self):
         with self.assertRaises(SystemExit):
             self.cli("init", "--run", str(self.run), "--papers", "pa")

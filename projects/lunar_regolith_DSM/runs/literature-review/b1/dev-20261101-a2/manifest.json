@@ -127,5 +127,9 @@
   "scripts/literature_review/zotero_pull.py": "e4d7f12b50dbd2df38ddac801faeb840f5a7e9fdccae9fc57f291bb16de54805",
   "requirements-workflows.lock": "45d37abdf79e7ea3ad1f0532860663adae741b6441158e9343b6e33df39e87fa",
   "B1_CONTRACT.md#Papers": "1dde1c9b908ce4c5ec023e105798d743704b8e99ece6121194f4cef94bf3bd0b"
+ },
+ "closed": {
+  "date": "2026-11-04",
+  "reason": "copy-check (A2) test only; the execute run repeats the A2 gates (TODO 1.7)"
  }
 }

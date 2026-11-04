@@ -65,7 +65,7 @@ Goal: a line that passes its own rules, frozen, so that the nine-paper result be
       send the memo back to be redrafted). Why: today your "right" on a disputed claim reaches the library but not
       the memo. v2 adopts the redraft (`SPEC.md` §4). **⟂ depends on your choice:** build it into v1 now (I add a
       runner rule, small), or accept the gap for the pilot and check the memo by hand at memo approval.
-- [ ] **1.7 Me: close the second dev run** `dev-20261101-a2` (paused at the copy check for Li 2009). Why: it was a
+- [x] **1.7 Me: close the second dev run** `dev-20261101-a2` (Done 2026-11-04: `run_b1.py close`; kept, no longer current.) (paused at the copy check for Li 2009). Why: it was a
       copy-check test; the real run repeats that gate. I mark it abandoned in the status, without deleting it.
 - [ ] **1.8 Me: pin the Claude Code version.** The lock says 2.1.308; this machine runs 2.1.317. Why: the freeze
       records the version, and a version change means rerunning the calibration. I record 2.1.317 if the tuning rerun
