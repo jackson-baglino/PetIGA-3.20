@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "claude-opus-5-5",
+  "autoMemoryDirectory": "~/.claude/projects/lunar_cryosuction/memory",
+  "permissions": {
+    "ask": [
+      "Bash(*scripts/Studio/run_*)",
+      "Bash(*scripts/HPC/submit_*)",
+      "Bash(sbatch *)",
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(mpiexec *)",
+      "Bash(mpirun *)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(~/.ssh/**)"
+    ],
+    "allow": [
+      "Bash(scripts/check_freeze.sh)",
+      "Bash(scripts/check_ic_types.sh)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/log_session.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/ruff_check.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/notify.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
