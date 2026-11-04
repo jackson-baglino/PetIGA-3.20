@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """Read the user's rulings from a control review file (control_review.py) and print them as IDs and categories.
 
-    control_rulings.py --run <calibration run folder> [--set tuning]
+    control_rulings.py --run <calibration run folder> [--set tuning] [--normalize]
 
 The review file is under untrusted/ (it quotes the checker), so a session never opens it. This script prints, per
 flagged control, only its ID and the category of the user's ruling: "gold wrong", "checker wrong", "blank" or
 "other" (free text the script does not interpret), whether the user left a note under 'Notes:', and the file's
 modification time. No text from the file: a note is reported as present or absent, never read out.
+
+A ruling is classified by what it says, not by its first word: "gold wrong", "gold statement is incorrect" and
+"checker is right" are "gold wrong"; "checker wrong", "over-flagged" and "the gold statement is right" are
+"checker wrong". A ruling that says both, or neither, is "other". --normalize rewrites each classified 'Ruling:' line
+to start with its category ("Ruling: gold wrong. <your text>"), keeping the text, after copying the file to
+control_review_<set>.md.bak; it still prints only IDs and categories.
 """
 import argparse
 import datetime
@@ -14,6 +20,26 @@ import json
 import re
 import sys
 from pathlib import Path
+
+
+_CLEAN = re.compile(r"[*_`]")
+_GOLD = r"gold(?:\s+statement)?"
+_IS = r"(?:\s+(?:is|was))?\s+"
+_SAYS = (  # (pattern, category it implies)
+    (rf"\b{_GOLD}{_IS}(?:right|correct|fine|ok|accurate|true)\b", "checker wrong"),
+    (rf"\bchecker{_IS}(?:wrong|incorrect|mistaken)\b|\bover-?flag", "checker wrong"),
+    (rf"\b{_GOLD}{_IS}(?:wrong|incorrect|inaccurate)\b", "gold wrong"),
+    (rf"\bchecker{_IS}(?:right|correct)\b", "gold wrong"),
+)
+
+
+def classify(text):
+    """'gold wrong', 'checker wrong', 'blank' or 'other' for the text after 'Ruling:'."""
+    s = _CLEAN.sub("", text).strip().lower()
+    if not s:
+        return "blank"
+    found = {cat for pat, cat in _SAYS if re.search(pat, s)}
+    return found.pop() if len(found) == 1 else "other"
 
 
 def rulings(md):
@@ -26,16 +52,24 @@ def rulings(md):
             out[cur] = "blank"
             continue
         if cur and line.startswith("Ruling:"):
-            r = line[len("Ruling:"):].strip().lower()
-            if not r:
-                out[cur] = "blank"
-            elif re.match(r"^\**\s*gold", r):
-                out[cur] = "gold wrong"
-            elif re.match(r"^\**\s*checker", r):
-                out[cur] = "checker wrong"
-            else:
-                out[cur] = "other"
+            out[cur] = classify(line[len("Ruling:"):])
     return out
+
+
+def normalize(md):
+    """The file with each classified 'Ruling:' line starting with its category; the user's text is kept after it."""
+    lines, cur = md.split("\n"), None
+    for i, line in enumerate(lines):
+        m = re.match(r"^## (G\d{3}) ", line)
+        if m:
+            cur = m.group(1)
+            continue
+        if cur and line.startswith("Ruling:"):
+            rest = line[len("Ruling:"):].strip()
+            cat = classify(rest)
+            if cat in ("gold wrong", "checker wrong") and not _CLEAN.sub("", rest).lower().startswith(cat):
+                lines[i] = f"Ruling: {cat}. {rest}"
+    return "\n".join(lines)
 
 
 # A notes header: 'Notes:', 'Note:', '**Notes:**', '**Notes**:', '### Notes', any case, optionally indented. A colon
@@ -69,9 +103,14 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--run", required=True)
     ap.add_argument("--set", choices=["tuning"], default="tuning")
+    ap.add_argument("--normalize", action="store_true", help="start each classified ruling with its category")
     a = ap.parse_args(argv)
     f = Path(a.run) / "untrusted" / f"control_review_{a.set}.md"
     md = f.read_text()
+    if a.normalize:
+        f.with_name(f.name + ".bak").write_text(md)
+        md = normalize(md)
+        f.write_text(md)
     r = rulings(md)
     n = noted(md)
     made = datetime.datetime.fromtimestamp(f.stat().st_mtime).isoformat(timespec="seconds")
