@@ -12,6 +12,16 @@ single codebase (`sublimation_pf`, formerly `permafrost`) so that two papers
 can evolve independently. Their solvers have since diverged; only
 `src/snes_convergence.c` is still identical.
 
+One project per thesis paper, as siblings under `projects/`:
+
+| Paper | Project | Role |
+|---|---|---|
+| 1 | `enceladus_DSM` | dry snow on Enceladus |
+| 2 | `lunar_cryosuction` | science on the current two-phase model, frozen at tag `lunar_cryosuction/model-freeze-v1` (2026-11-04): ice aggregation in regolith pore channels, cryosuction-like setups |
+| 3 | `lunar_regolith_DSM` (this one) | literature review and the new model (most likely diffuse domain) |
+
+Solver changes made here stay here; paper 2 keeps the frozen copy.
+
 This folder is also the AM/ME/CE 295 course project (AI agents for scientific
 discovery): agentic workflows that read and check the literature, and will
 derive, implement and test a new coupling between the fixed regolith grains and

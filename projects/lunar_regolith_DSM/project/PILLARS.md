@@ -29,6 +29,12 @@ runs well and has no known problems. It is used, in parallel with Campaign A,
 to run simulations on related scientific questions. It is also the fallback if
 the new method does not work out. Campaign B does not wait on Campaign A.
 
+Since 2026-11-04 Campaign B is its own project, `projects/lunar_cryosuction`
+(paper 2). It holds a copy of the solver frozen at tag
+`lunar_cryosuction/model-freeze-v1`, and its science is ice aggregation in
+regolith pore channels and cryosuction-like setups. This project (paper 3)
+keeps Campaign A.
+
 ## Pilot — Synthesize `docs/`
 
 A small first workflow: read the existing design documents, check their

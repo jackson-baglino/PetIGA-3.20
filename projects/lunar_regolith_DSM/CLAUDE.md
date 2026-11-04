@@ -4,6 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # lunar_regolith_DSM
 
+Paper 3 of the thesis: the agentic literature review and the new model (most
+likely diffuse domain). Paper 2 runs the frozen two-phase model in the sibling
+`projects/lunar_cryosuction` (tag `lunar_cryosuction/model-freeze-v1`); solver
+changes made here do not go there. Paper 1 is `enceladus_DSM`.
+
 Phase-field model (C, PETSc 3.20 / PetIGA) of sublimation-driven ice
 metamorphism in lunar regolith, plus Python pre- and postprocessing. Layout,
 build and run details are in `README.md`; project goals in
