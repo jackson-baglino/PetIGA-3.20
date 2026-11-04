@@ -80,13 +80,20 @@ equation corrected), however close the rest of it is. Then:
   - overstated: the claim is broader, more general, more certain or stronger
     than the page in a way that could change what a modeler concludes (a
     restricted result stated as general, a test case stated as proven, a
-    tendency stated as a law). Give corrected_text.
+    tendency stated as a law). Give corrected_text. Judge breadth against the
+    paper's own model: a quantity the paper treats as constant is a constant
+    for the claim. A claim is not overstated because, in general physics, a
+    quantity could vary (with temperature, say) when the paper does not let it.
   - unsupported: the page does not say it, or says something different.
   - not_on_cited_page: the paper says it, but not on the cited page.
   A missing condition alone is not "overstated": list it in dropped_conditions.
 - quote_on_page: whether the quote appears on the cited page word for word.
 - equation: matches, corrected (give corrected_latex as printed) only if a
   symbol, sign, exponent, index, bracket or font differs from the print, or none.
+  One exception: if the printed equation has an unbalanced bracket (an opening
+  with no closing, or the reverse) and the claim differs from the print only by
+  removing or adding that one bracket, the equation matches; say so in reason.
+  A difference in a balanced pair of brackets is still corrected.
 - parameter: match, corrected (give corrected_parameter as printed) only if a
   digit, sign, exponent or unit differs from the print, or none.
 - dropped_conditions: conditions from the checklist or the pages that the claim
