@@ -32,7 +32,7 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
-EXEC="$ROOT/lunar_regolith_dsm"
+EXEC="$ROOT/lunar_cryosuction"
 CSV="$HERE/verify_wall_bc.csv"
 LOG="$HERE/verify_wall_bc.log"
 WORK="${TMPDIR:-/tmp}/verify_wall_bc.$$"
@@ -163,8 +163,8 @@ if [[ -z "$BASE_REF" ]]; then
   echo "G1,regression,,,,SKIP" >> "$CSV"
 else
   SNAP="$WORK/base"; mkdir -p "$SNAP"
-  if git -C "$ROOT/.." archive "$BASE_REF" lunar_regolith_DSM 2>/dev/null | tar -x -C "$SNAP"; then
-    if ( cd "$SNAP/lunar_regolith_DSM" && make >>"$LOG" 2>&1 ); then
+  if git -C "$ROOT/.." archive "$BASE_REF" lunar_cryosuction 2>/dev/null | tar -x -C "$SNAP"; then
+    if ( cd "$SNAP/lunar_cryosuction" && make >>"$LOG" 2>&1 ); then
       RUNOPTS=(-options_file "$ROOT/inputs/solver.opts" -periodic 0 -pf_monitor 1 -pf_output 0
                -dim 2 -Nx 24 -Ny 12 -Lx 6.25e-5 -Ly 3.125e-5 -eps 1.2e-6
                -ic_type multi_grains -ice_grain_cx 3.125e-5 -ice_grain_cy 1.5625e-5
@@ -180,7 +180,7 @@ else
                -thin_iface_corr 0)
       for which in base new; do
         folder="$WORK/g1_$which"; export folder; mkdir -p "$folder"
-        bin="$EXEC"; [[ $which == base ]] && bin="$SNAP/lunar_regolith_DSM/lunar_regolith_dsm"
+        bin="$EXEC"; [[ $which == base ]] && bin="$SNAP/lunar_cryosuction/lunar_cryosuction"
         "$bin" "${RUNOPTS[@]}" > "$WORK/g1_$which.out" 2>&1 || true
       done
       export folder="$WORK"

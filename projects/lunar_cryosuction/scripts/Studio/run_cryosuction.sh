@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # =============================================================================
-# run_lunar.sh — Build, run, and post-process a lunar_regolith_dsm simulation
+# run_cryosuction.sh — Build, run, and post-process a lunar_cryosuction simulation
 #
-# Location: $PETIGA_DIR/projects/lunar_regolith_DSM/scripts/Studio/run_lunar.sh
+# Location: $PETIGA_DIR/projects/lunar_cryosuction/scripts/Studio/run_cryosuction.sh
 #
 # Usage:
-#   ./scripts/Studio/run_lunar.sh <geometry> <experiment> [tag]
+#   ./scripts/Studio/run_cryosuction.sh <geometry> <experiment> [tag]
 #
 #   geometry    Name (without .opts) of a file in inputs/geometry/. Sets up
 #               the domain/mesh/IC: -dim, -Lx/-Ly/-Lz, -Nx/-Ny/-Nz (or
@@ -18,7 +18,7 @@
 #
 # Combining the two: the script concatenates solver.opts + the chosen
 # geometry .opts + the chosen experiment .opts (later files can override
-# earlier settings) and passes the result to `lunar_regolith_dsm`.
+# earlier settings) and passes the result to `lunar_cryosuction`.
 #
 # The output folder is auto-derived from the geometry name and the two opts
 # basenames, one subfolder per distinct geometry, timestamp leading the run
@@ -26,9 +26,9 @@
 #   $RESULTS_BASE/<geometry>/<timestamp>_<experiment>[_<tag>]/
 #
 # Examples:
-#   ./scripts/Studio/run_lunar.sh 2D_touching_grains base_T-20_h1.00_1d
-#   ./scripts/Studio/run_lunar.sh iceslab_1D_L100um_eps0.71um base_T-20_h0.95_1d sweep_a
-#   ./scripts/Studio/run_lunar.sh multigrain_2D_L100um_eps0.37um_test base_T-20_h0.95_1d multigrain_2day
+#   ./scripts/Studio/run_cryosuction.sh 2D_touching_grains base_T-20_h1.00_1d
+#   ./scripts/Studio/run_cryosuction.sh iceslab_1D_L100um_eps0.71um base_T-20_h0.95_1d sweep_a
+#   ./scripts/Studio/run_cryosuction.sh multigrain_2D_L100um_eps0.37um_test base_T-20_h0.95_1d multigrain_2day
 #
 # -----------------------------------------------------------------------
 # Adding a new EXPERIMENT (run conditions)
@@ -37,7 +37,7 @@
 # inputs/experiment/<my_experiment>.opts and edit -t_final/-temp/-humidity/
 # -grad_temp0 (and -outp/-n_out if you want non-default output cadence —
 # solver.opts defaults to -outp 1, i.e. a snapshot every time step). Then:
-#   ./scripts/Studio/run_lunar.sh <geometry> my_experiment [tag]
+#   ./scripts/Studio/run_cryosuction.sh <geometry> my_experiment [tag]
 #
 # -----------------------------------------------------------------------
 # Adding a new GEOMETRY / initial condition
@@ -52,7 +52,7 @@
 #   1. Write/adapt a preprocess/build_geometry_*.py script (see
 #      preprocess/build_geometry_multi_grain.py for a template) that writes
 #      an IGA mesh file under inputs/geometry/<name>.dat. Run it with:
-#        source venv_lunar/bin/activate && python3 preprocess/build_geometry_<name>.py
+#        source venv_cryosuction/bin/activate && python3 preprocess/build_geometry_<name>.py
 #      (run from the project root — paths inside these scripts are relative
 #      to the project root, not preprocess/).
 #   2. Create inputs/geometry/<my_geometry>.opts with -geom_file pointing at
@@ -60,7 +60,7 @@
 #      its parameters, -dim, -Lx/-Ly/-Lz, -eps, -delt_t, -periodic 0.
 #
 # Then run as usual:
-#   ./scripts/Studio/run_lunar.sh my_geometry <experiment> [tag]
+#   ./scripts/Studio/run_cryosuction.sh my_geometry <experiment> [tag]
 # =============================================================================
 
 
@@ -102,11 +102,11 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/opts.sh"
 
 # ---------------------------------------------------------------------------
 # Resolve project root — always two levels above this script's location
-# Script lives at: <project_root>/scripts/Studio/run_lunar.sh
+# Script lives at: <project_root>/scripts/Studio/run_cryosuction.sh
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_regolith_DSM"
+PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_cryosuction"
 
 # Validate that we resolved the project root correctly
 if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
@@ -117,11 +117,11 @@ if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
 fi
 
 # Convenience aliases
-EXEC="$PROJECT_ROOT/lunar_regolith_dsm"
+EXEC="$PROJECT_ROOT/lunar_cryosuction"
 SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
-RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch"
+RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch"
 SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 GEOMETRY_DIR="$INPUTS_DIR/geometry"
 EXPERIMENT_DIR="$INPUTS_DIR/experiment"
@@ -132,7 +132,7 @@ EXPERIMENT_DIR="$INPUTS_DIR/experiment"
 usage() {
     echo ""
     echo "Usage:"
-    echo "  ./scripts/Studio/run_lunar.sh <geometry> <experiment> [tag]"
+    echo "  ./scripts/Studio/run_cryosuction.sh <geometry> <experiment> [tag]"
     echo ""
     echo "Arguments:"
     echo "  geometry    Name (without .opts) of a file in inputs/geometry/"
@@ -145,8 +145,8 @@ usage() {
     echo "  \$RESULTS_BASE/<geom>/<timestamp>_<exp>[_<tag>]/"
     echo ""
     echo "Example:"
-    echo "  ./scripts/Studio/run_lunar.sh 2D_touching_grains base_T-20_h1.00_1d"
-    echo "  ./scripts/Studio/run_lunar.sh iceslab_1D_L100um_eps0.71um base_T-20_h0.95_1d sweep_a"
+    echo "  ./scripts/Studio/run_cryosuction.sh 2D_touching_grains base_T-20_h1.00_1d"
+    echo "  ./scripts/Studio/run_cryosuction.sh iceslab_1D_L100um_eps0.71um base_T-20_h0.95_1d sweep_a"
     echo ""
 }
 
@@ -161,10 +161,10 @@ exp_name="$2"
 title="${3:-}"
 
 # Args past the tag (an optional literal `--` separator is skipped) are
-# forwarded verbatim to the lunar_regolith_dsm executable, AFTER the three
+# forwarded verbatim to the lunar_cryosuction executable, AFTER the three
 # -options_file flags — so they override anything in the opts files.
 # Mirrors scripts/HPC/submit_enceladus.sh semantics, e.g.:
-#   ./scripts/Studio/run_lunar.sh GEOM EXP mytag -- -dtmax 1.0e2
+#   ./scripts/Studio/run_cryosuction.sh GEOM EXP mytag -- -dtmax 1.0e2
 # (Previously extra args were silently IGNORED — a -dtmax override ran
 # with the opts-file value and no warning.)
 EXTRA_OPTS=()
@@ -337,7 +337,7 @@ stage_output_folder() {
     fi
 
     # Copy this run script itself
-    cp "${BASH_SOURCE[0]}" "$folder/run_lunar.sh"
+    cp "${BASH_SOURCE[0]}" "$folder/run_cryosuction.sh"
 
     echo "✅ Staging complete."
 }

@@ -1,6 +1,6 @@
 {
   "name": "mesh_params",
-  "description": "Compute the diffuse-interface parameter eps, the element counts and the derived phase-field parameters for the lunar_regolith_DSM solver from the simulation parameters. Units are in the argument names (m, degrees C, m/s). Give exactly one of alpha_c (condensation coefficient) or sigma_surf. Returns eps_m, mesh (h, nx, ny, nz), resolution (elements across the 5-95 % and 1-99 % bands), eps bounds with the binding one, derived tau_sub/lam_sub/M_sub, and a list of checks with status ok/note/warn/fail. Never hand-tune eps: use this tool. Does not write files.",
+  "description": "Compute the diffuse-interface parameter eps, the element counts and the derived phase-field parameters for the lunar_cryosuction solver from the simulation parameters. Units are in the argument names (m, degrees C, m/s). Give exactly one of alpha_c (condensation coefficient) or sigma_surf. Returns eps_m, mesh (h, nx, ny, nz), resolution (elements across the 5-95 % and 1-99 % bands), eps bounds with the binding one, derived tau_sub/lam_sub/M_sub, and a list of checks with status ok/note/warn/fail. Never hand-tune eps: use this tool. Does not write files.",
   "input_schema": {
     "type": "object",
     "properties": {

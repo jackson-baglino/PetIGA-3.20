@@ -19,7 +19,7 @@ src/assembly.c onto the translation mode f' = dphi/ds, that the interface moves 
 with M = mob_sub. **v_n > 0 means the ice is GROWING** — the interface advances
 into the air. The 5 is the ratio of the two profile integrals,
 (int f'^2 ds)/(int loc*f' ds) = (1/6eps)/(1/30); it is the same number as the
-hard-coded `a1 = 5.0` in lunar_main.c.
+hard-coded `a1 = 5.0` in cryosuction_main.c.
 
 Appended point arrays, all masked to the diffuse band (where kappa is defined):
 
@@ -111,7 +111,7 @@ RHO_ICE = None      # [kg/m^3]        PV_RHO_ICE
 EPS = None          # [m]             PV_EPS
 
 # (int f'^2 ds)/(int loc*f' ds) in units of 1/eps -- see the module docstring.
-# Same number as `a1` in lunar_main.c. Only change this if the double well
+# Same number as `a1` in cryosuction_main.c. Only change this if the double well
 # or the phase-change localizer changes.
 A1 = 5.0
 

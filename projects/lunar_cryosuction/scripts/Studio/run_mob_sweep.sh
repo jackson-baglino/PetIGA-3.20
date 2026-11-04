@@ -18,10 +18,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_regolith_DSM"
-EXEC="$PROJECT_ROOT/lunar_regolith_dsm"
+PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_cryosuction"
+EXEC="$PROJECT_ROOT/lunar_cryosuction"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
-RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch"
+RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch"
 GEOM="twograins_2D_L41um_eps0.49um"
 EXP="${1:-30day_T-5_h1.00_GTphys}"
 

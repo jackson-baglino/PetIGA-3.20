@@ -8,7 +8,7 @@
 #                                     # since the paths are this machine's
 #
 # Report only: nothing is changed. clang-tidy comes from the pip wheel in
-# venv_lunar (requirements.txt), so Homebrew and the compilers are untouched.
+# venv_cryosuction (requirements.txt), so Homebrew and the compilers are untouched.
 # Include paths are the makefile's plus the MPI/PETSc arch directory that
 # mpicc adds, so PETSC_DIR, PETSC_ARCH and PETIGA_DIR must be set, as for make.
 # Exit status is clang-tidy's: nonzero if a file fails to parse.
@@ -31,8 +31,8 @@ if [[ "${1:-}" == --compile-flags ]]; then
     exit 0
 fi
 
-TIDY="$ROOT/venv_lunar/bin/clang-tidy"
-[[ -x "$TIDY" ]] || { echo "clang-tidy missing: venv_lunar/bin/pip install -r requirements.txt" >&2; exit 1; }
+TIDY="$ROOT/venv_cryosuction/bin/clang-tidy"
+[[ -x "$TIDY" ]] || { echo "clang-tidy missing: venv_cryosuction/bin/pip install -r requirements.txt" >&2; exit 1; }
 
 if [[ $# -gt 0 ]]; then FILES=("$@"); else FILES=(src/*.c); fi
 echo "clang-tidy $("$TIDY" --version | sed -n 's/.*LLVM version //p'), config $ROOT/.clang-tidy"

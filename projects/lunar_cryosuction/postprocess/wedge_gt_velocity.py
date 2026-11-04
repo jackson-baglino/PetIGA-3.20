@@ -19,7 +19,7 @@ direction, the interface normal is exactly +/- x_hat, and v_n collapses to a
 no curvature stencils -- which is exactly what makes this comparison clean.
 Every other point on the arc would need all three.
 
-CONVENTIONS (from src/lunar_main.c:822-833 and src/assembly.c:166-180)
+CONVENTIONS (from src/cryosuction_main.c:822-833 and src/assembly.c:166-180)
 
   * phi = 1 in ice, 0 in vapor.  Outward normal n = -grad(phi)/|grad(phi)|,
     so v_n > 0 means GROWTH (deposition) on both faces.
@@ -129,7 +129,7 @@ def read_opts_ordered(run_dir):
 
     pplib.read_opts merges the staged *.opts in sorted-name order and says so:
     that puts solver.opts LAST, so its `-flag_BC_rhovfix 0` beats an experiment
-    file that set 1.  run_lunar.sh passes them solver -> geometry -> experiment
+    file that set 1.  run_cryosuction.sh passes them solver -> geometry -> experiment
     (lines 74-76), so the experiment file is the one that wins.  The run folder
     is named "<geometry>__<experiment>", which is enough to recover that order.
 
@@ -284,7 +284,7 @@ def _iter_vts(run_dir, source, y0):
 def beta_bare(opts, eps, d0, rho_air):
     """The kinetic coefficient this discretisation actually delivers.
 
-    lunar_main.c:822-833 builds
+    cryosuction_main.c:822-833 builds
 
         tau_sub = eps*lambda*( beta_sub/a1 + a2*eps/diff_sub + a2*eps/dif_vap )
 
@@ -333,7 +333,7 @@ def analyse(run_dir, source="igasol", stride=1, sigma_win=(4.0, 10.0),
         if opt_float(opts, dead) not in (None, 0.0):
             raise SystemExit(
                 f"{dead} was overridden ({opts[dead]}).  mob_sub and alph_sub are\n"
-                "derived from d0_sub0/beta_sub0 in lunar_main.c:822-833; setting either\n"
+                "derived from d0_sub0/beta_sub0 in cryosuction_main.c:822-833; setting either\n"
                 "directly breaks that chain, so -d0_sub0/-beta_sub0 no longer describe\n"
                 "this run's kinetics and the Gibbs-Thomson prediction is meaningless."
             )

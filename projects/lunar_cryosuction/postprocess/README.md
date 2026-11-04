@@ -102,7 +102,7 @@ the kinetic coefficient: fitting `sigma = beta*v_n + d0*chi` freely recovers
 beta_bare = tau_sub*d0_sub0/eps^2 = beta_sub0 + a1*a2*eps*(1/diff_sub + 1/dif_vap)*rho_ice/rho_vs
 ```
 
-`lunar_main.c:822-833` inflates `tau_sub` by those two `a2` Karma-Plapp
+`cryosuction_main.c:822-833` inflates `tau_sub` by those two `a2` Karma-Plapp
 thin-interface terms so the asymptotics can subtract them back off and land on
 `beta_sub0`. The measurement says the subtraction never happens — the interface
 responds to the uncorrected coefficient. At `eps = 8.58e-7 m`, `T = -20 C` the

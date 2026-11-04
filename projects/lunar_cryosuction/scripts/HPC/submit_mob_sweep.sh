@@ -21,7 +21,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJ="$(cd "$SCRIPT_DIR/../.." && pwd)"
-EXEC="$PROJ/lunar_regolith_dsm"
+EXEC="$PROJ/lunar_cryosuction"
 SOLVER_OPTS="$PROJ/inputs/solver.opts"
 
 GEOM="twograins_2D_L41um_eps0.49um"
@@ -77,7 +77,7 @@ echo "✅ Build complete."
 # Shared parent folder
 # ---------------------------------------------------------------------------
 TS=$(date +%Y-%m-%d__%H.%M.%S)
-BATCH_PARENT="$SCRATCH/lunar_regolith_DSM/${GEOM}/${TS}_mob_sweep${TAG:+_$TAG}"
+BATCH_PARENT="$SCRATCH/lunar_cryosuction/${GEOM}/${TS}_mob_sweep${TAG:+_$TAG}"
 mkdir -p "$BATCH_PARENT"
 
 echo ""

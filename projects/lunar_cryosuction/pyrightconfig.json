@@ -1,7 +1,7 @@
 {
-  "//": "Pyright (pyright-lsp plugin, CLI: pyright). Imports resolve against venv_lunar; scripts/ also sees venv_workflows. Excludes match ruff.toml. paraview (pvpython only) and mineru (venv_docparse) stay unresolved by design.",
+  "//": "Pyright (pyright-lsp plugin, CLI: pyright). Imports resolve against venv_cryosuction. Excludes match ruff.toml. paraview (pvpython only) stays unresolved by design.",
   "venvPath": ".",
-  "venv": "venv_lunar",
+  "venv": "venv_cryosuction",
   "pythonVersion": "3.11",
   "typeCheckingMode": "basic",
   "reportMissingImports": "warning",
@@ -15,17 +15,25 @@
     "venv_*",
     "scratch",
     "**/scratch",
-    "library",
-    "library_practice",
-    "index",
-    "runs",
     "studies/*/campaign_*",
-    "test",
     "preprocess/igakit_complexgeocodes"
   ],
   "executionEnvironments": [
-    { "root": "scripts", "extraPaths": [".", "scripts/units_verification", "venv_workflows/lib/python3.11/site-packages"] },
-    { "root": "studies", "extraPaths": [".", "postprocess"] },
-    { "root": "." }
+    {
+      "root": "scripts",
+      "extraPaths": [
+        "."
+      ]
+    },
+    {
+      "root": "studies",
+      "extraPaths": [
+        ".",
+        "postprocess"
+      ]
+    },
+    {
+      "root": "."
+    }
   ]
 }

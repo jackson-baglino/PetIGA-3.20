@@ -4,7 +4,7 @@ The opts files are split into three orthogonal categories. A run is composed
 by passing one file from each category to PETSc, left to right:
 
 ```
-mpiexec -np N ./lunar_regolith_dsm \
+mpiexec -np N ./lunar_cryosuction \
     -options_file inputs/solver.opts \
     -options_file inputs/geometry/<geom>.opts \
     -options_file inputs/experiment/<exp>.opts
@@ -14,7 +14,7 @@ PETSc processes `-options_file` flags left to right; later entries override
 earlier ones. The split lets you sweep one axis without touching the others
 (e.g., the same geometry at different humidities, or the same experiment on
 different meshes). In practice you never type this by hand — use
-`./scripts/Studio/run_lunar.sh <geom> <exp> [tag]`, which assembles the
+`./scripts/Studio/run_cryosuction.sh <geom> <exp> [tag]`, which assembles the
 three files and adds `-output_path`.
 
 ## Search `scratch/` before creating a new input file
@@ -62,7 +62,7 @@ Things that almost never change between runs:
 - Interface width (`eps`) and initial time step (`delt_t`) — tied to spatial
   resolution; always (re)computed with `preprocess/comp_eps.py`
 - For igakit meshes: `-geom_file <path>` plus a `# DOF_GRID: nx ny [nz]`
-  comment (parsed by `run_lunar.sh` for rank sizing — do not omit it)
+  comment (parsed by `run_cryosuction.sh` for rank sizing — do not omit it)
 - Geometry-specific solver overrides (e.g. `-ksp_type preonly -pc_type lu`
   for 1D, `-mob_sub` reductions for stiff pairs)
 
@@ -165,7 +165,7 @@ You still pass a **bare name** to the run scripts — they search the campaign
 subdirectories for you. `campaign/name` also works if you want to be explicit.
 
 ```bash
-./scripts/Studio/run_lunar.sh molaro_2D_L385um_eps0.46um_axisym molaro_T-20_h1.00_2h_a3e-2
+./scripts/Studio/run_cryosuction.sh molaro_2D_L385um_eps0.46um_axisym molaro_T-20_h1.00_2h_a3e-2
 ```
 
 ### If a file has no `_a<alpha_c>` token, check before trusting its physics
@@ -188,8 +188,8 @@ to use instead.
 
 ```bash
 # Two-grain neck formation at saturation
-./scripts/Studio/run_lunar.sh twograins_2D_L41um_eps0.49um base_T-20_h1.00_1d
+./scripts/Studio/run_cryosuction.sh twograins_2D_L41um_eps0.49um base_T-20_h1.00_1d
 
 # Same geometry, undersaturated
-./scripts/Studio/run_lunar.sh twograins_2D_L41um_eps0.49um base_T-20_h0.95_1d
+./scripts/Studio/run_cryosuction.sh twograins_2D_L41um_eps0.49um base_T-20_h0.95_1d
 ```

@@ -12,7 +12,7 @@
 #   1. Every 2D/3D file's -ic_type is in the live dispatch list.
 #      (1D falls through to a default, so any value is accepted there.)
 #   2. Any file setting -geom_file also carries a "# DOF_GRID: nx ny [nz]"
-#      comment — run_lunar.sh parses it for rank sizing; without it the
+#      comment — run_cryosuction.sh parses it for rank sizing; without it the
 #      run silently drops to 1 rank.
 #
 # Exit 0 if clean, 1 if any problem is found. Zero external dependencies.

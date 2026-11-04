@@ -48,8 +48,8 @@ echo "========================================================================="
 # reported success. POSTPROCESS_DIR is <run>/postprocess for a staged copy, so
 # also try the source tree via PETIGA_DIR.
 PYTHON=""
-for _cand in "$POSTPROCESS_DIR/../venv_lunar/bin/python3" \
-             "${PETIGA_DIR:-}/projects/lunar_regolith_DSM/venv_lunar/bin/python3"; do
+for _cand in "$POSTPROCESS_DIR/../venv_cryosuction/bin/python3" \
+             "${PETIGA_DIR:-}/projects/lunar_cryosuction/venv_cryosuction/bin/python3"; do
     if [[ -x "$_cand" ]] && "$_cand" -c "import numpy" >/dev/null 2>&1; then
         PYTHON="$_cand"; break
     fi
@@ -57,7 +57,7 @@ done
 if [[ -z "$PYTHON" ]]; then
     PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "")
     if [[ -n "$PYTHON" ]] && ! "$PYTHON" -c "import numpy" >/dev/null 2>&1; then
-        echo "  WARNING: $PYTHON has no numpy and no usable venv_lunar was found."
+        echo "  WARNING: $PYTHON has no numpy and no usable venv_cryosuction was found."
         echo "           Every plotting step below will fail, leaving plots/ empty."
         echo "           Create the venv: see requirements.txt"
     fi

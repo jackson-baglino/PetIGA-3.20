@@ -27,7 +27,7 @@ ROOT="$(cd "$HERE/../../.." && pwd)"
 GEOM=channel_2D_H100um_eps3.00um
 EXP=relax_T-20_theta60
 CSV="$HERE/dtmax_study.csv"
-PY="$ROOT/venv_lunar/bin/python"
+PY="$ROOT/venv_cryosuction/bin/python"
 
 echo "dtmax,dtmax_over_tau,steps,cfl_caps,phi_min,phi_max,theta_inf,theta_err,wall_s" > "$CSV"
 echo
@@ -36,10 +36,10 @@ printf "%-10s %-11s %-8s %-9s %-12s %-11s %-9s\n" dtmax dtmax/tau steps cfl_caps
 for DT in 2.0e3 4.0e3 8.0e3 1.6e4 3.2e4; do
   TAG="dtmax${DT}"
   S=$(date +%s)
-  "$ROOT/scripts/Studio/run_lunar.sh" "$GEOM" "$EXP" "$TAG" -- -dtmax "$DT" \
+  "$ROOT/scripts/Studio/run_cryosuction.sh" "$GEOM" "$EXP" "$TAG" -- -dtmax "$DT" \
       > "$HERE/dtmax_${DT}.log" 2>&1
   E=$(date +%s)
-  D=$(ls -td "$HOME/SimulationResults/lunar_regolith_DSM/scratch/$GEOM"/*"$TAG" 2>/dev/null | head -1)
+  D=$(ls -td "$HOME/SimulationResults/lunar_cryosuction/scratch/$GEOM"/*"$TAG" 2>/dev/null | head -1)
   [[ -z "$D" ]] && { echo "  $DT  FAILED (no run dir)"; continue; }
 
   TAU=$(grep -oE 'tau_sub  =  [0-9.e+-]+' "$D/outp.txt" | head -1 | awk '{print $3}')

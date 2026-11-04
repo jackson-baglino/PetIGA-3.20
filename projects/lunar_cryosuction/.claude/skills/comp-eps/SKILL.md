@@ -1,7 +1,7 @@
 ---
 name: comp-eps
 description: Compute the phase-field interface parameter eps and the mesh (Nx, Ny, Nz) for given domain/grain sizes, temperature and attachment coefficient, using preprocess/comp_eps.py (Kaempfer and Plapp 2009 bounds). Use whenever eps, mesh size or interface resolution is chosen or checked.
-allowed-tools: Bash(venv_lunar/bin/python preprocess/comp_eps.py *)
+allowed-tools: Bash(venv_cryosuction/bin/python preprocess/comp_eps.py *)
 ---
 
 # comp-eps
@@ -14,7 +14,7 @@ rescale it by eye; always run the script.
 From the project root:
 
 ```bash
-venv_lunar/bin/python preprocess/comp_eps.py --Lx <m> [--Ly <m>] [--Lz <m>] --T0 <degC> --alpha <alpha_c>
+venv_cryosuction/bin/python preprocess/comp_eps.py --Lx <m> [--Ly <m>] [--Lz <m>] --T0 <degC> --alpha <alpha_c>
 ```
 
 Add `--patch inputs/geometry/<family>/<name>.opts` only when the user asks

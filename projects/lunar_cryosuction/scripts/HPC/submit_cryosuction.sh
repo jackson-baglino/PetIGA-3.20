@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
-# submit_lunar.sh — compute optimal MPI ranks and submit via sbatch
+# submit_cryosuction.sh — compute optimal MPI ranks and submit via sbatch
 #
 # Usage (run from project root):
-#   ./scripts/HPC/submit_lunar.sh <geometry> <experiment> [tag] \
+#   ./scripts/HPC/submit_cryosuction.sh <geometry> <experiment> [tag] \
 #       [sbatch_overrides...] [-- extra_solver_opts...]
 #
 #   geometry    Name (without .opts) of a file in inputs/geometry/
@@ -16,17 +16,17 @@
 #     Special flag (consumed here, not passed to sbatch):
 #       --half-cores   request half the computed MPI ranks — queues faster
 #                      on a busy cluster at ~2x wall time.
-#   - after `--`: forwarded verbatim to the lunar_regolith_dsm executable itself
+#   - after `--`: forwarded verbatim to the lunar_cryosuction executable itself
 #     (appended after the three -options_file flags, so they override
 #     anything set in solver.opts/geometry/experiment opts files).
 #
 # Examples:
-#   ./scripts/HPC/submit_lunar.sh multigrain_2D_L100um_eps0.37um_test base_T-20_h0.95_1d
+#   ./scripts/HPC/submit_cryosuction.sh multigrain_2D_L100um_eps0.37um_test base_T-20_h0.95_1d
 #
-#   ./scripts/HPC/submit_lunar.sh multigrain_2D_L100um_eps0.37um_test base_T-20_h0.95_1d p2_run \
+#   ./scripts/HPC/submit_cryosuction.sh multigrain_2D_L100um_eps0.37um_test base_T-20_h0.95_1d p2_run \
 #       --time=0-12:00:00 --partition=expansion
 #
-#   ./scripts/HPC/submit_lunar.sh twograins_2D_L100um_eps0.37um_2grain base_T-20_h0.95_1d \
+#   ./scripts/HPC/submit_cryosuction.sh twograins_2D_L100um_eps0.37um_2grain base_T-20_h0.95_1d \
 #       d0GT_1e-8 -- -d0_GT 1.0e-8
 # =============================================================================
 
@@ -68,10 +68,10 @@ if [[ "${1:-}" != "" && "${1:-}" != --* ]]; then
 fi
 
 # Split remaining args on a literal `--`: before it are sbatch flags, after
-# it are extra options forwarded to the lunar_regolith_dsm executable.
+# it are extra options forwarded to the lunar_cryosuction executable.
 # `--half-cores` is intercepted here (not a real sbatch flag): request half
 # the computed MPI ranks so the job queues faster on a busy cluster. The
-# runner (run_lunar.sh) clamps its own rank count to the SLURM
+# runner (run_cryosuction.sh) clamps its own rank count to the SLURM
 # allocation, so the halved request propagates consistently; wall time
 # roughly doubles (weak-scaling regime at the 40k DoFs/core target).
 sbatch_flags=()
@@ -109,7 +109,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # Compute optimal NPROCS — kept in sync with compute_optimal_nprocs() in
-# run_lunar.sh. Formula: ceil(dof * Nx * Ny * Nz / TARGET_DOFS_PER_CORE)
+# run_cryosuction.sh. Formula: ceil(dof * Nx * Ny * Nz / TARGET_DOFS_PER_CORE)
 # ---------------------------------------------------------------------------
 # 40000 DoFs/rank (raised from 10000, 2026-07-12): PETSc guidance for
 # implicit solves is 20k-100k unknowns/rank — below ~20k, reductions and halo
@@ -168,7 +168,7 @@ echo "============================================================"
 hpc_cost_pre_submit "${NPROCS}"
 
 # ---------------------------------------------------------------------------
-# Submit — --ntasks/--nodes override the #SBATCH defaults in run_lunar.sh
+# Submit — --ntasks/--nodes override the #SBATCH defaults in run_cryosuction.sh
 # ---------------------------------------------------------------------------
 run_args=("$geom_name" "$exp_name")
 if [[ "${#extra_opts[@]}" -gt 0 ]]; then
@@ -186,5 +186,5 @@ sbatch \
     --ntasks-per-node="${TASKS_PER_NODE}" \
     --mem-per-cpu="$(mem_per_cpu "$total_dofs" "$NPROCS")" \
     "${sbatch_flags[@]}" \
-    "$SCRIPT_DIR/run_lunar.sh" \
+    "$SCRIPT_DIR/run_cryosuction.sh" \
     "${run_args[@]}"

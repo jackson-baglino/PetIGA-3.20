@@ -7,10 +7,10 @@ ROOT="${CLAUDE_PROJECT_DIR:?}"
 f=$(jq -r '.tool_input.file_path // .tool_response.filePath // empty')
 case "$f" in "$ROOT"/*.py) ;; *) exit 0 ;; esac
 [ -f "$f" ] || exit 0
-RUFF="$ROOT/venv_lunar/bin/ruff"
+RUFF="$ROOT/venv_cryosuction/bin/ruff"
 if [ ! -x "$RUFF" ]; then
   jq -n --arg r "$RUFF" '{hookSpecificOutput: {hookEventName: "PostToolUse",
-    additionalContext: ("ruff lint skipped: " + $r + " not found (no venv_lunar here)")}}'
+    additionalContext: ("ruff lint skipped: " + $r + " not found (no venv_cryosuction here)")}}'
   exit 0
 fi
 out=$("$RUFF" check --quiet --force-exclude --output-format concise "$f" 2>&1) && exit 0

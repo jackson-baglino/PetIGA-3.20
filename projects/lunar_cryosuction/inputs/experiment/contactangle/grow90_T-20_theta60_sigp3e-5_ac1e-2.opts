@@ -26,7 +26,7 @@
 # go somewhere too, or the temperature moves and cancels the supersaturation.
 #
 # Reservoirs are on the x-faces ONLY. Pinning vapor on the y walls would feed
-# ice directly at its contact line and corrupt the angle (lunar_main.c warns
+# ice directly at its contact line and corrupt the angle (cryosuction_main.c warns
 # about exactly this).
 #
 # t_final = 90 days, matching the wedge campaign.

@@ -39,18 +39,18 @@ CONSTANTS = Constants()
 # (constant name, value, file, text that must appear in that file). Checked by the drift test.
 # The molecule mass differs slightly in monitoring.c (3.0e-26 vs 2.99e-26) and is listed as a known difference.
 C_SOURCE_LINKS = [
-    ("k_ice_w_per_m_k", 2.29, "src/lunar_main.c", "thcond_ice = 2.29"),
-    ("k_air_w_per_m_k", 0.02, "src/lunar_main.c", "thcond_air = 0.02"),
-    ("rho_ice_kg_per_m3", 919.0, "src/lunar_main.c", "rho_ice    = 919.0"),
-    ("dv0_m2_per_s", 2.178e-5, "src/lunar_main.c", "dif_vap    = 2.178e-5"),
-    ("rho_air_kg_per_m3", 1.341, "src/lunar_main.c", "rho_air    = 1.341"),
+    ("k_ice_w_per_m_k", 2.29, "src/cryosuction_main.c", "thcond_ice = 2.29"),
+    ("k_air_w_per_m_k", 0.02, "src/cryosuction_main.c", "thcond_air = 0.02"),
+    ("rho_ice_kg_per_m3", 919.0, "src/cryosuction_main.c", "rho_ice    = 919.0"),
+    ("dv0_m2_per_s", 2.178e-5, "src/cryosuction_main.c", "dif_vap    = 2.178e-5"),
+    ("rho_air_kg_per_m3", 1.341, "src/cryosuction_main.c", "rho_air    = 1.341"),
     ("p_atm_pa", 101325.0, "src/material_properties.c", "Patm = 101325.0"),
     ("bb", 0.62, "src/material_properties.c", "bb = 0.62"),
-    ("a1", 5.0, "src/lunar_main.c", "a1 = 5.0"),
-    ("a2", 0.1581, "src/lunar_main.c", "a2 = 0.1581"),
+    ("a1", 5.0, "src/cryosuction_main.c", "a1 = 5.0"),
+    ("a2", 0.1581, "src/cryosuction_main.c", "a2 = 0.1581"),
     ("m_h2o_d0_kg", 2.9915e-26, "include/NASA_types.h", "M_H2O_KG   2.9915e-26"),
     ("k_b_d0_j_per_k", 1.380649e-23, "include/NASA_types.h", "K_BOLTZ    1.380649e-23"),
-    ("gamma_iv_j_per_m2", 0.109, "src/lunar_main.c", "gamma_ia_bulk = 0.109"),
+    ("gamma_iv_j_per_m2", 0.109, "src/cryosuction_main.c", "gamma_ia_bulk = 0.109"),
 ]
 KNOWN_DIFFERENCES = {
     "m_h2o_kg": "monitoring.c uses 3.0e-26 kg in the Hertz-Knudsen kinetic term (0.3 % above this value)",

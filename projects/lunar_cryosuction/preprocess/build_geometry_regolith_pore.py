@@ -38,7 +38,7 @@ Strategies listed in CARVES_WALLS get their own mesh .dat instead of sharing
 the pore-only mesh, since their walls genuinely differ.
 
 Writes inputs/geometry/meshes/regolith_pore.dat and inputs/geometry/2D_regolith_pore.opts
-(so scripts/Studio/run_lunar.sh finds them by the usual convention), plus a
+(so scripts/Studio/run_cryosuction.sh finds them by the usual convention), plus a
 preview PNG. Deterministic (seeded). Every geometric constraint is asserted
 before anything is written — including the wall-slope budget that keeps the
 wall-conforming mesh from becoming over-skewed.

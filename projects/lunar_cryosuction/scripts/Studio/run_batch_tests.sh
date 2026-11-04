@@ -2,7 +2,7 @@
 # =============================================================================
 # run_batch_tests.sh — Run a curated set of tests sequentially into one folder
 #
-# Location: $PETIGA_DIR/projects/lunar_regolith_DSM/scripts/Studio/run_batch_tests.sh
+# Location: $PETIGA_DIR/projects/lunar_cryosuction/scripts/Studio/run_batch_tests.sh
 #
 # All runs go under a single timestamped parent folder:
 #   $RESULTS_BASE/batch_<timestamp>/<test_name>/
@@ -31,8 +31,8 @@ set -uo pipefail
 # Paths
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_regolith_DSM"
-EXEC="$PROJECT_ROOT/lunar_regolith_dsm"
+PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_cryosuction"
+EXEC="$PROJECT_ROOT/lunar_cryosuction"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 GEOMETRY_DIR="$INPUTS_DIR/geometry"
@@ -40,7 +40,7 @@ EXPERIMENT_DIR="$INPUTS_DIR/experiment"
 
 POSTPROCESS="$PROJECT_ROOT/postprocess"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
-RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch"
+RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch"
 
 # Allocation constants (TARGET_DOFS_PER_CORE, MAX_LOCAL_CORES) — single source
 # of truth in scripts/lib/alloc.sh.

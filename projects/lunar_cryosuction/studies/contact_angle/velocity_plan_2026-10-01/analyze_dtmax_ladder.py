@@ -27,7 +27,7 @@ Solver cost comes from solver_evo.dat (Newton and Krylov iterations per step,
 step rejections).
 
 Usage:
-    venv_lunar/bin/python3 studies/contact_angle/velocity_plan_2026-10-01/analyze_dtmax_ladder.py <batch_dir>
+    venv_cryosuction/bin/python3 studies/contact_angle/velocity_plan_2026-10-01/analyze_dtmax_ladder.py <batch_dir>
 """
 import glob
 import os

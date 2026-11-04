@@ -1,4 +1,4 @@
-TARGETS = lunar_regolith_dsm
+TARGETS = lunar_cryosuction
 
 all: $(TARGETS)
 .PHONY: all clean debug

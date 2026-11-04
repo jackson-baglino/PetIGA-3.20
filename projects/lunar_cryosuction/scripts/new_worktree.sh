@@ -16,11 +16,11 @@
 # checkout has none of the git-ignored files the project needs. This script
 # starts from local HEAD (or the branch you name) and links, not copies, the
 # shared git-ignored files from the main checkout:
-#   venv_lunar/, venv_workflows/  one shared environment (pins in requirements*.txt;
+#   venv_cryosuction/, venv_workflows/  one shared environment (pins in requirements*.txt;
 #                                 give a worktree its own venv only if its
 #                                 branch changes the requirements)
 #   CLAUDE.local.md               personal rules
-# The solver build (obj/, lunar_regolith_dsm) is per worktree on purpose, so a
+# The solver build (obj/, lunar_cryosuction) is per worktree on purpose, so a
 # physics branch never overwrites main's binary.
 #
 # Remove a worktree when its branch is merged or archived (CLAUDE.md):
@@ -45,7 +45,7 @@ done
 case "$name" in */*|.*|*" "*) echo "name must be a plain folder name: $name" >&2; exit 2 ;; esac
 
 ROOT="$(git rev-parse --show-toplevel)"
-PROJECT_REL=projects/lunar_regolith_DSM
+PROJECT_REL=projects/lunar_cryosuction
 MAIN_PROJECT="$ROOT/$PROJECT_REL"
 WT="$ROOT/.claude/worktrees/$name"
 WT_PROJECT="$WT/$PROJECT_REL"
@@ -71,7 +71,7 @@ else
     git -C "$ROOT" worktree add -b "$branch" "$WT" HEAD
 fi
 
-for f in venv_lunar venv_workflows CLAUDE.local.md; do
+for f in venv_cryosuction venv_workflows CLAUDE.local.md; do
     if [ -e "$MAIN_PROJECT/$f" ]; then
         ln -s "$MAIN_PROJECT/$f" "$WT_PROJECT/$f"
         echo "linked $f -> main checkout"
@@ -81,7 +81,7 @@ for f in venv_lunar venv_workflows CLAUDE.local.md; do
 done
 
 # The links must be ignored by git, or they could be committed by accident.
-untracked=$(git -C "$WT_PROJECT" status --porcelain --untracked-files=all -- venv_lunar venv_workflows CLAUDE.local.md)
+untracked=$(git -C "$WT_PROJECT" status --porcelain --untracked-files=all -- venv_cryosuction venv_workflows CLAUDE.local.md)
 if [ -n "$untracked" ]; then
     echo "warning: git does not ignore these links in the worktree:" >&2
     echo "$untracked" >&2
@@ -90,7 +90,7 @@ fi
 if [ "$make_it" -eq 1 ]; then
     echo "building the solver in the worktree (make)..."
     make -C "$WT_PROJECT" >/dev/null
-    echo "built $WT_PROJECT/lunar_regolith_dsm"
+    echo "built $WT_PROJECT/lunar_cryosuction"
 fi
 
 cat <<EOF

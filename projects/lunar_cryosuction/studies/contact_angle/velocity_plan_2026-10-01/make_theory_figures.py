@@ -39,7 +39,7 @@ beta_sub0 + a1*a2*eps*(1/D_T + 1/D_v)*rho_ice/rho_vs, an ADDITIVE offset of
 --beta-offset 0 draws the curves for a solver that removes it exactly.
 
 Usage:
-    venv_lunar/bin/python3 studies/contact_angle/velocity_plan_2026-10-01/make_theory_figures.py \\
+    venv_cryosuction/bin/python3 studies/contact_angle/velocity_plan_2026-10-01/make_theory_figures.py \\
         [--alpha 1e-3] [--beta-offset 8.74e5]
 
 Figures 2-4 are written with an _ac<alpha> suffix; figure 1 is alpha-independent.

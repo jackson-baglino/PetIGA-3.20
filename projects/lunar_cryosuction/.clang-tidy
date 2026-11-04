@@ -16,5 +16,5 @@ Checks: >
   -bugprone-reserved-identifier,
   -bugprone-multi-level-implicit-pointer-conversion
 # Report problems in this project's headers, not in PETSc's or PetIGA's.
-HeaderFilterRegex: 'lunar_regolith_DSM/include/'
+HeaderFilterRegex: 'lunar_cryosuction/include/'
 WarningsAsErrors: ''

@@ -9,7 +9,7 @@
 # and nowhere else.
 #
 # Each is set with := so an environment override wins, e.g.
-#   TARGET_DOFS_PER_CORE=80000 ./scripts/HPC/submit_lunar.sh ...
+#   TARGET_DOFS_PER_CORE=80000 ./scripts/HPC/submit_cryosuction.sh ...
 # lets large-domain runs tune the target without editing any script.
 # ---------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@
 # ---------------------------------------------------------------------------
 # mem_per_cpu <total_dofs> <nprocs>  ->  echoes the --mem-per-cpu to request, e.g. "2G"
 #
-# The flat 1G in run_lunar.sh's #SBATCH header was sized for ~50k DoF per core.
+# The flat 1G in run_cryosuction.sh's #SBATCH header was sized for ~50k DoF per core.
 # Peak RSS per rank measured in the same scaling test (sacct MaxRSS, always on
 # rank 0): 630 MB at 100k DoF/core, 860 MB at 198k, and OOM-killed at 394k
 # under 1G. Fit, to ~10 %:

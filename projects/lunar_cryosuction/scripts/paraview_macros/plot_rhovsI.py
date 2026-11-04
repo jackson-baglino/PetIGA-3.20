@@ -149,7 +149,7 @@ from paraview.simple import (
     Show,
 )
 
-# --- solver constants (material_properties.c / lunar_main.c) -------------
+# --- solver constants (material_properties.c / cryosuction_main.c) -------------
 RHO_AIR = float(os.environ.get("PV_RHO_AIR", 1.341))  # kg/m^3, AppCtx default
 
 # gamma_iv * V_m / R_gas [m*K]; d0(T) = this / temK. See comp_eps.py.

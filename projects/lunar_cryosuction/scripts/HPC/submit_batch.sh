@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# submit_batch.sh — Submit a batch of lunar_regolith_dsm simulations to SLURM,
+# submit_batch.sh — Submit a batch of lunar_cryosuction simulations to SLURM,
 # with all outputs going into a single timestamped parent folder for easy
 # bulk download.
 #
@@ -8,12 +8,12 @@
 # test specs work on both. Each test is submitted as an independent sbatch
 # job (so they run in parallel on the cluster), but they all write into:
 #
-#   $SCRATCH/lunar_regolith_DSM/batch_<timestamp>[_<tag>]/<geom>__<exp>/
+#   $SCRATCH/lunar_cryosuction/batch_<timestamp>[_<tag>]/<geom>__<exp>/
 #
 # Each sbatch call:
 #   - sizes its allocation to the geometry's grid (TARGET_DOFS_PER_CORE)
-#   - calls run_lunar.sh as the actual SLURM script
-#   - sets BATCH_OUT_DIR so run_lunar.sh writes into the shared parent
+#   - calls run_cryosuction.sh as the actual SLURM script
+#   - sets BATCH_OUT_DIR so run_cryosuction.sh writes into the shared parent
 #   - sets SKIP_COMPILE=1 since this script builds once on the submission host
 #
 # Usage (run from project root):
@@ -22,14 +22,14 @@
 #
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests-file tests.txt
 #
-# --extra-opts forwards a single quoted string of lunar_regolith_dsm CLI flags to
+# --extra-opts forwards a single quoted string of lunar_cryosuction CLI flags to
 # EVERY fanned-out job (appended after the three -options_file flags, same
-# as submit_lunar.sh's `-- ...` convention, so they override anything
+# as submit_cryosuction.sh's `-- ...` convention, so they override anything
 # set in the opts files):
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." --extra-opts "-beta_sub0 1.4e3"
 #
-# --out-root <dir> puts the batch parent under <dir>/lunar_regolith_DSM/ instead
-# of $SCRATCH/lunar_regolith_DSM/. Use it for runs that must survive: scratch is
+# --out-root <dir> puts the batch parent under <dir>/lunar_cryosuction/ instead
+# of $SCRATCH/lunar_cryosuction/. Use it for runs that must survive: scratch is
 # purged, the group directory is not. The directory must already exist -- a typo
 # here must not silently fall back to scratch.
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." \
@@ -42,7 +42,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-RUN_SCRIPT="$SCRIPT_DIR/run_lunar.sh"
+RUN_SCRIPT="$SCRIPT_DIR/run_cryosuction.sh"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 GEOMETRY_DIR="$INPUTS_DIR/geometry"
 EXPERIMENT_DIR="$INPUTS_DIR/experiment"
@@ -50,8 +50,8 @@ SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 
 # Resource-sizing parameters. FOUR copies of TARGET_DOFS_PER_CORE exist -- keep
 # them in sync:
-#   scripts/Studio/run_lunar.sh :: compute_optimal_nprocs
-#   scripts/HPC/run_lunar.sh    :: compute_optimal_nprocs
+#   scripts/Studio/run_cryosuction.sh :: compute_optimal_nprocs
+#   scripts/HPC/run_cryosuction.sh    :: compute_optimal_nprocs
 # TARGET_DOFS_PER_CORE and MAX_TASKS_PER_NODE are sourced from
 # scripts/lib/alloc.sh (single source of truth; see rationale there).
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
@@ -134,16 +134,16 @@ cd "$PROJECT_ROOT"
 
 # ---------------------------------------------------------------------------
 # Build once (sets SKIP_COMPILE=1 for each fanned-out job — see compile_code
-# in run_lunar.sh for the race-condition rationale).
+# in run_cryosuction.sh for the race-condition rationale).
 # ---------------------------------------------------------------------------
 echo ""
-echo "--- Building lunar_regolith_dsm on submission host ---"
+echo "--- Building lunar_cryosuction on submission host ---"
 if ! make all; then
     echo "❌ Build failed. Fix the build before submitting jobs."
     exit 1
 fi
-if [[ ! -x ./lunar_regolith_dsm ]]; then
-    echo "❌ ./lunar_regolith_dsm still missing after make all."
+if [[ ! -x ./lunar_cryosuction ]]; then
+    echo "❌ ./lunar_cryosuction still missing after make all."
     exit 1
 fi
 echo "✅ Build complete."
@@ -160,9 +160,9 @@ if [[ -n "$out_root" ]]; then
         echo "❌ --out-root is not a writable directory: $out_root"
         exit 1
     fi
-    BATCH_PARENT="$(cd "$out_root" && pwd)/lunar_regolith_DSM/$batch_name"
+    BATCH_PARENT="$(cd "$out_root" && pwd)/lunar_cryosuction/$batch_name"
 elif [[ -d "${SCRATCH:-}" ]]; then
-    BATCH_PARENT="$SCRATCH/lunar_regolith_DSM/$batch_name"
+    BATCH_PARENT="$SCRATCH/lunar_cryosuction/$batch_name"
 else
     BATCH_PARENT="$PROJECT_ROOT/scratch/$batch_name"
 fi
@@ -225,7 +225,7 @@ compute_alloc() {
     [[ -z "${dof:-}" ]] && dof=3
 
     # -geom_file meshes override -Nx/-Ny/-Nz; read the grid from the
-    # "# DOF_GRID: nx ny [nz]" comment, matching submit_lunar.sh.
+    # "# DOF_GRID: nx ny [nz]" comment, matching submit_cryosuction.sh.
     if grep -q "^-geom_file" "$geom_file"; then
         read -r nx ny nz <<< "$(awk '$1=="#" && $2=="DOF_GRID:"{print $3, $4, $5}' "$geom_file" | head -n1)"
     else
@@ -249,7 +249,7 @@ compute_alloc() {
 }
 
 # ---------------------------------------------------------------------------
-# Submit one job: sbatch run_lunar.sh <geom> <exp> <tag>
+# Submit one job: sbatch run_cryosuction.sh <geom> <exp> <tag>
 # with BATCH_OUT_DIR pointing at the shared parent so all jobs end up there.
 # ---------------------------------------------------------------------------
 N_SUBMITTED=0
