@@ -50,7 +50,7 @@ statements:
     kind: equation
     questions: [none]   # Q1, Q2, Q3 or none
     # dropped 'empirical relation', which was the user's own addition (ruling 2026-10-30)
-    statement: 'The humidity ratio $x_s(T)$ of air saturated with vapor over ice is defined from the saturation vapor pressure over ice and the air pressure, $x_s(T) = 0.62 \frac{P_{vs}(T)}{P_a - P_{vs}(T)}$.'
+    statement: 'The humidity ratio $x_s(T)$ of air saturated with vapor over ice is defined from the saturation vapor pressure over ice and the air pressure, $x_s(T) \cong 0.62 \frac{P_{vs}(T)}{P_a - P_{vs}(T)}$.'
     symbol: x_s(T)
     value:
     unit: 
@@ -106,7 +106,7 @@ statements:
     kind: method
     questions: [Q1]   # Q1, Q2, Q3 or none
     # rewritten by Claude from the user's ruling 2026-10-30 (symmetric diffusivity, anti-trapping term); the user should confirm against p. 8
-    statement: 'The model takes the vapor diffusivity to be symmetric, the same in the ice as in the air; with unequal diffusivities, an anti-trapping term could be added to remove the spurious interface effects this would otherwise cause.'
+    statement: 'The model takes the vapor diffusivity to be symmetric to derive the thin-interface correction parameter, the same in the ice as in the air; with unequal diffusivities, an anti-trapping term could be added to remove the spurious interface effects this would otherwise cause.'
     symbol:
     value:
     unit:
@@ -174,7 +174,7 @@ statements:
     kind: equation
     questions: [Q1, Q2]   # Q1, Q2, Q3 or none
     # page: Eq. (2.6) is on p. 85 of this PDF, the indicator function on p. 84; the NIH manuscript differs (ruling 2026-10-30)
-    statement: To apply Nuemann or Robin boundary conditions on the diffuse domain, the problem can be reformulated using an indicator functioin $\chi_{\Omega(t)}$ and a smooth approximation of the Dirac delta function $\delta_{\epsilon}(\phi)$, which is nonzero only in a thin layer around the boundary.
+    statement: For Neumann and Robin boundary conditions, the problem can be formally rewritten on Ω using the characteristic function χ_{Ω1} and the surface delta function δ_{∂Ω1} (eqs. 2.6, 2.7). The diffuse domain approximation then replaces both χ_{Ω1} and δ_{∂Ω1} with approximations built from φ and its derivatives.
     symbol:
     value:
     unit:
@@ -304,23 +304,25 @@ statements:
     location: Table 6
     kind: result
     # page 267 -> 264, Table 6, grains of radius about 100 um (ruling 2026-10-30)
-    statement: 'Table 6 gives sintering time scales of order $10^{90}$ years for grains of radius about 100 µm.'
+    statement: 'Table 6 lists power-law parameters for Eq. (31), τ = f T^g, for the Stage 1 sintering timescale. For 100-µm radius grains, f = 4.159 x 10^90 yr and g = -39.51.'
   - paper: molaro_2019
-    page: 260
+    page: [258, 260]
+    location: Figure 12
     kind: result
-    statement: The neck width for the warmer $T=-5^\circ$C grain pair sintering experiment grew slower than for the colder $T=-20^\circ$C case.
+    # page 260 -> [258, 260]: the result is on p. 258 (PDF p. 16), Figure 12 on p. 260 (PDF p. 18) (ruling 2026-11-04)
+    statement: "In the grain-pair experiments, the −5 °C grains showed a slower sintering rate than the model predicted (with higher measurement uncertainty), while the −20 °C grains matched the model well (p258; Figure 12, p260)."
 
   # ---- blackford_2007 (branch B3, sintering; a review): 8 slots ----
   - paper: blackford_2007
     page: 357
     location: Section 2.2.2
     kind: result
-    statement: 'Diffusion mechanisms can be broken into two primary categories: those that cause densification--bulk transport mechanisms which include grainn boundary diffusion and plastic flow--and those that do not--surface transport mechanisms which include surface diffusion and ice growth by vapor transport.'
+    statement: 'Diffusion mechanisms can be broken into two primary categories: those that cause densification--bulk transport mechanisms which include grain boundary diffusion and plastic flow--and those that do not--surface transport mechanisms which include surface diffusion and ice growth by vapor transport.'
   - paper: blackford_2007
     page: 360
     location: Figure 5
     kind: result
-    statement: 'Figure 5 is a pair of sechematics showing both solid sate and liquid-phase sintering. In this diagram we see the interfacial energies, and contact angles. The surface energy on the solid vapor interface is $109 mJ/m^2$.'
+    statement: 'Figure 5 is a pair of schematics showing both solid state and liquid-phase sintering. In this diagram we see the interfacial energies, and contact angles. The surface energy on the solid vapor interface is $109 mJ/m^2$.'
     symbol: $\gamma_{sv}$
     value: 109
     unit: mJ m^-2
@@ -335,7 +337,7 @@ statements:
     location: Section 4
     kind: result
     # 1 micron -> 2 microns, a typo (ruling 2026-10-30)
-    statement: 'Vapor transport is the dominant mechanism in most laboratory sintering experiments, and surface diffusion is only expected to dominate at temperatures warmer that $-6^\circ$C or colder than $-40^\circ$C, and for neck raddii smaller than 2 microns.'
+    statement: 'Maeno and Ebinuma concluded vapor transport is dominant under most natural and laboratory conditions. They predicted surface diffusion dominates at small neck radii (ca <2 µm) at homologous temperatures corresponding to 0 to −6 °C, and for neck radii of ca <1 µm below ~−40 °C.'
   - paper: blackford_2007
     page: 371
     location: Section 4.2
@@ -351,7 +353,7 @@ statements:
     page: 370
     location: Figure 10
     kind: result
-    statement: Surface diffusion is the dominant mechanism for neck growth at temperatures colder than homologous temperature of 0.8 and near 1.0, and only for grains that are sufficiently small, with small neck radii.
+    statement: "In Maeno and Ebinuma's sintering map for two 35 µm ice particles (Fig. 10), surface diffusion dominates in two regions at small neck radii: neck radii ca <1 µm below ~−40 °C, and neck radii ca <2 µm near the melting point (0 to −6 °C). For 350 µm spheres the behavior was similar, with a larger vapor-dominated region."
   - paper: blackford_2007
     page: 367
     location: Section 3.3
