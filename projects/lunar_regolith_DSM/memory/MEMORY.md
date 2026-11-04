@@ -10,6 +10,7 @@
 - Sessions read only `Literature/` in the iCloud research folder; `Proposals/` only when the user directly asks. Everything else is saved in this project or the course folder.  (2026-11-01 · user)
 - `memory/semantic/units.md` verified 2026-10-22 by the units-verification workflow (run 20261022-155335): 54 literature rows checked against page images; the value column is the printed value.  (2026-10-22 · workflow; user-approved)
 - Workflow agents run at Claude Code's default effort; effort is turned only as a diagnostic when a workflow shows inconsistencies or disagreements, one agent at a time, with the level recorded in the manifest. The default can change with a Claude Code update, so rerun the calibration after one.  (2026-11-01 · user)
+- Thesis split: this project is paper 3 (literature review and the new model); paper 2 runs the frozen two-phase model in `projects/lunar_cryosuction` (tag `lunar_cryosuction/model-freeze-v1`); paper 1 is `enceladus_DSM`.  (2026-11-04 · user)
 
 ## Solver
 
