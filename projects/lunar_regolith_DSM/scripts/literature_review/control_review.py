@@ -31,7 +31,8 @@ def main(argv=None):
                if "control_id" in r and r.get("flagged")]
     lines = [f"# Controls the checker flagged ({a.set} set, {run.name})", "",
              "For each: is the gold statement wrong (fix it in gold_statements.yaml), or is the checker wrong",
-             "(over-flagging)? Write your ruling after 'Ruling:'.", ""]
+             "(over-flagging)? Write your ruling after 'Ruling:', and anything worth keeping (why, what to fix)",
+             "under 'Notes:'.", ""]
     for r in flagged:
         g = gold[int(r["control_id"][1:]) - 1]
         vf = run / "untrusted" / r["paper"] / f"plant_verdicts_{a.set}.json"
@@ -44,7 +45,7 @@ def main(argv=None):
                 lines.append(f"**{k.replace('_', ' ').capitalize()}:** {v[k]}")
         if v.get("dropped_conditions"):
             lines.append(f"**Dropped conditions:** {json.dumps(v['dropped_conditions'], ensure_ascii=False)}")
-        lines += [f"**Reason:** {v.get('reason')}", "", "Ruling: ", ""]
+        lines += [f"**Reason:** {v.get('reason')}", "", "Ruling: ", "", "Notes: ", ""]
     out = run / "untrusted" / f"control_review_{a.set}.md"
     out.write_text("\n".join(lines))
     print(json.dumps({"flagged_controls": len(flagged), "file": str(out)}))

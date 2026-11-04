@@ -49,11 +49,11 @@ Goal: a line that passes its own rules, frozen, so that the nine-paper result be
       (marks c006 `rejected_by_user` if you answered `w`), and confirm it with the curator's counts.
 - [ ] **1.3 You: rule on the nine flagged control statements** (G001 G004 G007 G014 G018 G031 G032 G036 G039) in
       `runs/literature-review/calib-dev6/untrusted/control_review_tuning.md`. For each, write "gold wrong" or "checker
-      wrong" on its `Ruling:` line. Why: the checker must flag at most 4 of 40 correct statements. Until each flag is
+      wrong" on its `Ruling:` line, and anything worth keeping under `Notes:`. Why: the checker must flag at most 4 of 40 correct statements. Until each flag is
       settled, we don't know whether the 9 flags are checker errors or errors in your gold statements. Use the new
       condition rule: a condition is kept if it is **necessary** or **scope** (`SPEC.md` §6.2). Note that G018 is a
       statement you ruled "checker wrong" on 30 October.
-- [ ] **1.4 Me: read the rulings** (`control_rulings.py`, counts and IDs only) and act on them.
+- [ ] **1.4 Me: read the rulings** (`control_rulings.py`: counts, IDs and which controls have a note; no text) and act on them.
       **⟂ depends on 1.3:**
       - all or most "gold wrong": you fix those gold statements (I prepare the edits; you approve them), then 1.5;
       - several "checker wrong": I change the checker's prompt, aiming at over-flagging conditions, then 1.5;
