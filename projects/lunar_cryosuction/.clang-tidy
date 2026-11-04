@@ -1,0 +1,20 @@
+# clang-tidy: static checks for the C solver. Run with scripts/lint_c.sh,
+# which supplies the PETSc/PetIGA include paths. Report only; no fix-its.
+#
+# Bug-prone patterns and the Clang static analyzer (null dereference, use of
+# uninitialized values, memory leaks, dead stores). Switched off: checks that
+# fire on ordinary PETSc code without pointing at a bug.
+Checks: >
+  -*,
+  clang-analyzer-*,
+  -clang-analyzer-security.insecureAPI.*,
+  -clang-analyzer-optin.performance.Padding,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-reserved-identifier,
+  -bugprone-multi-level-implicit-pointer-conversion
+# Report problems in this project's headers, not in PETSc's or PetIGA's.
+HeaderFilterRegex: 'lunar_regolith_DSM/include/'
+WarningsAsErrors: ''

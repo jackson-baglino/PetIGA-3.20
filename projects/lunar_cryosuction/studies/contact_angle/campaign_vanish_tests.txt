@@ -1,0 +1,18 @@
+# Sublimate an ice lens to nothing, for scripts/HPC/submit_batch.sh --tests-file
+#
+# LEG 1 only. The wedge at theta = 120 against a saturated reservoir: a convex
+# meniscus is undersaturated relative to a flat reservoir, so the lens loses
+# mass with no equilibrium to stop at.
+#
+# The full shrinkage needs ~1400 days, about 93 h at dtmax and more once dt
+# collapses, so it does not fit in one 24 h job. This leg runs 301 days (~20 h);
+# continue with -initial_cond and -t_start as described in the experiment file.
+#
+# This is a RESOLUTION test as much as a physics one. As the lens half-width
+# approaches the interface width the two menisci overlap and the phase field can
+# no longer represent a distinct lens. Things to read afterwards:
+#   plots/phi_bounds.png   excursions outside [0,1] appearing late = the lens
+#                          has become unresolvable
+#   plots/timestep.png     dt collapsing as v_n diverges
+#   the fingerprint test   distinct sol_*.dat, in case the solve stalls
+wedge_2D_L300um_eps0.86um_wall:wedgevanish_T-20_theta120

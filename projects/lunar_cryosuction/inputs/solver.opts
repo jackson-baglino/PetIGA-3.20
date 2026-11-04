@@ -1,0 +1,186 @@
+# =============================================================================
+# solver.opts — numerical defaults for the clean 2-phase phase-field model.
+#
+# Three-file opts architecture (loaded left-to-right, later overrides earlier):
+#   inputs/solver.opts          ← THIS FILE: numerical settings only
+#   inputs/geometry/<name>.opts ← mesh, domain, IC type, eps, initial dt
+#   inputs/experiment/<name>.opts ← t_final, T, humidity, gradient, etc.
+# =============================================================================
+
+# ---------- DOFs & discretisation ---------------------------------------------
+-dof 3                                  # ice / temperature / vapor
+-p 2                                    # B-spline polynomial order (quadratic)
+-C 1                                    # B-spline continuity (C^1 for p=2)
+-periodic 1                             # periodic BCs (closed system; vapor cannot
+                                        # leak through boundaries — needed for clean
+                                        # mass-balance diagnostics).
+
+# ---------- Output ------------------------------------------------------------
+-n_out 5000                             # snapshots when -outp 0
+-outp 1                                 # output every N time steps; -outp 1 with the
+                                        # adaptive dt produces naturally log-spaced
+                                        # snapshots (dense early when dt is small,
+                                        # sparse later when dt is large).
+-pf_output 1                    # enable sol*.dat field output
+-pf_monitor 1                   # enable monitor table output
+
+# ---------- Boundary conditions (Neumann everywhere unless overridden) --------
+-flag_BC_Tfix 0
+-flag_BC_rhovfix 0
+-flag_Tdep 0                            # temperature-independent material properties
+
+# ---------- Phase-field bounds (defensive backstop only) ----------------------
+# The real bound enforcement is now structural: src/<project>_main.c sets
+# SNESVISetVariableBounds(0<=ice<=1) on the SNES (see -snes_type vinewtonssls
+# below), so the Newton DOF itself can't leave [0,1] -- and since the field at
+# any quadrature point is a convex combination of nearby DOFs, that also keeps
+# the evaluated field in [0,1] everywhere, with no retry/rollback needed.
+#
+# -phase_lo/-phase_hi below now only guard assembly.c's older, pointwise
+# domain-error check and monitoring.c's bounds-rollback (BoundsRollbackPreStep)
+# -- both should never fire anymore now that VI keeps the DOF itself in [0,1],
+# but they're left in place as a cheap backstop for anything VI doesn't catch
+# (e.g. KSP inexactness in the projected Newton step producing a tiny,
+# floating-point-scale overshoot).
+#
+# History (now resolved by the VI switch, kept for context): job64406550
+# (random_bumpy_floor_v1) needed -dtmax capped at 2.0e3 after dt grew into a
+# floating grain's full-sublimation singularity; job64410270
+# (random_bumpy_floor_v2) needed the gate widened -0.05/1.05 -> -0.15/1.15
+# because a fully-extinct floor cap's UNDAMPED trial Newton iterate tripped
+# the domain-error check every retry, even though the final accepted state
+# was fine, causing a dt limit cycle. The bump_2D_L100um_eps0.37um_icecap case
+# (job64415277) then showed the underlying problem directly: even with
+# dt-halving retries, an encapsulating ice ring fully sublimating produced
+# real (not just transient) field-level undershoots of -0.10 to -0.18 before
+# the gate accepted them -- dt-shrinking has diminishing returns right at a
+# genuine AC-extinction singularity. Switching to a bound-constrained solve
+# fixes the underlying issue instead of tuning dt/gate width around it.
+# Tightened -0.15/1.15 -> -0.05/1.05 (2026-07-09): during a grain's terminal
+# collapse the interface velocity diverges (v = d0_sub0/(beta_sub0*r), ~30
+# cells/step at dt=178 s when r~1.7 um) and the quadratic B-spline front
+# develops Gibbs undershoots; at +-0.15 the guard slept through committed
+# phi = -0.107 ripple states (2026-07-09 12.34.19 run, small-grain collapse
+# at t~700-1100 s). At +-0.05 those trials fail the solve and the rejection
+# feedback drives dt down to the interface-CFL scale (~2-17 s) through the
+# collapse, then dt regrows. Healthy converged states overshoot only ~-0.007,
+# so 0.05 keeps ample margin for legitimate trial-iterate wiggle.
+-phase_lo -0.05
+-phase_hi  1.05
+
+-Lambda 0.0                             # triple-junction penalty in F_tri (disabled).
+                                        # Like the removed Sigma_k this is a
+                                        # THREE-phase construction: a two-phase
+                                        # model has no triple junction. Kept at 0
+                                        # rather than removed, pending a decision.
+                                        # Only relevant for 3-phase ice/sediment/vapor
+                                        # contact lines; the 2-phase (ice+vapor, no sediment)
+                                        # geometry has no triple junction so Lambda=0 is
+                                        # physically correct here.
+
+# ---------- Time integrator --------------------------------------------------
+# Generalized-alpha spectral radius rho_inf. PETSc's TSALPHA default is
+# rho_inf = 1 (Alpha_m = Alpha_f = Gamma = 0.5, midpoint rule), which has ZERO
+# high-frequency dissipation: stiff modes are amplified by -1 per step, i.e.
+# they flip sign forever instead of decaying. With dt ~ 1e2-1e3 s the vapor
+# diffusion modes are stiff by a factor dt/tau_diff ~ 1e4-1e5, so any kick
+# (e.g. the step-51 dt-overshoot crisis, 2026-07-09 domerr-sync run) imprints
+# a spatially oscillatory ripple that rings undamped and "radiates" from the
+# source. rho_inf = 0.5 (the standard structural-dynamics choice, also used by
+# Kaempfer & Plapp-type codes) annihilates stiff transients within a few steps
+# while keeping second-order accuracy on the resolved dynamics.
+-ts_alpha_radius 0.5
+
+# ---------- Adaptive time stepping -------------------------------------------
+# dtmax = tau_kin(smallest grain)/5. The kinetic timescale tau_kin =
+# beta_sub0*L^2/d0_sub0 is what bounds dt for this model (NOT the vapor
+# Peclet number, which is dt-independent and ~1e-6 here): for the 9.375 um
+# grain tau_kin = 9.9e5*(9.375e-6)^2/1e-7 = 870 s. Measured on the
+# 2026-07-09 two-grain runs, Newton becomes a non-contractive limit cycle at
+# dt ~ 237-316 s = tau_kin/3, and the oscillating iterates carry phi ripples
+# up to -0.107 that pass BOTH the +-0.15 domain guard AND atol=1e-6 (an
+# O(0.1) phi error has nodal residual ~1e-12 in this dimensional scaling),
+# so they get committed and imprint the "radiating oscillation" artifact at
+# step ~52. Capping at 2e2 keeps dt on the 1.3335x ladder's 177.9 s rung =
+# tau_kin/4.9, safely inside the contractive range. RE-DERIVE when grain
+# sizes change: dtmax ~ beta_sub0*L_min^2/(5*d0_sub0).
+# (History: old cap 1.0e3 was a speed knob after vinewtonssls removed the
+# full-sublimation-singularity failure mode; see git history for details.)
+-dtmax 2.0e2
+-adap 1
+-NRmin 5                                # SNES iters strictly below this trigger dt growth
+-NRmax 15                               # SNES iters above this trigger dt shrink
+-max_rej 50                             # raised from 25: extra margin so the existing
+                                        # halving recovery has more room to find a small
+                                        # enough dt before TS gives up, on top of the
+                                        # dtmax cap above (job64406550 needed exactly 26
+                                        # consecutive halvings and ran out at 25)
+
+# ---------- Nonlinear solver (SNES) ------------------------------------------
+# VI bounds disabled: the strict [0,1] bound-constrained solve (vinewtonssls)
+# was tested but caused GT Jacobian singularity failures once a grain dissolved
+# (DOFs pinned at phi=0 → |∇phi|=0 → 1/|∇phi|^3 blows up at large dt).
+# Plain newtonls is more robust for multi-year Ostwald-ripening runs.
+#
+# To re-enable VI: set -vi_bounds 1 and -snes_type vinewtonssls (vinewtonrsls
+# hits a PETSc parallel bug with MPIBAIJ; vinewtonssls is the working choice).
+-vi_bounds 0
+-snes_type newtonls
+-snes_max_it 50
+-snes_rtol 1e-06
+-snes_atol 1e-06
+-snes_stol 1e-06
+# basic (full-step) line search, NOT bt. Diagnosed 2026-07-08 on the two-grain
+# GTphys case: near equilibrium the residual norm sits at machine-dust level
+# (||F|| ~ 2e-13 in this model's dimensional SI units), while any physically
+# meaningful Newton step must transit a second-order residual bump ~1e-8 from
+# the phi-T latent-heat/conduction coupling (k(phi)*grad T). So ||F(x+lambda*dx)||
+# > ||F(x)|| for EVERY lambda: bt backtracks to nothing and SNES returns
+# DIVERGED_LINE_SEARCH at any dt (verified identical with exact-LU linear
+# solves and with -snes_mf_operator true directional derivatives), which sent
+# the adaptive controller spiralling to dtmin. With basic, Newton converges
+# quadratically (ice-block residual 2.3e-13 -> 1.7e-20 in ONE iteration) and
+# the same case ran 51 steps / 0 rejects with dt ramping 1e-4 -> 2.4e+2 s.
+# Globalization safety nets that remain: the phase-bounds domain-error guard
+# in Residual (bad trial states fail the solve -> dt reduce), NRmin/NRmax
+# iteration-count dt adaptivity, and max_rej.
+-snes_linesearch_type basic
+# Print the divergence reason whenever a solve fails (silent on success).
+# Rationale: in the 2026-07-08/09 dt-collapse cascades, SNES aborted between
+# Newton it 0 and it 1 — i.e. inside the KSP solve or the trial-state function
+# evaluation — and nothing in the log said why, so every post-mortem was
+# guesswork. These make the next failure self-documenting at zero cost on
+# healthy steps.
+-snes_converged_reason ::failed
+-ksp_converged_reason ::failed
+
+# ---------- Linear solver (KSP + preconditioner) -----------------------------
+# bcgs, not gmres: with the Gibbs-Thomson curvature term active (d0_GT above),
+# the [ice,ice] Jacobian's curvature chain-rule term divides by |grad_ice|^3
+# and |grad_ice|^5 in the diffuse band (|grad_ice| ~ 1/eps ~ 1e6), and at
+# large dt -- where the stabilizing shift*mass-matrix diagonal is weak --
+# this conditioning pushed GMRES into DIVERGED_BREAKDOWN on the very first
+# Newton iteration (confirmed via -ksp_converged_reason: "DIVERGED_BREAKDOWN
+# iterations 400" -> SNES "DIVERGED_LINEAR_SOLVE iterations 0"), causing a
+# reject-and-halve cycle that stalled dt growth around 1e3 instead of
+# reaching dtmax. Same failure mode as 2D_touching_grains_hires.opts hit
+# before (which already overrides to bcgs per-file); moved the fix here
+# since GT is now active globally, not just in that one case.
+-ksp_type bcgs
+-ksp_rtol 1e-08
+# ksp_atol must sit far BELOW the nonlinear residual scale. This model
+# assembles dimensional SI residuals on a ~40 um domain: element volumes
+# ~1e-13 m^2 make ||F|| ~ 3e-13 at step start (per-DOF blocks: ice ~1e-13,
+# T ~1e-14, vapor ~1e-24). The old -ksp_atol 1e-12 was LARGER than ||F||,
+# so the linear solve could "converge" with a zero/garbage step; the bt
+# line search then found no decrease, SNES died before Newton it 1 (the
+# DOF-wise convergence test requires it >= 1), and the dt controller
+# spiralled to dtmin (2026-07-08 run 16.01.03, 63 rejects -> hard fail).
+# Rely on ksp_rtol; keep atol as a pure underflow guard only.
+-ksp_atol 1e-30
+-ksp_max_it 1000
+-ksp_gmres_restart 200
+-pc_type asm
+-pc_asm_overlap 1
+-sub_pc_type ilu
+-sub_pc_factor_levels 3

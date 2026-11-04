@@ -1,0 +1,59 @@
+# =============================================================================
+# geometry/2D_molaro_axisym_T-5pair.opts — Molaro et al. (2019) -5 C pair,
+# AXISYMMETRIC. Pair with experiment/molaro_T-5_h1.00_arrh.opts.
+#
+# The -5 C series' OWN grains (their Table: diameters 197/153 um at t=0):
+#   R = 98.5 / 76.5 um, t=0 neck WIDTH 32.51 um.
+# Both differ from the -20 C pair (202/145 um, neck 32.81), hence a separate
+# geometry — the two series are different grain pairs, not the same pair at
+# two temperatures.
+#
+# eps = 3.9e-7 is shared with 2D_molaro_axisym_T-20pair.opts so the
+# temperature comparison is not confounded by discretization. This file is
+# the BINDING one for that choice: at the Arrhenius alpha_c = 7.29e-2 for
+# -5 C, the K&P heat-channel ceiling is 3.94e-7 (comp_eps.py --T0 -5
+# --alpha 7.29e-2 -> Eq.43a D*_ia binding), so eps must sit under it. Note
+# this leaves only ~1% headroom: if alpha_c at -5 is revised UPWARD, eps
+# must shrink and BOTH geometries must be re-calibrated.
+#
+# CAVEAT (inherited, see .claude/ACTIVITY_LOG.md 2026-07-14): the ceiling
+# uses the D*_ia heat channel. On the conservative pure-ice channel this eps
+# is ~8.6x past the ceiling and the thin-interface correction has flipped
+# sign. If this run shows interface-kinetics artifacts, that is the first
+# suspect — re-derive with comp_eps.py --Dchannel ice.
+#
+# NECK CALIBRATION — DO NOT HAND-EDIT -ice_grain_cx. The IC sums diffuse
+# grain fields, so the measured phi=0.5 waist exceeds the sharp chord by
+# +4.93 um here (sharp 27.58 -> measured 32.51). Re-solve on any eps change:
+#
+#   python preprocess/calibrate_neck_geometry.py --axisym \
+#       --R0 7.65e-5 --R1 9.85e-5 --neck 32.51e-6 --eps <new_eps>
+#
+# Values below are its output at eps = 3.9e-7 (measured neck 32.510 um,
+# error < 0.1 nm).
+#
+# VERIFY AT RUNTIME:
+#   python postprocess/neck_width.py <run_dir> --axisym
+# =============================================================================
+
+-axisym 1
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.87776e-04
+-Ly 1.18500e-04
+-Lz 0
+
+-ice_grain_cx 9.65000e-05,2.69276e-04   # separation d = 1.727762e-04 m
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.65e-5,9.85e-5
+-ice_grain_ax 7.65e-5,9.85e-5
+-ice_grain_ay 7.65e-5,9.85e-5
+
+-Nx 1407                                # h = eps/sqrt(2)
+-Ny 430
+-Nz 1
+-eps 3.9000e-07
+
+-delt_t 1.0e-4
+-periodic 0

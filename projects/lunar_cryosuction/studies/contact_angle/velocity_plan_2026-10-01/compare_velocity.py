@@ -1,0 +1,538 @@
+#!/usr/bin/env python3
+"""Measured interface velocities of the velocity study against the theory.
+
+Reads SSA_evo.dat (channel) and the CSV that postprocess/wedge_gt_velocity.py
+leaves in each run folder (wedge), for every
+batch{A,B,C,D} run under --root, and writes into --out:
+
+    velocity_summary.csv          one row per run (and per meniscus on the wedge)
+    fig_channel_summary.png       v against theta, v against sigma_inf
+    fig_channel_time_maps.png     v(t) maps: time across, theta or sigma_inf up
+    fig_channel_phase_diagram.png theta x sigma_inf, coloured by v
+    fig_wedge_summary.png         as the channel summary, both menisci
+    fig_wedge_time_maps_ac*.png   as the channel maps, both menisci
+    fig_channel_velocity_vs_time.png   v(t) curves, one per run, per batch
+    fig_wedge_velocity_vs_time_ac*.png as above, both menisci
+
+WHAT "VELOCITY" MEANS HERE
+
+  channel  U = (dA/dt) / (2H): the rate at which the mean meniscus position
+           advances, with A(t) the ice area the solver writes to SSA_evo.dat
+           at every step. It is the quantity the series-resistance relation
+           predicts (vapor flux through the channel cross-section H), and it
+           is insensitive to the meniscus still relaxing from the clipped-disc
+           IC to its equilibrium arc, which the mid-plane and contact-line
+           velocities are not. (dA/dt)/arc-length, the mean NORMAL velocity,
+           is smaller by arc/2H = 1.03 to 1.24.
+  wedge    the centreline velocity of each meniscus: central differences of
+           the positions wedge_gt_velocity.py tracks, one per stored snapshot.
+           The band IC is the theta = 90 shape, so at any other angle the
+           centreline also carries the shape relaxation; only its late-time
+           value and its slope against sigma_inf are comparable to theory.
+
+THEORY (make_theory_figures.py), with beta = beta_sub0, no fitted offset, and
+evaluated at each run's MEASURED meniscus position:
+
+    channel   v = (sigma_inf + 2 d0 cos(theta)/H) / (beta + K l),  l = (Lx - A/H)/2
+    wedge     v_in/out = (sigma_inf + d0 (cos(theta) +/- sin(alpha)) / (r sin(alpha)))
+                         / (beta + K r ln(r/r_L or r_R/r))
+
+v > 0 is growth throughout.
+
+Usage:
+    python3 compare_velocity.py --root <velocity_study folder> [--out <dir>]
+"""
+import argparse
+import glob
+import os
+import re
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+import make_theory_figures as T    # constants, theory curvatures and the house style
+
+LX = 375e-6                        # channel_2D_H125um_eps0.86um
+ALPHAS = (1e-3, 1e-2)
+NM_DAY = T.NM_DAY
+DAY = T.DAY
+
+# Diverging with BLACK at zero (matplotlib's "berlin", reversed so growth is
+# blue and sublimation red): a stalled interface reads as dark, and the two
+# signs brighten away from it. --cmap swaps it ("managua", "vanimo", ...).
+DIVERGING = matplotlib.colormaps["berlin_r"].copy()
+DIVERGING.set_bad("#ffffff")
+C_A = {1e-3: T.BLUE, 1e-2: T.ORANGE}           # the two alpha_c series
+C_M = {"inner": T.BLUE, "outer": T.ORANGE}     # the two wedge menisci
+AC_LABEL = {1e-3: r"$\alpha_c = 10^{-3}$", 1e-2: r"$\alpha_c = 10^{-2}$"}
+
+
+def beta0(ac):
+    return T.BETA_HK1 / ac
+
+
+def v_channel(th_deg, sig, ell, ac, beta=None):
+    b = beta0(ac) if beta is None else beta
+    return (sig + 2.0 * T.D0 * np.cos(np.radians(th_deg)) / T.H) / (b + T.K * ell)
+
+
+def v_wedge(which, th_deg, sig, r, ac, beta=None):
+    b = beta0(ac) if beta is None else beta
+    c = np.cos(np.radians(th_deg))
+    if which == "inner":
+        return (sig + T.D0 * (c + T.SA) / (r * T.SA)) / (b + T.K * r * np.log(r / T.R_L))
+    return (sig + T.D0 * (c - T.SA) / (r * T.SA)) / (b + T.K * r * np.log(T.R_R / r))
+
+
+# --- loading -----------------------------------------------------------------
+NAME = re.compile(r"(channel|wedge).*theta(\d+)(?:_sig([mp])(\d)e-5)?_ac(1e-[23])$")
+
+
+def load(root):
+    """Every run under root/batch_*/ as a dict with its time series."""
+    runs = []
+    for d in sorted(glob.glob(os.path.join(root, "batch_*", "*__*"))):
+        m = NAME.search(d)
+        if not m:
+            continue
+        geom, th, s, n, ac = m.groups()
+        sig = 0.0 if s is None else (1 if s == "p" else -1) * int(n) * 1e-5
+        r = dict(geom=geom, theta=int(th), sigma=sig, ac=float(ac), dir=d)
+        r["beta"] = beta_realised(d, r["ac"])
+        if geom == "channel":
+            f = os.path.join(d, "SSA_evo.dat")
+            if not os.path.exists(f):
+                print("  missing", f)
+                continue
+            t, A = area_series(f)
+            r["t"] = t
+            r["ell"] = 0.5 * (LX - A / T.H)
+            r["v"] = {"mean": np.gradient(A, t) / (2.0 * T.H)}
+            r["v_th"] = {"mean": v_channel(r["theta"], sig, r["ell"], r["ac"])}
+            r["v_thin"] = {"mean": v_channel(r["theta"], sig, r["ell"], r["ac"], r["beta"])}
+        else:
+            f = os.path.join(d, "wedge_gt_velocity.csv")
+            if not os.path.exists(f):
+                print("  missing", f)
+                continue
+            c = np.genfromtxt(f, delimiter=",", names=True)
+            ok = np.isfinite(c["vn_left_meas"]) & np.isfinite(c["vn_right_meas"])
+            c = c[ok]
+            r["t"] = c["time"]
+            r["r"] = {"inner": c["r_left"], "outer": c["r_right"]}
+            # Plain central differences of the centreline positions. The CSV's
+            # own vn_*_meas is a 21-snapshot sliding fit: it smears every
+            # feature over +/-25 days and goes one-sided inside 25 days of
+            # either end, which puts kinks in the curve where nothing happens
+            # in the run. Growth moves the inner meniscus to SMALLER r.
+            r["v"] = {"inner": -np.gradient(c["r_left"], c["time"]),
+                      "outer": np.gradient(c["r_right"], c["time"])}
+            r["v_th"] = {k: v_wedge(k, r["theta"], sig, r["r"][k], r["ac"])
+                         for k in ("inner", "outer")}
+            r["v_thin"] = {k: v_wedge(k, r["theta"], sig, r["r"][k], r["ac"], r["beta"])
+                           for k in ("inner", "outer")}
+        runs.append(r)
+    return runs
+
+
+TAU_TERMS = re.compile(r"tau_sub terms:\s+kinetic\s+(\S+) s \+ thermal\s+(\S+) \+ vapor\s+(\S+)")
+
+
+def beta_realised(run_dir, ac):
+    """The kinetic coefficient the discretisation delivers.
+
+    tau_sub carries two thin-interface terms on top of the kinetic one, and
+    for this one-sided model they are not subtracted back off (see
+    wedge_gt_velocity.py), so the interface obeys beta_sub0*(tau_sub/tau_kin),
+    not beta_sub0. The three terms are read from the run's own outp.txt."""
+    try:
+        with open(os.path.join(run_dir, "outp.txt"), errors="replace") as fh:
+            for line in fh:
+                m = TAU_TERMS.search(line)
+                if m:
+                    k, th, v = map(float, m.groups())
+                    return beta0(ac) * (k + th + v) / k
+    except OSError:
+        pass
+    return beta0(ac)
+
+
+def area_series(path, dt_out=0.25 * DAY):
+    """Ice area A(t) from SSA_evo.dat (column 2, written every solver step),
+    resampled to a uniform dt_out.
+
+    The file carries seven significant digits, so differencing consecutive
+    steps is quantisation noise (a few nm/day at alpha_c = 1e-2). On the
+    quarter-day grid the central difference spans half a day and the noise
+    falls below 0.1 nm/day, while still resolving the run ~6x finer than the
+    stored snapshots."""
+    d = np.loadtxt(path, usecols=(1, 2))
+    t, i = np.unique(d[:, 1], return_index=True)
+    tg = np.arange(0.0, t[-1] + 0.5 * dt_out, dt_out)
+    tg = tg[tg <= t[-1]]
+    return tg, np.interp(tg, t, d[i, 0])
+
+
+def window(r, lo, hi):
+    """Mask for lo..hi as fractions of the run's own span."""
+    t = r["t"]
+    return (t >= lo * t.max()) & (t <= hi * t.max()) & (t > DAY)
+
+
+def avg(r, key, lo=0.5, hi=1.0, theory=False):
+    """theory: False = measured, True = beta_sub0, "thin" = realised beta."""
+    w = window(r, lo, hi)
+    src = r["v_thin"] if theory == "thin" else r["v_th"] if theory else r["v"]
+    return float(np.mean(src[key][w]))
+
+
+def pick(runs, geom, ac, sweep):
+    """The theta sweep (sigma = 0) or the sigma sweep (theta = 60), in order."""
+    sel = [r for r in runs if r["geom"] == geom and r["ac"] == ac]
+    if sweep == "theta":
+        return sorted((r for r in sel if r["sigma"] == 0.0), key=lambda r: r["theta"])
+    return sorted((r for r in sel if r["theta"] == 60), key=lambda r: r["sigma"])
+
+
+def fit_beta(runs, ac):
+    """Least-squares beta in v(t) = F/(beta + K l(t)) over the channel runs,
+    on the second-half time series. (Fitting run averages against the
+    run-averaged l is biased low when l changes a lot during the window.)"""
+    F, V, L = [], [], []
+    for r in runs:
+        if r["geom"] != "channel" or r["ac"] != ac:
+            continue
+        w = window(r, 0.5, 1.0)
+        f = r["sigma"] + 2 * T.D0 * np.cos(np.radians(r["theta"])) / T.H
+        F.append(np.full(w.sum(), f)); V.append(r["v"]["mean"][w]); L.append(r["ell"][w])
+    F, V, L = map(np.concatenate, (F, V, L))
+    bs = np.linspace(0.2, 5.0, 4801) * beta0(ac)
+    err = [np.sum((V - F / (b + T.K * L)) ** 2) for b in bs]
+    return bs[int(np.argmin(err))]
+
+
+# --- figures -----------------------------------------------------------------
+def save(fig, out, name):
+    fig.savefig(os.path.join(out, name), dpi=200, facecolor="white")
+    plt.close(fig)
+    print("wrote", name)
+
+
+def sweep_axis(ax, sweep):
+    if sweep == "theta":
+        ax.set_xlabel(r"contact angle $\theta$ [deg]")
+        ax.set_xticks([30, 60, 90, 120, 150])
+    else:
+        ax.set_xlabel(r"reservoir supersaturation $\sigma_\infty$ [$10^{-5}$]")
+    ax.axhline(0, color=T.MUTED, lw=0.8, zorder=1)
+
+
+def xval(r, sweep):
+    return r["theta"] if sweep == "theta" else r["sigma"] * 1e5
+
+
+def fig_channel_summary(runs, out):
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.6), constrained_layout=True)
+    for ax, sweep, letter in zip(axes, ("theta", "sigma"), "ab"):
+        for ac in ALPHAS:
+            rr = pick(runs, "channel", ac, sweep)
+            if not rr:
+                continue
+            x = np.array([xval(r, sweep) for r in rr])
+            ax.plot(x, [avg(r, "mean", theory=True) * NM_DAY for r in rr],
+                    color=C_A[ac], lw=2.0, zorder=2,
+                    label="theory, " + AC_LABEL[ac])
+            ax.plot(x, [avg(r, "mean") * NM_DAY for r in rr], "o", ms=9,
+                    mfc=C_A[ac], mec="white", mew=2.0, zorder=3,
+                    label="simulation, " + AC_LABEL[ac])
+        sweep_axis(ax, sweep)
+        ax.set_ylabel("meniscus velocity [nm/day]")
+        T.panel(ax, letter)
+    axes[0].legend(fontsize=12, loc="upper right")
+    axes[0].text(0.03, 0.05, r"$\sigma_\infty = 0$", transform=axes[0].transAxes, color=T.MUTED)
+    axes[1].text(0.03, 0.92, r"$\theta = 60^\circ$", transform=axes[1].transAxes, color=T.MUTED)
+    save(fig, out, "fig_channel_summary.png")
+
+
+def time_map(ax, rr, key, sweep, t_end):
+    """Rows = runs, columns = time, colour = velocity. Returns the mappable."""
+    tg = np.linspace(1.0, t_end, 240)                  # days
+    Z = np.full((len(rr), tg.size), np.nan)
+    for i, r in enumerate(rr):
+        td = r["t"] / DAY
+        m = td >= 1.0
+        Z[i] = np.interp(tg, td[m], r["v"][key][m] * NM_DAY, left=np.nan, right=np.nan)
+    vmax = np.nanpercentile(np.abs(Z), 99)
+    im = None
+    for i in range(len(rr)):                           # one band per run, gap between
+        im = ax.imshow(Z[i:i + 1], aspect="auto", cmap=DIVERGING, vmin=-vmax, vmax=vmax,
+                       extent=(tg[0], tg[-1], i - 0.44, i + 0.44), interpolation="nearest")
+    ax.set_ylim(-0.6, len(rr) - 0.4)
+    ax.set_yticks(range(len(rr)))
+    if sweep == "theta":
+        ax.set_yticklabels(["%d°" % r["theta"] for r in rr])
+        ax.set_ylabel(r"contact angle $\theta$")
+    else:
+        ax.set_yticklabels(["%+d" % round(r["sigma"] * 1e5) if r["sigma"] else "0" for r in rr])
+        ax.set_ylabel(r"$\sigma_\infty$ [$10^{-5}$]")
+    ax.set_xlim(tg[0], tg[-1])
+    ax.grid(False)
+    for s in ("left", "bottom"):
+        ax.spines[s].set_visible(False)
+    ax.tick_params(length=0)
+    return im
+
+
+def fig_channel_time_maps(runs, out):
+    fig, axes = plt.subplots(2, 2, figsize=(14.5, 8.6), constrained_layout=True)
+    for i, ac in enumerate(ALPHAS):
+        for j, sweep in enumerate(("theta", "sigma")):
+            ax = axes[i, j]
+            rr = pick(runs, "channel", ac, sweep)
+            if not rr:
+                ax.set_axis_off()
+                continue
+            im = time_map(ax, rr, "mean", sweep, 90.0)
+            cb = fig.colorbar(im, ax=ax, pad=0.02)
+            cb.set_label("velocity [nm/day]", fontsize=13)
+            cb.outline.set_visible(False)
+            ax.set_title(AC_LABEL[ac] + (r",  $\sigma_\infty = 0$" if sweep == "theta"
+                                         else r",  $\theta = 60^\circ$"),
+                         fontsize=14, loc="left", color=T.MUTED)
+            if i == 1:
+                ax.set_xlabel("time [days]")
+            T.panel(ax, "abcd"[2 * i + j])
+    save(fig, out, "fig_channel_time_maps.png")
+
+
+def fig_channel_phase(runs, out):
+    """theta x sigma_inf coloured by velocity: theory field, simulations on top."""
+    fig, axes = plt.subplots(1, 2, figsize=(14.5, 6.0), constrained_layout=True)
+    th = np.linspace(20, 160, 281)
+    sg = np.linspace(-3.6e-5, 3.6e-5, 241)
+    TH, SG = np.meshgrid(th, sg)
+    for ax, ac, letter in zip(axes, ALPHAS, "ab"):
+        Z = v_channel(TH, SG, T.L_CH, ac) * NM_DAY
+        vmax = np.abs(Z).max()
+        im = ax.pcolormesh(TH, SG * 1e5, Z, cmap=DIVERGING, vmin=-vmax, vmax=vmax,
+                           shading="auto", rasterized=True)
+        ax.contour(TH, SG * 1e5, Z, levels=[0.0], colors=["white"], linewidths=1.6)
+        sel = [r for r in runs if r["geom"] == "channel" and r["ac"] == ac]
+        if sel:
+            ax.scatter([r["theta"] for r in sel], [r["sigma"] * 1e5 for r in sel],
+                       c=[avg(r, "mean", 0.05, 0.25) * NM_DAY for r in sel],
+                       cmap=DIVERGING, vmin=-vmax, vmax=vmax, s=190,
+                       edgecolors="white", linewidths=2.2, zorder=3)
+        cb = fig.colorbar(im, ax=ax, pad=0.02)
+        cb.set_label("velocity [nm/day]", fontsize=13)
+        cb.outline.set_visible(False)
+        ax.set_xlabel(r"contact angle $\theta$ [deg]")
+        ax.set_ylabel(r"reservoir supersaturation $\sigma_\infty$ [$10^{-5}$]")
+        ax.set_xticks([30, 60, 90, 120, 150])
+        ax.grid(False)
+        ax.set_title(AC_LABEL[ac], fontsize=14, loc="left", color=T.MUTED)
+        ax.text(0.03, 0.93, "growth", transform=ax.transAxes, color=T.INK)
+        ax.text(0.97, 0.04, "sublimation", transform=ax.transAxes, ha="right", color=T.INK)
+        T.panel(ax, letter)
+    save(fig, out, "fig_channel_phase_diagram.png")
+
+
+def fig_wedge_summary(runs, out):
+    fig, axes = plt.subplots(2, 2, figsize=(13.5, 10.0), constrained_layout=True)
+    for i, ac in enumerate(ALPHAS):
+        for j, sweep in enumerate(("theta", "sigma")):
+            ax = axes[i, j]
+            rr = pick(runs, "wedge", ac, sweep)
+            x = np.array([xval(r, sweep) for r in rr])
+            for key in ("inner", "outer"):
+                ax.plot(x, [avg(r, key, theory=True) * NM_DAY for r in rr],
+                        color=C_M[key], lw=2.0, zorder=2, label="theory, %s meniscus" % key)
+                ax.plot(x, [avg(r, key) * NM_DAY for r in rr], "o", ms=9,
+                        mfc=C_M[key], mec="white", mew=2.0, zorder=3,
+                        label="simulation, %s meniscus" % key)
+            sweep_axis(ax, sweep)
+            ax.set_ylabel("centreline velocity [nm/day]")
+            ax.set_title(AC_LABEL[ac] + (r",  $\sigma_\infty = 0$" if sweep == "theta"
+                                         else r",  $\theta = 60^\circ$"),
+                         fontsize=14, loc="left", color=T.MUTED)
+            T.panel(ax, "abcd"[2 * i + j])
+    axes[0, 0].legend(fontsize=12)
+    save(fig, out, "fig_wedge_summary.png")
+
+
+def fig_wedge_time_maps(runs, out, ac):
+    fig, axes = plt.subplots(2, 2, figsize=(14.5, 8.6), constrained_layout=True)
+    for i, key in enumerate(("inner", "outer")):
+        for j, sweep in enumerate(("theta", "sigma")):
+            ax = axes[i, j]
+            rr = pick(runs, "wedge", ac, sweep)
+            if not rr:
+                ax.set_axis_off()
+                continue
+            im = time_map(ax, rr, key, sweep, 150.0)
+            cb = fig.colorbar(im, ax=ax, pad=0.02)
+            cb.set_label("velocity [nm/day]", fontsize=13)
+            cb.outline.set_visible(False)
+            ax.set_title("%s meniscus, %s" % (key, r"$\sigma_\infty = 0$" if sweep == "theta"
+                                              else r"$\theta = 60^\circ$"),
+                         fontsize=14, loc="left", color=T.MUTED)
+            if i == 1:
+                ax.set_xlabel("time [days]")
+            T.panel(ax, "abcd"[2 * i + j])
+    save(fig, out, "fig_wedge_time_maps_ac%s.png" % ("1e-3" if ac == 1e-3 else "1e-2"))
+
+
+def sweep_colors(rr, sweep):
+    """One colour per run: blue on the growth side of the sweep, red on the
+    sublimation side, grey for the neutral run (theta = 90 or sigma_inf = 0)."""
+    x = np.array([90.0 - r["theta"] if sweep == "theta" else r["sigma"] * 1e5 for r in rr])
+    s = x / max(np.abs(x).max(), 1e-30)                 # -1 .. 1, + = growth side
+    blues, reds = matplotlib.colormaps["Blues"], matplotlib.colormaps["Reds"]
+    return [T.GREY if abs(v) < 1e-9 else (blues if v > 0 else reds)(0.45 + 0.5 * abs(v))
+            for v in s]
+
+
+def velocity_curves(ax, rr, key, sweep, t_end):
+    """Measured v(t) for every run of one sweep (solid), theory dashed."""
+    labels = []
+    allv = np.concatenate([r["v"][key][r["t"] >= DAY] for r in rr]) * NM_DAY
+    pad = 0.07 * (allv.max() - allv.min())
+    ax.set_ylim(allv.min() - pad, allv.max() + pad)     # theory may run off-scale
+    for r, col in zip(rr, sweep_colors(rr, sweep)):
+        td = r["t"] / DAY
+        m = td >= 1.0
+        ax.plot(td[m], r["v_th"][key][m] * NM_DAY, color=col, lw=1.1, ls=(0, (4, 3)), zorder=2)
+        ax.plot(td[m], r["v"][key][m] * NM_DAY, color=col, lw=2.2, zorder=3)
+        name = ("%d°" % r["theta"]) if sweep == "theta" else (
+            "%+d" % round(r["sigma"] * 1e5) if r["sigma"] else "0")
+        labels.append([td[m][-1], r["v"][key][m][-1] * NM_DAY, name])
+    # direct labels at the line ends, nudged apart where two ends nearly coincide
+    lo, hi = ax.get_ylim()
+    gap = 0.052 * (hi - lo)
+    labels.sort(key=lambda q: q[1])
+    for i in range(1, len(labels)):
+        labels[i][1] = max(labels[i][1], labels[i - 1][1] + gap)
+    for x, y, name in labels:
+        ax.text(x + 0.012 * t_end, y, name, va="center", fontsize=12, color=T.MUTED,
+                clip_on=False)
+    ax.axhline(0, color=T.MUTED, lw=0.8, zorder=1)
+    ax.set_xlim(0, t_end)
+    ax.set_ylabel("velocity [nm/day]")
+    ax.text(1.012, 1.03, r"$\theta$" if sweep == "theta" else r"$\sigma_\infty$ [$10^{-5}$]",
+            transform=ax.transAxes, fontsize=12, color=T.MUTED, va="bottom")
+
+
+def line_key(fig):
+    from matplotlib.lines import Line2D
+    fig.legend(handles=[Line2D([], [], color=T.MUTED, lw=2.2, label="simulation"),
+                        Line2D([], [], color=T.MUTED, lw=1.1, ls=(0, (4, 3)), label="theory")],
+               loc="outside upper right", ncols=2, fontsize=12)
+
+
+def fig_channel_curves(runs, out):
+    """Batches A and B at both alpha_c: one v(t) curve per run."""
+    fig, axes = plt.subplots(2, 2, figsize=(14.5, 9.6), constrained_layout=True)
+    for i, ac in enumerate(ALPHAS):
+        for j, sweep in enumerate(("theta", "sigma")):
+            ax = axes[i, j]
+            rr = pick(runs, "channel", ac, sweep)
+            if not rr:
+                ax.set_axis_off()
+                continue
+            velocity_curves(ax, rr, "mean", sweep, 90.0)
+            ax.set_title("batch %s:  %s,  %s" % (
+                "AB"[j], AC_LABEL[ac],
+                r"$\sigma_\infty = 0$" if sweep == "theta" else r"$\theta = 60^\circ$"),
+                fontsize=14, loc="left", color=T.MUTED)
+            if i == 1:
+                ax.set_xlabel("time [days]")
+            T.panel(ax, "abcd"[2 * i + j])
+    line_key(fig)
+    save(fig, out, "fig_channel_velocity_vs_time.png")
+
+
+def fig_wedge_curves(runs, out, ac):
+    """Batches C and D at one alpha_c: v(t) per run, for each meniscus."""
+    fig, axes = plt.subplots(2, 2, figsize=(14.5, 9.6), constrained_layout=True)
+    for i, key in enumerate(("inner", "outer")):
+        for j, sweep in enumerate(("theta", "sigma")):
+            ax = axes[i, j]
+            rr = pick(runs, "wedge", ac, sweep)
+            if not rr:
+                ax.set_axis_off()
+                continue
+            velocity_curves(ax, rr, key, sweep, 150.0)
+            ax.set_title("batch %s:  %s meniscus,  %s" % (
+                "CD"[j], key,
+                r"$\sigma_\infty = 0$" if sweep == "theta" else r"$\theta = 60^\circ$"),
+                fontsize=14, loc="left", color=T.MUTED)
+            if i == 1:
+                ax.set_xlabel("time [days]")
+            T.panel(ax, "abcd"[2 * i + j])
+    line_key(fig)
+    save(fig, out, "fig_wedge_velocity_vs_time_ac%s.png" % ("1e-3" if ac == 1e-3 else "1e-2"))
+
+
+def write_summary(runs, out):
+    path = os.path.join(out, "velocity_summary.csv")
+    with open(path, "w") as fh:
+        fh.write("# second half of each run; v > 0 = growth; theory uses beta_sub0 at the "
+                 "measured meniscus position\n")
+        fh.write("# *_thin: theory with the kinetic coefficient the solver realises, "
+                 "beta_sub0*(tau_sub/tau_kin)\n")
+        fh.write("geometry,alpha_c,theta_deg,sigma_inf,meniscus,t_end_d,"
+                 "v_meas_m_s,v_theory_m_s,v_meas_nm_day,v_theory_nm_day,meas_over_theory,"
+                 "v_theory_thin_nm_day,meas_over_theory_thin\n")
+        for r in sorted(runs, key=lambda r: (r["geom"], r["ac"], r["sigma"] != 0, r["theta"], r["sigma"])):
+            for key in r["v"]:
+                vm, vt, vn = avg(r, key), avg(r, key, theory=True), avg(r, key, theory="thin")
+                ratio = vm / vt if abs(vt) > 1e-15 else float("nan")
+                ratio_n = vm / vn if abs(vn) > 1e-15 else float("nan")
+                fh.write("%s,%g,%d,%g,%s,%.1f,%.4e,%.4e,%.2f,%.2f,%.3f,%.2f,%.3f\n"
+                         % (r["geom"], r["ac"], r["theta"], r["sigma"], key,
+                            r["t"].max() / DAY, vm, vt, vm * NM_DAY, vt * NM_DAY, ratio,
+                            vn * NM_DAY, ratio_n))
+    print("wrote velocity_summary.csv")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--root", required=True, help="folder holding the batch_* folders")
+    ap.add_argument("--out", default=None, help="output folder (default: <root>/figures)")
+    ap.add_argument("--cmap", default=None,
+                    help="diverging matplotlib colormap (default: berlin_r)")
+    args = ap.parse_args()
+    if args.cmap:
+        global DIVERGING
+        DIVERGING = matplotlib.colormaps[args.cmap].copy()
+        DIVERGING.set_bad("#ffffff")
+    out = args.out or os.path.join(args.root, "figures")
+    os.makedirs(out, exist_ok=True)
+
+    runs = load(args.root)
+    print("%d runs: %d channel, %d wedge" % (
+        len(runs), sum(r["geom"] == "channel" for r in runs),
+        sum(r["geom"] == "wedge" for r in runs)))
+    for ac in ALPHAS:
+        b = fit_beta(runs, ac)
+        real = [r["beta"] for r in runs if r["ac"] == ac][0]
+        print("  alpha_c = %g: fitted beta = %.3f x beta_sub0; realised by tau_sub = %.3f x"
+              % (ac, b / beta0(ac), real / beta0(ac)))
+
+    write_summary(runs, out)
+    fig_channel_summary(runs, out)
+    fig_channel_time_maps(runs, out)
+    fig_channel_phase(runs, out)
+    fig_wedge_summary(runs, out)
+    for ac in ALPHAS:
+        fig_wedge_time_maps(runs, out, ac)
+    fig_channel_curves(runs, out)
+    for ac in ALPHAS:
+        fig_wedge_curves(runs, out, ac)
+
+
+if __name__ == "__main__":
+    main()

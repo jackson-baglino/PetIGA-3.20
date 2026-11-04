@@ -1,0 +1,71 @@
+# =============================================================================
+# experiment/tgrad/tgrad_T-20_h1.00_90d_G0_rhovBC.opts — 90 days at -20 C, NO temperature
+# gradient, with the pore's OPEN ENDS held at 100% humidity (Dirichlet vapor).
+#
+# Tgrad_T-20_G0_90d.opts with one change: the x-faces become vapor reservoirs.
+#
+# WHY. The closed-system wedge run relaxed and then stopped dead (late drift
+# ~0, extrapolating to 3e4 yr per band length). Cause, measured: a deposit
+# spanning the channel is a vapor BARRIER — phi_aef = max(1-phi, air_lim) with
+# air_lim=1e-6 in src/assembly.c suppresses vapor diffusion through ice by 1e6
+# — so the two sides equilibrated SEPARATELY with their own menisci and sat at
+# densities they could not equalise. Measured split +9.269e-06 against the
+# Gibbs-Thomson prediction d0*(1/r1 + 1/r2) = +8.472e-06, agreeing to 9%: the
+# curvature difference was real and correctly reproduced, it just had no path
+# to act through.
+#
+# Reservoirs at the open ends give each side its own path. Physically they
+# stand in for the rest of a regolith pore network — a plug in one throat is
+# bypassed by neighbouring pores, so neither side is truly sealed.
+#
+# -rhovfix_axis 0 pins ONLY the x-faces. The default (-1) pins every face,
+# which here would put a vapor reservoir on the solid regolith walls, feeding
+# the ice at its contact line and corrupting the contact angle.
+#
+# WHAT TO EXPECT. Both reservoirs sit at rho_vs(T), the FLAT-interface value.
+#   - The inner (left) meniscus is CONCAVE, so its own equilibrium density is
+#     rho_vs*(1 - d0/r1), BELOW the reservoir -> it is supersaturated -> ice
+#     DEPOSITS there and the face advances toward the narrow end.
+#   - The outer (right) meniscus is CONVEX, equilibrium rho_vs*(1 + d0/r2),
+#     ABOVE the reservoir -> undersaturated -> ice SUBLIMATES and that face
+#     also retreats toward the narrow end.
+# Both faces move the same way: the deposit migrates toward the throat.
+#
+# The two rates nearly cancel in mass terms, which is a useful check: the
+# supersaturation scales as 1/r while the face area scales as r, so their
+# product is r-independent. Expect near-constant deposit mass with a moving
+# centroid, NOT growth or shrinkage.
+#
+# Rate estimate (diffusion-limited, reservoir to face over ~6.5e-5 m):
+# ~5-10 um of travel over 90 days. Small, but two orders of magnitude above
+# the 0.006 um/yr noise floor the closed run established.
+#
+# MASS IS NOT CONSERVED — this is now an OPEN system, and vapor crosses the
+# x-faces by construction. postprocess/plot_mass.py's conservation gate does
+# NOT apply here; use it only on the closed (Neumann) runs. The gate to watch
+# instead is postprocess/track_wedge_band.py's late-half drift in r_c.
+#
+# THE CONTROL THIS NEEDS (not built yet). Reservoirs at rho_vs are out of
+# equilibrium with any curved surface, so in principle they can drive motion on
+# their own. The clean null is the same setup in a PARALLEL channel: there a
+# bridging deposit at 90 deg has FLAT menisci, equilibrium exactly rho_vs, and
+# must NOT move. If it does, the motion is the BC and not the taper. Worth
+# running before any migration measured here is reported as a taper effect.
+# =============================================================================
+
+-t_final 7.776e6                        # 90 days
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                  # no gradient: geometry is the only driver
+
+-flag_BC_Tfix 1                          # pin wall temperatures (uniform)
+-flag_BC_rhovfix 1                       # vapor reservoirs...
+-rhovfix_axis 0                          # ...on the x-faces ONLY (open pore ends)
+
+-beta_sub0 5.9216e5                      # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                        # physical capillary length at -20 C
+
+-dtmax 5.7e2                             # 1.093 * tau_sub (tau_sub = 5.233e2 s)
+-dtCFL 1
+-dtCFL_dphimax 0.2

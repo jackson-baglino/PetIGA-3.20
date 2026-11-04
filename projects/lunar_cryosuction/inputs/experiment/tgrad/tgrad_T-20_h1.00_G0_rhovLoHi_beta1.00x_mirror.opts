@@ -1,0 +1,63 @@
+# =============================================================================
+# experiment/tgrad/tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x.opts
+#
+# MIRROR CONTROL for the beta_sub0 sweep. Identical to
+# tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x.opts except that -rhovfix_lo and
+# -rhovfix_hi are exchanged.
+#
+# Pair with geometry/wedge/wedge_2D_L300um_eps0.86um_90deg_mirror.opts, which
+# reflects the channel about x = Lx/2: the wide end moves to x=0, the throat to
+# x=Lx, and the virtual apex to (4.0e-04, 1.0e-04). Reflecting the geometry
+# without also exchanging the two reservoirs would change the physics rather
+# than mirror it, since -rhovfix_lo is tied to the x=0 face and that face is now
+# the WIDE end.
+#
+# EXPECTED RESULT: the two menisci exchange roles exactly. The inner (concave)
+# meniscus is now on the right, so the mirrored run's OUTER-meniscus numbers
+# should reproduce the unmirrored run's INNER ones and vice versa, to within the
+# quoted sigma-extraction sensitivity. The unmirrored 1.00x arm shows a residual
+# ~1% difference between the two menisci; this run determines whether that
+# difference follows the geometry (concave vs convex, hence physical) or the
+# side (left vs right, hence an artifact of the mesh or the measurement).
+#
+# The thin-interface counter-terms were removed from tau_sub on 2026-09-09
+# (-thin_iface_corr, default 0). Before that change the realised kinetic
+# coefficient was beta_sub0 + Delta rather than beta_sub0, and this sweep
+# measured the resulting shortfall as 0.3160 / 0.5359 / 0.8220 / 0.9487 across
+# the four arms (batch 2026-08-25__18.14.15_beta_ladder). With the correction
+# removed the prediction for EVERY arm is
+#
+#     v_n,measured / v_n,predicted  =  1.0000
+#
+# so the four arms together test that the fix holds over a 40x range in
+# beta_sub0, not merely at one point. Read the ratio from each run's
+# postprocess/wedge_gt_velocity.py summary.
+#
+# THIS ARM: beta_sub0 = 5.9216e+05 s/m  (1x the reference 5.9216e+05)
+#           tau_sub   = 429.21 s   (was 522.13 s before the fix)
+#
+# -t_final and -dtmax are recomputed for the corrected tau_sub: v_n now scales
+# as 1/beta_sub0 rather than 1/(beta_sub0 + Delta), so both had to move. They
+# are set so every arm runs the same 3406 steps and moves the menisci the
+# same ~2 control-point spacings, giving all four equal cost and equal precision.
+#   -dtmax   = 1.093 * tau_sub
+#   -t_final scales with beta_sub0
+# =============================================================================
+
+-t_final 1.5980e+06                     # 18.50 d
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                  # isothermal: geometry and the BCs are the only drivers
+
+-flag_BC_Tfix 1                          # pin wall temperatures (uniform)
+-flag_BC_rhovfix 1                       # vapor reservoirs...
+-rhovfix_axis 0                          # ...on the x-faces ONLY (open pore ends)
+-rhovfix_lo 0.999995                     # rho_v at x=0  / rho_vs
+-rhovfix_hi 1.000005                     # rho_v at x=Lx / rho_vs
+
+-beta_sub0 5.9216e+05                   # 1x reference; predicted ratio 1.0000
+
+-dtmax 4.691e+02                        # 1.093 * tau_sub (429.2 s)
+-dtCFL 1
+-dtCFL_dphimax 0.2

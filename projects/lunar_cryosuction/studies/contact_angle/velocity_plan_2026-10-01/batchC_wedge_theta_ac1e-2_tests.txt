@@ -1,0 +1,7 @@
+# batchC -- wedge, theta sweep at sigma_inf = 0, 150 d, alpha_c = 1e-2.
+# for scripts/HPC/submit_batch.sh --tests-file; see README.md in this folder.
+wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta30_ac1e-2
+wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta60_ac1e-2
+wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta90_ac1e-2
+wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta120_ac1e-2
+wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta150_ac1e-2

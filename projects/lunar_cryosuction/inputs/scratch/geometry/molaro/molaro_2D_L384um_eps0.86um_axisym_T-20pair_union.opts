@@ -1,0 +1,62 @@
+# =============================================================================
+# geometry/2D_molaro_axisym_T-20pair_union_epsloose.opts — loose arm of the
+# UNION-IC eps-convergence series. Pair with
+# experiment/molaro_T-20_h1.00_arrh_epsloose.opts (dtmax = 5.7e2, unchanged).
+#
+# WHY THIS SERIES EXISTS (supersedes the *_fixgeom series)
+# --------------------------------------------------------
+# The fixgeom series shared one sharp geometry but still started from three
+# DIFFERENT measured necks -- 38.19 / 35.60 / 32.91 um at eps = 8.584e-7 /
+# 6.030e-7 / 3.479e-7 (runs job65081756 / job65081757 / job65080441). The
+# phi=0.5 contours overlapped away from the neck but never at the neck itself.
+#
+# Cause: the additive IC. A lone grain's profile crosses 0.5 at r=R for ANY
+# eps (hence the agreement away from the neck), but where grains overlap the
+# two tanh tails ADD, and the sum crosses 0.5 at an eps-dependent radius.
+#
+# Fix: -ic_grain_union 1 builds the field from the signed distance to the
+# UNION, phi = 0.5-0.5*tanh(0.5*min_k(sdf_k)/eps), so phi=0.5 <=> sdf=0 <=>
+# the sharp union surface, for EVERY eps. Verified: the measured t=0 neck is
+# 28.61 um at all three eps under the union form (vs a 5.3 um spread under the
+# additive form).
+#
+# Because the sharp chord IS the initial neck under this flag, d is solved
+# ONCE against the experimental value and shared by the whole series:
+#   preprocess/calibrate_neck_geometry.py :: solve_d_union(7.25e-5, 1.01e-4,
+#   32.81e-6) -> d = 1.702784e-4 (sharp chord = 32.8100 um).
+# So every arm now starts at the experiment's 32.81 um neck AND at the same
+# contour. No per-eps neck calibration; the old bisection is not used here.
+#
+# CAVEAT: the sharp union has a zero-radius concave crease at the neck. No
+# diffuse interface can hold it -- AC dynamics rounds it to O(eps) within a few
+# steps. Contours coincide at t=0 and then diverge by O(eps) AT THE NECK ONLY.
+# That divergence is the genuine eps error this series measures; expect it, and
+# expect the first few snapshots to show a fast fillet-rounding transient that
+# is NOT sintering.
+#
+# Compare arms by neck-vs-time at fixed t. With a common w(0) the "+X%" growth
+# figures are finally comparable too.
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # union SDF IC — the point of this series
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.83778e-04
+-Ly 1.21000e-04
+-Lz 0
+
+-ice_grain_cx 9.25000e-05,2.62778e-04   # d = 1.702784e-04 m — SHARED by all arms
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 633                                 # h = eps/sqrt(2)  (~127k nodes)
+-Ny 200
+-Nz 1
+-eps 8.5840e-07
+
+-delt_t 1.0e-4
+-periodic 0

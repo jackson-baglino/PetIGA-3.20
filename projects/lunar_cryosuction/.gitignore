@@ -1,0 +1,96 @@
+# Build artifacts
+obj/
+*.o
+lunar_regolith_dsm
+# clangd flags with this machine's paths; regenerate: scripts/lint_c.sh --compile-flags
+compile_flags.txt
+
+# macOS metadata
+.DS_Store
+.DS_Store?
+._*
+
+# Python virtual environments (no trailing slash: worktrees link them)
+venv_*
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Simulation outputs (generated at runtime)
+outputs/
+tmp/
+# Stashed run folders at the project root only (currently
+# scratch/2D_two_ice_grains_boundary/). ANCHORED (leading slash) so it does not
+# swallow the quarantine folders -- preprocess/scratch/, inputs/scratch/,
+# postprocess/scratch/, studies/scratch/ -- which hold retired SOURCE and must
+# stay tracked so a file can be pulled back out on any clone.
+/scratch/
+
+# Generated geometry previews (regenerable by preprocess/build_geometry_*.py)
+preprocess/*.vtk
+
+# Parameter-sweep run outputs. The drivers (test/*.py) and reports (test/*.md)
+# ARE tracked -- only the generated sweep directories and logs are ignored.
+test/tune_*/
+test/plots/
+test/*.log
+# Stray SSA file written when a run is launched without -output_path
+/SSA_evo.dat
+
+# Editor/IDE files
+.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Cached neck measurements (regenerable by plot_neck_convergence.py)
+_neck_csv/
+
+# LaTeX build artefacts (keep only .tex sources and the final .pdf)
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.out
+*.toc
+*.bbl
+*.blg
+
+# Paper library: only the DOI list is committed; papers, texts and records stay local
+/library/*
+!/library/references.bib
+!/library/events.jsonl
+# Practice-round library, frozen read-only 2026-10-23; used only as seeds
+/library_practice/*
+!/library_practice/references.bib
+
+# Claude Code: personal settings are committed for course transparency
+# (the global ~/.config/git/ignore excludes them, so re-include here);
+# the session-ID log and the old Stop-hook log stay local
+!.claude/settings.local.json
+.claude/sessions.tsv
+.claude/ACTIVITY_LOG.md
+
+# Workflow runs: manifests are committed; bulk traces and run databases stay local
+runs/**/transcript*.jsonl
+runs/**/runs.db
+
+# Workflow runs (runs/<workflow>/<run_id>/): page images and Marker page text are paper material, and
+# runs.db / transcripts are local logs. Their sha256 hashes are committed in each run's manifest.json.
+runs/**/pages
+runs/**/marker
+runs/**/crops/
+runs/**/inspection/
+runs/**/runs.db
+runs/**/transcripts/
+runs/**/transcript*.jsonl
+
+# Literature review: paper text and images never enter git (WORKFLOW.md §8, untrusted/)
+runs/literature-review/**/untrusted/
+runs/literature-review/p1-dev/
