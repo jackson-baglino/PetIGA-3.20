@@ -39,13 +39,13 @@ date and commit. Ideas that come up along the way go to `BACKLOG.md`, not here.
 
 Goal: a line that passes its own rules, frozen, so that the nine-paper result belongs to one known version.
 
-- [ ] **1.1 You: look at claim c006 again.** Why: on 2026-11-02 you marked it "right". We then assumed the checker had
+- [x] **1.1 You: look at claim c006 again.** (Done 2026-11-03: right, with a note; 34437223.) Why: on 2026-11-02 you marked it "right". We then assumed the checker had
       shown it wrong, but its last verdict calls the statement *supported*. The claim was disputed for another reason,
       which the review tool didn't show until 2026-11-03 (it now lists what failed). In your own terminal:
       `venv_workflows/bin/python scripts/literature_review/u3_review.py --run runs/literature-review/b1/dev-20261101-kp --redo kaempfer_plapp_2009-c006`
       Read "Why it is disputed", then answer for the claim as a whole. **⟂ depends:** if it is still right, answer
       `r` (nothing changes in the library); if a failed point makes it wrong, answer `w`.
-- [ ] **1.2 Me: run the line on the dev run** so the stage that publishes your decisions applies your answer
+- [x] **1.2 Me: run the line on the dev run** (Done 2026-11-03: 22 same, 1 next version, 0 rejected.) so the stage that publishes your decisions applies your answer
       (marks c006 `rejected_by_user` if you answered `w`), and confirm it with the curator's counts.
 - [ ] **1.3 You: rule on the nine flagged control statements** (G001 G004 G007 G014 G018 G031 G032 G036 G039) in
       `runs/literature-review/calib-dev6/untrusted/control_review_tuning.md`. For each, write "gold wrong" or "checker
