@@ -19,6 +19,25 @@ Nothing on X [a-c004].
 """
 
 
+class DisputeReasons(unittest.TestCase):
+    OK = {"text": "supported", "quote_on_page": True, "equation": "none", "parameter": "none", "dropped_conditions": []}
+
+    def test_each_failed_test_is_named(self):
+        f = {"verdict": dict(self.OK, equation="corrected", corrected_latex="x"),
+             "e3": {"ok": False, "words": 10, "found_on": [5, 7]}}
+        r = u3.dispute_reasons(f)
+        self.assertEqual(len(r), 2)
+        self.assertIn("equation corrected", r[0])
+        self.assertIn("[5, 7]", r[1])
+
+    def test_supported_statement_with_a_dropped_condition(self):
+        r = u3.dispute_reasons({"verdict": dict(self.OK, dropped_conditions=["isothermal"]), "e3": {"ok": True}})
+        self.assertEqual(r, ["dropped condition: isothermal"])
+
+    def test_nothing_failed_is_said_plainly(self):
+        self.assertIn("unexpected", u3.dispute_reasons({"verdict": self.OK, "e3": {"ok": True}})[0])
+
+
 class Review(unittest.TestCase):
     def test_model_option_claims(self):
         self.assertEqual(u3.model_option_claims(MEMO), ["a-c002", "a-c003"])

@@ -77,6 +77,30 @@ def items(run, question):
     return uniq
 
 
+def dispute_reasons(f):
+    """Each test of revise.confirmed() that the claim's final verdict or quote check fails, in words."""
+    v, e3, out = f.get("verdict"), f.get("e3"), []
+    if v is None:
+        return ["no verdict from the checker"]
+    if v.get("text") != "supported":
+        out.append(f"statement judged {v.get('text')}" + (f"; checker's wording: {v['corrected_text']}"
+                                                          if v.get("corrected_text") else ""))
+    if not v.get("quote_on_page"):
+        out.append("the checker did not find the quote on the cited page")
+    if v.get("equation") not in ("matches", "none"):
+        out.append(f"equation {v.get('equation')}: {v.get('corrected_latex', '')}")
+    if v.get("parameter") not in ("match", "none"):
+        out.append(f"parameter {v.get('parameter')}: {v.get('corrected_parameter', '')}")
+    for d in v.get("dropped_conditions") or []:
+        out.append(f"dropped condition: {d if isinstance(d, str) else json.dumps(d, ensure_ascii=False)}")
+    if e3 is None:
+        out.append("quote check (E3) not run on the final version")
+    elif not e3.get("ok"):
+        out.append(f"quote check (E3) failed: {e3.get('words')} words (8 needed), found on PDF page(s) "
+                   f"{e3.get('found_on')} (needed: the cited page only)")
+    return out or ["none of the checks failed on the final version (a disputed status here is unexpected)"]
+
+
 def load(path, default):
     return json.loads(path.read_text()) if path.exists() else default
 
@@ -95,9 +119,13 @@ def show(kind, cid, run, claims):
                            .read_text())
         f = next((x for x in final if x["claim_id"] == cid), {})
         cl, v = f.get("claim", {}), f.get("verdict") or {}
-        print(f"  claim:  {cl.get('text')}\n  quote:  {cl.get('quote')}\n  checker: {v.get('text')}: "
+        print(f"  (paper {cid.rsplit('-c', 1)[0]}, PDF page {cl.get('page_pdf', '?')})")
+        print(f"  claim:  {cl.get('text')}\n  quote:  {cl.get('quote')}\n  checker: statement {v.get('text')}: "
               f"{v.get('reason')}")
-        print("Is the claim right, as stated, on that page?")
+        print("  Why it is disputed (what failed after the revision rounds):")
+        for r in dispute_reasons(f):
+            print(f"   - {r}")
+        print("Is the claim right, as stated, on that page? (Judge the claim, including the points above.)")
         return
     print(f"  claim:  {c.get('text')}")
     m = c.get("meaning") or {}
