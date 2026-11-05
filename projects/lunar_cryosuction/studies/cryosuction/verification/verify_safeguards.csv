@@ -1,0 +1,8 @@
+gate,case,value,expected,result
+S1,ssa_bitwise,identical,identical,PASS
+S2,rollbacks,1,>=1,PASS
+S2,max_dphi_accepted,4.517e-02,<=0.05,PASS
+S2,duplicate_step_rows,0,0,PASS
+S4,reaches_t_final,3.023814e+03,>=3.0e3,PASS
+S3,warns,printed,printed,PASS
+S3,defaults_quiet,absent,absent,PASS
