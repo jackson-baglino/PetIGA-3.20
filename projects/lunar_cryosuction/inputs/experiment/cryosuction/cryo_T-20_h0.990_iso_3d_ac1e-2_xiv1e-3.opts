@@ -9,6 +9,10 @@
 -flag_BC_Tfix 1
 -flag_BC_rhovfix 1
 -rhovfix_faces x0
+-phi_open_bc 0                          # x0 is a 90-degree face for phi (natural BC). The default
+                                        # do-nothing "open" phi condition is ill-posed: ice that
+                                        # touches it spreads into a flat film (stage-0b A1/A4, BC
+                                        # review 2026-11-05). Decided by the user 2026-11-05.
 -rhovfix_lo 0.990
 -xi_v 1e-3
 -t_final 2.592e5
