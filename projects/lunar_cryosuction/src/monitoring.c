@@ -10,6 +10,10 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscFunctionBegin;
   AppCtx *user = (AppCtx *)mctx;
 
+  /* InterfaceCFLMonitor runs first and may already have condemned this step;
+   * never record a state BoundsRollbackPreStep is about to discard. */
+  if (user->bounds_violated) PetscFunctionReturn(0);
+
   //-------- compute beta_sub
   Vec localU;
   const PetscScalar *arrayU;
@@ -362,7 +366,11 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  AppCtx *user = (AppCtx *)mctx;  
+  AppCtx *user = (AppCtx *)mctx;
+
+  /* InterfaceCFLMonitor runs first and may already have condemned this step;
+   * never record a state BoundsRollbackPreStep is about to discard. */
+  if (user->bounds_violated) PetscFunctionReturn(0);
 
   // Check if it's the first step
   if (step == 0) {
@@ -448,10 +456,35 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
  * disposes. Quiet phases are untouched (rate ~ 0 -> cap huge); events
  * throttle automatically and dt regrows the moment they end.
  *
- * Runs as a TS monitor (accepted steps only), so the rate is always
- * measured on a solution the solver already accepted; the cap is applied
- * with TSSetTimeStep after the controller's own adjustment.
+ * ENFORCEMENT (model-freeze-v2, 2026-11-05; port of enceladus_DSM
+ * caa209e0). Clamping only the NEXT dt is advisory: the step that overshot
+ * has already happened and stays in the record (stage-0b B1 kept 264 steps
+ * with |dphi| > 0.2, the largest 2.04). Now a step whose MEASURED |dphi|
+ * exceeds cfl_dphimax is rolled back through the deferred mechanism the
+ * bounds guard uses, and retried at
+ *
+ *     dt_retry = CFL_RETRY_SAFETY * cfl_dphimax * dt_used / dphi_max,
+ *
+ * so max |dphi| per step <= cfl_dphimax on every step the run keeps. The
+ * forward clamp is kept (at CFL_FORWARD_MARGIN) because it prevents most
+ * rollbacks. Registered FIRST among the monitors, and every other monitor
+ * returns early when bounds_violated is set, so a rejected step leaves no
+ * row and no snapshot. BoundsRollbackPreStep resets cfl_U_prev to the state
+ * it rolls back to, so the retried step is measured against the right
+ * reference whichever guard asked for the rollback.
+ *
+ * Runs as a TS monitor (after a converged step).
  * ========================================================================= */
+
+/* Fractions of the dt that would hit cfl_dphimax exactly.
+ * CFL_RETRY_SAFETY   after a rollback: well inside, so the retry does not
+ *                    violate again.
+ * CFL_FORWARD_MARGIN on the predicted next dt: the prediction uses the last
+ *                    step's rate, so an accelerating front overshoots it;
+ *                    targeting the limit exactly turns every acceleration
+ *                    into a rollback (enceladus smoke test: 1 step in 3). */
+#define CFL_RETRY_SAFETY   0.8
+#define CFL_FORWARD_MARGIN 0.9
 PetscErrorCode InterfaceCFLMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
                                    void *mctx)
 {
@@ -477,6 +510,7 @@ PetscErrorCode InterfaceCFLMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 
   if (!user->cfl_U_prev) {                    /* first call: just record */
     ierr = VecDuplicate(U, &user->cfl_U_prev); CHKERRQ(ierr);
+    ierr = VecDuplicate(U, &user->cfl_diff);   CHKERRQ(ierr);
     ierr = VecCopy(U, user->cfl_U_prev);       CHKERRQ(ierr);
     user->cfl_t_prev = t;
     PetscFunctionReturn(0);
@@ -484,13 +518,41 @@ PetscErrorCode InterfaceCFLMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 
   PetscReal dt_used = t - user->cfl_t_prev;
   if (dt_used > 0.0) {
-    /* ||dphi||_inf of the last step: reuse cfl_U_prev as the diff buffer */
+    /* ||dphi||_inf of the last step, into a SCRATCH vector: the rollback
+     * path returns early, so cfl_U_prev must never be used as the buffer. */
     PetscReal dphi_max;
-    ierr = VecAYPX(user->cfl_U_prev, -1.0, U); CHKERRQ(ierr);  /* prev = U - prev */
-    ierr = VecStrideNorm(user->cfl_U_prev, 0, NORM_INFINITY, &dphi_max); CHKERRQ(ierr);
+    ierr = VecWAXPY(user->cfl_diff, -1.0, user->cfl_U_prev, U); CHKERRQ(ierr);
+    ierr = VecStrideNorm(user->cfl_diff, 0, NORM_INFINITY, &dphi_max); CHKERRQ(ierr);
 
     if (dphi_max > 0.0) {
-      PetscReal dt_cap = user->cfl_dphimax * dt_used / dphi_max;
+      /* --- hard enforcement: undo a step that already violated it ------- */
+      if (dphi_max > user->cfl_dphimax) {
+        PetscReal dt_retry = CFL_RETRY_SAFETY * user->cfl_dphimax * dt_used / dphi_max;
+        PetscBool can_retry = (step > 0) && (dt_retry >= ts->dtmin);
+        if (can_retry) {
+          user->cfl_n_reject++;
+          PetscPrintf(PETSC_COMM_WORLD,
+              "\033[33m[WARN] Interface-CFL violated at step %d: max |dphi| "
+              "%.3e > %.3e, rolling back, dt %.3e -> %.3e%s\033[0m\n",
+              (int)step, (double)dphi_max, (double)user->cfl_dphimax,
+              (double)dt_used, (double)dt_retry,
+              (user->cfl_n_reject > 3) ? "  [3+ consecutive: check -dtCFL_dphimax]" : "");
+          user->bounds_violated = PETSC_TRUE;
+          user->bounds_new_dt   = dt_retry;
+          /* Return WITHOUT recording U: cfl_U_prev must keep the last
+           * ACCEPTED state. */
+          PetscFunctionReturn(0);
+        }
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\033[33m[WARN] Interface-CFL violated at step %d (max |dphi| "
+            "%.3e > %.3e) but cannot retry: %s. Accepting the step.\033[0m\n",
+            (int)step, (double)dphi_max, (double)user->cfl_dphimax,
+            (step == 0) ? "step 0" : "dt would fall below dtmin");
+      }
+      user->cfl_n_reject = 0;
+
+      /* --- forward clamp: keep the NEXT step inside the criterion too --- */
+      PetscReal dt_cap = CFL_FORWARD_MARGIN * user->cfl_dphimax * dt_used / dphi_max;
       PetscReal dt_next;
       ierr = TSGetTimeStep(ts, &dt_next); CHKERRQ(ierr);
       if (dt_cap < dt_next) {
@@ -530,6 +592,19 @@ PetscErrorCode BoundsRollbackPreStep(TS ts)
   if (user && user->bounds_violated) {
     ierr = TSRollBack(ts); CHKERRQ(ierr);
     ierr = TSSetTimeStep(ts, user->bounds_new_dt); CHKERRQ(ierr);
+    /* Re-anchor the step-to-step diagnostics on the state just restored.
+     * Whichever guard asked for the rollback (bounds in Monitor, or the CFL
+     * check), InterfaceCFLMonitor or ResolutionMonitor may already have
+     * recorded the rejected state as "previous"; the retried step must be
+     * measured against the state it actually starts from. */
+    {
+      Vec       X;
+      PetscReal t0;
+      ierr = TSGetSolution(ts, &X); CHKERRQ(ierr);
+      ierr = TSGetTime(ts, &t0); CHKERRQ(ierr);
+      if (user->cfl_U_prev) { ierr = VecCopy(X, user->cfl_U_prev); CHKERRQ(ierr); user->cfl_t_prev = t0; }
+      if (user->res_U_prev) { ierr = VecCopy(X, user->res_U_prev); CHKERRQ(ierr); user->res_t_prev = t0; }
+    }
     user->bounds_violated = PETSC_FALSE;
     user->bounds_new_dt   = 0.0;
   }
@@ -552,6 +627,9 @@ PetscErrorCode BoundaryFluxMonitor(TS ts, PetscInt step, PetscReal t, Vec U, voi
   PetscFunctionBegin;
   AppCtx  *user = (AppCtx *)mctx;
   PetscInt dim  = user->dim;
+  /* InterfaceCFLMonitor runs first and may already have condemned this step;
+   * never record a state BoundsRollbackPreStep is about to discard. */
+  if (user->bounds_violated) PetscFunctionReturn(0);
   PetscReal flux[3][2][2];   /* [axis][side][0 = vapor, 1 = heat] */
   PetscReal gflux[3][2][2];
   ierr = PetscMemzero(flux, sizeof(flux)); CHKERRQ(ierr);
@@ -654,6 +732,9 @@ PetscErrorCode ResolutionMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void 
   PetscFunctionBegin;
   AppCtx  *user = (AppCtx *)mctx;
   PetscInt dim  = user->dim;
+  /* InterfaceCFLMonitor runs first and may already have condemned this step;
+   * never record a state BoundsRollbackPreStep is about to discard. */
+  if (user->bounds_violated) PetscFunctionReturn(0);
 
   if (!user->res_U_prev) {
     ierr = VecDuplicate(U, &user->res_U_prev); CHKERRQ(ierr);

@@ -183,6 +183,8 @@ int main(int argc, char *argv[]) {
     user.flag_dtCFL   = PETSC_TRUE;   /* on by default */
     user.cfl_dphimax  = 0.2;          /* max pointwise |dphi| per step */
     user.cfl_U_prev   = NULL;
+    user.cfl_diff     = NULL;
+    user.cfl_n_reject = 0;
     user.res_U_prev = NULL; user.res_view = NULL; user.res_t_prev = 0.0;   /* ResolutionMonitor */
     user.res_pi_max = 0.0; user.res_open_phi_max = 0.0;
     user.res_n_warn = 0; user.res_n_bad = 0; user.res_n_open = 0;
@@ -1418,6 +1420,13 @@ int main(int argc, char *argv[]) {
     }
     ierr = TSSetType(ts, TSALPHA); CHKERRQ(ierr);
     ierr = TSAlphaSetRadius(ts, 0.5); CHKERRQ(ierr);
+    /* Interface-CFL limiter, registered FIRST: PETSc runs monitors in
+     * registration order, and this one can condemn the step just taken
+     * (measured |dphi| > -dtCFL_dphimax => rollback). Every later monitor
+     * returns early when user.bounds_violated is set, so a rejected step
+     * leaves no table row, no bflux/resolution row and no snapshot.
+     * Disable with -dtCFL 0. */
+    ierr = TSMonitorSet(ts, InterfaceCFLMonitor, &user, NULL); CHKERRQ(ierr);
     if (monitor) { ierr = TSMonitorSet(ts, Monitor, &user, NULL); CHKERRQ(ierr); }
     /* bflux.dat: physical vapor and heat flux through every Dirichlet face.
      * Output only; skipped when no face is pinned or -bflux_output 0. */
@@ -1442,9 +1451,6 @@ int main(int argc, char *argv[]) {
         ierr = TSMonitorSet(ts, ResolutionMonitor, &user, NULL); CHKERRQ(ierr);
     }
     if (output) { ierr = TSMonitorSet(ts, OutputMonitor, &user, NULL); CHKERRQ(ierr); }
-    /* Interface-CFL limiter: registered unconditionally (cheap — one vector
-     * diff + stride norm per accepted step); disable with -dtCFL 0. */
-    ierr = TSMonitorSet(ts, InterfaceCFLMonitor, &user, NULL); CHKERRQ(ierr);
 
     /* Application context — so BoundsRollbackPreStep can fetch user via
      * TSGetApplicationContext to consume deferred bounds-rollback requests. */
@@ -2153,6 +2159,7 @@ cleanup:
     if (user.solver_view) { ierr = PetscViewerDestroy(&user.solver_view); CHKERRQ(ierr); }
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = VecDestroy(&user.cfl_U_prev); CHKERRQ(ierr);
+    ierr = VecDestroy(&user.cfl_diff);   CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     for (PetscInt d = 0; d < 3; d++) { ierr = PetscFree(user.cent[d]); CHKERRQ(ierr); }

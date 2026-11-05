@@ -369,16 +369,20 @@ typedef struct {
   PetscBool bounds_violated;
   PetscReal bounds_new_dt;
 
-  // Interface-CFL timestep limiter (InterfaceCFLMonitor in monitoring.c):
-  // clamps the NEXT dt so max pointwise |d(phi)| per step stays below
-  // cfl_dphimax, measured from the last accepted step's rate
+  // Interface-CFL timestep limiter (InterfaceCFLMonitor in monitoring.c).
+  // ENFORCED since model-freeze-v2: a step whose measured |dphi| exceeds
+  // cfl_dphimax is rolled back and retried smaller; it also clamps the NEXT
+  // dt from the last accepted step's rate
   // ||phi^n - phi^{n-1}||_inf / dt. Lets dtmax be large (quiet phases
   // cruise) while fast interface events (grain collapse, neck formation)
   // throttle dt automatically instead of Gibbs-rippling the B-spline front.
   PetscBool flag_dtCFL;      // -dtCFL (default 1)
-  PetscReal cfl_dphimax;     // -dtCFL_dphimax (default 0.2)
-  Vec       cfl_U_prev;      // previous accepted solution (lazy-created)
+  PetscReal cfl_dphimax;     // -dtCFL_dphimax
+  Vec       cfl_U_prev;      // previous ACCEPTED solution (lazy-created)
+  Vec       cfl_diff;        // scratch for U - cfl_U_prev (never cfl_U_prev
+                             // itself: the rollback path returns early)
   PetscReal cfl_t_prev;      // time of previous accepted step
+  PetscInt  cfl_n_reject;    // consecutive CFL rollbacks (thrash diagnostic)
 
   // Axisymmetric (r-z) mode: x = z (symmetry axis direction), y = r (radial),
   // axis on the y = 0 boundary. Every residual/Jacobian/monitor integrand is
