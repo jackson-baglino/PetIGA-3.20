@@ -188,6 +188,7 @@ int main(int argc, char *argv[]) {
     user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see NASA_types.h) */
     user.ic_grain_union = PETSC_FALSE; /* multi_grains IC: additive (see NASA_types.h) */
     user.ssa_view = NULL;              /* SSA_evo.dat viewer, opened lazily in Monitor() */
+    user.bflux_view = NULL;            /* bflux.dat viewer, opened lazily in BoundaryFluxMonitor() */
     user.solver_view = NULL;           /* solver_evo.dat viewer, opened lazily in Monitor() */
     user.solver_snes_prev = 0; user.solver_ksp_prev = 0; user.solver_rej_prev = 0;
     user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
@@ -1405,6 +1406,21 @@ int main(int argc, char *argv[]) {
     ierr = TSSetType(ts, TSALPHA); CHKERRQ(ierr);
     ierr = TSAlphaSetRadius(ts, 0.5); CHKERRQ(ierr);
     if (monitor) { ierr = TSMonitorSet(ts, Monitor, &user, NULL); CHKERRQ(ierr); }
+    /* bflux.dat: physical vapor and heat flux through every Dirichlet face.
+     * Output only; skipped when no face is pinned or -bflux_output 0. */
+    {
+        PetscBool bflux_output = PETSC_TRUE, any_flux = PETSC_FALSE;
+        ierr = PetscOptionsGetBool(NULL, NULL, "-bflux_output", &bflux_output, NULL); CHKERRQ(ierr);
+        for (PetscInt l = 0; l < 3; l++)
+            for (PetscInt m = 0; m < 2; m++) {
+                user.flux_face[l][m] = (PetscBool)(l < dim &&
+                    (bc_dirichlet[l][m][1] || bc_dirichlet[l][m][2]));
+                if (user.flux_face[l][m]) any_flux = PETSC_TRUE;
+            }
+        if (monitor && bflux_output && any_flux) {
+            ierr = TSMonitorSet(ts, BoundaryFluxMonitor, &user, NULL); CHKERRQ(ierr);
+        }
+    }
     if (output) { ierr = TSMonitorSet(ts, OutputMonitor, &user, NULL); CHKERRQ(ierr); }
     /* Interface-CFL limiter: registered unconditionally (cheap — one vector
      * diff + stride norm per accepted step); disable with -dtCFL 0. */
@@ -2101,6 +2117,7 @@ int main(int argc, char *argv[]) {
 cleanup:
     /* Cleanup Resources */
     if (user.ssa_view) { ierr = PetscViewerDestroy(&user.ssa_view); CHKERRQ(ierr); }
+    if (user.bflux_view) { ierr = PetscViewerDestroy(&user.bflux_view); CHKERRQ(ierr); }
     if (user.solver_view) { ierr = PetscViewerDestroy(&user.solver_view); CHKERRQ(ierr); }
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = VecDestroy(&user.cfl_U_prev); CHKERRQ(ierr);

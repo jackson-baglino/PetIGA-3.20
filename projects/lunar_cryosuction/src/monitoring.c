@@ -536,3 +536,94 @@ PetscErrorCode BoundsRollbackPreStep(TS ts)
 
   PetscFunctionReturn(0);
 }
+
+/* Physical flux out through the Dirichlet faces, one row per step in bflux.dat:
+ *   vapor:  J = -int D_v(T) phi_aef grad(rho_v).n dGamma   [kg/s]
+ *   heat:   Q = -int k(phi) grad(T).n dGamma               [W]
+ * per unit depth in 2D, and the full 2*pi*r surface in axisymmetric mode.
+ * Positive is out of the domain. D_v and k are the UNSCALED coefficients:
+ * the residual multiplies them by xi_v and xi_T to accelerate the run, but
+ * the physical flux uses the true values (Kaempfer and Plapp 2009, Sec. II D).
+ * phi_aef = max(1 - phi, air_lim) and the clamped phi in k(phi) match
+ * Residual_A1. Read-only: it does not change the solution. */
+PetscErrorCode BoundaryFluxMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void *mctx)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  AppCtx  *user = (AppCtx *)mctx;
+  PetscInt dim  = user->dim;
+  PetscReal flux[3][2][2];   /* [axis][side][0 = vapor, 1 = heat] */
+  PetscReal gflux[3][2][2];
+  ierr = PetscMemzero(flux, sizeof(flux)); CHKERRQ(ierr);
+
+  Vec localU; const PetscScalar *arrayU;
+  IGAElement element; IGAPoint point; PetscScalar *UU;
+  ierr = IGAGetLocalVecArray(user->iga, U, &localU, &arrayU); CHKERRQ(ierr);
+  ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
+  while (IGANextElement(user->iga, element)) {
+    ierr = IGAElementGetValues(element, arrayU, &UU); CHKERRQ(ierr);
+    while (IGAElementNextForm(element, user->flux_face)) {
+      if (!element->atboundary) continue;
+      PetscInt axis = element->boundary_id / 2, side = element->boundary_id % 2;
+      ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
+      while (IGAElementNextPoint(element, point)) {
+        /* FormGrad packs [dof][dim] with stride dim, so index g[dof*dim + l]. */
+        PetscScalar sol[3], g[9];
+        ierr = IGAPointFormValue(point, UU, &sol[0]); CHKERRQ(ierr);
+        ierr = IGAPointFormGrad (point, UU, &g[0]); CHKERRQ(ierr);
+        PetscReal phi_c = PetscMin(PetscMax(PetscRealPart(sol[0]), 0.0), 1.0);
+        PetscReal phi_aef = PetscMax(1.0 - phi_c, user->air_lim);
+        PetscScalar thcond, dif_vap;
+        ThermalCond(user, phi_c, &thcond, NULL);
+        VaporDiffus(user, sol[1], &dif_vap, NULL);
+        PetscReal dT_dn = 0.0, drhov_dn = 0.0;
+        for (PetscInt l = 0; l < dim; l++) {
+          dT_dn    += PetscRealPart(g[1 * dim + l]) * point->normal[l];
+          drhov_dn += PetscRealPart(g[2 * dim + l]) * point->normal[l];
+        }
+        PetscReal JW = point->detJac[0] * point->weight[0];
+        if (user->axisym) {
+          PetscReal xphys[3] = {0.0, 0.0, 0.0};
+          IGAPointFormPoint(point, xphys);
+          JW *= 2.0 * PETSC_PI * xphys[1];
+        }
+        flux[axis][side][0] += -PetscRealPart(dif_vap) * phi_aef * drhov_dn * JW;
+        flux[axis][side][1] += -PetscRealPart(thcond) * dT_dn * JW;
+      }
+      ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
+    }
+  }
+  ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
+  ierr = IGARestoreLocalVecArray(user->iga, U, &localU, &arrayU); CHKERRQ(ierr);
+  ierr = MPI_Allreduce(flux, gflux, 12, MPIU_REAL, MPI_SUM, PETSC_COMM_WORLD); CHKERRQ(ierr);
+
+  static const char axes[3] = {'x', 'y', 'z'};
+  if (user->bflux_view == NULL) {
+    char filedata[256];
+    const char *dir = getenv("folder");
+    if (dir) { snprintf(filedata, sizeof(filedata), "%s/bflux.dat", dir); }
+    else     { snprintf(filedata, sizeof(filedata), "bflux.dat"); }
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, filedata, &user->bflux_view); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(user->bflux_view,
+             "# outward physical flux (unscaled D_v, k); vapor kg/s, heat W; %s\n# t step",
+             user->axisym ? "axisymmetric, full 2*pi*r surface" : "per unit depth in 2D");
+    CHKERRQ(ierr);
+    for (PetscInt l = 0; l < dim; l++)
+      for (PetscInt m = 0; m < 2; m++)
+        if (user->flux_face[l][m]) {
+          ierr = PetscViewerASCIIPrintf(user->bflux_view, " J_vap_%c%d Q_heat_%c%d",
+                                        axes[l], (int)m, axes[l], (int)m); CHKERRQ(ierr);
+        }
+    ierr = PetscViewerASCIIPrintf(user->bflux_view, "\n"); CHKERRQ(ierr);
+  }
+  ierr = PetscViewerASCIIPrintf(user->bflux_view, "%.10e %d", (double)t, (int)step); CHKERRQ(ierr);
+  for (PetscInt l = 0; l < dim; l++)
+    for (PetscInt m = 0; m < 2; m++)
+      if (user->flux_face[l][m]) {
+        ierr = PetscViewerASCIIPrintf(user->bflux_view, " %.10e %.10e",
+                                      (double)gflux[l][m][0], (double)gflux[l][m][1]); CHKERRQ(ierr);
+      }
+  ierr = PetscViewerASCIIPrintf(user->bflux_view, "\n"); CHKERRQ(ierr);
+  ierr = PetscViewerFlush(user->bflux_view); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}

@@ -162,6 +162,11 @@ typedef struct {
   PetscBool phi_open_bc;
   PetscBool open_face[3][2];
 
+  // Faces with a T or rho_v Dirichlet value. bflux.dat reports the physical
+  // vapor and heat flux through each of them (BoundaryFluxMonitor).
+  PetscBool flux_face[3][2];
+  PetscViewer bflux_view;
+
   // Stall detector. A bounds excursion can leave the solve unable to advance
   // while TS keeps stepping: the run reaches t_final and reports SUCCESS with a
   // solution that stopped changing. That happened twice on eps = 0.75 um runs
