@@ -73,7 +73,7 @@ Goal: a line that passes its own rules, frozen, so that the nine-paper result be
 - [x] **1.9 Me: final development checks.** (Done 2026-11-04: literature review 152, units 48, flowchart 6, preprocess 10 tests pass; permissions OK; ruff clean.) All tests pass, `check_permissions.py`, `lr_status.py --write`, commit.
 - [x] **1.10 You: approve the freeze** (Done 2026-11-04: b1-v1 at fd6f12a5, tag lr-b1-v1.) (`/lr-freeze`, v1). Why: from here on nothing that affects results can change
       during the run.
-- [ ] **1.11 Me: live hook checks** right after the freeze. These can only be tested in the execute phase: an edit
+- [x] **1.11 Me: live hook checks** (Done 2026-11-04: H3–H6 pass; WORKFLOW §12.) right after the freeze. These can only be tested in the execute phase: an edit
       to a frozen file asks first (H3); a station run by hand is blocked (H4); a stop with a stale status is blocked
       once (H5); the foreman can't `cat` a file (H6).
 

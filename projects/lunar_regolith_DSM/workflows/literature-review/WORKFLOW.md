@@ -1243,6 +1243,15 @@ build log with the date. The tests B1 needs:
   flagged (G028)**, within the rule; 18 calls, none failed. G018 (the print
   has an extra parenthesis the statement drops) was flagged in rounds 1 and 2
   and not in 3: the checker varies run to run on borderline items.
+- Live hook checks after the freeze b1-v1, 2026-11-04 (Claude Code 2.1.318):
+  H4 seen live: a session's direct call of `curator.py` was blocked by the
+  harness. H3, H5 and H6 were run as the harness runs them, on a hand-made
+  event, against the real freeze: H3 answers "ask" for an edit to a frozen
+  prompt and nothing for TODO.md; H6 refuses the foreman `cat` and
+  `run_b1.py approve`, and allows `run_b1.py status`; H5 blocks a stop once
+  when the contract's line status was made stale on purpose (restored from
+  git after), and not on the second stop or when it is fresh. Not seen live:
+  H3's prompt (it would ask the user) and H6 in a foreman session.
 
 T-units is deferred with the units check it tests (E3b, `check_units.py`,
 §13), which B1 does not run (user decision 2026-11-01); unit and exponent
