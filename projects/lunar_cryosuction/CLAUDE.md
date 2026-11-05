@@ -13,7 +13,8 @@ lunar surface.
 The sibling projects are `enceladus_DSM` (paper 1) and `lunar_regolith_DSM`
 (paper 3: agentic literature review and a new model, most likely diffuse
 domain). This project was copied from `lunar_regolith_DSM` on 2026-11-04, at
-tag `lunar_cryosuction/model-freeze-v1`. Layout, build and run are in
+tag `lunar_cryosuction/model-freeze-v1`, unfrozen once to `lunar_cryosuction/model-freeze-v2` on 2026-11-05
+(solver safeguards; see the Versions table in `FREEZE.md`). Layout, build and run are in
 `README.md`; the freeze rule and its ledger are in `FREEZE.md`.
 Path-scoped rules in `.claude/rules/` load when a session touches matching
 files: `solver-c.md` (`src/`, `include/`) and `inputs.md` (inputs, pre- and

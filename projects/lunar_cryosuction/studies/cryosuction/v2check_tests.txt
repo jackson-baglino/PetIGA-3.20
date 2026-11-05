@@ -1,0 +1,4 @@
+# Model-freeze-v2 check (2026-11-05): does the safeguard port alone carry the
+# stage-0b B1 setup through the 4.5-8.9e3 s window where every h = 0.99 run
+# first overshot? Same mesh and eps as stage-0b B1. One job.
+channel_2D_H125um_eps0.39um_deadend:cryo_T-20_h0.990_iso_20ks_ac1e-2

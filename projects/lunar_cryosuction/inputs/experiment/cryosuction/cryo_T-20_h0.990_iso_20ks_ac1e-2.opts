@@ -1,0 +1,29 @@
+# experiment/cryosuction/cryo_T-20_h0.990_iso_20ks_ac1e-2.opts
+#
+# Model-freeze-v2 check (2026-11-05): stage-0b B1 setup (open end x = 0 at
+# h = 0.99, dead pore at x = Lx, isothermal bath, pore starts saturated),
+# run to 2e4 s. Every stage-0b h = 0.99 run first overshot phi = 1 at
+# 4.5-8.9e3 s; this asks whether the v2 safeguards alone carry the run
+# through that window on the unchanged mesh.
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1
+-rhovfix_faces x0
+-phi_open_bc 0                          # x0 is a 90-degree face for phi (natural BC). The default
+                                        # do-nothing "open" phi condition is ill-posed: ice that
+                                        # touches it spreads into a flat film (stage-0b A1/A4, BC
+                                        # review 2026-11-05). Decided by the user 2026-11-05.
+-rhovfix_lo 0.990
+-xi_v 1e-3
+-t_final 2.0e4
+-n_out 21
+# --- substrate and kinetics ---
+-beta_sub0 7.9408e5                     # K&P beta0 at -20 C, alpha_c = 1e-2 (comp_eps beta_sub)
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # Young: cos(theta) = 0.5, theta = 60 deg
+# -dtmax is in the GEOMETRY file: 2*tau_sub depends on that geometry's eps.
+-dtCFL 1
+-outp 0
