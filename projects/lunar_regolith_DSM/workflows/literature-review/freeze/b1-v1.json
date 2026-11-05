@@ -77,5 +77,9 @@
   "B1_CONTRACT.md#Papers": "b878440d8c6677938002d110695f6b3d63ba34d7e6c7f242302e510c563f1c01",
   "venv_docparse#installed": "6ade8c1c97e041e0f12b99bbcfa99ae5ea648772d25977fcaf98c0f62d3792e8",
   "parser_model#snapshot": "08aaea840498d49ce16247b6263196cf02814885"
+ },
+ "thawed": {
+  "date": "2026-11-04T19:04:03-08:00",
+  "reason": "User decision 2026-11-05, an exception to the repair rule (WORKFLOW.md \u00a70, which reserves thawing for real errors found in U3, X1 or Y3): the frozen Papers section's 'Copy kinds' paragraph still gave the preprint page counts (Folch & Plapp 37, Plapp 36, Yu, Chen & Thornton 59) after contract v2 (fdaa059a) moved to the published copies. No agent or station reads it, but the user wants the frozen contract correct. The execute run 20261105-pilot had run no station (waiting at U0); it is closed and replaced under b1-v2."
  }
 }

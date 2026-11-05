@@ -137,5 +137,9 @@
   "B1_CONTRACT.md#Papers": "b878440d8c6677938002d110695f6b3d63ba34d7e6c7f242302e510c563f1c01",
   "venv_docparse#installed": "6ade8c1c97e041e0f12b99bbcfa99ae5ea648772d25977fcaf98c0f62d3792e8",
   "parser_model#snapshot": "08aaea840498d49ce16247b6263196cf02814885"
+ },
+ "closed": {
+  "date": "2026-11-04",
+  "reason": "b1-v1 thawed 2026-11-05 to correct the contract's Copy kinds paragraph; no station had run (waiting at U0); replaced by a new execute run under b1-v2"
  }
 }
