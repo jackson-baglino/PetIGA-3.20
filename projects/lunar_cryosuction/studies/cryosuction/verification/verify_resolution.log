@@ -1,4 +1,4 @@
-BASE_REF = HEAD (e0b3c296)
+BASE_REF = HEAD (b10fd0cb)
 
 === K1: checker does not change the solution ===
 /Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/assembly.c -o obj/assembly.o
@@ -19,14 +19,14 @@ ld: warning: -bind_at_load is deprecated on macOS
 
 === K3: fast front on a coarse eps prints the warning ===
   K3 warning: printed (expected printed) PASS
-RESOLUTION SUMMARY: max Pi = 4357.580; steps with Pi > 0.5: 53, Pi > 1: 53; max phi on an open face 2.460e-03 (0 steps > 0.01)   <-- CHECK THIS RUN
 
 === K4: coarse mesh trips the start-up check ===
   K4 static: printed (expected printed) PASS
   K4 comp_eps_mesh_quiet: absent (expected absent) PASS
 
-=== K5: ice on an open face ===
+=== K5: ice on a vapor-reservoir face ===
   K5 touching: printed (expected printed) PASS
   K5 clear: absent (expected absent) PASS
+  K6 closed_face_touching: printed (expected printed) PASS
 
 ALL GATES PASSED   (see /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/studies/cryosuction/verification/verify_resolution.csv)

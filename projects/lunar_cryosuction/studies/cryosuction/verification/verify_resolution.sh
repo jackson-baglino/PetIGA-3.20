@@ -20,8 +20,12 @@
 #                     h = 0.9) must print the RESOLUTION WARNING and count it.
 #   K4  Static     -- a mesh 2x coarser than eps/sqrt(2) must print the
 #                     start-up RESOLUTION WARNING.
-#   K5  Open face  -- a disc cut by an open face must print the OPEN-FACE
-#                     WARNING; the same disc fully inside must not.
+#   K5  Reservoir  -- a disc cut by a vapor-reservoir face must print the
+#                     RESERVOIR-FACE WARNING; the same disc fully inside must
+#                     not.
+#   K6  Watch      -- the warning does not depend on the phi condition: the
+#                     same cut disc with -phi_open_bc 0 (90-degree face) still
+#                     prints it.
 #
 # Writes verify_resolution.csv and verify_resolution.log next to this script.
 # =============================================================================
@@ -110,13 +114,16 @@ runcase k4ok "$EXEC" "${BOX[@]}" -ice_grain_cx 3.0e-5 -t_final 1.0 -delt_t 1.0e-
 if grep -q "RESOLUTION WARNING: mesh coarser" "$WORK/k4ok/out.txt"; then rec K4 comp_eps_mesh_quiet printed absent FAIL; else rec K4 comp_eps_mesh_quiet absent absent PASS; fi
 
 # ---------------------------------------------------------------- K5 ----
-say ""; say "=== K5: ice on an open face ==="
+say ""; say "=== K5: ice on a vapor-reservoir face ==="
 runcase k5 "$EXEC" "${BOX[@]}" -ice_grain_cx -7.5e-6 -decouple_phase_change 1 -flag_BC_rhovfix 1 -rhovfix_faces x0 \
   -t_final 1.0e3 -delt_t 1.0e-2 -dtmax 1.0e2
-if grep -q "OPEN-FACE WARNING" "$WORK/k5/out.txt"; then rec K5 touching printed printed PASS; else rec K5 touching absent printed FAIL; fi
+if grep -q "RESERVOIR-FACE WARNING" "$WORK/k5/out.txt"; then rec K5 touching printed printed PASS; else rec K5 touching absent printed FAIL; fi
 runcase k5ok "$EXEC" "${BOX[@]}" -ice_grain_cx 3.0e-5 -decouple_phase_change 1 -flag_BC_rhovfix 1 -rhovfix_faces x0 \
   -t_final 1.0e3 -delt_t 1.0e-2 -dtmax 1.0e2
-if grep -q "OPEN-FACE WARNING" "$WORK/k5ok/out.txt"; then rec K5 clear printed absent FAIL; else rec K5 clear absent absent PASS; fi
+if grep -q "RESERVOIR-FACE WARNING" "$WORK/k5ok/out.txt"; then rec K5 clear printed absent FAIL; else rec K5 clear absent absent PASS; fi
+runcase k6 "$EXEC" "${BOX[@]}" -ice_grain_cx -7.5e-6 -decouple_phase_change 1 -flag_BC_rhovfix 1 -rhovfix_faces x0 \
+  -phi_open_bc 0 -t_final 1.0e3 -delt_t 1.0e-2 -dtmax 1.0e2
+if grep -q "RESERVOIR-FACE WARNING" "$WORK/k6/out.txt"; then rec K6 closed_face_touching printed printed PASS; else rec K6 closed_face_touching absent printed FAIL; fi
 
 say ""
 if [[ $fail -eq 0 ]]; then say "ALL GATES PASSED   (see $CSV)"; else say "FAILURES -- see $CSV"; fi

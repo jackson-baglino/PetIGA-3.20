@@ -90,7 +90,7 @@ def resolution(run: Path) -> str:
     a = np.loadtxt(f, ndmin=2)
     flag = "  <-- CHECK" if (a[:, 4] > 1).any() or (a[:, 5] > 0.01).any() else ""
     return (f"max Pi {a[:, 4].max():.3f} (steps > 0.5: {(a[:, 4] > 0.5).sum()}, > 1: {(a[:, 4] > 1).sum()}); "
-            f"max phi on open face {a[:, 5].max():.2e}{flag}")
+            f"max phi on a reservoir face {a[:, 5].max():.2e}{flag}")
 
 
 def solver_cost(run: Path) -> str:
