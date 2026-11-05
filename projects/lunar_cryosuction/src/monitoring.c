@@ -741,6 +741,7 @@ PetscErrorCode ResolutionMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void 
     ierr = VecDuplicate(U, &user->res_U_prev); CHKERRQ(ierr);
     ierr = VecCopy(U, user->res_U_prev); CHKERRQ(ierr);
     user->res_t_prev = t;
+    user->res_t0     = t;
     PetscFunctionReturn(0);
   }
   PetscReal dt = t - user->res_t_prev;
@@ -787,13 +788,20 @@ PetscErrorCode ResolutionMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void 
   vmax = glob[0]; open_max = glob[1];
 
   PetscReal Pi = user->beta_sub0 * vmax * user->eps / user->d0_sub0;
-  user->res_pi_max = PetscMax(user->res_pi_max, Pi);
+  PetscBool startup = (PetscBool)(t - user->res_t0 < user->res_t_skip);
   user->res_open_phi_max = PetscMax(user->res_open_phi_max, open_max);
-  if (Pi > 0.5) user->res_n_warn++;
-  if (Pi > 1.0) user->res_n_bad++;
   if (open_max > 0.01) user->res_n_open++;
+  if (startup) {
+    user->res_pi_max_startup = PetscMax(user->res_pi_max_startup, Pi);
+  } else {
+    user->res_pi_max = PetscMax(user->res_pi_max, Pi);
+    if (Pi > 0.5) user->res_n_warn++;
+    if (Pi > 1.0) user->res_n_bad++;
+  }
 
-  if (Pi > 1.0) {
+  if (startup) {
+    /* not judged: see res_t_skip in NASA_types.h */
+  } else if (Pi > 1.0) {
     PetscPrintf(PETSC_COMM_WORLD,
       "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
       "!!! RESOLUTION WARNING step %d: interface too fast for this eps/mesh (K&P Eq. 45)\n"
@@ -876,8 +884,10 @@ PetscErrorCode ResolutionSummary(AppCtx *user)
 {
   PetscFunctionBegin;
   PetscPrintf(PETSC_COMM_WORLD,
-    "\nRESOLUTION SUMMARY: max Pi = %.3f; steps with Pi > 0.5: %d, Pi > 1: %d; "
+    "\nRESOLUTION SUMMARY (after the %.3g s start-up window; max Pi inside it %.3f, not judged): "
+    "max Pi = %.3f; steps with Pi > 0.5: %d, Pi > 1: %d; "
     "max phi on a reservoir face %.3e (%d steps > 0.01)%s\n",
+    (double)user->res_t_skip, (double)user->res_pi_max_startup,
     (double)user->res_pi_max, (int)user->res_n_warn, (int)user->res_n_bad,
     (double)user->res_open_phi_max, (int)user->res_n_open,
     (user->res_n_bad > 0 || user->res_n_open > 0) ? "   <-- CHECK THIS RUN" : "");

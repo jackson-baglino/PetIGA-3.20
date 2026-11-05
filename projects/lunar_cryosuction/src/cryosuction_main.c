@@ -194,6 +194,7 @@ int main(int argc, char *argv[]) {
     user.res_U_prev = NULL; user.res_view = NULL; user.res_t_prev = 0.0;   /* ResolutionMonitor */
     user.res_pi_max = 0.0; user.res_open_phi_max = 0.0;
     user.res_n_warn = 0; user.res_n_bad = 0; user.res_n_open = 0;
+    user.res_t_skip = 0.0; user.res_t0 = 0.0; user.res_pi_max_startup = 0.0;
     user.cfl_t_prev   = 0.0;
 
     user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see NASA_types.h) */
@@ -1462,6 +1463,17 @@ int main(int argc, char *argv[]) {
     PetscBool resolution_check = PETSC_TRUE;
     ierr = PetscOptionsGetBool(NULL, NULL, "-resolution_check", &resolution_check, NULL); CHKERRQ(ierr);
     if (monitor && resolution_check) {
+        /* Start-up window. Over the first ~tau_sub the IC profile relaxes to
+         * the model's equilibrium shape and wall contact lines move to the
+         * set angle; the measured |dphi/dt|/|grad phi| there is not a
+         * sublimation front (stage 0b and v2check: v_n = 2.4e-8 m/s, twice the
+         * kinetic ceiling |sigma|/beta0, gone by t = 95 s with tau_sub = 130 s).
+         * Pi is still written to resolution.dat but not judged before
+         * -resolution_skip_tau x tau_sub (default 2). Ice on a reservoir face
+         * is judged from the first step. */
+        PetscReal skip_tau = 2.0;
+        ierr = PetscOptionsGetReal(NULL, NULL, "-resolution_skip_tau", &skip_tau, NULL); CHKERRQ(ierr);
+        user.res_t_skip = skip_tau * tau_sub;
         ierr = TSMonitorSet(ts, ResolutionMonitor, &user, NULL); CHKERRQ(ierr);
     }
     if (output) { ierr = TSMonitorSet(ts, OutputMonitor, &user, NULL); CHKERRQ(ierr); }

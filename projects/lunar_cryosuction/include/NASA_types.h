@@ -176,6 +176,10 @@ typedef struct {
   PetscReal   res_t_prev;
   PetscReal   res_pi_max;     // largest Pi so far
   PetscBool   res_watch_face[3][2]; // vapor-reservoir faces to watch for ice
+  PetscReal   res_t_skip;     // start-up window: Pi is not judged for t - res_t0 < this
+                              // (-resolution_skip_tau x tau_sub, default 2 tau_sub)
+  PetscReal   res_t0;         // time of the first ResolutionMonitor call (run or restart start)
+  PetscReal   res_pi_max_startup; // largest Pi inside the start-up window
   PetscReal   res_open_phi_max; // largest phi seen on a reservoir face so far
   PetscInt    res_n_warn;     // steps with Pi > 0.5 (outside comp_eps's design margin)
   PetscInt    res_n_bad;      // steps with Pi > 1 (Eq. 45 violated)
