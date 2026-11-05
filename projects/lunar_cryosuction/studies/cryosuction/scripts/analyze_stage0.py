@@ -14,7 +14,9 @@ A  open face, pure curvature flow (dA/dt = -D * total turning):
    A4  sessile cap, theta = 60 deg on y = 0, circle center (-5 um, -R cos th):
        full area A = R^2 (th - sin th cos th) falls at 2 th D_eff; the visible
        part x > 0, y > 0 is integrated numerically.
-B  xi invariance: ice change and mean outflow J_x0 of B2-B4 against B1.
+B  xi invariance: ice change and mean outflow J_x0 of B2-B4 against B1, and
+   solver cost from solver_evo.dat (step t dt snes_its ksp_its ksp/snes
+   rejections): steps, Newton and Krylov iterations, rejected steps.
    Also the IC transient: ice change over the first --t-transient seconds
    against the later steady loss rate.
 C  pilot: ice left, outflow, and the mass balance J_x0 vs -rho_ice dA/dt.
@@ -50,6 +52,16 @@ def bflux(run: Path):
         return None, None
     a = np.loadtxt(f, comments="#", ndmin=2)
     return a[:, 0], a[:, 2]  # t, J_vap_x0 (first pinned face is x0 in these runs)
+
+
+def solver_cost(run: Path) -> str:
+    f = run / "solver_evo.dat"
+    if not f.exists():
+        return "solver_evo.dat missing"
+    a = np.loadtxt(f, ndmin=2)
+    return (f"{a.shape[0]} steps, {int(a[:, 3].sum())} Newton its "
+            f"({a[:, 3].mean():.2f}/step), {int(a[:, 4].sum())} Krylov its, "
+            f"{int(a[:, 6].sum())} rejected")
 
 
 def seg_area(R: float, d: float) -> float:
@@ -129,6 +141,9 @@ def part_b(batch: Path, tol: float, t_tr: float):
     tb, jb = bflux(runs["B1 xi_v 1e-3"])
     j1 = np.trapezoid(jb, tb) / (tb[-1] - tb[0]) if tb is not None else float("nan")
     print(f"  B1: ice change {da1:+.4e} m2 over {t1[-1]:.3e} s, mean J_x0 {j1:.4e} kg/(m s)")
+    for k, r in runs.items():
+        if r is not None:
+            print(f"  cost {k}: {solver_cost(r)}")
     early = t1 <= t_tr
     if early.sum() >= 2 and t1[-1] > 2 * t_tr:
         rate_late = (a1[-1] - a1[np.searchsorted(t1, 2 * t_tr)]) / (t1[-1] - 2 * t_tr)
