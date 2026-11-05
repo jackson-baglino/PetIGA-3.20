@@ -52,10 +52,28 @@ because it is a format conversion for ParaView, not a figure.
 | `plot_fields.py` | `igasol.dat`, `sol_*.dat` | `.vts` snapshots for ParaView |
 | `plot_fields_highres.py` | same | same, supersampled |
 | `wedge_gt_velocity.py` | `vtkOut/`, staged `.opts` | measured vs. Gibbs-Thomson `v_n` on the two centreline menisci (wedge geometries only) |
+| `vapor_movie.py` | `pf.pvd`, `vtkOut/solV_*.vts`, staged `.opts` | `plots/vapor_movie.mp4`: ice on cmocean ice over the air's supersaturation on cmocean balance; `--tracers` adds particles along the vapor flux (`plots/vapor_movie_tracers.mp4`). 2D only, needs ffmpeg |
 | `pplib.py` | — | shared helpers, not a plotter |
 
 `plot_fields_highres.py` is deliberately **not** in the sweep: it is slow and
 only wanted on demand.
+`vapor_movie.py` is on demand for the same reason (about 1 min plain and 2 min
+with tracers for a 62-snapshot, 600k-node run) and because it needs ffmpeg. It
+reads `vtkOut/`, so run the sweep first:
+
+```bash
+python3 postprocess/vapor_movie.py --dir <run>              # ice + supersaturation
+python3 postprocess/vapor_movie.py --dir <run> --tracers    # + vapor-flux tracers
+```
+
+The tracers are a visualization, not model output: they follow the direction
+of the model's vapor flux, `-phi_a grad(rho_v)`, with the speed rescaled so a
+particle moves `--dmax` um per frame at a typical flux (the median over snapshots
+of the 90th percentile of the air's flux). Real vapor crosses a pore in under a
+second, far less than the time between snapshots, so read direction and relative
+speed, not absolute speed. Each movie also writes `<name>_first.png`, the poster
+frame to give PowerPoint. It replaces the capability of the retired
+`scratch/make_field_movie.py` (raw vapor density on `amp`, no tracers).
 
 ```bash
 python3 postprocess/plot_fields_highres.py --dir <run> --n-per-elem 4
