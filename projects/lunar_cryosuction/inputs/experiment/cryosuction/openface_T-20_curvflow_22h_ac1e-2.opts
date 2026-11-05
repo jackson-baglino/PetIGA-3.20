@@ -22,5 +22,4 @@
 -gamma_is 0.2455000                     # Young: cos(theta) = 0.5, theta = 60 deg
 # -dtmax is in the GEOMETRY file: 2*tau_sub depends on that geometry's eps.
 -dtCFL 1
--dtCFL_dphimax 0.2
 -outp 0

@@ -181,7 +181,13 @@ int main(int argc, char *argv[]) {
 
     /* Interface-CFL timestep limiter (InterfaceCFLMonitor) */
     user.flag_dtCFL   = PETSC_TRUE;   /* on by default */
-    user.cfl_dphimax  = 0.2;          /* max pointwise |dphi| per step */
+    user.cfl_dphimax  = 0.05;         /* max pointwise |dphi| per step. 0.2 before
+                                       * v2. enceladus_DSM 60244164 ladder (neck
+                                       * merge, otherwise identical runs): 0.2 let the
+                                       * front cross 1.13 elements/step, phi overshoot
+                                       * 8e-3, rho_v/rho_vs in [-6.7, 8.2]; 0.05 gave
+                                       * 0.28 elements/step, overshoot at machine
+                                       * precision, rho_v/rho_vs in [0.99, 1.00]. */
     user.cfl_U_prev   = NULL;
     user.cfl_diff     = NULL;
     user.cfl_n_reject = 0;
