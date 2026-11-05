@@ -167,6 +167,18 @@ typedef struct {
   PetscBool flux_face[3][2];
   PetscViewer bflux_view;
 
+  // Resolution checker (ResolutionMonitor): the K&P (2009) Eq. 45 number
+  // Pi = beta_sub0 * v_n * eps / d0_sub0 from the measured interface speed,
+  // and the largest phi on an open face. One row per step in resolution.dat.
+  Vec         res_U_prev;
+  PetscReal   res_t_prev;
+  PetscReal   res_pi_max;     // largest Pi so far
+  PetscReal   res_open_phi_max; // largest phi seen on an open face so far
+  PetscInt    res_n_warn;     // steps with Pi > 0.5 (outside comp_eps's design margin)
+  PetscInt    res_n_bad;      // steps with Pi > 1 (Eq. 45 violated)
+  PetscInt    res_n_open;     // steps with phi > 0.01 on an open face
+  PetscViewer res_view;
+
   // Stall detector. A bounds excursion can leave the solve unable to advance
   // while TS keeps stepping: the run reaches t_final and reports SUCCESS with a
   // solution that stopped changing. That happened twice on eps = 0.75 um runs

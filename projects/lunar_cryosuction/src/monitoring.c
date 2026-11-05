@@ -627,3 +627,177 @@ PetscErrorCode BoundaryFluxMonitor(TS ts, PetscInt step, PetscReal t, Vec U, voi
   ierr = PetscViewerFlush(user->bflux_view); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+
+/* =========================================================================
+ * Resolution checker
+ *
+ * Kaempfer and Plapp (2009, Eq. 45): the phase field relaxes on a time scale
+ * that must be shorter than the time the interface needs to cross its own
+ * width, which bounds eps < d0/(beta0 v_n). preprocess/comp_eps.py sizes eps
+ * at HALF that bound (safety 0.5) for an expected v_n. Here v_n is MEASURED
+ * every step, v_n = |dphi/dt| / |grad phi| at quadrature points inside the
+ * interface band (0.1 < phi < 0.9), and the number
+ *
+ *     Pi = beta_sub0 * v_n * eps / d0_sub0
+ *
+ * is reported: Pi <= 0.5 is inside comp_eps's design margin, 0.5 < Pi <= 1
+ * is outside the margin but inside the bound, Pi > 1 violates Eq. 45 (the
+ * mesh/eps is too coarse for the speed the run actually reached). The same
+ * pass records the largest phi on any open face (-phi_open_bc), where the
+ * stage-0 tests found a spurious film once ice touches the face.
+ * dphi/dt is a backward difference over the last accepted step. Read-only.
+ * ========================================================================= */
+PetscErrorCode ResolutionMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void *mctx)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  AppCtx  *user = (AppCtx *)mctx;
+  PetscInt dim  = user->dim;
+
+  if (!user->res_U_prev) {
+    ierr = VecDuplicate(U, &user->res_U_prev); CHKERRQ(ierr);
+    ierr = VecCopy(U, user->res_U_prev); CHKERRQ(ierr);
+    user->res_t_prev = t;
+    PetscFunctionReturn(0);
+  }
+  PetscReal dt = t - user->res_t_prev;
+  if (dt <= 0.0) PetscFunctionReturn(0);
+
+  PetscReal vmax = 0.0, open_max = 0.0;
+  Vec lU, lP; const PetscScalar *aU, *aP;
+  IGAElement el; IGAPoint pt; PetscScalar *UU, *PP;
+  ierr = IGAGetLocalVecArray(user->iga, U, &lU, &aU); CHKERRQ(ierr);
+  ierr = IGAGetLocalVecArray(user->iga, user->res_U_prev, &lP, &aP); CHKERRQ(ierr);
+  ierr = IGABeginElement(user->iga, &el); CHKERRQ(ierr);
+  while (IGANextElement(user->iga, el)) {
+    ierr = IGAElementGetValues(el, aU, &UU); CHKERRQ(ierr);
+    ierr = IGAElementGetValues(el, aP, &PP); CHKERRQ(ierr);
+    while (IGAElementNextForm(el, user->open_face)) {
+      ierr = IGAElementBeginPoint(el, &pt); CHKERRQ(ierr);
+      while (IGAElementNextPoint(el, pt)) {
+        PetscScalar s[3];
+        ierr = IGAPointFormValue(pt, UU, &s[0]); CHKERRQ(ierr);
+        PetscReal phi = PetscRealPart(s[0]);
+        if (el->atboundary) {                     /* open-face point */
+          open_max = PetscMax(open_max, phi);
+          continue;
+        }
+        if (phi <= 0.1 || phi >= 0.9) continue;   /* interface band only */
+        PetscScalar sp[3], g[9];
+        ierr = IGAPointFormValue(pt, PP, &sp[0]); CHKERRQ(ierr);
+        ierr = IGAPointFormGrad(pt, UU, &g[0]); CHKERRQ(ierr);
+        PetscReal gn = 0.0;
+        for (PetscInt l = 0; l < dim; l++) gn += PetscSqr(PetscRealPart(g[l]));
+        gn = PetscSqrtReal(gn);
+        if (gn <= 0.0) continue;
+        PetscReal v = PetscAbsReal(phi - PetscRealPart(sp[0])) / dt / gn;
+        vmax = PetscMax(vmax, v);
+      }
+      ierr = IGAElementEndPoint(el, &pt); CHKERRQ(ierr);
+    }
+  }
+  ierr = IGAEndElement(user->iga, &el); CHKERRQ(ierr);
+  ierr = IGARestoreLocalVecArray(user->iga, U, &lU, &aU); CHKERRQ(ierr);
+  ierr = IGARestoreLocalVecArray(user->iga, user->res_U_prev, &lP, &aP); CHKERRQ(ierr);
+  PetscReal loc[2] = {vmax, open_max}, glob[2];
+  ierr = MPI_Allreduce(loc, glob, 2, MPIU_REAL, MPI_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+  vmax = glob[0]; open_max = glob[1];
+
+  PetscReal Pi = user->beta_sub0 * vmax * user->eps / user->d0_sub0;
+  user->res_pi_max = PetscMax(user->res_pi_max, Pi);
+  user->res_open_phi_max = PetscMax(user->res_open_phi_max, open_max);
+  if (Pi > 0.5) user->res_n_warn++;
+  if (Pi > 1.0) user->res_n_bad++;
+  if (open_max > 0.01) user->res_n_open++;
+
+  if (Pi > 1.0) {
+    PetscPrintf(PETSC_COMM_WORLD,
+      "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+      "!!! RESOLUTION WARNING step %d: interface too fast for this eps/mesh (K&P Eq. 45)\n"
+      "!!!   v_n = %.3e m/s  ->  Pi = beta0 v_n eps/d0 = %.3f > 1\n"
+      "!!!   eps must be below d0/(beta0 v_n) = %.3e m; rerun comp_eps.py --vn %.3e\n"
+      "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n",
+      (int)step, (double)vmax, (double)Pi,
+      (double)(user->d0_sub0 / (user->beta_sub0 * vmax)), (double)vmax);
+  } else if (Pi > 0.5) {
+    PetscPrintf(PETSC_COMM_WORLD,
+      "RESOLUTION NOTE step %d: Pi = %.3f (outside comp_eps margin 0.5, inside the Eq. 45 bound), v_n = %.3e m/s\n",
+      (int)step, (double)Pi, (double)vmax);
+  }
+  if (open_max > 0.01) {
+    PetscPrintf(PETSC_COMM_WORLD,
+      "!!! OPEN-FACE WARNING step %d: phi = %.3f on an open face (ice touches it; "
+      "the stage-0 tests found a spurious film grows from here)\n", (int)step, (double)open_max);
+  }
+
+  if (user->res_view == NULL) {
+    char fn[256];
+    const char *dir = getenv("folder");
+    if (dir) { snprintf(fn, sizeof(fn), "%s/resolution.dat", dir); }
+    else     { snprintf(fn, sizeof(fn), "resolution.dat"); }
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, fn, &user->res_view); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(user->res_view,
+             "# K&P Eq. 45 check: Pi = beta0 v_n eps/d0 (<= 0.5 design, > 1 violated); "
+             "eps %.6e m, beta0 %.6e s/m, d0 %.6e m\n# t step dt vn_max Pi phi_max_open_face\n",
+             (double)user->eps, (double)user->beta_sub0, (double)user->d0_sub0); CHKERRQ(ierr);
+  }
+  ierr = PetscViewerASCIIPrintf(user->res_view, "%.10e %d %.6e %.6e %.6e %.6e\n",
+           (double)t, (int)step, (double)dt, (double)vmax, (double)Pi, (double)open_max); CHKERRQ(ierr);
+  ierr = PetscViewerFlush(user->res_view); CHKERRQ(ierr);
+
+  ierr = VecCopy(U, user->res_U_prev); CHKERRQ(ierr);
+  user->res_t_prev = t;
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode ResolutionStaticCheck(AppCtx *user)
+{
+  PetscFunctionBegin;
+  const PetscReal hmax = user->eps / PetscSqrtReal(2.0);
+  PetscReal L[3] = {user->Lx, user->Ly, user->Lz};
+  PetscInt  N[3] = {user->Nx, user->Ny, user->Nz};
+  const char ax[3] = {'x', 'y', 'z'};
+  PetscBool bad = PETSC_FALSE;
+  PetscPrintf(PETSC_COMM_WORLD, "\nRESOLUTION CHECK (start-up)\n");
+  for (PetscInt l = 0; l < user->dim; l++) {
+    if (N[l] <= 0 || L[l] <= 0.0) continue;
+    PetscReal h = L[l] / (PetscReal)N[l];
+    PetscPrintf(PETSC_COMM_WORLD, "   h_%c = L/N = %.4e m   eps/sqrt(2) = %.4e m   ratio %.3f\n",
+                ax[l], (double)h, (double)hmax, (double)(h / hmax));
+    if (h > 1.05 * hmax) bad = PETSC_TRUE;
+  }
+  PetscReal rmin = PETSC_MAX_REAL;
+  for (PetscInt k = 0; k < user->n_act; k++)
+    if (user->radius && user->radius[k] > 0.0) rmin = PetscMin(rmin, user->radius[k]);
+  if (rmin < PETSC_MAX_REAL) {
+    PetscPrintf(PETSC_COMM_WORLD, "   eps / smallest IC grain radius = %.4f (comp_eps limit 0.05)\n",
+                (double)(user->eps / rmin));
+    if (user->eps / rmin > 0.05) bad = PETSC_TRUE;
+  }
+  PetscPrintf(PETSC_COMM_WORLD,
+    "   eps is only valid for front speeds v_n < d0/(2 beta0 eps) = %.3e m/s (comp_eps margin)\n",
+    (double)(user->d0_sub0 / (2.0 * user->beta_sub0 * user->eps)));
+  if (bad) {
+    PetscPrintf(PETSC_COMM_WORLD,
+      "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+      "!!! RESOLUTION WARNING: mesh coarser than eps/sqrt(2) by > 5 %% or eps > 5 %% of the\n"
+      "!!! smallest grain radius. Size eps and Nx/Ny/Nz with preprocess/comp_eps.py.\n"
+      "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n");
+  }
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode ResolutionSummary(AppCtx *user)
+{
+  PetscFunctionBegin;
+  PetscPrintf(PETSC_COMM_WORLD,
+    "\nRESOLUTION SUMMARY: max Pi = %.3f; steps with Pi > 0.5: %d, Pi > 1: %d; "
+    "max phi on an open face %.3e (%d steps > 0.01)%s\n",
+    (double)user->res_pi_max, (int)user->res_n_warn, (int)user->res_n_bad,
+    (double)user->res_open_phi_max, (int)user->res_n_open,
+    (user->res_n_bad > 0 || user->res_n_open > 0) ? "   <-- CHECK THIS RUN" : "");
+  PetscFunctionReturn(0);
+}

@@ -183,6 +183,9 @@ int main(int argc, char *argv[]) {
     user.flag_dtCFL   = PETSC_TRUE;   /* on by default */
     user.cfl_dphimax  = 0.2;          /* max pointwise |dphi| per step */
     user.cfl_U_prev   = NULL;
+    user.res_U_prev = NULL; user.res_view = NULL; user.res_t_prev = 0.0;   /* ResolutionMonitor */
+    user.res_pi_max = 0.0; user.res_open_phi_max = 0.0;
+    user.res_n_warn = 0; user.res_n_bad = 0; user.res_n_open = 0;
     user.cfl_t_prev   = 0.0;
 
     user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see NASA_types.h) */
@@ -1421,6 +1424,13 @@ int main(int argc, char *argv[]) {
             ierr = TSMonitorSet(ts, BoundaryFluxMonitor, &user, NULL); CHKERRQ(ierr);
         }
     }
+    /* Resolution checker: K&P Eq. 45 from the measured interface speed, and
+     * ice on open faces. Output only; -resolution_check 0 turns it off. */
+    PetscBool resolution_check = PETSC_TRUE;
+    ierr = PetscOptionsGetBool(NULL, NULL, "-resolution_check", &resolution_check, NULL); CHKERRQ(ierr);
+    if (monitor && resolution_check) {
+        ierr = TSMonitorSet(ts, ResolutionMonitor, &user, NULL); CHKERRQ(ierr);
+    }
     if (output) { ierr = TSMonitorSet(ts, OutputMonitor, &user, NULL); CHKERRQ(ierr); }
     /* Interface-CFL limiter: registered unconditionally (cheap — one vector
      * diff + stride norm per accepted step); disable with -dtCFL 0. */
@@ -2110,7 +2120,9 @@ int main(int argc, char *argv[]) {
     }
 
     /* Solve the system */
+    if (monitor && resolution_check) { ierr = ResolutionStaticCheck(&user); CHKERRQ(ierr); }
     ierr = TSSolve(ts, U); CHKERRQ(ierr);
+    if (monitor && resolution_check) { ierr = ResolutionSummary(&user); CHKERRQ(ierr); }
 
     PetscPrintf(PETSC_COMM_WORLD, "Solution completed. \n");
 
@@ -2118,6 +2130,8 @@ cleanup:
     /* Cleanup Resources */
     if (user.ssa_view) { ierr = PetscViewerDestroy(&user.ssa_view); CHKERRQ(ierr); }
     if (user.bflux_view) { ierr = PetscViewerDestroy(&user.bflux_view); CHKERRQ(ierr); }
+    if (user.res_view) { ierr = PetscViewerDestroy(&user.res_view); CHKERRQ(ierr); }
+    ierr = VecDestroy(&user.res_U_prev); CHKERRQ(ierr);
     if (user.solver_view) { ierr = PetscViewerDestroy(&user.solver_view); CHKERRQ(ierr); }
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = VecDestroy(&user.cfl_U_prev); CHKERRQ(ierr);
