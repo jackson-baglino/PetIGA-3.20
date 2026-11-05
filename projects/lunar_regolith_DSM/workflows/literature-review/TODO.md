@@ -70,7 +70,7 @@ Goal: a line that passes its own rules, frozen, so that the nine-paper result be
 - [x] **1.8 Me: pin the Claude Code version.** (Done 2026-11-04: 2.1.318; the freeze now records it and `verify` reports a change.) The lock says 2.1.308; this machine runs 2.1.317. Why: the freeze
       records the version, and a version change means rerunning the calibration. I record 2.1.317 if the tuning rerun
       (1.5) ran on it. **⟂ depends:** if Claude Code updates again before the freeze, rerun 1.5.
-- [ ] **1.9 Me: final development checks.** All tests pass, `check_permissions.py`, `lr_status.py --write`, commit.
+- [x] **1.9 Me: final development checks.** (Done 2026-11-04: literature review 152, units 48, flowchart 6, preprocess 10 tests pass; permissions OK; ruff clean.) All tests pass, `check_permissions.py`, `lr_status.py --write`, commit.
 - [ ] **1.10 You: approve the freeze** (`/lr-freeze`, v1). Why: from here on nothing that affects results can change
       during the run.
 - [ ] **1.11 Me: live hook checks** right after the freeze. These can only be tested in the execute phase: an edit
