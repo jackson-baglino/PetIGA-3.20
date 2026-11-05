@@ -1,0 +1,10 @@
+gate,case,result
+F1,legacy_bitwise,PASS
+F2,rhovfix_faces_x0x1,PASS
+F2,Tfix_faces_x0x1,PASS
+F3,runs_and_differs,PASS
+F3,x0_open_and_pinned,PASS
+F3,x1_dead_end,PASS
+F4,no_flag,PASS
+F4,with_axis,PASS
+F4,T_parallel,PASS

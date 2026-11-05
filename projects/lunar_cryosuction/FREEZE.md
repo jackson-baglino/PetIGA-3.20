@@ -54,4 +54,4 @@ belong to which version.
 
 | Commit | Date | Category | What and why | Regression gate |
 |---|---|---|---|---|
-| — | — | — | (no changes since the freeze) | — |
+| 60bd33a5 | 2026-11-04 | BC option | `-rhovfix_faces`, `-Tfix_faces`: pin vapor or T only on named faces (open end plus dead pore). Unset = legacy logic. `-wall_faces` parser factored into `ParseFaceList`. | G1–G4 PASS (`verify_wall_bc.sh`, base 1443a0b0); F1 bitwise vs 1443a0b0 with legacy reservoirs, F2–F4 PASS (`studies/cryosuction/verification/verify_face_bc.sh`) |

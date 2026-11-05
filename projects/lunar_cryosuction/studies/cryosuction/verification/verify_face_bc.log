@@ -1,0 +1,35 @@
+BASE_REF = HEAD (1443a0b0)
+
+=== F1: legacy reservoir options, base vs new binary ===
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/assembly.c -o obj/assembly.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/cryosuction_main.c -o obj/cryosuction_main.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/env_helper.c -o obj/env_helper.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/initial_conditions.c -o obj/initial_conditions.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/material_properties.c -o obj/material_properties.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/monitoring.c -o obj/monitoring.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/snes_convergence.c -o obj/snes_convergence.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -Wl,-ld_classic -Wl,-bind_at_load -Wl,-commons,use_dylibs -Wl,-search_paths_first -Wl,-no_compact_unwind -Wl,-ld_classic -Wl,-bind_at_load -Wl,-commons,use_dylibs -Wl,-search_paths_first -Wl,-no_compact_unwind  -Wall -Wwrite-strings -Wno-unknown-pragmas -fstack-protector -fno-stack-check -Qunused-arguments -O3 -march=native -mtune=native -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -o lunar_cryosuction obj/assembly.o obj/cryosuction_main.o obj/env_helper.o obj/initial_conditions.o obj/material_properties.o obj/monitoring.o obj/snes_convergence.o -Wl,-rpath,/Users/jacksonbaglino/PetIGA-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -L/Users/jacksonbaglino/PetIGA-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -lpetiga -L/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -Wl,-rpath,/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -L/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -Wl,-rpath,/opt/X11/lib -L/opt/X11/lib -L/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12/gcc/aarch64-apple-darwin23/12 -L/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12/gcc -L/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12 -Wl,-rpath,/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12/gcc/aarch64-apple-darwin23/12 -Wl,-rpath,/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12/gcc -Wl,-rpath,/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12 -lpetsc -lsuperlu_dist -lflapack -lfblas -lparmetis -lmetis -lX11 -lmpifort -lmpi -lpmpi -lpthread -lm -lgfortran -lemutls_w -lheapt_w -ld_classic -lgfortran -lquadmath -lc++
+ld: warning: -commons use_dylibs is no longer supported, using error treatment instead
+ld: warning: -commons use_dylibs is no longer supported, using error treatment instead
+ld: warning: -bind_at_load is deprecated on macOS
+  F1 legacy_bitwise: PASS
+
+=== F2: face lists reproduce the legacy options ===
+  F2 rhovfix_faces_x0x1: PASS
+  F2 Tfix_faces_x0x1: PASS
+
+=== F3: one-sided reservoir ===
+   x = 0   (left)     open  (ice passes)     Dirichlet -20.0031 C     Dirichlet 8.4020e-04 kg/m3
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+  F3 runs_and_differs: PASS
+  F3 x0_open_and_pinned: PASS
+  F3 x1_dead_end: PASS
+
+=== F4: guards ===
+  F4 no_flag: PASS
+  F4 with_axis: PASS
+  F4 T_parallel: PASS
+
+ALL GATES PASSED   (see /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/studies/cryosuction/verification/verify_face_bc.csv)
