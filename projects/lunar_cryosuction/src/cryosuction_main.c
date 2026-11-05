@@ -101,6 +101,41 @@ static PetscBool RestartStateFromLog(const char *sol_path, PetscReal *t_out,
   return found;
 }
 
+/* Parse a face list such as "x0,y1" into face[axis][side]: an axis letter
+ * x/y/z followed by side 0 (low coordinate) or 1 (high). Used by -wall_faces,
+ * -rhovfix_faces and -Tfix_faces; opt is the option name for error messages.
+ * face is cleared first, and *any is set if at least one face was named. */
+static PetscErrorCode ParseFaceList(const char *opt, const char *list, PetscInt dim,
+                                    PetscBool face[3][2], PetscBool *any)
+{
+  PetscErrorCode ierr;
+  ierr = PetscMemzero(face, 6 * sizeof(PetscBool)); CHKERRQ(ierr);
+  *any = PETSC_FALSE;
+  for (const char *c = list; *c != '\0'; c++) {
+    PetscInt axis, side;
+    if (*c == ',' || *c == ' ') continue;
+    if      (*c == 'x' || *c == 'X') axis = 0;
+    else if (*c == 'y' || *c == 'Y') axis = 1;
+    else if (*c == 'z' || *c == 'Z') axis = 2;
+    else SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                 "%s \"%s\": expected an axis letter x/y/z, got '%c'. "
+                 "Use a comma-separated list like \"y0,y1\".", opt, list, *c);
+    c++;
+    if      (*c == '0') side = 0;
+    else if (*c == '1') side = 1;
+    else SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                 "%s \"%s\": axis letter must be followed by side "
+                 "0 (low) or 1 (high).", opt, list);
+    if (axis >= dim)
+      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+              "%s \"%s\" names axis %d but -dim is %d.",
+              opt, list, (int)axis, (int)dim);
+    face[axis][side] = PETSC_TRUE;
+    *any = PETSC_TRUE;
+  }
+  return 0;
+}
+
 int main(int argc, char *argv[]) {
     /* Petsc Initialization */
     PetscErrorCode ierr;
@@ -197,6 +232,13 @@ int main(int argc, char *argv[]) {
     PetscReal contact_angle_deg = 0.0;
     PetscBool contact_angle_set = PETSC_FALSE;
     char      wall_faces[64] = "";
+    /* -rhovfix_faces / -Tfix_faces: when set, pin only the named faces
+     * (one-sided reservoirs, e.g. an open end and a dead pore). Empty
+     * means the legacy axis logic below, unchanged. */
+    char      rhovfix_faces[64] = "";
+    char      Tfix_faces[64]    = "";
+    PetscBool rhovfix_face[3][2], Tfix_face[3][2];
+    PetscBool rhovfix_faces_any = PETSC_FALSE, Tfix_faces_any = PETSC_FALSE;
     PetscBool test_wall_measure = PETSC_FALSE;
     PetscBool test_wall_jacobian = PETSC_FALSE;
 
@@ -718,6 +760,28 @@ int main(int argc, char *argv[]) {
     if (user.rhovfix_axis >= dim)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
                 "-rhovfix_axis %d is out of range for dim=%d", (int)user.rhovfix_axis, (int)dim);
+    ierr = PetscOptionsString("-rhovfix_faces",
+             "With -flag_BC_rhovfix: pin vapor ONLY on these faces, e.g. \"x0\" "
+             "(value -rhovfix_lo on side-0 faces, -rhovfix_hi on side-1 faces). "
+             "Faces left out are zero-flux, e.g. a dead pore. Default: unset "
+             "(use -rhovfix_axis)",
+             "", rhovfix_faces, rhovfix_faces, sizeof(rhovfix_faces), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsString("-Tfix_faces",
+             "With -flag_BC_Tfix: pin T ONLY on these faces, e.g. \"x0\", to "
+             "temp0 + (2*side-1)*grad_temp0[axis]*L/2. Faces left out are "
+             "insulated. Default: unset (legacy gradient-axis logic)",
+             "", Tfix_faces, Tfix_faces, sizeof(Tfix_faces), NULL); CHKERRQ(ierr);
+    ierr = ParseFaceList("-rhovfix_faces", rhovfix_faces, dim, rhovfix_face, &rhovfix_faces_any); CHKERRQ(ierr);
+    ierr = ParseFaceList("-Tfix_faces", Tfix_faces, dim, Tfix_face, &Tfix_faces_any); CHKERRQ(ierr);
+    if (rhovfix_faces_any && !flag_BC_rhovfix)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                "-rhovfix_faces is set but -flag_BC_rhovfix is off.");
+    if (rhovfix_faces_any && user.rhovfix_axis >= 0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                "-rhovfix_faces and -rhovfix_axis are both set; use one.");
+    if (Tfix_faces_any && !flag_BC_Tfix)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                "-Tfix_faces is set but -flag_BC_Tfix is off.");
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-dtCFL",           "Interface-CFL timestep limiter",                   "", user.flag_dtCFL, &user.flag_dtCFL, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-axisym",          "Axisymmetric r-z mode (x=axis, y=radius; grains on y=0)", "", user.axisym, &user.axisym, NULL); CHKERRQ(ierr);
@@ -964,32 +1028,7 @@ int main(int argc, char *argv[]) {
      * -wall_faces "y0,y1": axis letter x/y/z followed by side 0 (low
      * coordinate) or 1 (high). Faces left out keep the natural Neumann
      * dphi/dn = 0 they have always had, so omitting the flag is a no-op. */
-    ierr = PetscMemzero(user.wall_face, sizeof(user.wall_face)); CHKERRQ(ierr);
-    user.wall_any = PETSC_FALSE;
-    if (wall_faces[0] != '\0') {
-        for (const char *c = wall_faces; *c != '\0'; c++) {
-            PetscInt axis, side;
-            if (*c == ',' || *c == ' ') continue;
-            if      (*c == 'x' || *c == 'X') axis = 0;
-            else if (*c == 'y' || *c == 'Y') axis = 1;
-            else if (*c == 'z' || *c == 'Z') axis = 2;
-            else SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
-                         "-wall_faces \"%s\": expected an axis letter x/y/z, got '%c'. "
-                         "Use a comma-separated list like \"y0,y1\".", wall_faces, *c);
-            c++;
-            if      (*c == '0') side = 0;
-            else if (*c == '1') side = 1;
-            else SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
-                         "-wall_faces \"%s\": axis letter must be followed by side "
-                         "0 (low) or 1 (high).", wall_faces);
-            if (axis >= dim)
-                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                        "-wall_faces \"%s\" names axis %d but -dim is %d.",
-                        wall_faces, (int)axis, (int)dim);
-            user.wall_face[axis][side] = PETSC_TRUE;
-            user.wall_any = PETSC_TRUE;
-        }
-    }
+    ierr = ParseFaceList("-wall_faces", wall_faces, dim, user.wall_face, &user.wall_any); CHKERRQ(ierr);
     if (user.wall_any && user.periodic == 1)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
                 "-wall_faces is set but -periodic 1: a periodic domain has no "
@@ -1280,6 +1319,7 @@ int main(int argc, char *argv[]) {
              * not the legacy all-faces behaviour (-1). */
             if (user.rhovfix_axis >= 0 && l != user.rhovfix_axis) continue;
             for (PetscInt m = 0; m < 2; m++) {
+                if (rhovfix_faces_any && !rhovfix_face[l][m]) continue;
                 /* Axisymmetric mode: the y = 0 face is the symmetry AXIS —
                  * interior space of the 3D problem, usually with ice sitting
                  * on it — never a reservoir. Keep it natural Neumann (the
@@ -1328,8 +1368,16 @@ int main(int argc, char *argv[]) {
         for (PetscInt l = 0; l < dim; l++) {
             /* Face parallel to the gradient (no component along axis l): leave
              * it insulating so the transverse gradient survives on that edge. */
-            if (has_grad && user.grad_temp0[l] == 0.0) continue;
+            if (has_grad && user.grad_temp0[l] == 0.0) {
+                if (Tfix_faces_any && (Tfix_face[l][0] || Tfix_face[l][1]))
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                            "-Tfix_faces names a face on axis %d, which is parallel to "
+                            "-grad_temp0: T varies along it, so a constant value is wrong.",
+                            (int)l);
+                continue;
+            }
             for (PetscInt m = 0; m < 2; m++) {
+                if (Tfix_faces_any && !Tfix_face[l][m]) continue;
                 /* Axisym: skip the y=0 axis face (interior space, not a
                  * thermal reservoir) — same guard as the vapor BC above. */
                 if (user.axisym && l == 1 && m == 0) continue;
