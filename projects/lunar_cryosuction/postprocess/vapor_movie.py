@@ -15,8 +15,8 @@ THE TRACERS ARE A VISUALIZATION, NOT PART OF THE MODEL
   The solver has no particles. For each snapshot the flux is interpolated to a regular grid and particles are
   advected through it (RK2, --subframes steps per snapshot). Their SPEED IS RESCALED FOR VISIBILITY: a particle
   moves --dmax um per step at the reference flux (the median over snapshots of the 90th percentile of |flux| in
-  the air), and no faster. Vapor really crosses a pore in well under a second, far less than the time between
-  snapshots, so the absolute speed means nothing; direction and relative speed (fast in a throat, stalled behind
+  the air), and no faster. With the physical D_v the vapor drift speed D_v |grad ln rho_v| is ~0.1-0.3 mm/s in the
+  stage-0b runs, so vapor crosses a pore in seconds, far less than the hours between snapshots, so the absolute speed means nothing; direction and relative speed (fast in a throat, stalled behind
   ice) are what the particles show. Particles respawn at random air locations when they enter ice, leave the
   mesh, or reach the domain edge moving outward (an open vapor face such as a reservoir), plus a 1 % random
   refresh per step so they do not bunch up.

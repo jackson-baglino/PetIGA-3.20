@@ -69,8 +69,9 @@ python3 postprocess/vapor_movie.py --dir <run> --tracers    # + vapor-flux trace
 The tracers are a visualization, not model output: they follow the direction
 of the model's vapor flux, `-phi_a grad(rho_v)`, with the speed rescaled so a
 particle moves `--dmax` um per frame at a typical flux (the median over snapshots
-of the 90th percentile of the air's flux). Real vapor crosses a pore in under a
-second, far less than the time between snapshots, so read direction and relative
+of the 90th percentile of the air's flux). With the physical `D_v`, vapor drifts at
+`D_v |grad ln rho_v|`, about 0.1 to 0.3 mm/s in the stage-0b runs, so it crosses a
+pore in seconds, far less than the hours between snapshots, so read direction and relative
 speed, not absolute speed. Each movie also writes `<name>_first.png`, the poster
 frame to give PowerPoint. It replaces the capability of the retired
 `scratch/make_field_movie.py` (raw vapor density on `amp`, no tracers).
