@@ -74,10 +74,27 @@ def items_for(paper, ids, plants, offset):
                                            p.get("planted_unit", p.get("correct_unit")))})
     for i, g in enumerate(gold, 1):
         if g.get("paper") == paper and g.get("statement"):
+            pages = g.get("page") if isinstance(g.get("page"), list) else [g.get("page")]
             out.append({"id": f"G{i:03d}", "role": "control", "fact": ("S", i),
                         "text": g["statement"], "page_pdf": pdf_page(g.get("page"), offset),
+                        "pages_pdf": [pdf_page(x, offset) for x in pages if x is not None],
                         "parameter": parameter(g.get("symbol"), g.get("value"), g.get("unit"))})
     return [x for x in out if x["page_pdf"]]
+
+
+def shown_claim(x):
+    """The item as the checker sees it: a claim with its main page; a gold statement's other pages named."""
+    more = [p for p in x.get("pages_pdf", []) if p != x["page_pdf"]]
+    return {"id": x["id"], "text": x["text"], "kind": "parameter" if x.get("parameter") else "result",
+            "quote": "", "page_pdf": x["page_pdf"],
+            "location": f"the statement also draws on PDF page(s) {', '.join(map(str, more))}" if more else "",
+            "conditions": [], "quote_check": "not given", **({"parameter": x["parameter"]} if x.get("parameter") else {})}
+
+
+def pages_shown(group):
+    """Every page an item of the call cites: the main page, and each further page a gold statement lists (a fact
+    on p. 12 whose condition is on p. 5 is checked on both, as gold_statements.yaml says)."""
+    return sorted({p for x in group for p in (x.get("pages_pdf") or [x["page_pdf"]])})
 
 
 def calls(items):
@@ -139,11 +156,8 @@ def main(argv=None):
         for k, g in enumerate(calls(items)):
             if all(x["id"] in verdicts for x in g):
                 continue
-            shown = [{"id": x["id"], "text": x["text"], "kind": "parameter" if x.get("parameter") else "result",
-                      "quote": "", "page_pdf": x["page_pdf"], "location": "", "conditions": [],
-                      "quote_check": "not given", **({"parameter": x["parameter"]} if x.get("parameter") else {})}
-                     for x in g]
-            show = [by_num[p] for p in sorted({x["page_pdf"] for x in g}) if p in by_num]
+            shown = [shown_claim(x) for x in g]
+            show = [by_num[p] for p in pages_shown(g) if p in by_num]
             with tempfile.TemporaryDirectory() as tmp:
                 files = rc.folder_with(show, tmp)
                 res, meta = ac.call(tmp, ac.prompt("checker_verdicts", files=files,
