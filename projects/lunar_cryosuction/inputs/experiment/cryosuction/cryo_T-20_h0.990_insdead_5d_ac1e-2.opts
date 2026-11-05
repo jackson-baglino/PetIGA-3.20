@@ -1,0 +1,23 @@
+# experiment/cryosuction/cryo_T-20_h0.990_insdead_5d_ac1e-2.opts
+#
+# Stage 0, pilot C4: T fixed ONLY at the open end; dead pore and walls
+# insulated. Against the isothermal C1 this isolates sublimation cooling.
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-Tfix_faces x0
+-flag_BC_rhovfix 1
+-rhovfix_faces x0
+-rhovfix_lo 0.990
+-t_final 4.32e5
+-n_out 61
+# --- substrate and kinetics ---
+-beta_sub0 7.9408e5                     # K&P beta0 at -20 C, alpha_c = 1e-2 (comp_eps beta_sub)
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # Young: cos(theta) = 0.5, theta = 60 deg
+# -dtmax is in the GEOMETRY file: 2*tau_sub depends on that geometry's eps.
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0

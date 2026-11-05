@@ -1,18 +1,19 @@
-# stage 0 -- cryosuction shakedown (2026-11-04). For scripts/HPC/submit_batch.sh
-# --tests-file; see studies/cryosuction/README.md for what each test checks.
+# stage 0 -- cryosuction shakedown, REQUEUE 2026-11-04 (alpha_c 1e-2, eps and
+# mesh from comp_eps.py at each run's expected front speed). For
+# scripts/HPC/submit_batch.sh --tests-file; see studies/cryosuction/README.md.
 #
-# A: open-face verification, pure curvature flow (1 rank each)
-openface_2D_box60um_disc_offcenter:openface_T-20_curvflow_7d
-openface_2D_box60um_disc_offcenter:openface_T-20_curvflow_7d_closed
-openface_2D_box60um_disc_interior:openface_T-20_curvflow_7d
-openface_2D_box60x30um_cap:openface_T-20_curvflow_7d
-# B: time-scaling invariance, H125 dead-end channel, open end at h = 0.99
-channel_2D_H125um_eps0.86um_deadend:cryo_T-20_h0.990_iso_3d_xiv1e-3
-channel_2D_H125um_eps0.86um_deadend:cryo_T-20_h0.990_iso_3d_xiv1e-4
-channel_2D_H125um_eps0.86um_deadend:cryo_T-20_h0.990_iso_3d_xiv1e-2
-channel_2D_H125um_eps0.86um_deadend:cryo_T-20_h0.990_iso_3d_xiv1e-3_xiT1e-3
-# C: pilot cryosuction, open end at h = 0.90
-throat_2D_L850um_eps0.86um_narrowL_deadend:cryo_T-20_h0.900_iso_5d
-regolithpore_2D_L814um_eps0.86um_throat_deadend:cryo_T-20_h0.900_iso_5d
-throat_2D_L850um_eps0.86um_narrowL_deadend:cryo_T-20_h0.900_G+1000_warmdead_5d
-throat_2D_L850um_eps0.86um_narrowL_deadend:cryo_T-20_h0.900_insdead_5d
+# A: open-face verification, pure curvature flow
+openface_2D_box60um_disc_offcenter:openface_T-20_curvflow_22h_ac1e-2
+openface_2D_box60um_disc_offcenter:openface_T-20_curvflow_22h_ac1e-2_closed
+openface_2D_box60um_disc_interior:openface_T-20_curvflow_22h_ac1e-2
+openface_2D_box60x30um_cap:openface_T-20_curvflow_22h_ac1e-2
+# B: time-scaling invariance, H125 dead-end channel (eps 0.39 um), h = 0.99
+channel_2D_H125um_eps0.39um_deadend:cryo_T-20_h0.990_iso_3d_ac1e-2_xiv1e-3
+channel_2D_H125um_eps0.39um_deadend:cryo_T-20_h0.990_iso_3d_ac1e-2_xiv1e-4
+channel_2D_H125um_eps0.39um_deadend:cryo_T-20_h0.990_iso_3d_ac1e-2_xiv1e-2
+channel_2D_H125um_eps0.39um_deadend:cryo_T-20_h0.990_iso_3d_ac1e-2_xiv1e-3_xiT1e-3
+# C: pilot cryosuction
+throat_2D_L850um_eps0.86um_narrowL_deadend:cryo_T-20_h0.990_iso_5d_ac1e-2
+regolithpore_2D_L814um_eps0.86um_throat_deadend:cryo_T-20_h0.998_iso_5d_ac1e-2
+throat_2D_L850um_eps0.86um_narrowL_deadend:cryo_T-20_h0.990_G+100_warmdead_5d_ac1e-2
+throat_2D_L850um_eps0.86um_narrowL_deadend:cryo_T-20_h0.990_insdead_5d_ac1e-2

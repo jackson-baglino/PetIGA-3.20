@@ -4,9 +4,10 @@
 # Open-face verification (stage 0, test A1/A2; studies/cryosuction/README.md).
 # Pure curvature flow (the experiment sets -decouple_phase_change 1), so the
 # ice area has an analytic law: dA/dt = -D * (total turning of the interface),
-# D = eps^2/tau_sub. eps is the H125 channel's comp_eps value (8.5840e-7 m at
-# -20 C, alpha_c 1e-3) so the test checks the production interface; the mesh
-# follows the solver rule h = eps/sqrt(2) = 6.07e-7 m.
+# D = eps^2/tau_sub. eps and Nx/Ny are from comp_eps.py (written with --patch,
+# 2026-11-04), alpha_c 1e-2, default v_n (curvature flow is far slower):
+#   comp_eps.py --Lx 6.0e-5 --Ly 4.5e-5 --Rave 1.5e-5 --T0 -20 --alpha 1e-2
+#   -> B-KINETIC binding, -eps 6.3921e-07 (h = 4.52e-7 m), all checks OK
 #
 # A disc R0 = 15 um centered 7.5 um OUTSIDE the open x = 0 face, so the face
 # cuts it off-center and the interface meets the face at about 60 deg, not 90.
@@ -17,17 +18,16 @@
 -dim 2
 -Nz 1
 -Lz 0
--eps 8.5840e-07
+-eps 6.3921e-07
 -eps_valid_temp -20.0
 -delt_t 1.0e-4
 -periodic 0
-# dtmax: the cryosuction experiments set it (alpha_c = 1e-3, -beta_sub0
-# 7.9408e6 gives tau_sub = 5.8604e3 s, dtmax = 2*tau_sub = 1.17e4 s). This
-# value, kept from geometry/contactangle/channel_2D_H125um_eps0.86um.opts, is
-# only the fallback for an experiment that sets no -dtmax.
--dtmax 5.948e+03
--Nx 99
--Ny 75
+# dtmax = 2*tau_sub for alpha_c 1e-2 (-beta_sub0 7.9408e5): tau_sub = 3.5952e2 s,
+# printed by the solver for this eps (studies/cryosuction/scripts/preflight.sh).
+# A different alpha_c or eps needs a new value.
+-dtmax 7.19e2
+-Nx 133
+-Ny 100
 -Lx 6.0e-5
 -Ly 4.5e-5
 -ice_grain_cx -7.5e-6

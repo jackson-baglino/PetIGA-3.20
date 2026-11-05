@@ -104,32 +104,32 @@ def main_figure(ic: Path, out: Path):
     fig = plt.figure(figsize=(11, 12.5))
     gs = fig.add_gridspec(3, 1, height_ratios=[1.0, 1.25, 1.25], hspace=0.70,
                           left=0.08, right=0.94, top=0.84, bottom=0.07)
-    fig.suptitle("Cryosuction stage 0: geometry, boundary conditions and initial ice  (T₀ = −20 °C, α_c = 10⁻³)",
+    fig.suptitle("Cryosuction stage 0: geometry, boundary conditions and initial ice  (T₀ = −20 °C, α_c = 10⁻²)",
                  x=0.08, ha="left", fontsize=13, color=INK, fontweight="bold", y=0.975)
     fig.text(0.08, 0.945, "Open end at x = 0 (left) faces the dry reservoir; x = Lx (right) is a dead pore. "
              "Ice is drawn from the solver's own initial state.\nWalls carry the static contact angle θ = 60° "
-             "(Young: γ_ia 0.109, γ_as 0.300, γ_is 0.2455 J/m²). eps = 0.858 µm, mesh h = eps/√2.",
+             "(Young: γ_ia 0.109, γ_as 0.300, γ_is 0.2455 J/m²).\neps and mesh from comp_eps.py at each run's expected front speed.",
              fontsize=9, color=INK2, va="top")
-    legend(fig, 0.925)
+    legend(fig, 0.915)
     faces = {"x0": ("open", "open end"), "x1": ("dead", "dead pore"),
              "y0": ("wall", ""), "y1": ("wall", "")}
 
     phi, X, Y = load(ic, "chan")
     panel(fig.add_subplot(gs[0]), phi, X, Y,
-          "B1–B4  flat channel, H = 125 µm, 375 µm long: one ice bridge (2 ranks)", faces,
+          "B1–B4  flat channel 125 × 375 µm, one ice bridge  (eps 0.39 µm)", faces,
           "Open end h = 0.99 of ρ_vs(T₀); every face held at T₀ (isothermal bath); 3 days.\n"
           "B1: ξ_v = 1e-3, ξ_T = 1 (M&F defaults).   B2: ξ_v = 1e-4.   B3: ξ_v = 1e-2.   B4: ξ_v = ξ_T = 1e-3.")
     phi, X, Y = load(ic, "throat")
     panel(fig.add_subplot(gs[1]), phi, X, Y,
-          "C1, C3, C4  two-throat channel, 850 µm: plugs in a 30 µm and a 90 µm throat (6 ranks)", faces,
-          "Open end h = 0.90; 5 days.   C1: T₀ on every face.   C3: T fixed at both ends, +1000 K/m "
-          "(open end −20.43 °C, dead end −19.58 °C), walls insulated.\n"
+          "C1, C3, C4  two-throat channel, 850 µm: plugs in a 30 µm and a 90 µm throat   (eps 0.86 µm)", faces,
+          "Open end h = 0.99; 5 days.   C1: T₀ on every face.   C3: T fixed at both ends, +100 K/m "
+          "(open end −20.04 °C, dead end −19.96 °C), walls insulated.\n"
           "C4: T fixed at the open end only; dead end and walls insulated (isolates sublimation cooling).")
     phi, X, Y = load(ic, "regpore")
     panel(fig.add_subplot(gs[2]), phi, X, Y,
-          "C2  regolith pore, 814 µm, walls of 12 + 12 grains: central grain + 6 wall caps (9 ranks)",
-          faces, "Open end h = 0.90; T₀ on every face; 5 days. Note: the builder's 'throat_bridge' "
-          "grain does not touch either wall (free disc).")
+          "C2  regolith pore, 814 µm, walls of 12 + 12 grains: central grain + 6 wall caps   (eps 0.86 µm)",
+          faces, "Open end h = 0.998 (h = 0.99 would need eps 0.20 µm); T₀ on every face; 5 days.\n"
+          "Note: the builder's 'throat_bridge' grain does not touch either wall (free disc).")
     fig.savefig(out / "stage0_setup_cryosuction.png", dpi=200, facecolor="white")
     plt.close(fig)
 
@@ -140,8 +140,8 @@ def verification_figure(ic: Path, out: Path):
     fig.suptitle("Stage 0, tests A: does ice pass through the open end undisturbed?",
                  x=0.07, ha="left", fontsize=13, color=INK, fontweight="bold", y=0.97)
     fig.text(0.07, 0.915, "Pure curvature flow (phase change off): the ice area obeys dA/dt = −D·(total turning "
-             "of the interface), D = eps²/τ_sub = 1.26e-16 m²/s.\nAn open face must let the cut part shrink "
-             "exactly as if the domain continued. 1 rank each, 7 days.", fontsize=9, color=INK2, va="top")
+             "of the interface), D = eps²/τ_sub = 1.14e-15 m²/s (eps 0.64 µm, α_c 10⁻²).\nAn open face must let the cut part shrink "
+             "exactly as if the domain continued. 1 rank each, 22 hours.", fontsize=9, color=INK2, va="top")
     legend(fig, 0.83)
     plain = {"x1": ("plain", ""), "y0": ("plain", ""), "y1": ("plain", "")}
     phi, X, Y = load(ic, "off")

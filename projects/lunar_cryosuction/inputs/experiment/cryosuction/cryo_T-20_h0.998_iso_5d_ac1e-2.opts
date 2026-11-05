@@ -1,0 +1,23 @@
+# experiment/cryosuction/cryo_T-20_h0.998_iso_5d_ac1e-2.opts
+#
+# Stage 0, pilot C: open end x = 0 at h = 0.998, dead pore at x = Lx, isothermal
+# bath on every face (T fixed at both ends and on the walls). h = 0.998 is for
+# the regolith pore, whose eps budget does not allow h = 0.99 (see its file).
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1
+-rhovfix_faces x0
+-rhovfix_lo 0.998
+-t_final 4.32e5
+-n_out 61
+# --- substrate and kinetics ---
+-beta_sub0 7.9408e5                     # K&P beta0 at -20 C, alpha_c = 1e-2 (comp_eps beta_sub)
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # Young: cos(theta) = 0.5, theta = 60 deg
+# -dtmax is in the GEOMETRY file: 2*tau_sub depends on that geometry's eps.
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0

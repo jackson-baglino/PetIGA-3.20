@@ -1,0 +1,27 @@
+# experiment/cryosuction/cryo_T-20_h0.990_G+100_warmdead_5d_ac1e-2.opts
+#
+# Stage 0, pilot C3: T fixed at both ends with the DEAD end warm, +100 K/m
+# (1 K/cm): over the 850 um two-throat channel T runs -20.0425 C (open end) to
+# -19.9575 C (dead end); walls insulated. rhovfix_lo is a multiple of
+# rho_vs(T0 = -20 C), so the local open-end humidity is
+# 0.99*rho_vs(-20)/rho_vs(-20.0425) = 0.994 (still undersaturated). The old
+# +1000 K/m would have made it 1.031, supersaturated, reversing the flow.
+-temp -20.0
+-humidity 1.0
+-grad_temp0 100.0,0.0,0.0
+-flag_BC_Tfix 1
+-Tfix_faces x0,x1
+-flag_BC_rhovfix 1
+-rhovfix_faces x0
+-rhovfix_lo 0.990
+-t_final 4.32e5
+-n_out 61
+# --- substrate and kinetics ---
+-beta_sub0 7.9408e5                     # K&P beta0 at -20 C, alpha_c = 1e-2 (comp_eps beta_sub)
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # Young: cos(theta) = 0.5, theta = 60 deg
+# -dtmax is in the GEOMETRY file: 2*tau_sub depends on that geometry's eps.
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0

@@ -24,8 +24,11 @@ while IFS= read -r line; do
   if ( cd "$ROOT" && folder="$d" "$EXEC" -options_file inputs/solver.opts -options_file "$gf" \
          -options_file "$ef" -t_final 0 -pf_output 0 > "$d/out.txt" 2>&1 ); then
     tau=$(grep -m1 -E "tau_sub *=" "$d/out.txt" | sed 's/^ *//')
+    dtr=$(grep -m1 -E "dtmax/tau_sub" "$d/out.txt" | sed 's/^ *//')
     echo "OK   $line"
-    echo "     $tau"
+    echo "     $tau   $dtr"
+    grep -E "h_[xyz] = L/N|eps / smallest|only valid for front|RESOLUTION WARNING" "$d/out.txt" | sed 's/^ */     /'
+    grep -q "RESOLUTION WARNING" "$d/out.txt" && fail=1
     grep -E "^ +[xy] = " "$d/out.txt" | sed 's/^/    /'
   else
     echo "FAIL $line"; tail -5 "$d/out.txt" | sed 's/^/     /'; fail=1

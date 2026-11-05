@@ -33,8 +33,25 @@ from pathlib import Path
 
 import numpy as np
 
-EPS = 8.5840e-7
 RHO_ICE = 919.0  # src/cryosuction_main.c user.rho_ice
+
+
+def run_value(run: Path, key: str) -> float:
+    """eps (from the staged opts) or tau_sub (from the solver header in outp.txt)."""
+    if key == "eps":
+        val = float("nan")
+        for f in sorted(run.glob("*.opts")):
+            for line in f.read_text().splitlines():
+                if line.split()[:1] == ["-eps"]:
+                    val = float(line.split()[1])
+        return val
+    for name in ("outp.txt", "out.txt"):
+        f = run / name
+        if f.exists():
+            m = re.search(r"tau_sub\s*=\s*([0-9.eE+-]+)\s*s", f.read_text(errors="ignore"))
+            if m:
+                return float(m.group(1))
+    return float("nan")
 
 
 def find_run(batch: Path, geom: str, exp: str) -> Path | None:
@@ -64,6 +81,16 @@ def bflux(run: Path):
         return None, None
     a = np.loadtxt(f, comments="#", ndmin=2)
     return a[:, 0], a[:, 2]  # t, J_vap_x0 (first pinned face is x0 in these runs)
+
+
+def resolution(run: Path) -> str:
+    f = run / "resolution.dat"
+    if not f.exists():
+        return "resolution.dat missing"
+    a = np.loadtxt(f, ndmin=2)
+    flag = "  <-- CHECK" if (a[:, 4] > 1).any() or (a[:, 5] > 0.01).any() else ""
+    return (f"max Pi {a[:, 4].max():.3f} (steps > 0.5: {(a[:, 4] > 0.5).sum()}, > 1: {(a[:, 4] > 1).sum()}); "
+            f"max phi on open face {a[:, 5].max():.2e}{flag}")
 
 
 def solver_cost(run: Path) -> str:
@@ -108,7 +135,7 @@ def fig_a(batch: Path, out: Path, d_eff: float, r0: float):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    exp = "openface_T-20_curvflow_7d"
+    exp = "openface_T-20_curvflow_22h_ac1e-2"
     th, r0c, cx, d = math.pi / 3, 2.0e-5, -5.0e-6, 7.5e-6
     full0 = r0c * r0c * (th - math.sin(th) * math.cos(th))
     cases = [("A3 full disc", "openface_2D_box60um_disc_interior", exp, "#52514e",
@@ -146,7 +173,7 @@ def fig_a(batch: Path, out: Path, d_eff: float, r0: float):
 
 def part_a(batch: Path, tol: float, fig: Path | None = None):
     print("\n== A: open face, curvature flow ==")
-    exp, expc = "openface_T-20_curvflow_7d", "openface_T-20_curvflow_7d_closed"
+    exp, expc = "openface_T-20_curvflow_22h_ac1e-2", "openface_T-20_curvflow_22h_ac1e-2_closed"
     r3 = find_run(batch, "openface_2D_box60um_disc_interior", exp)
     if r3 is None:
         print("  A3 run not found; A skipped")
@@ -155,8 +182,9 @@ def part_a(batch: Path, tol: float, fig: Path | None = None):
     slope = np.polyfit(t3, a3, 1)[0]
     d_eff = -slope / (2 * math.pi)
     r0 = math.sqrt(a3[0] / math.pi)
+    eps, tau = run_value(r3, "eps"), run_value(r3, "tau_sub")
     print(f"  A3 {r3.name}: R0 = {r0:.4e} m (from A(0)), D_eff = {d_eff:.4e} m2/s "
-          f"(eps^2/tau_sub = {EPS**2 / 5.8604e3:.4e})")
+          f"(eps^2/tau_sub = {eps**2 / tau:.4e}, eps {eps:.4e}, tau_sub {tau:.4e})")
     d = 7.5e-6
     for tag, e in (("A1 open", exp), ("A2 90deg", expc)):
         r = find_run(batch, "openface_2D_box60um_disc_offcenter", e)
@@ -166,7 +194,7 @@ def part_a(batch: Path, tol: float, fig: Path | None = None):
         t, a = ssa(r)
         R = np.sqrt(np.clip(r0 * r0 - 2 * d_eff * t, 0.0, None))
         model = np.array([seg_area(Ri, d) for Ri in R])
-        report(tag, t, model, a, R > d + 4 * EPS, tol)
+        report(tag, t, model, a, R > d + 4 * eps, tol)
     r4 = find_run(batch, "openface_2D_box60x30um_cap", exp)
     if r4 is not None:
         t, a = ssa(r4)
@@ -182,11 +210,11 @@ def part_a(batch: Path, tol: float, fig: Path | None = None):
 
 def part_b(batch: Path, tol: float, t_tr: float):
     print("\n== B: time-scaling invariance ==")
-    g = "channel_2D_H125um_eps0.86um_deadend"
-    names = {"B1 xi_v 1e-3": "cryo_T-20_h0.990_iso_3d_xiv1e-3",
-             "B2 xi_v 1e-4": "cryo_T-20_h0.990_iso_3d_xiv1e-4",
-             "B3 xi_v 1e-2": "cryo_T-20_h0.990_iso_3d_xiv1e-2",
-             "B4 xi_T = xi_v = 1e-3": "cryo_T-20_h0.990_iso_3d_xiv1e-3_xiT1e-3"}
+    g = "channel_2D_H125um_eps0.39um_deadend"
+    names = {"B1 xi_v 1e-3": "cryo_T-20_h0.990_iso_3d_ac1e-2_xiv1e-3",
+             "B2 xi_v 1e-4": "cryo_T-20_h0.990_iso_3d_ac1e-2_xiv1e-4",
+             "B3 xi_v 1e-2": "cryo_T-20_h0.990_iso_3d_ac1e-2_xiv1e-2",
+             "B4 xi_T = xi_v = 1e-3": "cryo_T-20_h0.990_iso_3d_ac1e-2_xiv1e-3_xiT1e-3"}
     runs = {k: find_run(batch, g, v) for k, v in names.items()}
     if runs["B1 xi_v 1e-3"] is None:
         print("  B1 not found; B skipped")
@@ -198,7 +226,7 @@ def part_b(batch: Path, tol: float, t_tr: float):
     print(f"  B1: ice change {da1:+.4e} m2 over {t1[-1]:.3e} s, mean J_x0 {j1:.4e} kg/(m s)")
     for k, r in runs.items():
         if r is not None:
-            print(f"  cost {k}: {solver_cost(r)}")
+            print(f"  cost {k}: {solver_cost(r)}\n  resolution {k}: {resolution(r)}")
     early = t1 <= t_tr
     if early.sum() >= 2 and t1[-1] > 2 * t_tr:
         rate_late = (a1[-1] - a1[np.searchsorted(t1, 2 * t_tr)]) / (t1[-1] - 2 * t_tr)
@@ -219,10 +247,10 @@ def part_b(batch: Path, tol: float, t_tr: float):
 
 def part_c(batch: Path):
     print("\n== C: pilot ==")
-    for g, e in (("throat_2D_L850um_eps0.86um_narrowL_deadend", "cryo_T-20_h0.900_iso_5d"),
-                 ("regolithpore_2D_L814um_eps0.86um_throat_deadend", "cryo_T-20_h0.900_iso_5d"),
-                 ("throat_2D_L850um_eps0.86um_narrowL_deadend", "cryo_T-20_h0.900_G+1000_warmdead_5d"),
-                 ("throat_2D_L850um_eps0.86um_narrowL_deadend", "cryo_T-20_h0.900_insdead_5d")):
+    for g, e in (("throat_2D_L850um_eps0.86um_narrowL_deadend", "cryo_T-20_h0.990_iso_5d_ac1e-2"),
+                 ("regolithpore_2D_L814um_eps0.86um_throat_deadend", "cryo_T-20_h0.998_iso_5d_ac1e-2"),
+                 ("throat_2D_L850um_eps0.86um_narrowL_deadend", "cryo_T-20_h0.990_G+100_warmdead_5d_ac1e-2"),
+                 ("throat_2D_L850um_eps0.86um_narrowL_deadend", "cryo_T-20_h0.990_insdead_5d_ac1e-2")):
         r = find_run(batch, g, e)
         if r is None:
             print(f"  {g}:{e} not found")
@@ -233,7 +261,7 @@ def part_c(batch: Path):
         lost = RHO_ICE * (a[0] - a[-1])
         print(f"  {g}:{e}\n    t_end {t[-1]:.3e} s, ice left {a[-1] / a[0]:.3f} of initial; "
               f"mass out through x0 {out:.4e} kg/m vs ice lost {lost:.4e} kg/m "
-              f"(ratio {out / lost if lost else float('nan'):.4f})")
+              f"(ratio {out / lost if lost else float('nan'):.4f})\n    resolution: {resolution(r)}")
 
 
 def main() -> int:
@@ -243,7 +271,7 @@ def main() -> int:
     p.add_argument("--t-transient", type=float, default=600.0)
     p.add_argument("--fig-a", type=Path, default=None, help="write the A area-law figure here")
     a = p.parse_args()
-    print(f"# batch {a.batch}\n# tol {a.tol}, IC transient window {a.t_transient} s, eps {EPS}, rho_ice {RHO_ICE}")
+    print(f"# batch {a.batch}\n# tol {a.tol}, IC transient window {a.t_transient} s, rho_ice {RHO_ICE}")
     part_a(a.batch, a.tol, a.fig_a)
     part_b(a.batch, a.tol, a.t_transient)
     part_c(a.batch)

@@ -1,12 +1,21 @@
 # =============================================================================
-# geometry/cryosuction/channel_2D_H125um_eps0.86um_deadend.opts
+# geometry/cryosuction/channel_2D_H125um_eps0.39um_deadend.opts
 #
 # CRYOSUCTION COPY (2026-11-04): identical to
 # geometry/contactangle/channel_2D_H125um_eps0.86um.opts except that x = Lx is a
 # DEAD PORE, regolith with the wall contact angle (-wall_faces y0,y1,x1). The
-# x = 0 end is the open end; the experiment pins T and rho_v there. The
-# cryosuction experiments set -dtmax 1.17e4 (alpha_c = 1e-3); the dtmax note
-# below is the original's, for the solver-default beta_sub0.
+# x = 0 end is the open end; the experiment pins T and rho_v there.
+#
+# eps AND MESH RESIZED 2026-11-04 with comp_eps.py (--patch) for the
+# cryosuction drive, alpha_c 1e-2 and open-end h = 0.99. The expected front
+# speed is the series-law maximum at the bridge's nearest approach to the open
+# end (l = 94 um), from studies/cryosuction/scripts/front_speed.py:
+#   front_speed.py --alpha 1e-2 --h 0.99 --l 9.4e-5  ->  v_n = 1.6241e-09 m/s
+#   comp_eps.py --Lx 3.75e-4 --Ly 1.25e-4 --Rave 9.375e-5 --vn 1.6241e-09 \
+#       --T0 -20 --alpha 1e-2   ->  B-KINETIC binding, -eps 3.9358e-07,
+#       -Nx 1348 -Ny 450 (1.83 M DOF), all checks OK
+# The comp_eps and dtmax notes further down are the ORIGINAL file's (eps
+# 0.86 um, alpha_c 1e-3) and no longer apply; -eps/-Nx/-Ny/-dtmax below do.
 #
 # Flat channel sized to the WEDGE, for comparing contact-angle dynamics against
 # the wedge campaign at matched interface curvature.
@@ -41,8 +50,8 @@
 # =============================================================================
 -ic_type multi_grains
 -dim 2
--Nx 618
--Ny 206
+-Nx 1348
+-Ny 450
 -Nz 1
 -Lx 3.75e-4
 -Ly 1.25e-4
@@ -53,7 +62,7 @@
 -ice_grain_cy 6.25e-5
 -ice_grain_R  9.375e-5
 
--eps 8.5840e-07
+-eps 3.9358e-07
 -eps_valid_temp -20.0
 -delt_t 1.0e-4
 -periodic 0
@@ -67,4 +76,7 @@
 # 2 x tau_sub since 2026-10-02 (was tau_sub/2): the dtmax ladder in
 # studies/contact_angle/velocity_plan_2026-10-01/README.md found 2 x tau_sub
 # indistinguishable from 0.8 x in growth, sintering and ripening.
--dtmax 5.948e+03
+# dtmax = 2*tau_sub for alpha_c 1e-2 (-beta_sub0 7.9408e5): tau_sub = 1.3049e2 s,
+# printed by the solver for this eps (studies/cryosuction/scripts/preflight.sh).
+# A different alpha_c or eps needs a new value.
+-dtmax 2.61e2

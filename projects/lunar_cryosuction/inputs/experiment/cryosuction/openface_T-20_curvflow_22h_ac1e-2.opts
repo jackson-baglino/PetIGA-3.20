@@ -1,0 +1,26 @@
+# experiment/cryosuction/openface_T-20_curvflow_22h_ac1e-2.opts
+#
+# Stage 0, tests A1/A3/A4: pure curvature flow (-decouple_phase_change 1) with
+# x = 0 open (the vapor reservoir on x0 only makes the face open; with the
+# coupling off, vapor and T do not act on the ice). D = eps^2/tau_sub; t_final
+# 8.0e4 s is before the A3 disc vanishes (about 1e5 s at these values).
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1
+-rhovfix_faces x0
+-rhovfix_lo 1.0
+-decouple_phase_change 1
+-phi_open_bc 1
+-t_final 8.0e4
+-n_out 41
+# --- substrate and kinetics ---
+-beta_sub0 7.9408e5                     # K&P beta0 at -20 C, alpha_c = 1e-2 (comp_eps beta_sub)
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # Young: cos(theta) = 0.5, theta = 60 deg
+# -dtmax is in the GEOMETRY file: 2*tau_sub depends on that geometry's eps.
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0
