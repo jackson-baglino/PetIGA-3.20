@@ -246,6 +246,11 @@ def phase():
     return "execute", f["version"]
 
 
+def claude_version():
+    """The installed Claude Code version string, e.g. '2.1.318 (Claude Code)'."""
+    return subprocess.run(["claude", "--version"], capture_output=True, text=True).stdout.strip()
+
+
 def freeze_diff():
     _, f = latest_freeze()
     if f is None:
@@ -282,7 +287,7 @@ def cmd_init(a):
     git = subprocess.run(["git", "rev-parse", "HEAD"], cwd=PROJECT, capture_output=True, text=True).stdout.strip()
     dirty = bool(subprocess.run(["git", "status", "--porcelain", "--", "workflows/literature-review", "scripts"],
                                 cwd=PROJECT, capture_output=True, text=True).stdout.strip())
-    cc = subprocess.run(["claude", "--version"], capture_output=True, text=True).stdout.strip()
+    cc = claude_version()
     sys.path.insert(0, str(HERE))
     import agent_call
     models = {p.stem: agent_call.load(p.stem)["model"] for p in sorted(agent_call.DEFS.glob("*.md"))}
@@ -512,7 +517,8 @@ def cmd_freeze(a):
     version = f"b1-v{n}"
     FREEZE.mkdir(exist_ok=True)
     git = subprocess.run(["git", "rev-parse", "HEAD"], cwd=PROJECT, capture_output=True, text=True).stdout.strip()
-    rec = {"version": version, "frozen": now(), "git_commit": git, "approved_by": "user", "files": snapshot()}
+    rec = {"version": version, "frozen": now(), "git_commit": git, "approved_by": "user",
+           "claude_code": claude_version(), "files": snapshot()}
     (FREEZE / f"{version}.json").write_text(json.dumps(rec, indent=1) + "\n")
     print(f"froze {version} at {git[:8]}: {len(rec['files'])} files. Commit it and tag lr-{version}.")
 
@@ -529,6 +535,11 @@ def cmd_thaw(a):
 def cmd_verify(a):
     d = freeze_diff()
     print("frozen files unchanged" if not d else "changed since the freeze:\n  " + "\n  ".join(d))
+    _, f = latest_freeze()
+    now_cc = claude_version()
+    if f and f.get("claude_code") and f["claude_code"] != now_cc:   # reported, not blocking: each run's manifest
+        print(f"Claude Code differs: frozen with {f['claude_code']}, now {now_cc}; C0 scores the checker "
+              "on the version the run uses")                        # records its own version
     return 1 if d else 0
 
 

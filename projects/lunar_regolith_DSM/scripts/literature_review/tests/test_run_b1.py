@@ -228,6 +228,18 @@ class Freeze(unittest.TestCase):
             self.assertEqual(run_b1.phase(), ("develop", "b1-v2"))
             self.assertEqual(run_b1.freeze_diff(), ["b"])
 
+    def test_freeze_records_the_claude_code_version_and_verify_reports_a_change(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(run_b1, "FREEZE", Path(tmp)), \
+                mock.patch.object(run_b1, "snapshot", return_value={"a": "1"}), \
+                mock.patch.object(run_b1, "claude_version", return_value="2.1.318 (Claude Code)"), \
+                mock.patch.object(run_b1.subprocess, "run", return_value=mock.Mock(stdout="", returncode=0)), \
+                mock.patch("builtins.print") as out:
+            run_b1.main(["freeze", "--approved-by-user"])
+            self.assertEqual(json.loads((Path(tmp) / "b1-v1.json").read_text())["claude_code"], "2.1.318 (Claude Code)")
+            with mock.patch.object(run_b1, "claude_version", return_value="2.1.320 (Claude Code)"):
+                self.assertEqual(run_b1.main(["verify"]), 0)              # reported, not blocking
+            self.assertIn("Claude Code differs", " ".join(str(c) for c in out.call_args_list))
+
 
 class ParserInFreeze(unittest.TestCase):
     def test_parser_state_in_snapshot_and_missing_env_is_named(self):
