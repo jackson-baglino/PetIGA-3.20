@@ -56,9 +56,18 @@ else
     exit 1
 fi
 
-PYTHON="$(command -v python3 || command -v python || true)"
+# Prefer the project venv (same rule as run_postprocess.sh): the bare python3
+# on PATH often has no numpy, and every figure step then fails.
+PYTHON=""
+for _cand in "${PETIGA_DIR:-}/projects/lunar_cryosuction/venv_cryosuction/bin/python3" \
+             "$HOME/PetIGA-3.20/projects/lunar_cryosuction/venv_cryosuction/bin/python3" \
+             "$(command -v python3 || true)" "$(command -v python || true)"; do
+    if [[ -n "$_cand" && -x "$_cand" ]] && "$_cand" -c "import numpy" >/dev/null 2>&1; then
+        PYTHON="$_cand"; break
+    fi
+done
 if [[ -z "$PYTHON" ]]; then
-    echo "❌ Neither python3 nor python found on PATH."
+    echo "❌ No python with numpy found (tried the project venv and PATH)."
     exit 1
 fi
 

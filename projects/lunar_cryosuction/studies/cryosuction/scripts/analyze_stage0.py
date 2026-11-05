@@ -60,7 +60,7 @@ def find_run(batch: Path, geom: str, exp: str) -> Path | None:
     hits = []
     for p in sorted(batch.rglob("SSA_evo.dat")):
         run = p.parent
-        if f"{geom}__{exp}" in str(run):
+        if run.name == f"{geom}__{exp}":
             hits.append(run)
             continue
         name = re.sub(r"^\d{4}-\d\d-\d\d__\d\d\.\d\d\.\d\d_", "", run.name)
@@ -236,13 +236,20 @@ def part_b(batch: Path, tol: float, t_tr: float):
     for k, r in runs.items():
         if k.startswith("B1") or r is None:
             continue
+        # Compare over the window both runs reached (a crashed run ends early;
+        # np.interp would otherwise hold its last value).
         t, a = ssa(r)
-        ai = np.interp(t1, t, a)
-        rel = abs((ai[-1] - ai[0]) - da1) / abs(da1)
+        tc = min(t[-1], t1[-1])
+        ref = np.interp(tc, t1, a1) - a1[0]
+        rel = abs((np.interp(tc, t, a) - a[0]) - ref) / abs(ref)
         tbk, jbk = bflux(r)
-        jk = np.trapezoid(jbk, tbk) / (tbk[-1] - tbk[0]) if tbk is not None else float("nan")
-        print(f"  {k}: ice change differs from B1 by {rel:.3e}; mean J_x0 {jk:.4e} "
-              f"({abs(jk - j1) / abs(j1):.3e} from B1)  {'PASS' if rel < tol else 'FAIL'}")
+
+        def mean_j(tb_, jb_, tc=tc):
+            m = tb_ <= tc
+            return np.trapezoid(jb_[m], tb_[m]) / (tb_[m][-1] - tb_[m][0])
+        jk, j1c = mean_j(tbk, jbk), mean_j(tb, jb)
+        print(f"  {k}: over t <= {tc:.3e} s, ice change differs from B1 by {rel:.3e}; mean J_x0 "
+              f"{jk:.4e} vs B1 {j1c:.4e} ({abs(jk - j1c) / abs(j1c):.3e})  {'PASS' if rel < tol else 'FAIL'}")
 
 
 def part_c(batch: Path):
