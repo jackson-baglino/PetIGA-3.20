@@ -73,7 +73,7 @@ statements:
     value:
     unit:
   - paper: kaempfer_plapp_2009
-    page: [5, 3]
+    page: [5, 3, 6]   # p. 6 added 2026-11-04: the statement cites it for gamma(T)
     location: Eq (13)
     kind: equation
     questions: [none]   # Q1, Q2, Q3 or none
