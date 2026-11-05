@@ -1,0 +1,24 @@
+# experiment/cryosuction/openface_T-20_curvflow_7d_closed.opts
+#
+# Stage 0, test A2: as openface_T-20_curvflow_7d.opts but -phi_open_bc 0, so
+# x = 0 is a 90 deg Neumann face. Shows that test A1 can tell the two apart.
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1
+-rhovfix_faces x0
+-rhovfix_lo 1.0
+-decouple_phase_change 1
+-phi_open_bc 0
+-t_final 6.0e5
+-n_out 25
+# --- substrate and kinetics: as the velocity study (studies/contact_angle) ---
+-beta_sub0 7.9408e6                     # K&P beta0 at -20 C, alpha_c = 1e-3
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # Young: cos(theta) = 0.5, theta = 60 deg
+-dtmax 1.17e4                           # 2*tau_sub, tau_sub = 5.8604e3 s (printed by the solver)
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0

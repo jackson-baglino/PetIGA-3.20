@@ -1,0 +1,39 @@
+# =============================================================================
+# geometry/cryosuction/openface_2D_box60x30um_cap.opts
+#
+# Open-face verification (stage 0, test A4; studies/cryosuction/README.md).
+# Pure curvature flow (the experiment sets -decouple_phase_change 1), so the
+# ice area has an analytic law: dA/dt = -D * (total turning of the interface),
+# D = eps^2/tau_sub. eps is the H125 channel's comp_eps value (8.5840e-7 m at
+# -20 C, alpha_c 1e-3) so the test checks the production interface; the mesh
+# follows the solver rule h = eps/sqrt(2) = 6.07e-7 m.
+#
+# A sessile cap on the regolith wall y = 0 (contact angle from the experiment's
+# gammas, 60 deg) that straddles the open x = 0 face: a contact line at the
+# corner where wall and open face meet. Circle R0 = 20 um centered at
+# (-5 um, -10 um) = (-5 um, -R0 cos 60), so the IC already has the 60 deg
+# angle. The full cap obeys dA/dt = -2*theta*D (theta in radians) and stays a
+# circular arc whose center moves only in y; the visible area x > 0 follows
+# from that, with no fitted parameter once D is known from A3.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nz 1
+-Lz 0
+-eps 8.5840e-07
+-eps_valid_temp -20.0
+-delt_t 1.0e-4
+-periodic 0
+# dtmax: the cryosuction experiments set it (alpha_c = 1e-3, -beta_sub0
+# 7.9408e6 gives tau_sub = 5.8604e3 s, dtmax = 2*tau_sub = 1.17e4 s). This
+# value, kept from geometry/contactangle/channel_2D_H125um_eps0.86um.opts, is
+# only the fallback for an experiment that sets no -dtmax.
+-dtmax 5.948e+03
+-Nx 99
+-Ny 50
+-Lx 6.0e-5
+-Ly 3.0e-5
+-wall_faces y0
+-ice_grain_cx -5.0e-6
+-ice_grain_cy -1.0e-5
+-ice_grain_R  2.0e-5

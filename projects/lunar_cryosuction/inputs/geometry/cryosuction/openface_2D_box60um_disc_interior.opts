@@ -1,0 +1,33 @@
+# =============================================================================
+# geometry/cryosuction/openface_2D_box60um_disc_interior.opts
+#
+# Open-face verification (stage 0, test A3; studies/cryosuction/README.md).
+# Pure curvature flow (the experiment sets -decouple_phase_change 1), so the
+# ice area has an analytic law: dA/dt = -D * (total turning of the interface),
+# D = eps^2/tau_sub. eps is the H125 channel's comp_eps value (8.5840e-7 m at
+# -20 C, alpha_c 1e-3) so the test checks the production interface; the mesh
+# follows the solver rule h = eps/sqrt(2) = 6.07e-7 m.
+#
+# The same disc fully inside the box: the reference that measures D_eff
+# (dA/dt = -2*pi*D) including the O(eps/R) corrections.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nz 1
+-Lz 0
+-eps 8.5840e-07
+-eps_valid_temp -20.0
+-delt_t 1.0e-4
+-periodic 0
+# dtmax: the cryosuction experiments set it (alpha_c = 1e-3, -beta_sub0
+# 7.9408e6 gives tau_sub = 5.8604e3 s, dtmax = 2*tau_sub = 1.17e4 s). This
+# value, kept from geometry/contactangle/channel_2D_H125um_eps0.86um.opts, is
+# only the fallback for an experiment that sets no -dtmax.
+-dtmax 5.948e+03
+-Nx 99
+-Ny 75
+-Lx 6.0e-5
+-Ly 4.5e-5
+-ice_grain_cx 3.0e-5
+-ice_grain_cy 2.25e-5
+-ice_grain_R  1.5e-5

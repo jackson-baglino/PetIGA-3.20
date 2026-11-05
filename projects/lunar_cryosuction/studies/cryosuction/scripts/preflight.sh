@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# studies/cryosuction/scripts/preflight.sh <tests-file>
+#
+# Parse check before an HPC submission: for every geom:exp line, resolve both
+# names, then start the solver with -t_final 0 on one rank (set-up, IC and the
+# header only; no time step is taken) and check that it exits cleanly and that
+# the printed boundary table and tau_sub are what the files claim. This is a
+# set-up check like the verification drivers, not a simulation; it writes only
+# to a temporary folder.
+set -uo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+source "$ROOT/scripts/lib/opts.sh"
+EXEC="$ROOT/lunar_cryosuction"
+[[ -x $EXEC ]] || { echo "missing $EXEC -- run make" >&2; exit 2; }
+WORK="${TMPDIR:-/tmp}/cryo_preflight.$$"; mkdir -p "$WORK"; trap 'rm -rf "$WORK"' EXIT
+fail=0
+while IFS= read -r line; do
+  line="${line%%#*}"; line="$(echo "$line" | tr -d '[:space:]')"
+  [[ -z $line ]] && continue
+  g="${line%%:*}"; e="${line#*:}"
+  gf=$(resolve_opts "$ROOT/inputs/geometry" "$g") || { echo "FAIL $line: geometry not found"; fail=1; continue; }
+  ef=$(resolve_opts "$ROOT/inputs/experiment" "$e") || { echo "FAIL $line: experiment not found"; fail=1; continue; }
+  d="$WORK/$g.$e"; mkdir -p "$d"
+  if ( cd "$ROOT" && folder="$d" "$EXEC" -options_file inputs/solver.opts -options_file "$gf" \
+         -options_file "$ef" -t_final 0 -pf_output 0 > "$d/out.txt" 2>&1 ); then
+    tau=$(grep -m1 -E "tau_sub *=" "$d/out.txt" | sed 's/^ *//')
+    echo "OK   $line"
+    echo "     $tau"
+    grep -E "^ +[xy] = " "$d/out.txt" | sed 's/^/    /'
+  else
+    echo "FAIL $line"; tail -5 "$d/out.txt" | sed 's/^/     /'; fail=1
+  fi
+done < "$1"
+exit $fail
