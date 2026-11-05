@@ -120,11 +120,14 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     }
     PetscScalar phi_a = 1.0 - phi;
 
-    /* Out-of-bounds trial iterate: tell SNES so the line search backs off. */
+    /* Out-of-bounds trial iterate: tell SNES so the line search backs off.
+     * Uses the SOLVER guard, not the physics band (see NASA_types.h), and
+     * checks phi only: phi_a = 1 - phi is algebraic, so testing it too would
+     * silently narrow the band to [max(lo,1-hi), min(hi,1-lo)].
+     * (Ported from enceladus_DSM c6dee625 / 60244164.) */
     {
-        PetscReal lo = user->phase_lo, hi = user->phase_hi;
-        if (PetscRealPart(phi)   < lo || PetscRealPart(phi)   > hi ||
-            PetscRealPart(phi_a) < lo || PetscRealPart(phi_a) > hi) {
+        PetscReal lo = user->snes_guard_lo, hi = user->snes_guard_hi;
+        if (PetscRealPart(phi) < lo || PetscRealPart(phi) > hi) {
             if (user->snes) SNESSetFunctionDomainError(user->snes);
             return 0;
         }

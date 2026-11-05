@@ -324,9 +324,22 @@ typedef struct {
   PetscReal xi_T;
   PetscReal xi_v;
 
-  /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */
-  PetscReal phase_lo;     // lower bound for phi_ice, phi_air (default -0.25)
-  PetscReal phase_hi;     // upper bound for phi_ice, phi_air (default  1.25)
+  /* Two separate bands (ported from enceladus_DSM c6dee625 and 60244164):
+   *  PHYSICS band [phase_lo, phase_hi]: an ACCEPTED step whose phi_ice or
+   *    phi_air leaves it is rolled back at half dt (Monitor). Default
+   *    [-0.01, 1.01].
+   *  SOLVER guard [snes_guard_lo, snes_guard_hi]: a residual evaluation at a
+   *    phi outside it raises SNESSetFunctionDomainError so the line search
+   *    backs off. Checked on phi only (phi_a = 1 - phi is algebraic; testing
+   *    both narrows the band). Default [-0.01, 1.05].
+   * They must stay separate: PETSc evaluates the residual at the INCOMING
+   * state, so a guard as narrow as the physics band makes an accepted state
+   * at the band edge unrecoverable (every retry domain-errors identically,
+   * whatever dt). */
+  PetscReal phase_lo;      // -phase_lo      (default -0.01)
+  PetscReal phase_hi;      // -phase_hi      (default  1.01)
+  PetscReal snes_guard_lo; // -snes_guard_lo (default -0.01)
+  PetscReal snes_guard_hi; // -snes_guard_hi (default  1.05)
 
   PetscReal *alph;     // Alpha field, possibly phase fraction or related property
   PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)

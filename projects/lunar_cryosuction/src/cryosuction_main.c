@@ -196,8 +196,10 @@ int main(int argc, char *argv[]) {
     user.solver_snes_prev = 0; user.solver_ksp_prev = 0; user.solver_rej_prev = 0;
     user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
 
-    user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
-    user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
+    user.phase_lo   = -0.01;   /* physics band: excursion -> rollback (NASA_types.h) */
+    user.phase_hi   =  1.01;
+    user.snes_guard_lo = -0.01; /* solver guard, phi only (NASA_types.h)        */
+    user.snes_guard_hi =  1.05;
 
     /* Temporal-scaling factors (M&F 2024 §3.1, eqs. 25-26): slow the fast
      * T / vapor diffusion timescales by 1/xi while keeping the quasi-steady
@@ -867,13 +869,21 @@ int main(int argc, char *argv[]) {
              "(larger values suppress spurious phases at binary interfaces; default 1.0)",
              "", user.Lambd, &user.Lambd, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-phase_lo",
-             "Lower bound for phase fields phi_ice, phi_air "
-             "(simulation aborts if any phi falls below this; default -0.05)",
+             "Physics band, lower: an accepted step with phi_ice or phi_air below "
+             "this is rolled back at half dt (default -0.01)",
              "", user.phase_lo, &user.phase_lo, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-phase_hi",
-             "Upper bound for phase fields phi_ice, phi_air "
-             "(simulation aborts if any phi exceeds this; default 1.05)",
+             "Physics band, upper: an accepted step with phi_ice or phi_air above "
+             "this is rolled back at half dt (default 1.01)",
              "", user.phase_hi, &user.phase_hi, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-snes_guard_lo",
+             "Solver guard, lower: a residual evaluated at phi below this is a "
+             "domain error, so the line search backs off (phi only; default -0.01)",
+             "", user.snes_guard_lo, &user.snes_guard_lo, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-snes_guard_hi",
+             "Solver guard, upper (phi only; default 1.05). Keep it wider than "
+             "-phase_hi: see NASA_types.h",
+             "", user.snes_guard_hi, &user.snes_guard_hi, NULL); CHKERRQ(ierr);
 
     PetscOptionsEnd();
 
@@ -1617,6 +1627,14 @@ int main(int argc, char *argv[]) {
     } else {
         PetscPrintf(PETSC_COMM_WORLD, "   adaptive    OFF (fixed dt)\n");
     }
+    PetscPrintf(PETSC_COMM_WORLD,
+                "   phi physics band [%.3g, %.3g] (rollback),  solver guard [%.3g, %.3g] (phi only)\n",
+                (double)user.phase_lo, (double)user.phase_hi,
+                (double)user.snes_guard_lo, (double)user.snes_guard_hi);
+    if (user.snes_guard_hi <= user.phase_hi || user.snes_guard_lo > user.phase_lo)
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   \033[31mWARNING: solver guard is not wider than the physics band;"
+                    " an accepted state at the band edge can become unrecoverable.\033[0m\n");
 
     /* --- Transport & thermophysical properties ----------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n TRANSPORT & THERMOPHYSICAL PROPERTIES\n");
