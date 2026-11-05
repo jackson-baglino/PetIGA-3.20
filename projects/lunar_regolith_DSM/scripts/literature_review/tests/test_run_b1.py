@@ -196,6 +196,20 @@ class Line(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.cli("run", "--run", str(new))
 
+    def test_an_execute_run_is_closed_only_after_its_freeze_is_thawed(self):
+        root = Path(self.tmp.name)
+        (root / "freeze").mkdir()
+        (root / "freeze" / "b1-v1.json").write_text(json.dumps({"version": "b1-v1", "files": {}}))
+        run = root / "b1" / "ex"
+        run.mkdir(parents=True)
+        (run / "manifest.json").write_text(json.dumps({"dev": False, "freeze": "b1-v1", "created": "x"}))
+        with self.assertRaises(SystemExit):
+            self.cli("close", "--run", str(run), "--reason", "r")
+        (root / "freeze" / "b1-v1.json").write_text(json.dumps({"version": "b1-v1", "files": {},
+                                                                 "thawed": {"reason": "x"}}))
+        self.cli("close", "--run", str(run), "--reason", "replaced under b1-v2")
+        self.assertEqual(json.loads((run / "manifest.json").read_text())["closed"]["reason"], "replaced under b1-v2")
+
     def test_papers_and_skip_only_in_dev(self):
         with self.assertRaises(SystemExit):
             self.cli("init", "--run", str(self.run), "--papers", "pa")

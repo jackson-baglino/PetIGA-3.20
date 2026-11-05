@@ -13,7 +13,7 @@ Papers table in B1_CONTRACT.md; each file's sha256 must start with the hash prin
     run_b1.py freeze  --approved-by-user           write freeze/b1-vN.json and start the execute phase
     run_b1.py thaw    --reason TEXT                end the execute phase (WORKFLOW.md §5 repair rule)
     run_b1.py verify                               do the frozen files still match the latest freeze?
-    run_b1.py close   --run <dir> --reason TEXT    development only: retire a dev run (kept, no longer current)
+    run_b1.py close   --run <dir> --reason TEXT    retire a dev run, or an execute run after a thaw (kept)
 
 `run` repeats: pick the first stage (in graph order) whose required stages are done and that is not done itself;
 stop at a blocking gate, at a station that is not built, at a station that fails, or at --until / --max. A run
@@ -404,11 +404,14 @@ def cmd_status(a):
 
 
 def cmd_close(a):
-    """Retire a dev run: the manifest records when and why; the folder is kept, but the run is no longer current."""
+    """Retire a dev run, or an execute run whose freeze was thawed: the manifest records when and why; the folder is
+    kept, but the run is no longer current."""
     f = Path(a.run) / "manifest.json"
     m = json.loads(f.read_text())
     if not m["dev"]:
-        raise SystemExit("only a dev run can be closed; an execute run ends at its last stage or by a thaw")
+        fr = FREEZE / f"{m['freeze']}.json"
+        if not (fr.exists() and json.loads(fr.read_text()).get("thawed")):
+            raise SystemExit(f"an execute run can be closed only after its freeze ({m['freeze']}) is thawed")
     m["closed"] = {"date": datetime.date.today().isoformat(), "reason": a.reason}
     f.write_text(json.dumps(m, indent=1) + "\n")
     print(f"closed {Path(a.run).name}")
