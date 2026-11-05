@@ -68,7 +68,7 @@ statements:
     location: Eq (11)
     kind: equation
     questions: [none]   # Q1, Q2, Q3 or none
-    statement: The equilibrium state of the vapor field interacting with a curved ice surface is given by the generalized Gibbs-Thomson relation.
+    statement: A vapor field interacting with a curved ice surface is given by the generalized Gibbs-Thomson relation.
     symbol: 
     value:
     unit:
@@ -78,7 +78,7 @@ statements:
     kind: equation
     questions: [none]   # Q1, Q2, Q3 or none
     # dropped 'expected to vary little in a simulation', the user's inference, which ignores temperature gradient metamorphism (ruling 2026-10-30). The user confirms Eq. (13) is on p. 5 (031502-5); the checker's page dispute was wrong
-    statement: 'The capillary length $d_0$ is inversely proportional to temperature.'
+    statement: 'Eq. (13) gives $d_0 = \gamma a^3/(kT)$, so d0 depends on temperature explicitly through 1/T and also through $\gamma$, which the paper notes is temperature-dependent (p.6). The model itself takes d0 as constant, evaluated at the reference temperature (d0 ~ 10^-9 m at 263 K).'
     symbol: d_0
     value:
     unit:
@@ -106,7 +106,7 @@ statements:
     kind: method
     questions: [Q1]   # Q1, Q2, Q3 or none
     # rewritten by Claude from the user's ruling 2026-10-30 (symmetric diffusivity, anti-trapping term); the user should confirm against p. 8
-    statement: 'The model takes the vapor diffusivity to be symmetric to derive the thin-interface correction parameter, the same in the ice as in the air; with unequal diffusivities, an anti-trapping term could be added to remove the spurious interface effects this would otherwise cause.'
+    statement: "The model's vapor diffusivity is one-sided: D(φ)=D_v(1-φ)/2, with no diffusion in the ice. The relations in Eqs. 37-40, including the thin-interface correction, hold for the analogous symmetric case (D constant and equal in both phases), which the paper uses by analogy with solidification. For asymmetric (one-sided) diffusion, a finite W magnifies spurious effects (temperature/chemical-potential jump, interface stretching, surface diffusion). In one-sided solidification models these are removed by an antitrapping current [36,37], which is not part of the base model."
     symbol:
     value:
     unit:
@@ -289,7 +289,7 @@ statements:
     page: 258
     kind: result
     # rewritten by Claude from the user's ruling 2026-10-30 (25 um radius, -55 C, about 1e-5 days, initial density); numbers from the checker's correction, the user should confirm against p. 258
-    statement: 'For grains of radius 25 µm at a homologous temperature of 0.8 ($-55^\circ$C) and an initial relative density of 0.5, vapor transport becomes the dominant mechanism after about $10^{-5}$ days.'
+    statement: 'For an aggregate of 25-µm-radius ice grains with initial relative density 0.5 at homologous temperature 0.8, Fig. 10 shows the vapor-transport current V̇_3 overtaking surface diffusion V̇_1 at roughly 10^-4 days. This is read from the figure, not stated in the text.'
   - paper: molaro_2019
     page: 260
     kind: result
