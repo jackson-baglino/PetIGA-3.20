@@ -1,0 +1,8 @@
+gate,case,value,expected,result
+K1,ssa_bitwise,identical,identical,PASS
+K2,vn_vs_area,9.004142e-11 (ratio 1.0644),8.459475e-11,PASS
+K3,warning,printed,printed,PASS
+K4,static,printed,printed,PASS
+K4,comp_eps_mesh_quiet,absent,absent,PASS
+K5,touching,printed,printed,PASS
+K5,clear,absent,absent,PASS
