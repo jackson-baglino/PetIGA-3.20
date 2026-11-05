@@ -74,6 +74,11 @@ scripts/HPC/submit_batch.sh --tag cryo_stage0b \
 venv_cryosuction/bin/python studies/cryosuction/scripts/analyze_stage0.py --batch <batch folder> --fig-a <png>
 ```
 
+## Run ledger
+
+Every run and batch, queued or finished, with its question, what to look
+for, and the outcome: `RUNS.md`.
+
 ## Scripts
 
 - `scripts/supersat_compare.py`: compares the imposed undersaturation h − 1

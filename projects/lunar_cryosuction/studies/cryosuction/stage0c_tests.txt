@@ -1,0 +1,13 @@
+# Stage 0c (model-freeze-v2, 2026-11-05): the stage-0b coupled runs again, on
+# v2, with -phi_open_bc 0. Run ledger: studies/cryosuction/RUNS.md (IDs 0c-*).
+# Submit with -- --time=2-00:00:00 (3- and 5-day runs at dt ~ 40-80 s).
+#
+# 0c-B1  rectangular channel, the paper baseline candidate (3 days)
+channel_2D_H125um_eps0.39um_deadend:cryo_T-20_h0.990_iso_3d_ac1e-2_xiv1e-3
+# 0c-C1/C3/C4  two-throat mesh: does v2 alone stop the distorted-mesh crashes?
+#   Diagnostic only: Pi 1.1-1.5 there (beyond K&P Eq. 45), mesh aspect 5.5.
+throat_2D_L850um_eps0.86um_narrowL_deadend:cryo_T-20_h0.990_iso_5d_ac1e-2
+throat_2D_L850um_eps0.86um_narrowL_deadend:cryo_T-20_h0.990_G+100_warmdead_5d_ac1e-2
+throat_2D_L850um_eps0.86um_narrowL_deadend:cryo_T-20_h0.990_insdead_5d_ac1e-2
+# 0c-C2  regolith pore, h = 0.998 (completed on v1; rerun so its results are v2)
+regolithpore_2D_L814um_eps0.86um_throat_deadend:cryo_T-20_h0.998_iso_5d_ac1e-2
