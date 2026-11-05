@@ -18,8 +18,8 @@
 # fixes) show up there once they are logged.
 set -uo pipefail
 
-TAG=lunar_cryosuction/model-freeze-v1
-OLD=projects/lunar_regolith_DSM        # where the frozen tree lives in the tag
+TAG=lunar_cryosuction/model-freeze-v2   # v1 (2026-11-04) lived under projects/lunar_regolith_DSM
+OLD=projects/lunar_cryosuction         # where the frozen tree lives in the tag
 BASELINE=52e7ba16                      # last split commit (rename and rewiring)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="$(git -C "$HERE" rev-parse --show-toplevel)"

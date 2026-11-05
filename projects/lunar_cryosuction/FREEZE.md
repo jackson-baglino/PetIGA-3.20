@@ -16,6 +16,19 @@ it stood when the thesis work was split (2026-11-04):
 The model keeps developing in `lunar_regolith_DSM` (paper 3). Changes made
 there do not come here.
 
+## Versions
+
+| Tag | Date | What changed | Runs on it |
+|---|---|---|---|
+| `lunar_cryosuction/model-freeze-v1` | 2026-11-04 | the split (above) | stage 0 (cancelled) and stage 0b (`batch_2026-11-04__19.34.44_cryo_stage0b`), with the logged v1 additions 60bd33a5, 770a9bb5, 8c96ab09 |
+| `lunar_cryosuction/model-freeze-v2` | 2026-11-05 | solver safeguards ported from enceladus_DSM, unfrozen by the user (ledger rows 118d69f2, a47d659d, d9c10138). Equations, constitutive laws and the residual/Jacobian are unchanged; what changed is which steps are accepted. | everything after stage 0b |
+
+Why v2: in stage 0b, five of the eight coupled runs aborted. Their solver
+logs and fields match the failure modes that enceladus_DSM had already fixed
+(see the ledger rows). The review of 2026-11-05 found no regression in the
+physics: four independent comparisons covered the BC code, enceladus runs,
+lunar rectangular runs and lunar distorted-mesh runs.
+
 ## The rule: physics frozen, setup open
 
 **Frozen.** The governing equations, the constitutive laws
@@ -57,3 +70,6 @@ belong to which version.
 | 60bd33a5 | 2026-11-04 | BC option | `-rhovfix_faces`, `-Tfix_faces`: pin vapor or T only on named faces (open end plus dead pore). Unset = legacy logic. `-wall_faces` parser factored into `ParseFaceList`. | G1–G4 PASS (`verify_wall_bc.sh`, base 1443a0b0); F1 bitwise vs 1443a0b0 with legacy reservoirs, F2–F4 PASS (`studies/cryosuction/verification/verify_face_bc.sh`) |
 | 770a9bb5 | 2026-11-04 | output | `bflux.dat`: physical (unscaled D_v, k) vapor and heat flux out through every Dirichlet face, one row per step; `-bflux_output 0` disables. Read-only. | G1–G4 PASS; H1 bitwise SSA vs 8484a311, H2–H3 analytic 1D flux within 1e-5 and independent of xi_v, H4 PASS (`studies/cryosuction/verification/verify_bflux.sh`) |
 | 8c96ab09 | 2026-11-04 | output | Resolution checker: per-step K&P Eq. 45 number Pi = beta0 v_n eps/d0 from the measured front speed (boxed warning if Pi > 1), ice on open faces, start-up mesh/eps check, end summary, `resolution.dat`. Read-only; `-resolution_check 0` disables. | G1–G4 PASS; K1 bitwise SSA vs 1e608260, K2 v_n within +6.4 % of the area speed (conservative by design), K3–K5 warnings fire and stay quiet when they should (`studies/cryosuction/verification/verify_resolution.sh`) |
+| 118d69f2 | 2026-11-05 | unfreeze v2 (default) | Separate solver guard from the phi physics band (port of enceladus c6dee625/60244164): `-phase_lo/hi` physics band [-0.01, 1.01] (rollback), `-snes_guard_lo/hi` [-0.01, 1.05] on phi only (domain error). Before: one band +-0.05 on phi and phi_a did both; stage-0b B1 stalled with phi_max = 1.0500 at the guard edge. | S1 bitwise vs 8d659590 with the legacy values on the command line (all SSA columns but the logged next-dt); S3 banner warning (`studies/cryosuction/verification/verify_safeguards.sh`) |
+| a47d659d | 2026-11-05 | unfreeze v2 (behavior) | Interface-CFL limit enforced by rollback (port of enceladus caa209e0), monitor registered first, all other monitors skip a condemned step; BoundsRollbackPreStep re-anchors cfl_U_prev/res_U_prev (fix beyond the enceladus code). | S1 as above; S2 forced violation rolls back once, kept steps max \|dphi\| 0.045 <= 0.05, no duplicate step rows; S4 completes |
+| d9c10138 | 2026-11-05 | unfreeze v2 (default) | `-dtCFL_dphimax` default 0.2 -> 0.05 (enceladus 60244164 ladder); cryosuction experiment files drop their explicit 0.2. | S1 unaffected (sets the value explicitly); S2 runs at 0.05 |
