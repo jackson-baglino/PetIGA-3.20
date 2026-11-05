@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import re
 from pathlib import Path
 
 import numpy as np
@@ -37,8 +38,19 @@ RHO_ICE = 919.0  # src/cryosuction_main.c user.rho_ice
 
 
 def find_run(batch: Path, geom: str, exp: str) -> Path | None:
-    hits = [p for p in batch.rglob("SSA_evo.dat") if f"{geom}__{exp}" in str(p)]
-    return hits[0].parent if hits else None
+    """HPC batch layout <geom>__<exp>/, or the local run-script layout
+    <geom>/<YYYY-MM-DD__HH.MM.SS>_<exp>[_stage0_<test>]/ (newest wins)."""
+    hits = []
+    for p in sorted(batch.rglob("SSA_evo.dat")):
+        run = p.parent
+        if f"{geom}__{exp}" in str(run):
+            hits.append(run)
+            continue
+        name = re.sub(r"^\d{4}-\d\d-\d\d__\d\d\.\d\d\.\d\d_", "", run.name)
+        name = re.sub(r"_stage0_[A-Z]\d$", "", name)
+        if run.parent.name == geom and name == exp:
+            hits.append(run)
+    return hits[-1] if hits else None
 
 
 def ssa(run: Path):
@@ -91,7 +103,48 @@ def report(name, t, model, meas, valid, tol):
     return verdict
 
 
-def part_a(batch: Path, tol: float):
+def fig_a(batch: Path, out: Path, d_eff: float, r0: float):
+    """Ice area against the exact curvature-flow law, A1-A4."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    exp = "openface_T-20_curvflow_7d"
+    th, r0c, cx, d = math.pi / 3, 2.0e-5, -5.0e-6, 7.5e-6
+    full0 = r0c * r0c * (th - math.sin(th) * math.cos(th))
+    cases = [("A3 full disc", "openface_2D_box60um_disc_interior", exp, "#52514e",
+              lambda t: math.pi * max(r0 * r0 - 2 * d_eff * t, 0.0)),
+             ("A1 cut disc, open face", "openface_2D_box60um_disc_offcenter", exp, "#eb6834",
+              lambda t: seg_area(math.sqrt(max(r0 * r0 - 2 * d_eff * t, 0.0)), d)),
+             ("A2 cut disc, 90° face", "openface_2D_box60um_disc_offcenter", exp + "_closed", "#6250d6",
+              lambda t: seg_area(math.sqrt(max(r0 * r0 - 2 * d_eff * t, 0.0)), d)),
+             ("A4 wall cap at corner, open face", "openface_2D_box60x30um_cap", exp, "#2a78d6",
+              lambda t: cap_visible(math.sqrt(max(full0 - 2 * th * d_eff * t, 0.0)
+                                              / (th - math.sin(th) * math.cos(th))), th, cx))]
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for label, g, e, c, law in cases:
+        r = find_run(batch, g, e)
+        if r is None:
+            continue
+        t, a = ssa(r)
+        tt = np.linspace(0, t[-1], 200)
+        ax.plot(t / 86400, a * 1e12, color=c, lw=2, label=f"{label}: solver")
+        if label.startswith("A1"):
+            continue  # A1 and A2 share one exact law, drawn with A2
+        ax.plot(tt / 86400, [law(x) * 1e12 for x in tt], color=c, lw=1.2, ls="--",
+                label="A1 & A2 cut disc: exact law" if label.startswith("A2") else f"{label}: exact law")
+    ax.set_xlabel("time [days]")
+    ax.set_ylabel("ice area in the domain [µm²]")
+    ax.set_title("Open-face test: pure curvature flow against the exact area law\n"
+                 f"(D_eff = {d_eff:.3e} m²/s from A3; dashed = exact, solid = solver)", fontsize=10)
+    ax.legend(fontsize=7.5, frameon=False, ncol=2, loc="upper right")
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(out, dpi=180)
+    print(f"  figure: {out}")
+
+
+def part_a(batch: Path, tol: float, fig: Path | None = None):
     print("\n== A: open face, curvature flow ==")
     exp, expc = "openface_T-20_curvflow_7d", "openface_T-20_curvflow_7d_closed"
     r3 = find_run(batch, "openface_2D_box60um_disc_interior", exp)
@@ -123,6 +176,8 @@ def part_a(batch: Path, tol: float):
         R = np.sqrt(np.clip(full, 0.0, None) / (th - math.sin(th) * math.cos(th)))
         model = np.array([cap_visible(Ri, th, cx) for Ri in R])
         report("A4 cap at the corner", t, model, a, model > 0.2 * model[0], tol)
+    if fig is not None:
+        fig_a(batch, fig, d_eff, r0)
 
 
 def part_b(batch: Path, tol: float, t_tr: float):
@@ -186,9 +241,10 @@ def main() -> int:
     p.add_argument("--batch", type=Path, required=True)
     p.add_argument("--tol", type=float, default=0.02)
     p.add_argument("--t-transient", type=float, default=600.0)
+    p.add_argument("--fig-a", type=Path, default=None, help="write the A area-law figure here")
     a = p.parse_args()
     print(f"# batch {a.batch}\n# tol {a.tol}, IC transient window {a.t_transient} s, eps {EPS}, rho_ice {RHO_ICE}")
-    part_a(a.batch, a.tol)
+    part_a(a.batch, a.tol, a.fig_a)
     part_b(a.batch, a.tol, a.t_transient)
     part_c(a.batch)
     return 0
