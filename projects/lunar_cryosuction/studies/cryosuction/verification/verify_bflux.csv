@@ -1,0 +1,8 @@
+gate,case,value,expected,result
+H1,ssa_bitwise,identical,identical,PASS
+H1,bflux_written,yes,yes,PASS
+H2,J_x0,8.0539044984e-11,8.053829355793043e-11,PASS
+H2,J_x1,-8.0538303837e-11,-8.053829355793043e-11,PASS
+H3,J_x0,8.0538583567e-11,8.053829355793043e-11,PASS
+H3,J_x1,-8.0538333468e-11,-8.053829355793043e-11,PASS
+H4,no_file,absent,absent,PASS
