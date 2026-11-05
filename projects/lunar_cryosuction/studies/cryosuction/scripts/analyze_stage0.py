@@ -88,9 +88,16 @@ def resolution(run: Path) -> str:
     if not f.exists():
         return "resolution.dat missing"
     a = np.loadtxt(f, ndmin=2)
-    flag = "  <-- CHECK" if (a[:, 4] > 1).any() or (a[:, 5] > 0.01).any() else ""
-    return (f"max Pi {a[:, 4].max():.3f} (steps > 0.5: {(a[:, 4] > 0.5).sum()}, > 1: {(a[:, 4] > 1).sum()}); "
-            f"max phi on a reservoir face {a[:, 5].max():.2e}{flag}")
+    # Same start-up window as the solver's checker (2 tau_sub from the first
+    # row): the IC relaxation there is not a sublimation front.
+    tau = run_value(run, "tau_sub")
+    t_skip = 2.0 * tau if tau == tau else 0.0
+    p = a[a[:, 0] - a[0, 0] >= t_skip, 4]
+    if p.size == 0:
+        p = np.zeros(1)
+    flag = "  <-- CHECK" if (p > 1).any() or (a[:, 5] > 0.01).any() else ""
+    return (f"after the {t_skip:.3g} s start-up window: max Pi {p.max():.3f} (steps > 0.5: {(p > 0.5).sum()}, "
+            f"> 1: {(p > 1).sum()}); max phi on a reservoir face {a[:, 5].max():.2e}{flag}")
 
 
 def solver_cost(run: Path) -> str:

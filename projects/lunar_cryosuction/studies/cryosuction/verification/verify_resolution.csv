@@ -7,3 +7,5 @@ K4,comp_eps_mesh_quiet,absent,absent,PASS
 K5,touching,printed,printed,PASS
 K5,clear,absent,absent,PASS
 K6,closed_face_touching,printed,printed,PASS
+K7,warnings_window_vs_none,20 vs 90,fewer, >0,PASS
+K7,first_warning_time,7.2129560857e+02,>= 719 s,PASS

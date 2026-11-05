@@ -26,6 +26,12 @@
 #   K6  Watch      -- the warning does not depend on the phi condition: the
 #                     same cut disc with -phi_open_bc 0 (90-degree face) still
 #                     prints it.
+#   K7  Start-up   -- Pi is not judged inside the start-up window (default
+#                     2 tau_sub): the same run (h = 0.99, Pi > 1 throughout)
+#                     prints fewer warnings with the window than with
+#                     -resolution_skip_tau 0, none before the window ends, and
+#                     still warns after it. K3 runs with -resolution_skip_tau 0
+#                     because its whole run is shorter than its 2 tau_sub.
 #
 # Writes verify_resolution.csv and verify_resolution.log next to this script.
 # =============================================================================
@@ -101,7 +107,7 @@ rec K2 vn_vs_area "$vchk (ratio $ratio)" "$varea" "$ok"
 
 # ---------------------------------------------------------------- K3 ----
 say ""; say "=== K3: fast front on a coarse eps prints the warning ==="
-runcase k3 "$EXEC" "${BOX[@]}" -ice_grain_cx 3.0e-5 -beta_sub0 7.9408e6 -eps 2.5e-6 -Nx 34 -Ny 26 \
+runcase k3 "$EXEC" "${BOX[@]}" -ice_grain_cx 3.0e-5 -beta_sub0 7.9408e6 -eps 2.5e-6 -Nx 34 -Ny 26 -resolution_skip_tau 0 \
   -flag_BC_rhovfix 1 -rhovfix_faces x0 -rhovfix_lo 0.9 -humidity 0.9 -t_final 5.0e3 -delt_t 1.0e-2 -dtmax 5.0e2
 if grep -q "RESOLUTION WARNING step" "$WORK/k3/out.txt"; then rec K3 warning printed printed PASS; else rec K3 warning absent printed FAIL; fi
 grep -m1 "RESOLUTION SUMMARY" "$WORK/k3/out.txt" | tee -a "$LOG"
@@ -124,6 +130,19 @@ if grep -q "RESERVOIR-FACE WARNING" "$WORK/k5ok/out.txt"; then rec K5 clear prin
 runcase k6 "$EXEC" "${BOX[@]}" -ice_grain_cx -7.5e-6 -decouple_phase_change 1 -flag_BC_rhovfix 1 -rhovfix_faces x0 \
   -phi_open_bc 0 -t_final 1.0e3 -delt_t 1.0e-2 -dtmax 1.0e2
 if grep -q "RESERVOIR-FACE WARNING" "$WORK/k6/out.txt"; then rec K6 closed_face_touching printed printed PASS; else rec K6 closed_face_touching absent printed FAIL; fi
+
+# ---------------------------------------------------------------- K7 ----
+say ""; say "=== K7: start-up window ==="
+K7=("${BOX[@]}" -ice_grain_cx 3.0e-5 -flag_BC_rhovfix 1 -rhovfix_faces x0 -rhovfix_lo 0.99 -t_final 1.0e3 -delt_t 1.0e-2)
+runcase k7a "$EXEC" "${K7[@]}" -resolution_skip_tau 0
+runcase k7b "$EXEC" "${K7[@]}"
+na=$(grep -c "RESOLUTION WARNING step" "$WORK/k7a/out.txt"); nb=$(grep -c "RESOLUTION WARNING step" "$WORK/k7b/out.txt")
+tskip=$(grep -o "after the [0-9.e+-]* s start-up" "$WORK/k7b/out.txt" | awk '{print $3}')
+first=$(grep -o "RESOLUTION WARNING step [0-9]*" "$WORK/k7b/out.txt" | head -1 | awk '{print $4}')
+tfirst=$(awk -v s="$first" '!/^#/ && $2==s {print $1; exit}' "$WORK/k7b/resolution.dat")
+[[ $nb -lt $na && $nb -gt 0 ]] && rec K7 warnings_window_vs_none "$nb vs $na" "fewer, >0" PASS || rec K7 warnings_window_vs_none "$nb vs $na" "fewer, >0" FAIL
+ok=$(awk -v a="${tfirst:-0}" -v b="${tskip:-1e30}" 'BEGIN{print (a>=b)?"PASS":"FAIL"}')
+rec K7 first_warning_time "${tfirst:-none}" ">= ${tskip:-?} s" "$ok"
 
 say ""
 if [[ $fail -eq 0 ]]; then say "ALL GATES PASSED   (see $CSV)"; else say "FAILURES -- see $CSV"; fi

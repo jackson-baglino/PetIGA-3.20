@@ -1,4 +1,4 @@
-BASE_REF = HEAD (b10fd0cb)
+BASE_REF = HEAD (ae37f11a)
 
 === K1: checker does not change the solution ===
 /Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/assembly.c -o obj/assembly.o
@@ -28,5 +28,9 @@ ld: warning: -bind_at_load is deprecated on macOS
   K5 touching: printed (expected printed) PASS
   K5 clear: absent (expected absent) PASS
   K6 closed_face_touching: printed (expected printed) PASS
+
+=== K7: start-up window ===
+  K7 warnings_window_vs_none: 20 vs 90 (expected fewer, >0) PASS
+  K7 first_warning_time: 7.2129560857e+02 (expected >= 719 s) PASS
 
 ALL GATES PASSED   (see /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/studies/cryosuction/verification/verify_resolution.csv)
