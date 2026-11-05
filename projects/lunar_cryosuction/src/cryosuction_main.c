@@ -1360,6 +1360,14 @@ int main(int argc, char *argv[]) {
     /* A vapor-reservoir face is an open end of the pore, not a wall: let the
      * ice pass through it (FACE_OPEN in assembly.c). */
     ierr = PetscMemzero(user.open_face, sizeof(user.open_face)); CHKERRQ(ierr);
+    /* The resolution checker watches every vapor-reservoir face for ice,
+     * whatever the phi condition there (-phi_open_bc 0 makes it a 90-degree
+     * face, but ice reaching the reservoir still means the run left the
+     * intended setup). */
+    ierr = PetscMemzero(user.res_watch_face, sizeof(user.res_watch_face)); CHKERRQ(ierr);
+    for (PetscInt l = 0; l < dim; l++)
+        for (PetscInt m = 0; m < 2; m++)
+            user.res_watch_face[l][m] = (PetscBool)(bc_dirichlet[l][m][2] != 0);
     for (PetscInt l = 0; l < dim; l++) {
         for (PetscInt m = 0; m < 2; m++) {
             if (!user.phi_open_bc || !bc_dirichlet[l][m][2] || user.wall_face[l][m]) continue;

@@ -722,8 +722,9 @@ PetscErrorCode BoundaryFluxMonitor(TS ts, PetscInt step, PetscReal t, Vec U, voi
  * is reported: Pi <= 0.5 is inside comp_eps's design margin, 0.5 < Pi <= 1
  * is outside the margin but inside the bound, Pi > 1 violates Eq. 45 (the
  * mesh/eps is too coarse for the speed the run actually reached). The same
- * pass records the largest phi on any open face (-phi_open_bc), where the
- * stage-0 tests found a spurious film once ice touches the face.
+ * pass records the largest phi on any vapor-reservoir face (res_watch_face,
+ * whatever its phi condition): ice should not reach the reservoir, and with
+ * the do-nothing phi condition (-phi_open_bc 1) it spreads into a film.
  * dphi/dt is a backward difference over the last accepted step. Read-only.
  * ========================================================================= */
 PetscErrorCode ResolutionMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void *mctx)
@@ -754,13 +755,13 @@ PetscErrorCode ResolutionMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void 
   while (IGANextElement(user->iga, el)) {
     ierr = IGAElementGetValues(el, aU, &UU); CHKERRQ(ierr);
     ierr = IGAElementGetValues(el, aP, &PP); CHKERRQ(ierr);
-    while (IGAElementNextForm(el, user->open_face)) {
+    while (IGAElementNextForm(el, user->res_watch_face)) {
       ierr = IGAElementBeginPoint(el, &pt); CHKERRQ(ierr);
       while (IGAElementNextPoint(el, pt)) {
         PetscScalar s[3];
         ierr = IGAPointFormValue(pt, UU, &s[0]); CHKERRQ(ierr);
         PetscReal phi = PetscRealPart(s[0]);
-        if (el->atboundary) {                     /* open-face point */
+        if (el->atboundary) {                     /* reservoir-face point */
           open_max = PetscMax(open_max, phi);
           continue;
         }
@@ -808,8 +809,8 @@ PetscErrorCode ResolutionMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void 
   }
   if (open_max > 0.01) {
     PetscPrintf(PETSC_COMM_WORLD,
-      "!!! OPEN-FACE WARNING step %d: phi = %.3f on an open face (ice touches it; "
-      "the stage-0 tests found a spurious film grows from here)\n", (int)step, (double)open_max);
+      "!!! RESERVOIR-FACE WARNING step %d: phi = %.3f on a vapor-reservoir face (ice has "
+      "reached the reservoir; the setup assumes it never does)\n", (int)step, (double)open_max);
   }
 
   if (user->res_view == NULL) {
@@ -820,7 +821,7 @@ PetscErrorCode ResolutionMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void 
     ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, fn, &user->res_view); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(user->res_view,
              "# K&P Eq. 45 check: Pi = beta0 v_n eps/d0 (<= 0.5 design, > 1 violated); "
-             "eps %.6e m, beta0 %.6e s/m, d0 %.6e m\n# t step dt vn_max Pi phi_max_open_face\n",
+             "eps %.6e m, beta0 %.6e s/m, d0 %.6e m\n# t step dt vn_max Pi phi_max_reservoir_face\n",
              (double)user->eps, (double)user->beta_sub0, (double)user->d0_sub0); CHKERRQ(ierr);
   }
   ierr = PetscViewerASCIIPrintf(user->res_view, "%.10e %d %.6e %.6e %.6e %.6e\n",
@@ -876,7 +877,7 @@ PetscErrorCode ResolutionSummary(AppCtx *user)
   PetscFunctionBegin;
   PetscPrintf(PETSC_COMM_WORLD,
     "\nRESOLUTION SUMMARY: max Pi = %.3f; steps with Pi > 0.5: %d, Pi > 1: %d; "
-    "max phi on an open face %.3e (%d steps > 0.01)%s\n",
+    "max phi on a reservoir face %.3e (%d steps > 0.01)%s\n",
     (double)user->res_pi_max, (int)user->res_n_warn, (int)user->res_n_bad,
     (double)user->res_open_phi_max, (int)user->res_n_open,
     (user->res_n_bad > 0 || user->res_n_open > 0) ? "   <-- CHECK THIS RUN" : "");

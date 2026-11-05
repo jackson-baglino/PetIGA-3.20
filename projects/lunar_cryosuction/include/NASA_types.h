@@ -169,14 +169,17 @@ typedef struct {
 
   // Resolution checker (ResolutionMonitor): the K&P (2009) Eq. 45 number
   // Pi = beta_sub0 * v_n * eps / d0_sub0 from the measured interface speed,
-  // and the largest phi on an open face. One row per step in resolution.dat.
+  // and the largest phi on a vapor-reservoir face (res_watch_face: every
+  // rho_v Dirichlet face, open for phi or not). One row per step in
+  // resolution.dat. The res_open_* names predate the watch-face change.
   Vec         res_U_prev;
   PetscReal   res_t_prev;
   PetscReal   res_pi_max;     // largest Pi so far
-  PetscReal   res_open_phi_max; // largest phi seen on an open face so far
+  PetscBool   res_watch_face[3][2]; // vapor-reservoir faces to watch for ice
+  PetscReal   res_open_phi_max; // largest phi seen on a reservoir face so far
   PetscInt    res_n_warn;     // steps with Pi > 0.5 (outside comp_eps's design margin)
   PetscInt    res_n_bad;      // steps with Pi > 1 (Eq. 45 violated)
-  PetscInt    res_n_open;     // steps with phi > 0.01 on an open face
+  PetscInt    res_n_open;     // steps with phi > 0.01 on a reservoir face
   PetscViewer res_view;
 
   // Stall detector. A bounds excursion can leave the solve unable to advance
