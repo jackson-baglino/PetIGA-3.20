@@ -15,7 +15,7 @@
 #   venv_workflows/bin/pip install -r requirements-workflows.lock
 #
 # Non-Python tools the workflows call (versions used, 2026-10-22):
-#   Claude Code   2.1.308       the agent harness; model IDs are pinned per agent
+#   Claude Code   2.1.318       the agent harness (2026-11-04: tuning calibration calib-dev8); model IDs are pinned per agent
 #   Graphviz      14.0.0        `neato`, used by scripts/flowchart/render_flowchart.py
 #   MuPDF         1.24.9        `mutool draw`, page images for the agents
 #   Google Chrome (any recent)  headless screenshots for flowchart review

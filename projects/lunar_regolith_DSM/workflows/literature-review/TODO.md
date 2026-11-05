@@ -58,7 +58,7 @@ Goal: a line that passes its own rules, frozen, so that the nine-paper result be
       - all or most "gold wrong": you fix those gold statements (I prepare the edits; you approve them), then 1.5;
       - several "checker wrong": I change the checker's prompt, aiming at over-flagging conditions, then 1.5;
       - a mix: both.
-- [ ] **1.5 Me: rerun the tuning diagnostic** (`check_plants.py --set tuning`). **⟂ depends:** if controls flagged
+- [x] **1.5 Me: rerun the tuning diagnostic** (Done 2026-11-04, round 3, calib-dev8: 32/32 plants, 1/40 controls flagged.) (`check_plants.py --set tuning`). **⟂ depends:** if controls flagged
       ≤ 4/40 and the plant rules hold, go on; if not, back to 1.4 (a prompt change), at most two more rounds, then we
       decide together whether the rule or the checker gives way.
 - [x] **1.6 You: decide the open backlog item** (Done 2026-11-04: build it; stage Y1b.) (a claim review decision that changes what the memo cites should
@@ -67,7 +67,7 @@ Goal: a line that passes its own rules, frozen, so that the nine-paper result be
       runner rule, small), or accept the gap for the pilot and check the memo by hand at memo approval.
 - [x] **1.7 Me: close the second dev run** `dev-20261101-a2` (Done 2026-11-04: `run_b1.py close`; kept, no longer current.) (paused at the copy check for Li 2009). Why: it was a
       copy-check test; the real run repeats that gate. I mark it abandoned in the status, without deleting it.
-- [ ] **1.8 Me: pin the Claude Code version.** The lock says 2.1.308; this machine runs 2.1.317. Why: the freeze
+- [x] **1.8 Me: pin the Claude Code version.** (Done 2026-11-04: 2.1.318; the freeze now records it and `verify` reports a change.) The lock says 2.1.308; this machine runs 2.1.317. Why: the freeze
       records the version, and a version change means rerunning the calibration. I record 2.1.317 if the tuning rerun
       (1.5) ran on it. **⟂ depends:** if Claude Code updates again before the freeze, rerun 1.5.
 - [ ] **1.9 Me: final development checks.** All tests pass, `check_permissions.py`, `lr_status.py --write`, commit.

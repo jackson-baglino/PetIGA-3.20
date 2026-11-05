@@ -1232,6 +1232,17 @@ build log with the date. The tests B1 needs:
   item without a verdict; 18 calls, none failed. The flagged controls go to
   the user (`control_review.py` writes them, with the checker's reasons, to a
   file under untrusted/ that only the user opens).
+- Calibration diagnostic, tuning set, rounds 2 and 3, 2026-11-04 (Claude Code
+  2.1.318). Round 2 (`calib-dev7`): the user's rulings on calib-dev6 (7 gold
+  statements rewritten; 2 checker flags) and a checker change (breadth judged
+  against the paper's own model; one unbalanced printed bracket). 32 of 32
+  plants caught; 5 of 40 controls flagged. Round 3 (`calib-dev8`): 4 more
+  gold statements rewritten by the user, and `check_plants.py` now shows the
+  checker every page a gold statement lists (before, only the first). 32 of
+  32 plants caught (every kind; 17 reached the checker); **1 of 40 controls
+  flagged (G028)**, within the rule; 18 calls, none failed. G018 (the print
+  has an extra parenthesis the statement drops) was flagged in rounds 1 and 2
+  and not in 3: the checker varies run to run on borderline items.
 
 T-units is deferred with the units check it tests (E3b, `check_units.py`,
 §13), which B1 does not run (user decision 2026-11-01); unit and exponent
