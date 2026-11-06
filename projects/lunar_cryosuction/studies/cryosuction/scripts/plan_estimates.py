@@ -10,7 +10,8 @@ Sections
      the measured 5.73e12 s/m^2 (studies/cryosuction/RUNS.md, row 0c-B1).
   2. Ripening pair: Gibbs-Thomson drive, the gradient that cancels it, and a
      rough vanishing time (2D quasi-steady diffusion in series with kinetics).
-  3. Gradient-driven migration speed of ice, v ~ D_v * d(rho_vs)/dT * G / rho_ice
+  3. Gradient-driven migration speed of ice (and K&P Eq. 45 resolution number
+     Pi = beta0 v eps / d0 at --eps; the design limit is 0.5), v ~ D_v * d(rho_vs)/dT * G / rho_ice
      (no conductivity-contrast factor; ice conducts ~100x better than air, so
      the real local gradient in the air differs by an O(1) factor).
   4. Harvest time of a filled channel, front moving from l0 to l1 under
@@ -46,6 +47,7 @@ def main() -> int:
     p.add_argument("--l0", type=float, default=1e-4, help="harvest: start distance [m]")
     p.add_argument("--l1", type=float, nargs="+", default=[0.85e-3, 2e-3, 5e-3], help="harvest: end distances [m]")
     p.add_argument("--fill", type=float, default=1.0, help="harvest: ice fraction of the pore cross-section")
+    p.add_argument("--eps", type=float, default=8.584e-7, help="eps for the resolution number Pi [m]")
     a = p.parse_args()
 
     T = a.T0
@@ -89,7 +91,8 @@ def main() -> int:
     for G in a.G:
         vm = D * rho_vs * s * G / rho_i
         print(f"G = {G:7.1f} K/m: v = {vm:.3e} m/s = {vm * DAY * 1e6:8.3f} um/day;"
-              f" saturation change over 100 um = {s * G * 1e-4:.3e}")
+              f" saturation change over 100 um = {s * G * 1e-4:.3e};"
+              f" Pi = beta0 v eps/d0 = {beta0 * vm * a.eps / d0:.3f} at eps {a.eps:.3e} m")
 
     print(f"\n# 4. Harvest time, front from l0 = {a.l0:.2e} m, ice fill fraction {a.fill}")
     for h in a.harvest:
