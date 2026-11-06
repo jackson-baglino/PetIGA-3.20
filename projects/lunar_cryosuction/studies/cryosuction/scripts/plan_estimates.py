@@ -17,6 +17,11 @@ Sections
   4. Harvest time of a filled channel, front moving from l0 to l1 under
      suction sigma: t = [beta0 (l1 - l0) + K (l1^2 - l0^2) / 2] * f / sigma,
      K = rho_ice / (D_v rho_vs), f = ice fraction of the pore cross-section.
+  5. Warm-top (or warm-bottom) gradient runs: the collector holds
+     rho_open = h_open * rho_vs(T0), with T0 the mid-domain temperature
+     (src/cryosuction_main.c:1415). Ice colder than T_c, where
+     rho_vs(T_c) = rho_open, cannot lose vapor to the collector. Cutoff
+     distance on the cold side of the T0 point: dz = ln(1/h_open) / (s G).
 
     venv_cryosuction/bin/python studies/cryosuction/scripts/plan_estimates.py
 """
@@ -47,6 +52,7 @@ def main() -> int:
     p.add_argument("--l0", type=float, default=1e-4, help="harvest: start distance [m]")
     p.add_argument("--l1", type=float, nargs="+", default=[0.85e-3, 2e-3, 5e-3], help="harvest: end distances [m]")
     p.add_argument("--fill", type=float, default=1.0, help="harvest: ice fraction of the pore cross-section")
+    p.add_argument("--cutoff-h", type=float, nargs="+", default=[0.99, 0.995, 0.999], help="h_open for section 5")
     p.add_argument("--eps", type=float, default=8.584e-7, help="eps for the resolution number Pi [m]")
     a = p.parse_args()
 
@@ -102,6 +108,10 @@ def main() -> int:
             v_start = sig / (beta0 + K * a.l0)
             print(f"h = {h:5.3f}  l1 = {l1:.2e} m: t = {t / DAY:9.1f} days;"
                   f" starting front speed {v_start:.3e} m/s")
+    print("\n# 5. Harvest cutoff on the cold side of the T0 point, dz = ln(1/h_open)/(s G)")
+    for h in a.cutoff_h:
+        for G in a.G:
+            print(f"h_open = {h:6.4f}, G = {G:7.1f} K/m: dz = {math.log(1 / h) / (s * G) * 1e3:9.3f} mm")
     return 0
 
 
