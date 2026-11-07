@@ -216,19 +216,20 @@ def main():
     t, kappa, s_meas, pts, tags = sample_contour(run_dir, c["eps"], c["axisym"],
                                                  args.time, args.times)
 
-    # rho_vs at the run temperature, via the same expression as the solver.
-    # Taken off the data so a Tgrad run uses its own local value.
-    from paraview.simple import PVDReader  # noqa: F401  (import kept local)
-    rho_vs = None
-    # Supersaturation = (rho_v - rho_vs)/rho_vs is dimensionless, so the
-    # balance below needs rho_vs only through d0 and beta, which use the T0
-    # value. Recover it from the solver's own constants.
-    T0_K = 253.15
-    PATM, BB = 101325.0, 0.62
-    K = (-0.5865e4, 0.2224e2, 0.1375e-1, -0.3403e-4, 0.2697e-7, 0.6918)
-    Pvs = np.exp(K[0] / T0_K + K[1] + K[2] * T0_K + K[3] * T0_K ** 2
-                 + K[4] * T0_K ** 3 + K[5] * np.log(T0_K))
-    rho_vs = 1.341 * BB * Pvs / (PATM - Pvs)
+    # rho_vs at the run's mean temperature temp0, which is where the solver
+    # evaluates d0 and beta (start-up, K&P Eq. 13). Before 2026-11-06 this was
+    # fixed at -20 C, so at any other -temp d0 and beta were off by
+    # rho_vs(T)/rho_vs(-20 C) (8.6x in v_n at -40 C).
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from pplib import RHO_AIR_DEFAULT, opt_float, read_opts
+    from pplib import rho_vs as _rho_vs
+    opts = read_opts(run_dir)
+    T0_C = opt_float(opts, "-temp", None)
+    if T0_C is None:
+        print("  WARNING: no -temp in the staged .opts; assuming -20 C", file=sys.stderr)
+        T0_C = -20.0
+    rho_air = opt_float(opts, "-rho_air", RHO_AIR_DEFAULT) or RHO_AIR_DEFAULT
+    rho_vs = float(_rho_vs(T0_C, rho_air))
 
     d0 = 15.0 * c["mob_sub"] * c["rho_ice"] / (c["alph_sub"] * rho_vs)
     beta = 5.0 * c["rho_ice"] / (c["eps"] * c["alph_sub"] * rho_vs)
