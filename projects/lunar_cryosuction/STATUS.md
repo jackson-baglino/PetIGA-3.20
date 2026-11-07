@@ -46,7 +46,7 @@ Hypotheses: the user writes them; none recorded yet.
 
 | # | Issue | State | Next step |
 |---|---|---|---|
-| 1 | Fast phases under-resolved on 0.86 um meshes (Pi ~ 1) | I1-fine passes the preset < 5 % test (area 0.31 %, vanishing time 3.0 %; REPORT_issue1) | user confirms closing it and keeping 0.86 um for production |
+| 1 | Fast phases under-resolved on 0.86 um meshes (Pi ~ 1) | **closed** 2026-11-07 (user): I1-fine within 3 % (area 0.31 %, vanishing time 3.0 %; REPORT_issue1); production stays on eps 0.8584 um | check Pi in each new geometry's log |
 | 2 | B1 series-law slope 1.15x | **closed** 2026-11-06: slope 0.996-1.000x with D_v(-20 C), area-based face (RUNS.md 0c-B1) | D5 can be accepted |
 | 3 | Thermal BCs set the harvest rate | rule adopted | every run table has a thermal column |
 | 4 | Default -phi_open_bc 1 | **closed** | check_open_bc.sh runs in preflight.sh (commit 4db30788) |
@@ -100,6 +100,12 @@ Hypotheses: the user writes them; none recorded yet.
   at day 8): future margins must be longer. I1-fine: 0.86 um mesh within 3 %
   of the fine mesh. Reports REPORT_type4, REPORT_issue1 in the batch folders.
   New: analyze_type4.py, compare_issue1.py.
+- 2026-11-07: contact_angle.py fixed: keeps the remaining face when one face
+  reaches the domain edge (was: all lost); reports contact-line speed and
+  calls faces static (< 2 eps travel) or moving; extrapolates theta_inf only
+  for static faces (was: theta_inf -6406 deg on a moving wedge). Moving faces
+  show a dynamic angle below Young (3A-1: 25 vs 30 deg); static ones match to
+  0.06 deg. Reports T3/T4 updated.
 
 - 2026-11-07: T3 (type 3, 10 runs) finished and analyzed: series law holds to
   1 % with nothing fitted; report `REPORT_type3.md/.pdf` in the batch folder.
