@@ -187,17 +187,23 @@ def main(argv=None):
     # disagree about the shape of the curve.
     ref, ref_note = (a0, f"{n_grains} grains from -grains_file") if a0 else \
                     (area[0], "t = 0 value (no packing file found)")
-    ax2 = ax1.twinx()
-    ax2.set_ylim(np.array(ax1.get_ylim()) / ref)
-    if a.loglog:
-        ax2.set_yscale("log")
-    ax2.set_ylabel(f"Fraction of initial surface\n({ref_note})", fontsize=12)
-    ax2.tick_params(axis="both", which="major", labelsize=11)
+    # No normalized axis when there is nothing to normalize by (no packing
+    # file and no ice-air surface at t = 0, e.g. ice that appears later).
+    if np.isfinite(ref) and ref > 0:
+        ax2 = ax1.twinx()
+        ax2.set_ylim(np.array(ax1.get_ylim()) / ref)
+        if a.loglog:
+            ax2.set_yscale("log")
+        ax2.set_ylabel(f"Fraction of initial surface\n({ref_note})", fontsize=12)
+        ax2.tick_params(axis="both", which="major", labelsize=11)
+    else:
+        print("plot_ssa: initial surface is 0 and no packing file; normalized axis omitted")
 
+    change = (f"({(area[-1] / area[0] - 1) * 100:+.2f}%)   " if area[0] > 0 else "")
     ax1.set_title(a.title or
                   f"Ice-air surface evolution\n"
                   f"{area[0]:.4g} → {area[-1]:.4g} {unit_label}  "
-                  f"({(area[-1] / area[0] - 1) * 100:+.2f}%)   "
+                  f"{change}"
                   f"over {tt[-1]:.3g} {unit}",
                   fontsize=15)
     fig.tight_layout()
