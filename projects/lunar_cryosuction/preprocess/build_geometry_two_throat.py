@@ -240,6 +240,7 @@ def preview(bumps, bridges, fname, title):
 
 
 def main():
+    global EPS
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--orientation", choices=("narrow-left", "narrow-right"),
@@ -251,7 +252,14 @@ def main():
                     help="meniscus wall contact, as a fraction of THROAT_R from the "
                          "throat centre; larger = more ice and gentler menisci")
     ap.add_argument("--tag", default=None, help="override the output name suffix")
+    ap.add_argument("--eps", type=float, default=EPS,
+                    help=f"interface parameter [m] (default {EPS:.4e}); compute it with "
+                         "preprocess/comp_eps.py. Sets Nx, Ny and the resolution asserts; "
+                         "the walls and plugs do not depend on it")
     args = ap.parse_args()
+    if not (0.0 < args.eps < 1e-5):
+        ap.error("--eps must be in (0, 1e-5) m")
+    EPS = args.eps
 
     tag = args.tag if args.tag else args.orientation.replace("-", "_")
     dat = ROOT / f"inputs/geometry/two_throat_{tag}.dat"
