@@ -59,12 +59,18 @@ because it is a format conversion for ParaView, not a figure.
 | `section_flux.py` | snapshots | plan tool T3: vapor and heat flux through any line; `--check-face` compares with `bflux.dat` |
 | `type_summary.py` | a manifest of runs | plan tool T6: one CSV and one checked figure per simulation type |
 | `figcheck.py` | — | overlap and font-size check for any matplotlib figure (used by the tools above) |
+| `run_health.py` | each run's job log, `outp.txt`, `solver_evo.dat`, `resolution.dat`, `SSA_evo.dat` | how well each run of a batch ran: completed, wall time, steps, Newton/Krylov, rejections, rollbacks, steps at dtmax, phi range, Pi; a markdown table for the batch report (`--md`, `--csv`) |
 
 The measurement tools (`ice_bodies`, `water_budget`, `section_flux`) read the
 spline itself from `sol_*.dat` + `igasol.dat` (`pplib.iter_snapshots`), not
 `vtkOut/`: the `.vts` files hold control-point values, which smooth the field
 and sit at uneven points near the boundary. They are on demand, not in the
 sweep. Tests: `venv_cryosuction/bin/python -m unittest discover -s postprocess/tests -t .`
+
+Batch reports: one `REPORT_<type>.md` per downloaded batch, in the batch
+folder, with the health table from `run_health.py` and figures in
+`<batch>/report_figures/`; `scripts/md2pdf.py REPORT_<type>.md --landscape`
+renders the PDF next to it (headless Chrome; figures print at their own DPI).
 
 `plot_fields_highres.py` is deliberately **not** in the sweep: it is slow and
 only wanted on demand.
