@@ -428,6 +428,54 @@ class TestWaterBudget(unittest.TestCase):
             self.assertTrue(np.all(b["out"] == 0))
             self.assertLess(np.abs(b["closure"]).max(), 1e-20)
 
+    @staticmethod
+    def _write_bc_table(run, rows):
+        """outp.txt with the solver's BOUNDARY CONDITIONS table (format of
+        cryosuction_main.c). rows: [(wall, T_cell, rhov_cell)]."""
+        with open(os.path.join(run, "outp.txt"), "w") as fh:
+            fh.write("\n BOUNDARY CONDITIONS\n   Per wall, per equation.\n\n")
+            fh.write(f"   {'Wall':<18} {'phi_i (ice)':<22} {'T (temperature)':<24} rho_v (vapor)\n")
+            fh.write(f"   {'-' * 18} {'-' * 22} {'-' * 24} {'-' * 24}\n")
+            for wall, tc, vc in rows:
+                fh.write(f"   {wall:<18} {'Neumann  dphi/dn=0':<22} {tc:<24} {vc}\n")
+            fh.write("\n STEP 0\n")
+
+    def test_T_only_faces_add_no_vapor_outflow(self):
+        """Closed control (3C): T pinned on every face, vapor sealed everywhere.
+        The J_vap columns are weak-Neumann residuals and must not count; Q does."""
+        t = np.linspace(0, 100, 11)
+        with tempfile.TemporaryDirectory() as d:
+            run = fx.make_run(d)
+            fx.write_ssa(run, t, 1e-8 * np.ones_like(t), rhov=1e-12)
+            fx.write_bflux(run, t, {f: (1e-15, 2e-12) for f in ("x0", "x1", "y0", "y1")})
+            tc, sealed = "Dirichlet -20.0000 C", "Neumann  (sealed)"
+            self._write_bc_table(run, [("x = 0   (left)", tc, sealed), ("x = Lx  (right)", tc, sealed),
+                                       ("y = 0   (bottom)", tc, sealed), ("y = Ly  (top)", tc, sealed)])
+            self.assertEqual(water_budget.pinned_faces(run),
+                             {f: (True, False) for f in ("x0", "x1", "y0", "y1")})
+            b = water_budget.budget([run])
+            self.assertTrue(np.all(b["out"] == 0))
+            self.assertEqual(b["faces"], {})
+            self.assertAlmostEqual(b["heat"][-1], -4 * 2e-12 * 100, delta=1e-20)
+            lines = water_budget.summary(b)
+            self.assertIn("of the initial ice", "\n".join(lines))
+
+    def test_vapor_pinned_end_only(self):
+        """Reservoir at x0 only, T pinned on all four: only J_vap_x0 is outflow."""
+        t = np.linspace(0, 100, 11)
+        with tempfile.TemporaryDirectory() as d:
+            run = fx.make_run(d)
+            fx.write_ssa(run, t, 1e-8 * np.ones_like(t), rhov=1e-12)
+            fx.write_bflux(run, t, {"x0": (3e-15, 0.0), "x1": (5e-15, 0.0),
+                                    "y0": (7e-15, 0.0), "y1": (7e-15, 0.0)})
+            tc, sealed = "Dirichlet -20.0000 C", "Neumann  (sealed)"
+            self._write_bc_table(run, [("x = 0   (left)", tc, "Dirichlet 7.7000e-04 kg/m3"),
+                                       ("x = Lx  (right)", tc, sealed),
+                                       ("y = 0   (bottom)", tc, sealed), ("y = Ly  (top)", tc, sealed)])
+            b = water_budget.budget([run])
+            self.assertAlmostEqual(b["out"][-1], 3e-15 * 100, delta=1e-25)
+            self.assertEqual(list(b["faces"]), ["x0"])
+
     def test_edge_leak_is_reported_as_closure(self):
         """Ice lost with no outflow and no vapor gain: the whole loss is closure error."""
         with tempfile.TemporaryDirectory() as d:

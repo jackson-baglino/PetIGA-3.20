@@ -70,8 +70,55 @@ import pplib  # noqa: E402
 L_SUB_REF = 2.83e6   # J/kg near 250 K (reference value only)
 
 
+_BC_ROW_FACE = {"x = 0": "x0", "x = Lx": "x1", "y = 0": "y0", "r = 0": "y0",
+                "y = Ly": "y1", "z = 0": "z0", "z = Lz": "z1"}
+
+
+def pinned_faces(run_dir):
+    """{face: (T_pinned, vapor_pinned)} from the BOUNDARY CONDITIONS table the
+    solver prints to its log (outp.txt, else the SLURM *.o* file), or None
+    when no log has the table.
+
+    bflux.dat has a column pair for every face where T OR rho_v is Dirichlet
+    (cryosuction_main.c, flux_face). On a face where only T is pinned, J_vap is
+    -D grad(rho_v).n of a weakly imposed zero-flux condition: a discretization
+    residual, not vapor leaving. Likewise Q_heat on a face where only rho_v is
+    pinned. The table is printed from the same bc_dirichlet record, so it says
+    which columns are real fluxes."""
+    logs = [os.path.join(run_dir, "outp.txt")]
+    logs += sorted(os.path.join(run_dir, f) for f in os.listdir(run_dir)
+                   if ".o" in f and f.rsplit(".o", 1)[-1].isdigit())
+    for path in logs:
+        if not os.path.isfile(path):
+            continue
+        out, inside = {}, False
+        with open(path, errors="replace") as fh:
+            for line in fh:
+                if "BOUNDARY CONDITIONS" in line:
+                    out, inside = {}, True
+                    continue
+                if not inside:
+                    continue
+                s = line.strip()
+                key = next((k for k in _BC_ROW_FACE if s.startswith(k + " ")), None)
+                if key is None:
+                    if out and not s:
+                        break
+                    continue
+                # The T cell is "Dirichlet <v> C" or "Neumann  (insulating)";
+                # the rho_v cell "Dirichlet <v> kg/m3" or "Neumann  (sealed)".
+                out[_BC_ROW_FACE[key]] = ("(insulating)" not in s, "(sealed)" not in s)
+        if out:
+            return out
+    return None
+
+
 def load_bflux(run_dir):
-    """(t, J_total, Q_total, {face: J}) from bflux.dat, or None when absent."""
+    """(t, J_total, Q_total, {face: J}) from bflux.dat, or None when absent.
+
+    J_total sums only faces where vapor is pinned and Q_total only faces where
+    T is pinned (see pinned_faces); {face: J} keeps the same selection. With no
+    log to read, every column is summed and a warning is printed."""
     path = os.path.join(run_dir, "bflux.dat")
     if not os.path.isfile(path):
         return None
@@ -91,6 +138,14 @@ def load_bflux(run_dir):
     a = a[np.argsort(a[:, 0], kind="stable")]
     jcols = [k for k, n in enumerate(names) if n.startswith("J_vap")]
     qcols = [k for k, n in enumerate(names) if n.startswith("Q_heat")]
+    pins = pinned_faces(run_dir)
+    if pins is None:
+        print(f"water_budget: no BOUNDARY CONDITIONS table in a log in {run_dir}; summing "
+              "J_vap and Q_heat over every bflux.dat face (a T-only face adds its "
+              "weak-Neumann vapor residual to the outflow)", file=sys.stderr)
+    else:
+        jcols = [k for k in jcols if pins.get(names[k][len("J_vap_"):], (True, True))[1]]
+        qcols = [k for k in qcols if pins.get(names[k][len("Q_heat_"):], (True, True))[0]]
     t = a[:, 0]
     J = a[:, [2 + k for k in jcols]].sum(axis=1) if jcols else np.zeros_like(t)
     Q = a[:, [2 + k for k in qcols]].sum(axis=1) if qcols else np.zeros_like(t)
@@ -184,9 +239,20 @@ def budget(run_dirs, rho_ice=None):
                 lost=lost, faces=faces, rho_ice=rho_ice, has_bflux=bf is not None)
 
 
+def closure_ref(b):
+    """(reference mass, label) for a relative closure error: the most ice lost,
+    or the initial ice when (almost) none was lost, as in a closed control,
+    where dividing by the ice lost divides by ~0."""
+    m0 = abs(b["m_ice"][0])
+    lost = np.abs(b["lost"]).max()
+    if lost <= 1e-9 * m0:
+        return max(m0, 1e-300), "of the initial ice (almost none was lost)"
+    return max(lost, 1e-300), "of the ice lost"
+
+
 def summary(b, rec=None, rec_half=None):
     t, lost, out, vap, clo = b["t"], b["lost"], b["out"], b["vap"], b["closure"]
-    ref = max(np.abs(lost).max(), 1e-300)
+    ref, ref_name = closure_ref(b)
     lines = [
         f"rows {t.size}, t {t[0]:.4e} to {t[-1]:.4e} s ({(t[-1] - t[0]) / 86400:.3f} d), "
         f"rho_ice {b['rho_ice']:g} kg/m3, bflux.dat {'yes' if b['has_bflux'] else 'no (closed box: outflow 0)'}",
@@ -196,7 +262,7 @@ def summary(b, rec=None, rec_half=None):
         f"vapor held in the pore: start {vap[0]:.6e}, end {vap[-1]:.6e}, change {vap[-1] - vap[0]:+.6e} kg/m",
         f"vapor that left through the faces {out[-1]:.6e} kg/m",
         f"closure error (ice + vapor + outflow - initial): end {clo[-1]:+.3e} kg/m, "
-        f"max |.| {np.abs(clo).max():.3e} kg/m = {np.abs(clo).max() / ref:.3e} of the ice lost",
+        f"max |.| {np.abs(clo).max():.3e} kg/m = {np.abs(clo).max() / ref:.3e} {ref_name}",
     ]
     for f, J in b["faces"].items():
         lines.append(f"  face {f}: mean J {J.mean():+.4e} kg/(m s) over its rows")

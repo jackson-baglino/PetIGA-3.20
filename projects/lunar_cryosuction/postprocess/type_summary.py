@@ -18,7 +18,8 @@ For every run this collects (computing what is missing):
 and writes <out>/type<T>_summary.csv and <out>/type<T>_summary.png (ice
 fraction left, upper-face depth and closure error against time, one line per
 run). The figure is checked with figcheck before it is saved; problems are
-printed and make the exit status 1.
+printed and make the exit status 1. Closure error is relative to the ice lost,
+or to the initial ice when almost none was lost (water_budget.closure_ref).
 
 ice_bodies.csv in a run folder is reused when it is newer than every snapshot;
 otherwise ice_bodies is run (with --every, default 1) and its CSV written into
@@ -152,7 +153,7 @@ def summarize(typ, name, legs, cache, every, do_recapture):
                ice_left_frac=b["m_ice"][-1] / m0 if m0 else np.nan,
                ice_lost_kg_per_m=lost[-1], vapor_change_kg_per_m=b["vap"][-1] - b["vap"][0],
                outflow_kg_per_m=b["out"][-1],
-               closure_rel=np.abs(b["closure"]).max() / max(np.abs(lost).max(), 1e-300),
+               closure_rel=np.abs(b["closure"]).max() / water_budget.closure_ref(b)[0],
                recapture=(rec[1] / rec[0]) if rec and rec[0] > 0 else np.nan,
                t50_s=time_to_lose(b["t"], lost, m0, 0.5), t90_s=time_to_lose(b["t"], lost, m0, 0.9),
                events=n_events, pi_max=pi, phi_reservoir_max=phi_res, folder="+".join(legs), **end)
@@ -179,14 +180,14 @@ def figure(typ, results, path, vertical):
             tt = sorted(main)
             axs[1].plot(pplib.in_time_unit(tt, unit), [main[k]["face_lo"] * 1e6 for k in tt],
                         lw=1.4, color=ln.get_color())
-        ref = max(np.abs(b["lost"]).max(), 1e-300)
+        ref = water_budget.closure_ref(b)[0]
         axs[2].plot(t, b["closure"] / ref, lw=1.2, color=ln.get_color())
     axs[0].set_ylabel("ice left (fraction)")
     axs[1].set_ylabel("upper face x [µm]")
     if vertical:
         axs[1].invert_yaxis()
         axs[1].set_ylabel("upper face depth x [µm]")
-    axs[2].set_ylabel("closure / ice lost")
+    axs[2].set_ylabel("closure (relative)")
     for ax in axs:
         ax.set_xlabel(f"time [{unit}]")
         for side in ("top", "right"):
