@@ -45,6 +45,19 @@ def main() -> int:
     p.add_argument("--Ly", type=float)
     p.add_argument("--Rave", type=float)
     a = p.parse_args()
+    # Same input range as comp_eps (preprocess/mesh_params/tool.py), so the
+    # two never disagree about what is a valid case.
+    if not (-150.0 < a.T0 < -0.001):
+        p.error(f"--T0 must be in (-150, -0.001) C, where the ice formulas apply (got {a.T0})")
+    if not (0.0 < a.alpha <= 1.0):
+        p.error(f"--alpha must be in (0, 1] (got {a.alpha})")
+    if not (a.h > 0.0):
+        p.error(f"--h must be positive (got {a.h})")
+    if not (a.l >= 0.0):
+        p.error(f"--l must be >= 0 (got {a.l})")
+    if a.T0 < -100.0:
+        print(f"# WARNING: {a.T0} C is below the -100 C limit of the saturation fit; "
+              "rho_vs is extrapolated, and D_v is the air value", file=sys.stderr)
     v, beta0, K = speed(a.T0, a.alpha, a.h, a.l)
     print(f"# T0 {a.T0} C, alpha_c {a.alpha:g}, h {a.h}, l {a.l:g} m")
     print(f"beta0 = {beta0:.4e} s/m, K = {K:.4e} s/m^2, K*l = {K * a.l:.4e} s/m")
