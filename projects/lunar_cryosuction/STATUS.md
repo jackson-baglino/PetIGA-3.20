@@ -71,7 +71,7 @@ Hypotheses: the user writes them; none recorded yet.
 - Running: none. Prepared: I1-fine (issue-1 eps pair; tests file
   `studies/cryosuction/issue1_eps_pair_tests.txt`; needs a push first).
 - Next: shakedown (one short run per type) once builders and experiment files exist.
-- 24+ local commits are not pushed (D7); the HPC needs them for new inputs.
+- 46 local commits are not pushed (D7); the HPC needs them for the new inputs.
 
 ## Done recently
 
