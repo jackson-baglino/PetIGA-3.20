@@ -1,0 +1,24 @@
+# experiment/cryosuction/t3res_T-20_theta30_120d_ac1e-2.opts   (make_type34_inputs.py, 2026-11-07)
+#
+# Plan type 3A/3B: lens grows or shrinks by contact angle alone; h = 1 at both ends.
+# Isothermal at -20 C (T fixed on the boundary), theta = 30 deg from Young
+# (gamma_is = 0.3 - 0.109 cos theta), vapor set "res", 120 days.
+# -dtmax is in the GEOMETRY file (2 tau_sub depends on its eps).
+#
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1
+-rhovfix_axis 0                         # both x faces, h = 1
+-rhovfix_lo 1.000000
+-rhovfix_hi 1.000000
+-phi_open_bc 0                          # 90-degree phi face on every non-wall face
+-t_final 1.036800e+07
+-n_out 121                              # one snapshot a day
+-beta_sub0 7.9408e+05                     # K&P beta0 at -20 C, alpha_c = 1e-2
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2056032                     # cos(theta) = +0.866025
+-dtCFL 1
+-outp 0

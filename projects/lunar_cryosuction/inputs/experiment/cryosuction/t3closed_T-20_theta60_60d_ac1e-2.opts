@@ -1,0 +1,21 @@
+# experiment/cryosuction/t3closed_T-20_theta60_60d_ac1e-2.opts   (make_type34_inputs.py, 2026-11-07)
+#
+# Plan type 3C: closed pore; nothing should move (control).
+# Isothermal at -20 C (T fixed on the boundary), theta = 60 deg from Young
+# (gamma_is = 0.3 - 0.109 cos theta), vapor set "closed", 60 days.
+# -dtmax is in the GEOMETRY file (2 tau_sub depends on its eps).
+#
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 0                      # no vapor in or out: water conserved
+-phi_open_bc 0                          # 90-degree phi face on every non-wall face
+-t_final 5.184000e+06
+-n_out 61                              # one snapshot a day
+-beta_sub0 7.9408e+05                     # K&P beta0 at -20 C, alpha_c = 1e-2
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # cos(theta) = +0.500000
+-dtCFL 1
+-outp 0

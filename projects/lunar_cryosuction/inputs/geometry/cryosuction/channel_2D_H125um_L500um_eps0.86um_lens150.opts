@@ -1,0 +1,30 @@
+# =============================================================================
+# geometry/cryosuction/channel_2D_H125um_L500um_eps0.86um_lens150.opts   (make_type34_inputs.py, 2026-11-07)
+#
+# Plan type 3 (3A, 3C, 3D): lens in a flat 125 um pore.
+# Flat pore 500 x 125 um, walls y0 and y1. Lens = slab 175.0-325.0 um
+# (150 um long, area 1.8750e-08 m^2) with flat faces (90 deg at t = 0): the
+# intersection of two far, crossed discs (R = 6.250e-03 m, face sag 0.312 um), as in
+# contactangle/channel_2D_H125um_eps0.86um_flat90.opts.
+# eps 8.5840e-07 m (velocity-study value; see make_type34_inputs.py), h = eps/sqrt(2).
+# dtmax = 2 tau_sub = 1.3412e+03 s.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nx 824
+-Ny 206
+-Nz 1
+-Lx 5.000000e-04
+-Ly 1.250000e-04
+-Lz 0
+-bridge_cxL 6.425000e-03
+-bridge_rL  6.250000e-03
+-bridge_cxR -5.925000e-03
+-bridge_rR  6.250000e-03
+-bridge_cy  6.250000e-05
+-eps 8.5840e-07
+-eps_valid_temp -20
+-delt_t 1.0e-4
+-periodic 0
+-wall_faces y0,y1
+-dtmax 1.3412e+03

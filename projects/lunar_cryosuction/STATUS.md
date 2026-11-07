@@ -7,7 +7,7 @@ weeks (LOG.md keeps the history), and never let it pass about 150 lines.
 Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 `LOG.md`; the plan itself in the iCloud folder below.
 
-**Last updated:** 2026-11-07 (session be49e5a1)
+**Last updated:** 2026-11-07 (session be49e5a1), types 3-4 prepared
 
 ## Goal and deadline
 
@@ -36,7 +36,7 @@ shakedown Wed 11 Nov; production from 12-14 Nov).
 | D4 | AGU types: 1, 2, 6, 7 certain; 3-5 as trends | assumed |
 | D5 | accept B1 resolution | check done (issue 2 closed); confirm |
 | D6 | type 8 in paper 3 | assumed |
-| D7 | push local commits before the shakedown | **ask the user before pushing** |
+| D7 | push local commits | approved and pushed 2026-11-07; ask again for later pushes |
 | — | curvature symbol is chi, not kappa | decided 2026-11-06 |
 | — | open phi boundary dropped: every experiment sets -phi_open_bc 0 | decided 2026-11-06 |
 
@@ -62,16 +62,22 @@ Hypotheses: the user writes them; none recorded yet.
 - Tests: `postprocess/tests` (233), `studies/cryosuction/tests` (71),
   `preprocess/tests` (28), all passing; commands in postprocess/README.md. Every
   bug the tests found in the older tools was fixed on 2026-11-06.
+- Types 3 and 4 inputs done (studies/cryosuction/scripts/make_type34_inputs.py).
 - Still to build: geometry builders for the single throat (type 5), dog-bone
   (type 6), 2 mm regolith pore with its ice layout (type 7), wall caps of a
-  given theta (types 1, 2); experiment files for types 1-7.
+  given theta (types 1, 2); experiment files for types 1, 2, 5, 6, 7.
 
 ## HPC
 
-- Running: none. Prepared: I1-fine (issue-1 eps pair; tests file
-  `studies/cryosuction/issue1_eps_pair_tests.txt`; needs a push first).
+- Running: none. Prepared and pushed (user submits): I1-fine
+  (`issue1_eps_pair_tests.txt`), T3 (`type3_tests.txt`, 10 runs), T4
+  (`type4_tests.txt`, 7 runs); commands in RUNS.md rows / below.
 - Next: shakedown (one short run per type) once builders and experiment files exist.
-- 46 local commits are not pushed (D7); the HPC needs them for the new inputs.
+- Pushed 2026-11-07 (D7 approved).
+- Submit (from the project root on the HPC, after `git pull`):
+  `./scripts/HPC/submit_batch.sh --tag <tag> --tests-file studies/cryosuction/<file> --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs -- --time=<t>`
+  with I1: issue1_eps_pair, 2-00:00:00; T3: type3, 3-00:00:00; T4: type4, 4-00:00:00
+  (prefix `TARGET_DOFS_PER_CORE=50000` for T3/T4: small meshes, ~4x shorter wall time).
 
 ## Done recently
 

@@ -1,0 +1,11 @@
+# Plan type 3 (make_type34_inputs.py). RUNS.md IDs in the comments.
+channel_2D_H125um_L500um_eps0.86um_lens150:t3res_T-20_theta30_120d_ac1e-2   # 3A-1
+channel_2D_H125um_L500um_eps0.86um_lens150:t3res_T-20_theta60_120d_ac1e-2   # 3A-2
+channel_2D_H125um_L500um_eps0.86um_lens150:t3res_T-20_theta90_120d_ac1e-2   # 3A-3
+channel_2D_H125um_L500um_eps0.86um_lens150:t3res_T-20_theta120_120d_ac1e-2   # 3A-4
+channel_2D_H125um_L500um_eps0.86um_lens150:t3res_T-20_theta150_120d_ac1e-2   # 3A-5
+channel_2D_H60um_L500um_eps0.86um_lens150:t3res_T-20_theta60_120d_ac1e-2   # 3B-1
+channel_2D_H60um_L500um_eps0.86um_lens150:t3res_T-20_theta120_120d_ac1e-2   # 3B-2
+channel_2D_H125um_L500um_eps0.86um_lens150:t3closed_T-20_theta60_60d_ac1e-2   # 3C-1
+channel_2D_H125um_L500um_eps0.86um_lens150:t3top_T-20_theta60_120d_ac1e-2   # 3D-1
+channel_2D_H125um_L500um_eps0.86um_lens150:t3top_T-20_theta120_120d_ac1e-2   # 3D-2
