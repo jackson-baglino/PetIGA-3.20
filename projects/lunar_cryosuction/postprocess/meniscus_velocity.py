@@ -48,13 +48,18 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pplib import refine_tanh, read_opts, opt_float, step_times   # noqa: E402
+from pplib import node_weights, opt_float, read_opts, refine_tanh, step_times   # noqa: E402
 
 CSV_NAME = "meniscus_velocity.csv"
 
 
 def snapshots(run_dir, nu, nv):
-    """Yield (step, x1d, y1d, phi[ix,iy]) over the patch's own knot range."""
+    """Yield (step, x1d, Y, phi[ix,iy]) over the patch's own knot range.
+
+    Y is the full (nu, nv) array of node heights: on a mapped (wedge) mesh the
+    channel width changes with x, so no single column of y values describes
+    the grid. Columns are assumed to sit at constant x (x1d), as on every
+    channel and wedge mesh these runs use."""
     from igakit.io import PetIGA
     io = PetIGA()
     nrb = io.read(os.path.join(run_dir, "igasol.dat"))
@@ -66,7 +71,7 @@ def snapshots(run_dir, nu, nv):
                     if re.fullmatch(r"sol_\d+\.dat", x)):
         C, F = nrb(u, v, fields=io.read_vec(os.path.join(run_dir, f), nrb))
         yield (int(re.search(r"sol_(\d+)", f).group(1)),
-               C[:, 0, 0].copy(), C[0, :, 1].copy(), F[:, :, 0].copy())
+               C[:, 0, 0].copy(), C[:, :, 1].copy(), F[:, :, 0].copy())
 
 
 def measure(x1d, y1d, phi, eps, H):
@@ -93,39 +98,47 @@ def measure(x1d, y1d, phi, eps, H):
     then translates without changing shape. Their spread is therefore a direct
     readout of how far the bridge still is from its equilibrium shape.
     """
-    ny = y1d.size
+    Y = np.asarray(y1d, dtype=float)
+    if Y.ndim == 1:                                    # rectangular mesh
+        Y = np.broadcast_to(Y, (x1d.size, Y.size))
+    ny = Y.shape[1]
     mid = ny // 2
 
-    def crossings_in(col):
+    def all_crossings(col):
         c = np.flatnonzero((col[:-1] - 0.5) * (col[1:] - 0.5) < 0.0)
-        if c.size < 2:
-            return None
-        def refine(i):
+        out = []
+        for i in c:
             f = (0.5 - col[i]) / (col[i + 1] - col[i])
-            return refine_tanh(x1d, col, x1d[i] + f * (x1d[i + 1] - x1d[i]), eps)
-        return refine(c[0]), refine(c[-1])
+            out.append(refine_tanh(x1d, col, x1d[i] + f * (x1d[i + 1] - x1d[i]), eps))
+        return out
 
-    m = crossings_in(phi[:, mid])
-    w0 = crossings_in(phi[:, 0])
-    w1 = crossings_in(phi[:, -1])
-    if m is None or w0 is None or w1 is None:
+    m = all_crossings(phi[:, mid])
+    w0 = all_crossings(phi[:, 0])
+    w1 = all_crossings(phi[:, -1])
+    if len(m) < 2 or len(w0) < 2 or len(w1) < 2:
         return None
 
-    # ice area, and the length of the two menisci (the phi=0.5 contour,
-    # excluding the wall segments -- those are ice/regolith, not ice/vapor)
-    area = np.trapezoid(np.trapezoid(phi, y1d, axis=1), x1d)
-    XL, XR = [], []
-    for j in range(ny):
-        c = crossings_in(phi[:, j])
-        if c is not None:
-            XL.append(c[0]); XR.append(c[1])
-    XL, XR = np.array(XL), np.array(XR)
-    yy = y1d[:len(XL)] if len(XL) == ny else np.linspace(y1d[0], y1d[-1], len(XL))
-    arc = (np.sum(np.hypot(np.diff(XL), np.diff(yy)))
-           + np.sum(np.hypot(np.diff(XR), np.diff(yy))))
-    return dict(x_mid_l=m[0], x_mid_r=m[1],
-                x_wall_l=0.5 * (w0[0] + w1[0]), x_wall_r=0.5 * (w0[1] + w1[1]),
-                area=area, arc=arc)
+    # Ice area from the 2-D node coordinates (exact for a mapped mesh too).
+    X = np.broadcast_to(np.asarray(x1d, dtype=float)[:, None], Y.shape)
+    area = float((node_weights(X, Y) * phi).sum())
+
+    # Length of every ice-vapor face (the phi = 0.5 contour, excluding the
+    # wall segments, which are ice/regolith). A bridge that has split into
+    # two plugs has four faces; counting only the outer two would double
+    # v_mean. Rows are grouped by how many crossings they have, and each
+    # face k is the k-th crossing of the rows that have the usual count.
+    rows = [(j, all_crossings(phi[:, j])) for j in range(ny)]
+    counts = [len(c) for _, c in rows if c]
+    n_faces = max(set(counts), key=counts.count) if counts else 0
+    sel = [(j, c) for j, c in rows if len(c) == n_faces]
+    arc = 0.0
+    for k in range(n_faces):
+        xs = np.array([c[k] for _, c in sel])
+        ys = np.array([np.interp(c[k], x1d, Y[:, j]) for j, c in sel])
+        arc += float(np.sum(np.hypot(np.diff(xs), np.diff(ys))))
+    return dict(x_mid_l=m[0], x_mid_r=m[-1],
+                x_wall_l=0.5 * (w0[0] + w1[0]), x_wall_r=0.5 * (w0[-1] + w1[-1]),
+                area=area, arc=arc, n_faces=n_faces)
 
 
 def main():
@@ -155,10 +168,20 @@ def main():
             if np.isfinite(t):
                 g["t"] = t
                 rows.append(g)
+    # A restart leg rewrites the previous leg's last state as its step 0 at the
+    # same time; keep one row per time (the later leg's), or np.gradient
+    # divides by dt = 0.
+    by_t = {}
+    for r in rows:
+        by_t[r["t"]] = r
+    rows = [by_t[k] for k in sorted(by_t)]
     if len(rows) < 3:
         raise SystemExit("need at least 3 measurable snapshots")
-
-    rows.sort(key=lambda r: r["t"])
+    split = sorted({r["n_faces"] for r in rows if r["n_faces"] != 2})
+    if split:
+        print(f"  NOTE: some snapshots have {split} ice-vapor faces per row, not 2 (the bridge "
+              "split or a face reached a wall); x_mid/x_wall use the outermost faces, "
+              "v_mean uses every face.", file=sys.stderr)
     t  = np.array([r["t"] for r in rows])
     A  = np.array([r["area"] for r in rows])
     L  = np.array([r["arc"] for r in rows])
