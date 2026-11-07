@@ -73,6 +73,9 @@ Hypotheses: the user writes them; none recorded yet.
   RUNS.md rows. Nothing else is ready to submit.
 - DoF/core: decide on a scaling test after seeing these runs' s/step
   (user, 2026-11-07). Compare with Oct 2026 2-3-rank runs: 4.2-7.0 s/step.
+  T3 result (job wall time / steps, includes setup): 1.5-2.2 s/step at
+  47-50k DoF/core (11 ranks for 0.52 M DoF, 5 for 0.25 M), 17-24 core-s/step
+  for 0.52 M DoF; in line with the Sept 2026 50k runs (1.5-2.0 s/step).
 - Next: shakedown (one short run per type) once builders and experiment files exist.
 - Pushed 2026-11-07 (D7 approved).
 - Submit (from the project root on the HPC, after `git pull`):
