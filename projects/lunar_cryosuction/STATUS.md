@@ -7,7 +7,7 @@ weeks (LOG.md keeps the history), and never let it pass about 150 lines.
 Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 `LOG.md`; the plan itself in the iCloud folder below.
 
-**Last updated:** 2026-11-06 (session 99675a49 / be49e5a1)
+**Last updated:** 2026-11-07 (session be49e5a1)
 
 ## Goal and deadline
 
@@ -34,7 +34,7 @@ shakedown Wed 11 Nov; production from 12-14 Nov).
 | D2 | type 7: 2 mm, h_open 0.99 | assumed; confirm |
 | D3 | new thermal BC options after AGU | assumed |
 | D4 | AGU types: 1, 2, 6, 7 certain; 3-5 as trends | assumed |
-| D5 | accept B1 resolution once checked | pending the check (issue 2) |
+| D5 | accept B1 resolution | check done (issue 2 closed); confirm |
 | D6 | type 8 in paper 3 | assumed |
 | D7 | push local commits before the shakedown | **ask the user before pushing** |
 | — | curvature symbol is chi, not kappa | decided 2026-11-06 |
@@ -46,8 +46,8 @@ Hypotheses: the user writes them; none recorded yet.
 
 | # | Issue | State | Next step |
 |---|---|---|---|
-| 1 | Fast phases under-resolved on 0.86 um meshes (Pi ~ 1) | open | `--eps` for build_geometry_two_throat.py, then a 1-day pair at eps 0.328 um vs 0c-C1 (user submits) |
-| 2 | B1 series-law slope 1.15x | likely resolved (D_v(T): ratio 1.004) | confirm on the 0c-B1 output with ice_bodies + series fit |
+| 1 | Fast phases under-resolved on 0.86 um meshes (Pi ~ 1) | inputs ready (RUNS.md I1-fine) | user submits the 1-day eps 0.328 um run; compare with 0c-C1 day 1 |
+| 2 | B1 series-law slope 1.15x | **closed** 2026-11-06: slope 0.996-1.000x with D_v(-20 C), area-based face (RUNS.md 0c-B1) | D5 can be accepted |
 | 3 | Thermal BCs set the harvest rate | rule adopted | every run table has a thermal column |
 | 4 | Default -phi_open_bc 1 | **closed** | check_open_bc.sh runs in preflight.sh (commit 4db30788) |
 | 5 | Collector is h_open x rho_vs(T0) | rule adopted | rhov_bc.py prints exact values; methods text |
@@ -60,20 +60,22 @@ Hypotheses: the user writes them; none recorded yet.
   T4 rhov_bc, T5 check_open_bc, T6 type_summary, T7 vertical display (pplib
   helpers, used by T1/T6), T8 compare_velocity --at-ell/--at-r; figcheck.py.
 - Tests: `postprocess/tests` (233), `studies/cryosuction/tests` (71),
-  `preprocess/tests` (28); commands in postprocess/README.md. Bugs found in the
-  older tools are being fixed (each was an expectedFailure test).
+  `preprocess/tests` (28), all passing; commands in postprocess/README.md. Every
+  bug the tests found in the older tools was fixed on 2026-11-06.
 - Still to build: geometry builders for the single throat (type 5), dog-bone
   (type 6), 2 mm regolith pore with its ice layout (type 7), wall caps of a
   given theta (types 1, 2); experiment files for types 1-7.
 
 ## HPC
 
-- Running: none. Queued: none.
-- Next submission: issue-1 eps pair, then shakedown (one short run per type).
+- Running: none. Prepared: I1-fine (issue-1 eps pair; tests file
+  `studies/cryosuction/issue1_eps_pair_tests.txt`; needs a push first).
+- Next: shakedown (one short run per type) once builders and experiment files exist.
 - 24+ local commits are not pushed (D7); the HPC needs them for new inputs.
 
 ## Done recently
 
+- 2026-11-06: AGU_SimulationPlan (4 pp.) delivered; issue 2 closed; tool bugs fixed.
 - 2026-11-06: SimulationPlan_v2 (21 pp.) delivered; tools T1-T8 and tests;
   pplib.read_opts precedence fix (runs had been read with solver.opts winning).
 - 2026-11-05: stage 0c complete on model-freeze-v2 (RUNS.md).
