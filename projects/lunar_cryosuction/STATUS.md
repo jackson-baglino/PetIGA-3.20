@@ -7,7 +7,7 @@ weeks (LOG.md keeps the history), and never let it pass about 150 lines.
 Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 `LOG.md`; the plan itself in the iCloud folder below.
 
-**Last updated:** 2026-11-07 (session be49e5a1), types 3-4 prepared
+**Last updated:** 2026-11-07 (session be49e5a1, wrap-up)
 
 ## Goal and deadline
 
@@ -22,8 +22,8 @@ Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 
 ## Phase
 
-**Closing the open issues, building inputs, starting HPC runs** (plan
-timeline: issues closed by Mon 9 Nov; builders and experiment files 9-11 Nov;
+**First production batches running; next: post-process them and build the
+remaining geometries** (plan timeline: builders and experiment files 9-11 Nov;
 shakedown Wed 11 Nov; production from 12-14 Nov).
 
 ## Decisions
@@ -90,6 +90,7 @@ Hypotheses: the user writes them; none recorded yet.
 
 ## Done recently
 
+- 2026-11-07: I1-fine, T3, T4 submitted; types 3-4 inputs; DoF/core evidence (LOG.md).
 - 2026-11-06: AGU_SimulationPlan (4 pp.) delivered; issue 2 closed; tool bugs fixed.
 - 2026-11-06: SimulationPlan_v2 (21 pp.) delivered; tools T1-T8 and tests;
   pplib.read_opts precedence fix (runs had been read with solver.opts winning).

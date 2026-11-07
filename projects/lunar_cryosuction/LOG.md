@@ -1,5 +1,45 @@
 # LOG.md — running session log (newest first)
 
+## 2026-11-06/07 — simulation plan, analysis tools and tests, first production batches
+- Session: be49e5a1-66f2-4f54-9dcf-073a3f0d6550
+- Done: SimulationPlan_v2 (21 pp.) and AGU_SimulationPlan (4 pp., chi for
+  curvature) in the iCloud SimulationProposalsSetup folder (build scripts in
+  SimulationPlan_v2_build/). Built plan tools T1-T8 (ice_bodies, water_budget,
+  section_flux, rhov_bc, check_open_bc in preflight, type_summary, vertical
+  display, compare_velocity --at-ell/--at-r) plus figcheck.py and a spline
+  snapshot loader in pplib; fixed pplib.read_opts precedence (solver.opts had
+  been winning). Test suites: postprocess/tests 233, studies/cryosuction/tests
+  71, preprocess/tests 28, all passing; every bug they found in the older tools
+  was fixed (gt_balance temperature, meniscus_velocity split/mapped/restart,
+  plot_mass weights, crossings on a node, preflight last line, ...). Closed
+  plan issue 2 (0c-B1 slope 0.996-1.000x with D_v(-20 C), area-based face) and
+  issue 4. Added STATUS.md (imported by CLAUDE.md, updated in wrap-up). Built
+  the issue-1 fine mesh (eps 0.328 um) and all type 3-4 inputs
+  (make_type34_inputs.py). Pushed. User submitted I1-fine (200k DoF/core),
+  T3 (10 runs) and T4 (7 runs) at TARGET_DOFS_PER_CORE=50000. DoF/core:
+  enceladus' 200k was set by its k_eff solve and 24 M-DoF multi-node meshes;
+  on the 0.4-0.5 M-DoF lunar meshes, Sept runs (8-10 ranks, file timestamps,
+  checked against SLURM to 2 s) ran 1.4-2.0 s/step against 4.2-7.0 s/step at
+  2-3 ranks in Oct, at similar core-hours. The velocity-study README's
+  "3.2 s/step at 8 ranks" is not reproduced by any record.
+- Remaining:
+  1. Download and post-process I1-fine, T3, T4 (RUNS.md rows): resolution.dat
+     Pi, rollbacks (watch wedge om20, element aspect ~8 at its narrow end),
+     s/step from the .o files (decide on a DoF/core scaling test after that;
+     enceladus has submit_scaling_test.sh to adapt). I1: narrow-plug vanishing
+     time vs 0c-C1 day 1 (< 5 % keeps 0.86 um). T3/T4: ice_bodies,
+     water_budget, compare_velocity --at-ell / ice_bodies --at gap.
+  2. Geometry builders: wall caps of a given theta (types 1, 2, first), single
+     throat (5), dog-bone (6), 2 mm regolith pore with ice layout (7); then
+     experiment files and the shakedown batch.
+  3. User decisions open: D1-D4, D6 (assumed as the plan suggests), hypotheses.
+  4. Offered, not done: fix the velocity-study README's 3.2 s/step passage
+     (lunar_regolith_DSM); the full plan still uses kappa in the iCloud copy
+     (the builder now writes chi; the user has edited SimulationPlan_v2.docx,
+     so it was not overwritten).
+- Bottlenecks: geometry builders for types 1, 2, 5, 6, 7; wall time of the
+  180-day type-4 runs.
+
 ## 2026-11-05/06 — cryosuction stage 0b/0c, model-freeze-v2
 - Session: 99675a49-73a2-42ba-ab59-ef7bd012f37d
 - Done: analyzed stage 0b (v1): the do-nothing open-face phi BC is ill-posed
