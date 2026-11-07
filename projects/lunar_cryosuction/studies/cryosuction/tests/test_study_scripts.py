@@ -218,32 +218,28 @@ class FrontSpeed(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
         self.assertIn("invalid float value", r.stderr)
 
-    # BUG: front_speed.py:47-48 accepts alpha_c > 1 and prints v_n (1.75e-9 m/s at
+    # Fixed 2026-11-06 (was a bug): front_speed.py:47-48 accepts alpha_c > 1 and prints v_n (1.75e-9 m/s at
     # alpha 5); right: refuse alpha_c outside (0, 1] like mesh_params does.
-    @unittest.expectedFailure
     def test_alpha_above_one_is_refused(self):
         r = run("front_speed.py", "--alpha", 5, "--h", 0.99, "--l", 1e-4)
         self.assertNotEqual(r.returncode, 0)
 
-    # BUG: front_speed.py:47-48 accepts h < 0 (sigma > 1, unphysical) and prints
+    # Fixed 2026-11-06 (was a bug): front_speed.py:47-48 accepts h < 0 (sigma > 1, unphysical) and prints
     # v_n = 2.3e-7 m/s; right: refuse h < 0.
-    @unittest.expectedFailure
     def test_negative_humidity_is_refused(self):
         r = run("front_speed.py", "--alpha", 1e-2, "--h=-0.5", "--l", 1e-4)
         self.assertNotEqual(r.returncode, 0)
 
-    # BUG: front_speed.py:47-48 accepts a negative path length; with
+    # Fixed 2026-11-06 (was a bug): front_speed.py:47-48 accepts a negative path length; with
     # l = -1e-5 m it prints v_n larger than the kinetic upper bound; right: refuse l < 0.
-    @unittest.expectedFailure
     def test_negative_length_is_refused(self):
         r = run("front_speed.py", "--alpha", 1e-2, "--h", 0.99, "--l=-1e-5")
         self.assertNotEqual(r.returncode, 0)
 
-    # BUG: front_speed.py:31-35 has no temperature range. At --T0 -173 (100 K,
+    # Fixed 2026-11-06 (was a bug): front_speed.py:31-35 has no temperature range. At --T0 -173 (100 K,
     # lunar) it prints v_n = 3.6e-26 m/s from the ASHRAE fit and the AIR
     # diffusivity, and at +20 C a speed for ice above melting. Right: refuse
     # outside mesh_params' (-150, -0.001) C, as comp_eps does for the same input.
-    @unittest.expectedFailure
     def test_temperature_outside_formula_range_is_refused(self):
         for T in ("-173", "20"):
             r = run("front_speed.py", f"--T0={T}", "--alpha", 1e-2, "--h", 0.99, "--l", 1e-4)
@@ -439,20 +435,18 @@ class PlanEstimates(unittest.TestCase):
                 r = run("plan_estimates.py", *args)
                 self.assertNotEqual(r.returncode, 0)
 
-    # BUG: plan_estimates.py:104-110 prints negative harvest times for h_open > 1
+    # Fixed 2026-11-06 (was a bug): plan_estimates.py:104-110 prints negative harvest times for h_open > 1
     # ("t = -24.2 days" at h 1.01; vapor deposits, nothing is harvested) and for
     # l1 < l0. Right: refuse (or skip with a message) when 1 - h <= 0 or l1 <= l0.
-    @unittest.expectedFailure
     def test_harvest_with_deposition_is_not_a_negative_time(self):
         r = run("plan_estimates.py", "--harvest", 1.01, "--G", 1)
         days = nums(r"h = 1.010 .*t = +{N} days", r.stdout)
         self.assertTrue(r.returncode != 0 or (days and min(days) >= 0), r.stdout)
 
-    # BUG: plan_estimates.py:83-94 accepts a ripening pair that overlaps
+    # Fixed 2026-11-06 (was a bug): plan_estimates.py:83-94 accepts a ripening pair that overlaps
     # (center distance 10 um < Rs + Rl = 70 um, printed gap -6e-5 m) or with
     # L < Rs (log(L/Rs) < 0), and prints a shrink speed of 835 um/day. Right:
     # refuse gap <= 0 and R_small >= R_large.
-    @unittest.expectedFailure
     def test_overlapping_pair_is_refused(self):
         r = run("plan_estimates.py", "--pair", 20e-6, 50e-6, 10e-6, "--G", 1)
         self.assertNotEqual(r.returncode, 0)
