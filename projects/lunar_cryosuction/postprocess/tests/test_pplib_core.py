@@ -136,14 +136,13 @@ class TestLoadSSA(unittest.TestCase):
         np.testing.assert_array_equal(d[:, pplib.STEP], np.arange(8))
         np.testing.assert_array_equal(d[:, pplib.ICE], [0, 1, 2, 30, 40, 50, 60, 70])
 
-    # BUG: postprocess/pplib.py:83-85 keeps the LAST occurrence of each step in
+    # Fixed 2026-11-06 (was a bug): postprocess/pplib.py:83-85 keeps the LAST occurrence of each step in
     # FILE order, so a restarted segment that ends before the old one did
     # (steps 0..5 then 3..4) comes back as steps 0,1,2,5,3,4: time runs
     # backwards and every caller plots a zigzag. Right: rows ordered by step
     # (and ideally old rows past the restart point dropped). Low practical
     # impact: the solver truncates SSA_evo.dat on open, so this needs a
     # concatenated file.
-    @unittest.expectedFailure
     def test_restart_that_rewinds_is_monotonic(self):
         steps = [0, 1, 2, 3, 4, 5, 3, 4]
         fx.write_ssa(self.run, np.array(steps, float) * 10.0, np.ones(8), steps=steps)
@@ -213,14 +212,13 @@ class TestGrainRadii(unittest.TestCase):
         run3 = fx.make_run(self.tmp, geom="g3", geometry={"-grains_file": path})
         self.assertIsNone(pplib.grain_radii(run3))
 
-    # BUG: postprocess/pplib.py:268-269 resolves a relative -grains_file
+    # Fixed 2026-11-06 (was a bug): postprocess/pplib.py:268-269 resolves a relative -grains_file
     # against the CURRENT WORKING DIRECTORY, while the docstring (l. 253) says
     # the path is relative to the PROJECT root. The same run gives radii when
     # plotted from the project root and None (so plot_ssa silently falls back
     # to the t = 0 normalization) from anywhere else. Right: also try the path
     # under the project root (e.g. $PETIGA_DIR/projects/lunar_cryosuction or
     # the directory above pplib.py).
-    @unittest.expectedFailure
     def test_project_relative_path_independent_of_cwd(self):
         path = self.grains("0 0 4e-6\n")
         rel = os.path.relpath(path, fx.PROJECT)      # "relative to the PROJECT root"
@@ -501,11 +499,10 @@ class TestCrossings(unittest.TestCase):
         phi[k] = np.nan
         self.assertEqual(pplib.crossings(self.x, phi).size, 0)       # silent: no warning
 
-    # BUG: postprocess/pplib.py:428 tests (y[i]-level)*(y[i+1]-level) < 0, so a
+    # Fixed 2026-11-06 (was a bug): postprocess/pplib.py:428 tests (y[i]-level)*(y[i+1]-level) < 0, so a
     # profile that equals the level EXACTLY on a grid node (any IC centered on a
     # node: tanh(0) = 0 gives phi = 0.5 exactly) has no crossing at all; the
     # interface silently disappears. Right: return that node once.
-    @unittest.expectedFailure
     def test_crossing_exactly_on_a_node(self):
         x = np.linspace(0.0, 1.0, 11)
         phi = tanh_profile(x, 0.5, 0.1)
@@ -577,13 +574,12 @@ class TestRefineTanh(unittest.TestCase):
         self.assertGreater(abs(r[0] + 4.0), 0.2)
         self.assertLess(abs(r[0] + 4.0), 0.3)
 
-    # BUG: postprocess/pplib.py:451-454 returns x0 - intercept/slope with no
+    # Fixed 2026-11-06 (was a bug): postprocess/pplib.py:451-454 returns x0 - intercept/slope with no
     # check that the root lies in the fitted window. On a lens 2-3 eps wide
     # (phi never reaches 0.98, both flanks in the window) the line is nearly
     # flat and the "interface" lands 8 to 370 eps away, outside the domain.
     # Right: fall back to x0 when |root - x0| > half_width*eps (or when the
     # band is not monotone).
-    @unittest.expectedFailure
     def test_root_never_leaves_the_window(self):
         for w in (2.0, 3.0, 4.0):
             phi = fx.profile(np.minimum(self.x + w / 2, w / 2 - self.x), self.eps)
@@ -681,13 +677,12 @@ class TestCircleRadius(unittest.TestCase):
         self.assertIsNone(pplib.circle_radius(np.cos(th[:4]), np.sin(th[:4])))
         self.assertIsNone(pplib.circle_radius(np.empty(0), np.empty(0)))
 
-    # BUG: postprocess/pplib.py:492-502 never checks the rank or conditioning
+    # Fixed 2026-11-06 (was a bug): postprocess/pplib.py:492-502 never checks the rank or conditioning
     # of A. For collinear points A = [2x, 2y, 1] has rank 2, lstsq returns its
     # minimum-norm solution, and a finite "circle" comes back (radius 0.32 for
     # ten points on y = 0, 2.2 for ten on y = 2x + 1). Right: None (no finite
     # circle). Fix: return None when lstsq's rank < 3 (or when the singular
     # values show A is ill-conditioned).
-    @unittest.expectedFailure
     def test_collinear_points_return_none(self):
         px = np.linspace(0.0, 1.0, 10)
         for py in (np.zeros(10), 2 * px + 1):

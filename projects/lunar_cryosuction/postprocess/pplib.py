@@ -82,7 +82,10 @@ def load_ssa(path: str, min_cols: int = 4):
 
     steps = data[:, STEP].astype(int)
     _, last = np.unique(steps[::-1], return_index=True)
-    return data[np.sort(len(steps) - 1 - last)]
+    data = data[np.sort(len(steps) - 1 - last)]
+    # Step order, so a hand-concatenated restart that rewinds (steps 0..5,
+    # then 3..4) never runs time backwards.
+    return data[np.argsort(data[:, STEP], kind="stable")]
 
 
 # ---------------------------------------------------------------------------
@@ -265,7 +268,11 @@ def grain_radii(run_dir: str):
     if not rel:
         return None
 
-    candidates = [os.path.join(run_dir, os.path.basename(rel)), rel]
+    # A copy staged in the run folder first, then the path as written
+    # (relative to the project root, per the run scripts), resolved against
+    # the project root this file lives in and against the working directory.
+    project = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    candidates = [os.path.join(run_dir, os.path.basename(rel)), os.path.join(project, rel), rel]
     path = next((p for p in candidates if os.path.isfile(p)), None)
     if path is None:
         return None
@@ -424,12 +431,24 @@ def in_time_unit(t_sec, unit: str):
 
 
 def crossings(x, y, level=0.5):
-    """Linear-interpolation crossings of y=level in y(x).  Never a grid node."""
-    s = np.flatnonzero((y[:-1] - level) * (y[1:] - level) < 0.0)
-    if s.size == 0:
-        return np.empty(0)
+    """Linear-interpolation crossings of y=level in y(x), in x order.
+
+    A sample exactly at the level is a crossing (returned once, at that node)
+    when its two neighbors lie on opposite sides; a profile that only touches
+    the level is not a crossing.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    d = y - level
+    s = np.flatnonzero(d[:-1] * d[1:] < 0.0)
     f = (level - y[s]) / (y[s + 1] - y[s])
-    return x[s] + f * (x[s + 1] - x[s])
+    out = x[s] + f * (x[s + 1] - x[s])
+    if d.size >= 3:
+        k = np.flatnonzero(d[1:-1] == 0.0) + 1
+        k = k[d[k - 1] * d[k + 1] < 0.0]
+        if k.size:
+            out = np.sort(np.r_[out, x[k]])
+    return out
 
 
 def refine_tanh(x, phi, x0, eps, half_width=6.0, lo=0.02, hi=0.98):
@@ -451,7 +470,12 @@ def refine_tanh(x, phi, x0, eps, half_width=6.0, lo=0.02, hi=0.98):
     slope, intercept = np.polyfit(x[m] - x0, z, 1)
     if not np.isfinite(slope) or slope == 0.0:
         return x0
-    return x0 - intercept / slope
+    root = x0 - intercept / slope
+    # A band too thin or not monotone gives a nearly flat line whose root can
+    # land far outside the fitted window; then the crossing is the better guess.
+    if abs(root - x0) > half_width * eps:
+        return x0
+    return root
 
 
 def contour_points(x, Y, phi, level=0.5):
@@ -492,8 +516,12 @@ def circle_radius(px, py):
     A = np.column_stack((2.0 * px, 2.0 * py, np.ones(px.size)))
     b = px ** 2 + py ** 2
     try:
-        sol, *_ = np.linalg.lstsq(A, b, rcond=None)
+        sol, _, rank, sv = np.linalg.lstsq(A, b, rcond=None)
     except np.linalg.LinAlgError:
+        return None
+    # Collinear points: A = [2x, 2y, 1] is rank 2 (exactly or to round-off)
+    # and there is no finite circle.
+    if rank < 3 or sv[-1] <= 1e-9 * sv[0]:
         return None
     xc, yc = sol[0], sol[1]
     disc = sol[2] + xc ** 2 + yc ** 2
