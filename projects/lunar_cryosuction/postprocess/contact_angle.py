@@ -260,7 +260,12 @@ def angle_at_wall(coef, w, side, arc_x, X, Y, phi, eps, wb, wt, ice_dx):
     best, m = None, None
     for sgn in (+1.0, -1.0):
         q = np.array([px, py]) + sgn * r * d
-        if wall_distance(q[0], q[1], wb) < 0 or not np.isfinite(q).all():
+        # A probe that lands outside the pore is NOT skipped: sample_phi clips
+        # it onto the wall, and comparing the two clipped values still picks
+        # the ice side (checked for theta 5-175 deg in test_interface_tools).
+        # The old guard, wall_distance(...) < 0, could never fire (the
+        # distance is absolute); a real inside test made acute angles fail.
+        if not np.isfinite(q).all():
             continue
         val = sample_phi(X, Y, phi, q[0], q[1], wb, wt)
         if best is None or val > best:
