@@ -669,3 +669,112 @@ def style_vertical(ax, vertical: bool = True, unit: str = "µm"):
         ax.set_xlabel(f"x [{unit}]")
         ax.set_ylabel(f"y [{unit}]")
     ax.set_aspect("equal")
+
+
+# ---------------------------------------------------------------------------
+# Snapshot loader for the measurement tools (ice_bodies, water_budget,
+# section_flux). Two sources:
+#
+#   "nurbs"  sol_*.dat + igasol.dat, the spline EVALUATED on a uniform grid of
+#            n_per_elem points per element (igakit). These are true field
+#            values, so integrals and gradients carry only the sampling error.
+#   "vts"    vtkOut/solV_*.vts. plot_fields.py writes the CONTROL-POINT values
+#            there, not field values: a quadratic spline's control net is a
+#            smoothed copy of the field (the 1D step 0->1 is spread over about
+#            one more element) and its nodes sit at the Greville points, which
+#            are unevenly spaced next to the boundary. Fine for pictures;
+#            measurements from it carry an O(h) smoothing bias.
+#
+# "auto" takes nurbs when igakit and igasol.dat are present.
+# ---------------------------------------------------------------------------
+class Snapshot:
+    """One saved state: step, t [s], X, Y (ny, nx) [m] and fields phi, T, rhov."""
+
+    __slots__ = ("step", "t", "X", "Y", "phi", "T", "rhov", "source", "path")
+
+    def __init__(self, step, t, X, Y, phi, T, rhov, source, path):
+        self.step, self.t, self.X, self.Y = step, t, X, Y
+        self.phi, self.T, self.rhov = phi, T, rhov
+        self.source, self.path = source, path
+
+
+def snapshot_times(run_dir: str) -> dict:
+    """step -> t [s], from outp.txt, filled in from SSA_evo.dat when missing."""
+    tmap = step_times(run_dir)
+    ssa = load_ssa(run_dir)
+    if ssa is not None:
+        for row in ssa:
+            tmap.setdefault(int(row[STEP]), float(row[TIME]))
+    return tmap
+
+
+def _sol_files(run_dir):
+    return sorted(f for f in os.listdir(run_dir) if re.fullmatch(r"sol_\d+\.dat", f))
+
+
+def iter_snapshots(run_dirs, source: str = "auto", n_per_elem: int = 2, every: int = 1):
+    """Yield Snapshot objects in time order over one run or a restart chain.
+
+    run_dirs: a folder or a list of folders (legs of a restart chain). A step
+    present in two legs is taken from the later leg. Snapshots whose time is
+    unknown (no outp.txt row and no SSA_evo.dat row) are skipped with a note on
+    stderr, because a velocity built on a guessed time is wrong silently.
+    every: keep every n-th snapshot (1 = all).
+    """
+    import sys
+    if isinstance(run_dirs, (str, os.PathLike)):
+        run_dirs = [run_dirs]
+    items = {}
+    for rd in run_dirs:
+        rd = str(rd)
+        tmap = snapshot_times(rd)
+        use_nurbs = False
+        if source in ("auto", "nurbs"):
+            try:
+                import igakit  # noqa: F401
+                use_nurbs = os.path.isfile(os.path.join(rd, "igasol.dat")) and bool(_sol_files(rd))
+            except ImportError:
+                use_nurbs = False
+            if source == "nurbs" and not use_nurbs:
+                raise FileNotFoundError(f"{rd}: no igasol.dat + sol_*.dat (or igakit missing)")
+        if use_nurbs:
+            for f in _sol_files(rd):
+                st = int(re.search(r"sol_(\d+)", f).group(1))
+                items[st] = (tmap.get(st), "nurbs", os.path.join(rd, f), rd)
+        else:
+            vdir = os.path.join(rd, "vtkOut")
+            if not os.path.isdir(vdir):
+                raise FileNotFoundError(f"{rd}: no sol_*.dat/igasol.dat and no vtkOut/")
+            for f in sorted(os.listdir(vdir)):
+                if re.fullmatch(r"solV_\d+\.vts", f):
+                    st = step_of(f)
+                    items[st] = (tmap.get(st), "vts", os.path.join(vdir, f), rd)
+    rows = []
+    for st, (t, src, path, rd) in items.items():
+        if t is None:
+            print(f"pplib.iter_snapshots: no time for step {st} ({path}); skipped", file=sys.stderr)
+            continue
+        rows.append((t, st, src, path, rd))
+    rows.sort()
+    rows = rows[::max(1, int(every))] if every > 1 else rows
+    cache = {}
+    for t, st, src, path, rd in rows:
+        if src == "nurbs":
+            if rd not in cache:
+                from igakit.io import PetIGA
+                io = PetIGA()
+                nrb = io.read(os.path.join(rd, "igasol.dat"))
+                lim = [(float(nrb.knots[i][nrb.degree[i]]), float(nrb.knots[i][-nrb.degree[i] - 1]))
+                       for i in range(2)]
+                nel = [len(np.unique(nrb.knots[i])) - 1 for i in range(2)]
+                u = np.linspace(*lim[0], n_per_elem * nel[0] + 1)
+                v = np.linspace(*lim[1], n_per_elem * nel[1] + 1)
+                cache[rd] = (io, nrb, u, v)
+            io, nrb, u, v = cache[rd]
+            C, F = nrb(u, v, fields=io.read_vec(path, nrb))
+            X, Y = C[:, :, 0].T.copy(), C[:, :, 1].T.copy()
+            phi, T, rv = (F[:, :, k].T.copy() for k in range(3))
+        else:
+            fl, X, Y = read_vts(path)
+            phi, T, rv = fl["IcePhase"], fl["Temperature"], fl["VaporDensity"]
+        yield Snapshot(st, t, X, Y, phi, T, rv, src, path)
