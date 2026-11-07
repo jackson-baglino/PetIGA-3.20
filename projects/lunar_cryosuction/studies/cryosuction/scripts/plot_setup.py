@@ -103,14 +103,19 @@ def legend(fig, y):
 def main_figure(ic: Path, out: Path):
     fig = plt.figure(figsize=(11, 12.5))
     gs = fig.add_gridspec(3, 1, height_ratios=[1.0, 1.25, 1.25], hspace=0.70,
-                          left=0.08, right=0.94, top=0.84, bottom=0.07)
+                          left=0.08, right=0.94, top=0.80, bottom=0.07)
     fig.suptitle("Cryosuction stage 0: geometry, boundary conditions and initial ice  (T₀ = −20 °C, α_c = 10⁻²)",
                  x=0.08, ha="left", fontsize=13, color=INK, fontweight="bold", y=0.975)
-    fig.text(0.08, 0.945, "Open end at x = 0 (left) faces the dry reservoir; x = Lx (right) is a dead pore. "
+    sub = fig.text(0.08, 0.945, "Open end at x = 0 (left) faces the dry reservoir; x = Lx (right) is a dead pore. "
              "Ice is drawn from the solver's own initial state.\nWalls carry the static contact angle θ = 60° "
              "(Young: γ_ia 0.109, γ_as 0.300, γ_is 0.2455 J/m²).\neps and mesh from comp_eps.py at each run's expected front speed.",
              fontsize=9, color=INK2, va="top")
-    legend(fig, 0.915)
+    # The legend goes just below the subtitle's MEASURED extent, so a longer
+    # subtitle or another font cannot make the two overlap (figcheck found
+    # them touching when both sat at fixed fractions, 0.945 and 0.915).
+    fig.canvas.draw()
+    bb = sub.get_window_extent().transformed(fig.transFigure.inverted())
+    legend(fig, bb.y0 - 0.008)
     faces = {"x0": ("open", "open end"), "x1": ("dead", "dead pore"),
              "y0": ("wall", ""), "y1": ("wall", "")}
 

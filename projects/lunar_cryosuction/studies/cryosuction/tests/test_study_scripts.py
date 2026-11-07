@@ -836,12 +836,11 @@ class PlotSetup(unittest.TestCase):
     def test_verification_figure_layout_clean(self):
         self.assertEqual(self._layout_problems()["stage0_setup_verification.png"], [])
 
-    # BUG: plot_setup.py:109-113: the three-line subtitle (fig.text at y 0.945)
+    # Fixed 2026-11-06 (was a bug): plot_setup.py:109-113: the three-line subtitle (fig.text at y 0.945)
     # and the legend (anchored at y 0.915) are placed at fixed figure fractions;
     # figcheck finds the subtitle's last line overlapping the legend's first row
     # (in the committed PNG the two touch with no gap). Right: no text/text
     # overlap (move the legend down or derive its y from the subtitle's extent).
-    @unittest.expectedFailure
     def test_main_figure_layout_clean(self):
         self.assertEqual(self._layout_problems()["stage0_setup_cryosuction.png"], [])
 
