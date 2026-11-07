@@ -76,11 +76,16 @@ Hypotheses: the user writes them; none recorded yet.
 - Pushed 2026-11-07 (D7 approved).
 - Submit (from the project root on the HPC, after `git pull`):
   `./scripts/HPC/submit_batch.sh --tag <tag> --tests-file studies/cryosuction/<file> --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs -- --time=<t>`
-  with I1: issue1_eps_pair, 2-00:00:00; T3: type3, 2-00:00:00; T4: type4, 2-00:00:00.
-  Keep the default 200k DoF/core (scripts/lib/alloc.sh): on the 382k-DoF
-  velocity-study channel, 2 ranks gave 4.3-5.0 s/step (~10 core-s/step) and
-  8 ranks 3.2 s/step (~26 core-s/step), so 50k costs ~2.5x the core-hours for
-  ~1.5x speed. Expected wall time at 200k: T3 ~11 h, T4 ~15 h.
+  with I1: issue1_eps_pair, 2-00:00:00 (7.6 M DOF: default 200k DoF/core);
+  T3: type3 and T4: type4, each `TARGET_DOFS_PER_CORE=50000` and 2-00:00:00.
+  Evidence (2026-11-07, same 387k/495k-DoF meshes): Sept 2026 runs at 8-10
+  ranks (~50k/core) 1.5-2.0 s/step, 12-20 core-s/step (wall time from file
+  timestamps, a method that matches SLURM to 2 s); Oct 2026 runs at 2-3 ranks
+  (~190k/core) 4.2-7.0 s/step, 8.5-21 core-s/step (SLURM). Same core-hours
+  within ~20 %, ~3.4x shorter wall time at 50k. The velocity README's
+  "3.2 s/step at 8 ranks" is not reproduced by any record. Not a controlled
+  test (Sept used alpha_c 2e-3 and older code); confirm with a 2- vs 8-rank
+  pair in the shakedown. The enceladus 200k optimum is for 24 M DoF meshes.
 
 ## Done recently
 
