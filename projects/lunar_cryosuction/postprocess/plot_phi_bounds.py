@@ -79,9 +79,16 @@ def main():
     lo = opt_float(opts, "-phase_lo", -0.05)
     hi = opt_float(opts, "-phase_hi", 1.05)
 
-    under = np.maximum(-imin, 0.0)
-    over = np.maximum(imax - 1.0, 0.0)
+    # The solver prints phi_ice at %.4e, so an overshoot below 5e-5 reads
+    # "1.0000e+00"; the same excursion appears at full precision as the air
+    # minimum (phi_air = 1 - phi_ice). Take the larger of the two.
+    under = np.maximum(np.maximum(-imin, amax - 1.0), 0.0)
+    over = np.maximum(np.maximum(imax - 1.0, -amin), 0.0)
     worst = max(under.max(), over.max())
+    # A NaN field is skipped by the solver's min/max loop, which then prints
+    # its sentinels [1e30, -1e30]; min > max or |phi| >= 1e29 means the field
+    # was not finite on that step.
+    bad = (imin > imax) | (amin > amax) | (np.abs(np.r_[imin, imax, amin, amax]).reshape(4, -1) >= 1e29).any(axis=0)
 
     with open(os.path.join(args.dir, CSV_NAME), "w") as fh:
         fh.write("step,x,phi_ice_min,phi_ice_max,phi_air_min,phi_air_max,"
@@ -96,8 +103,12 @@ def main():
     print(f"    phi_i min          {imin.min():+.6e}   (guard {lo:+.3f})")
     print(f"    phi_i max          {imax.max():+.6e}   (guard {hi:+.3f})")
     print(f"    worst excursion    {worst:.3e}", end="")
-    print("   <- rounding only" if worst < 1e-12 else
-          "   <- REAL, inspect the run" if worst > 1e-6 else "   <- small")
+    if bad.any():
+        print(f"   <- NON-FINITE FIELD on {int(bad.sum())} step(s) (first at line {int(np.argmax(bad))}); "
+              "inspect the run")
+    else:
+        print("   <- rounding only" if worst < 1e-12 else
+              "   <- REAL, inspect the run" if worst > 1e-6 else "   <- small")
 
     if args.save:
         fig, ax = plt.subplots(2, 1, figsize=(7.4, 6.2), sharex=True,
