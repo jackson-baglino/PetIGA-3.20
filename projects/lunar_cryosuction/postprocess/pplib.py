@@ -88,38 +88,155 @@ def load_ssa(path: str, min_cols: int = 4):
 # ---------------------------------------------------------------------------
 # Staged .opts files
 # ---------------------------------------------------------------------------
+def _parse_opts_file(path: str) -> dict:
+    """{flag: value} from one .opts file. Comments (#) are stripped; a
+    valueless flag maps to "". Within one file the last setting wins."""
+    out: dict[str, str] = {}
+    with open(path, errors="replace") as fh:
+        for line in fh:
+            line = line.split("#", 1)[0].strip()
+            if not line.startswith("-"):
+                continue
+            parts = line.split(None, 1)
+            out[parts[0]] = parts[1].strip() if len(parts) > 1 else ""
+    return out
+
+
+_TS_PREFIX = re.compile(r"^\d{4}-\d\d-\d\d__\d\d\.\d\d\.\d\d_")
+
+
+def opts_order(run_dir: str) -> list[str]:
+    """The staged *.opts of a run, in the order the solver read them.
+
+    run_cryosuction.sh passes solver.opts, then the geometry file, then the
+    experiment file, and PETSc lets the later file win. Two folder layouts are
+    in use:
+
+        local  <scratch>/<geometry>/<YYYY-MM-DD__HH.MM.SS>_<experiment>[_tag]/
+        HPC    <batch>/<geometry>__<experiment>/
+
+    The geometry file is the one whose stem is the parent folder name (local)
+    or the part before "__" (HPC); the experiment file is the one whose stem
+    begins the rest of the folder name. If neither rule matches, a file that
+    sets -t_final is taken as the experiment (experiment files carry the run
+    length; geometry files never do). Anything still unplaced sits between
+    geometry and experiment, in name order.
+    """
+    if not os.path.isdir(run_dir):
+        return []
+    files = sorted(f for f in os.listdir(run_dir) if f.endswith(".opts"))
+    name = os.path.basename(os.path.normpath(run_dir))
+    parent = os.path.basename(os.path.dirname(os.path.normpath(run_dir)))
+    if _TS_PREFIX.match(name):
+        geom, rest = parent, _TS_PREFIX.sub("", name)
+    elif "__" in name:
+        geom, _, rest = name.partition("__")
+    else:
+        geom, rest = parent, name
+
+    def rank(fn: str) -> tuple:
+        stem = fn[:-len(".opts")]
+        if stem == "solver":
+            return (0, fn)
+        if stem == geom:
+            return (1, fn)
+        if rest == stem or rest.startswith(stem + "_"):
+            return (3, fn)
+        try:
+            if "-t_final" in _parse_opts_file(os.path.join(run_dir, fn)):
+                return (3, fn)
+        except OSError:
+            pass
+        return (2, fn)
+
+    return [os.path.join(run_dir, f) for f in sorted(files, key=rank)]
+
+
+def extra_opts(run_dir: str) -> dict:
+    """Flags passed after `--` to the run script, recovered from outp.txt.
+
+    run_cryosuction.sh echoes them as "Extra opts   : -a 1 -b 2" and passes
+    them after the three -options_file flags, so they beat every file.
+    Returns {} when the line is absent (no extra flags, or no outp.txt).
+    """
+    path = os.path.join(run_dir, "outp.txt")
+    if not os.path.isfile(path):
+        return {}
+    with open(path, errors="replace") as fh:
+        for i, line in enumerate(fh):
+            if i > 400:              # the line is in the header
+                break
+            m = re.match(r"^Extra opts\s*:\s*(.*)$", line.strip())
+            if m:
+                toks, out = m.group(1).split(), {}
+                k = 0
+                while k < len(toks):
+                    if toks[k].startswith("-") and not _is_number(toks[k]):
+                        has_val = k + 1 < len(toks) and (not toks[k + 1].startswith("-")
+                                                         or _is_number(toks[k + 1]))
+                        out[toks[k]] = toks[k + 1] if has_val else ""
+                        k += 2 if has_val else 1
+                    else:
+                        k += 1
+                return out
+    return {}
+
+
+def _is_number(tok: str) -> bool:
+    try:
+        float(tok)
+        return True
+    except ValueError:
+        return False
+
+
 def read_opts(run_dir: str) -> dict:
-    """Merge every ``*.opts`` staged in a run folder into a {flag: value} dict.
+    """Merge the staged ``*.opts`` of a run folder into a {flag: value} dict,
+    with the precedence the solver used: solver.opts < geometry < experiment
+    < flags passed after `--` (see opts_order and extra_opts).
 
     The run scripts copy solver / geometry / experiment opts into the run
     folder, so the settings a run actually used are recoverable from the folder
     alone -- no source tree, no guessing from the folder name.
 
-    Later files win, mirroring how PETSc processes repeated ``-options_file``
-    flags. That ordering is only approximated here (files are read in sorted
-    name order) so do not rely on it to resolve a flag that is genuinely set
-    twice to different values; every flag read by this module is set in exactly
-    one of the three.
+    Before 2026-11-06 this read the files in sorted name order, which put
+    solver.opts LAST: a run whose experiment set -flag_BC_rhovfix 1 was
+    reported as 0, and -periodic came back as solver.opts' 1. Only flags set
+    in more than one file were affected.
 
     Keys keep their leading dash. Valueless boolean flags map to "".
     """
     opts: dict[str, str] = {}
-    if not os.path.isdir(run_dir):
-        return opts
-    for fn in sorted(os.listdir(run_dir)):
-        if not fn.endswith(".opts"):
-            continue
+    for path in opts_order(run_dir):
         try:
-            with open(os.path.join(run_dir, fn), errors="replace") as fh:
-                for line in fh:
-                    line = line.split("#", 1)[0].strip()
-                    if not line.startswith("-"):
-                        continue
-                    parts = line.split(None, 1)
-                    opts[parts[0]] = parts[1].strip() if len(parts) > 1 else ""
+            opts.update(_parse_opts_file(path))
         except OSError:
             continue
+    opts.update(extra_opts(run_dir))
     return opts
+
+
+def opt_bool(opts: dict, key: str, default: bool = False) -> bool:
+    """PETSc boolean flag: absent -> default; "" (bare flag), 1, true, yes, on -> True."""
+    if key not in opts:
+        return default
+    v = str(opts[key]).strip().lower()
+    if v in ("", "1", "true", "yes", "on", "t", "y"):
+        return True
+    if v in ("0", "false", "no", "off", "f", "n"):
+        return False
+    return default
+
+
+def face_list(opts: dict, key: str) -> list[tuple[int, int]]:
+    """Parse a face list such as -wall_faces "y0,y1" into [(axis, side), ...]."""
+    raw = str(opts.get(key, "")).strip().strip('"').strip("'")
+    out = []
+    for tok in re.split(r"[,\s]+", raw):
+        m = re.fullmatch(r"([xyz])([01])", tok.strip().lower())
+        if m:
+            out.append(("xyz".index(m.group(1)), int(m.group(2))))
+    return out
 
 
 def opt_float(opts: dict, key: str, default=None):
@@ -383,3 +500,172 @@ def circle_radius(px, py):
     if not np.isfinite(disc) or disc <= 0.0:
         return None
     return xc, yc, float(np.sqrt(disc))
+
+
+# ---------------------------------------------------------------------------
+# Transport laws, copied from src/material_properties.c and the defaults in
+# src/cryosuction_main.c (lines 160-174). Keep them in step with the solver.
+# ---------------------------------------------------------------------------
+RHO_ICE = 919.0          # user.rho_ice
+DIF_VAP0 = 2.178e-5      # user.dif_vap, m^2/s at 273.15 K
+K_ICE, K_AIR = 2.29, 0.02  # user.thcond_ice, user.thcond_air, W/(m K)
+AIR_LIM = 1.0e-6         # user.air_lim, floor on the air fraction in the vapor flux
+
+
+def dif_vap(T_C, d0: float = DIF_VAP0):
+    """Vapor diffusivity D_v(T) = D0 (T/273.15)^1.81 (VaporDiffus)."""
+    return d0 * ((np.asarray(T_C, dtype=float) + 273.15) / 273.15) ** 1.81
+
+
+def thermal_cond(phi, k_ice: float = K_ICE, k_air: float = K_AIR):
+    """k(phi) = phi k_ice + (1 - phi) k_air with both fractions clipped at 0 (ThermalCond)."""
+    phi = np.asarray(phi, dtype=float)
+    return np.clip(phi, 0.0, None) * k_ice + np.clip(1.0 - phi, 0.0, None) * k_air
+
+
+def vapor_air_fraction(phi, air_lim: float = AIR_LIM):
+    """phi_aef = max(1 - clip(phi, 0, 1), air_lim), as in BoundaryFluxMonitor."""
+    return np.maximum(1.0 - np.clip(np.asarray(phi, dtype=float), 0.0, 1.0), air_lim)
+
+
+# ---------------------------------------------------------------------------
+# Snapshot series and quadrature on a sampled (possibly curvilinear) grid
+# ---------------------------------------------------------------------------
+def read_pvd(run_dir: str) -> list[tuple[float, str]]:
+    """[(t, absolute path to the .vts), ...] in time order, from pf.pvd.
+
+    pf.pvd is written by plot_fields.py with the snapshot times. Falls back to
+    vtkOut/solV_*.vts with times from step_times(outp.txt) when pf.pvd is
+    missing; a snapshot with no known time is dropped.
+    """
+    pvd = os.path.join(run_dir, "pf.pvd")
+    out = []
+    if os.path.isfile(pvd):
+        root = ET.parse(pvd).getroot()
+        for ds in root.iter("DataSet"):
+            f = os.path.join(run_dir, ds.get("file"))
+            if os.path.isfile(f):
+                out.append((float(ds.get("timestep")), f))
+    else:
+        tmap = step_times(run_dir)
+        vdir = os.path.join(run_dir, "vtkOut")
+        if os.path.isdir(vdir):
+            for fn in sorted(os.listdir(vdir)):
+                if re.fullmatch(r"solV_\d+\.vts", fn) and step_of(fn) in tmap:
+                    out.append((tmap[step_of(fn)], os.path.join(vdir, fn)))
+    out.sort(key=lambda p: p[0])
+    # Keep the last file for a repeated time (a restart re-writes its first snapshot).
+    dedup = {}
+    for t, f in out:
+        dedup[t] = f
+    return sorted(dedup.items())
+
+
+def node_weights(X, Y):
+    """Quadrature weight of every node of a structured (ny, nx) grid [m^2].
+
+    Each quadrilateral cell's area (shoelace formula, exact for straight-sided
+    cells) is shared equally among its four corners, so sum(w * f) is the
+    trapezoid rule on a uniform grid and its bilinear analogue on a mapped one.
+    Integrals of a sampled field differ from the solver's Gauss quadrature by
+    the sampling error, not by a definition.
+    """
+    X = np.asarray(X, dtype=float)
+    Y = np.asarray(Y, dtype=float)
+    x0, x1, x2, x3 = X[:-1, :-1], X[:-1, 1:], X[1:, 1:], X[1:, :-1]
+    y0, y1, y2, y3 = Y[:-1, :-1], Y[:-1, 1:], Y[1:, 1:], Y[1:, :-1]
+    area = 0.5 * np.abs((x0 * y1 - x1 * y0) + (x1 * y2 - x2 * y1)
+                        + (x2 * y3 - x3 * y2) + (x3 * y0 - x0 * y3))
+    w = np.zeros_like(X)
+    q = 0.25 * area
+    w[:-1, :-1] += q
+    w[:-1, 1:] += q
+    w[1:, 1:] += q
+    w[1:, :-1] += q
+    return w
+
+
+def grid_gradient(F, X, Y):
+    """(dF/dx, dF/dy) at every node of a structured, possibly curvilinear grid.
+
+    Second-order differences in index space (np.gradient), mapped to physical
+    space with the inverse Jacobian of (X, Y) with respect to (i, j). Exact for
+    a linear field on any grid whose mapping is itself smooth.
+    """
+    F = np.asarray(F, dtype=float)
+    Fj, Fi = np.gradient(F)            # axis 0 = j (rows), axis 1 = i (columns)
+    Xj, Xi = np.gradient(np.asarray(X, dtype=float))
+    Yj, Yi = np.gradient(np.asarray(Y, dtype=float))
+    det = Xi * Yj - Xj * Yi
+    with np.errstate(divide="ignore", invalid="ignore"):
+        dFdx = (Fi * Yj - Fj * Yi) / det
+        dFdy = (Fj * Xi - Fi * Xj) / det
+    return dFdx, dFdy
+
+
+def is_rectilinear(X, Y, rtol: float = 1e-9) -> bool:
+    """True when X depends only on the column and Y only on the row."""
+    X = np.asarray(X)
+    Y = np.asarray(Y)
+    sx = max(np.ptp(X), 1e-300)
+    sy = max(np.ptp(Y), 1e-300)
+    return bool(np.ptp(X, axis=0).max() <= rtol * sx and np.ptp(Y, axis=1).max() <= rtol * sy)
+
+
+class GridSampler:
+    """Interpolate fields of one structured grid at arbitrary points.
+
+    Rectilinear grids use scipy's RegularGridInterpolator (bilinear, exact for
+    bilinear data). Mapped grids use a Delaunay triangulation of the nodes,
+    built once (the mesh never moves) and reused for every field and snapshot.
+    Points outside the domain return NaN.
+    """
+
+    def __init__(self, X, Y):
+        self.X = np.asarray(X, dtype=float)
+        self.Y = np.asarray(Y, dtype=float)
+        self.rect = is_rectilinear(self.X, self.Y)
+        if not self.rect:
+            from scipy.spatial import Delaunay
+            self.tri = Delaunay(np.column_stack([self.X.ravel(), self.Y.ravel()]))
+
+    def __call__(self, F, px, py):
+        px = np.asarray(px, dtype=float)
+        py = np.asarray(py, dtype=float)
+        F = np.asarray(F, dtype=float)
+        if self.rect:
+            from scipy.interpolate import RegularGridInterpolator
+            f = RegularGridInterpolator((self.Y[:, 0], self.X[0, :]), F,
+                                        bounds_error=False, fill_value=np.nan)
+            return f(np.column_stack([py, px]))
+        from scipy.interpolate import LinearNDInterpolator
+        f = LinearNDInterpolator(self.tri, F.ravel(), fill_value=np.nan)
+        return f(px, py)
+
+
+# ---------------------------------------------------------------------------
+# Vertical display (plan tool T7): the pore axis x points DOWN the page, so
+# x = 0 (the face open to the surface in the cryosuction set-ups) is at the
+# top and depth increases downward, as in the planning sketches.
+# ---------------------------------------------------------------------------
+def to_display(X, Y, vertical: bool = True):
+    """Plot coordinates (h, v) for model coordinates (x, y).
+
+    vertical=True maps x -> depth on the vertical axis (use with
+    style_vertical, which inverts it) and y -> the horizontal axis.
+    vertical=False returns (X, Y) unchanged.
+    """
+    return (Y, X) if vertical else (X, Y)
+
+
+def style_vertical(ax, vertical: bool = True, unit: str = "µm"):
+    """Label and orient an axes for to_display coordinates."""
+    if vertical:
+        if not ax.yaxis_inverted():
+            ax.invert_yaxis()
+        ax.set_xlabel(f"across the pore y [{unit}]")
+        ax.set_ylabel(f"depth x [{unit}]")
+    else:
+        ax.set_xlabel(f"x [{unit}]")
+        ax.set_ylabel(f"y [{unit}]")
+    ax.set_aspect("equal")

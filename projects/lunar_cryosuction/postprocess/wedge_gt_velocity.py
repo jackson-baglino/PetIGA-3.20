@@ -98,6 +98,7 @@ from pplib import (                                    # noqa: E402
     crossings,
     in_time_unit,
     opt_float,
+    read_opts,
     read_vts,
     refine_tanh,
     rho_vs,
@@ -109,53 +110,11 @@ from pplib import (                                    # noqa: E402
 CSV_NAME = "wedge_gt_velocity.csv"
 
 
-# ---------------------------------------------------------------------------
-# Options, with the precedence the run scripts actually use
-# ---------------------------------------------------------------------------
-def _parse_opts_file(path):
-    out = {}
-    with open(path, errors="replace") as fh:
-        for line in fh:
-            line = line.split("#", 1)[0].strip()
-            if not line.startswith("-"):
-                continue
-            parts = line.split(None, 1)
-            out[parts[0]] = parts[1].strip() if len(parts) > 1 else ""
-    return out
-
-
-def read_opts_ordered(run_dir):
-    """read_opts(), but resolving flags set in more than one .opts correctly.
-
-    pplib.read_opts merges the staged *.opts in sorted-name order and says so:
-    that puts solver.opts LAST, so its `-flag_BC_rhovfix 0` beats an experiment
-    file that set 1.  run_cryosuction.sh passes them solver -> geometry -> experiment
-    (lines 74-76), so the experiment file is the one that wins.  The run folder
-    is named "<geometry>__<experiment>", which is enough to recover that order.
-
-    Only the vapor-BC flags are actually set twice; every physics flag this
-    script reads lives in exactly one file, so read_opts would do for those.
-    """
-    if not os.path.isdir(run_dir):
-        return {}
-    files = sorted(f for f in os.listdir(run_dir) if f.endswith(".opts"))
-    geom, _, exp = os.path.basename(os.path.normpath(run_dir)).partition("__")
-
-    def rank(fn):
-        stem = fn[: -len(".opts")]
-        if stem == "solver":
-            return 0
-        if stem == exp:
-            return 2
-        return 1                      # geometry, or anything unrecognised
-
-    opts = {}
-    for fn in sorted(files, key=lambda f: (rank(f), f)):
-        try:
-            opts.update(_parse_opts_file(os.path.join(run_dir, fn)))
-        except OSError:
-            continue
-    return opts
+# Options: pplib.read_opts resolves flags set in more than one .opts with the
+# solver's precedence (solver < geometry < experiment < `--` flags) since
+# 2026-11-06; the local read_opts_ordered that worked around the old
+# sorted-name order is gone.
+read_opts_ordered = read_opts
 
 
 # ---------------------------------------------------------------------------
