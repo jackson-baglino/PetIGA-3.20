@@ -39,8 +39,22 @@ evaluated at each run's MEASURED meniscus position:
 
 v > 0 is growth throughout.
 
+FIXED-POSITION SAMPLING (plan tool T8)
+
+The default comparison averages the second half of each run. Runs drift at
+different speeds, so "the second half" is a different meniscus position in
+each run, and the series law depends on that position. --at-ell L (channel:
+dry length l = (Lx - A/H)/2) and --at-r R (wedge: centreline radius of each
+meniscus) instead report measured and theoretical velocity at the moment the
+meniscus passes that position, linearly interpolated between the two samples
+that bracket the first crossing after the first day. A run that never reaches
+the position is listed with NaN, so runs moving the other way are visible,
+not dropped. Written to velocity_at_position.csv; the default outputs are
+unchanged.
+
 Usage:
     python3 compare_velocity.py --root <velocity_study folder> [--out <dir>]
+        [--at-ell 1.0e-4] [--at-r 2.0e-4]
 """
 import argparse
 import glob
@@ -186,6 +200,53 @@ def avg(r, key, lo=0.5, hi=1.0, theory=False):
     w = window(r, lo, hi)
     src = r["v_thin"] if theory == "thin" else r["v_th"] if theory else r["v"]
     return float(np.mean(src[key][w]))
+
+
+def position(r, key):
+    """The position series a velocity belongs to: l for the channel, r for
+    each wedge meniscus."""
+    return r["ell"] if r["geom"] == "channel" else r["r"][key]
+
+
+def at_position(r, key, target, t_min=DAY):
+    """(t, v_meas, v_theory, v_theory_thin) at the first time after t_min the
+    position series crosses target; NaNs if it never does."""
+    t, pos = r["t"], position(r, key)
+    m = t > t_min
+    t, pos = t[m], pos[m]
+    series = [r["v"][key][m], r["v_th"][key][m], r["v_thin"][key][m]]
+    d = pos - target
+    hit = np.flatnonzero(d == 0.0)
+    cross = np.flatnonzero(d[:-1] * d[1:] < 0.0)
+    cand = sorted(set(hit.tolist()) | set(cross.tolist()))
+    if not cand:
+        return (np.nan,) * 4
+    k = cand[0]
+    if d[k] == 0.0 or k + 1 >= t.size:
+        return (t[k],) + tuple(float(s[k]) for s in series)
+    f = d[k] / (d[k] - d[k + 1])
+    return ((1 - f) * t[k] + f * t[k + 1],) + tuple(float((1 - f) * s[k] + f * s[k + 1])
+                                                       for s in series)
+
+
+def write_at_position(runs, out, ell=None, rad=None):
+    path = os.path.join(out, "velocity_at_position.csv")
+    with open(path, "w") as fh:
+        fh.write("# velocity when the meniscus first passes a fixed position (after day 1); "
+                 "v > 0 = growth; NaN = never reached\n")
+        fh.write("geometry,alpha_c,theta_deg,sigma_inf,meniscus,position_m,t_cross_d,"
+                 "v_meas_nm_day,v_theory_nm_day,meas_over_theory,v_theory_thin_nm_day\n")
+        for r in sorted(runs, key=lambda r: (r["geom"], r["ac"], r["sigma"] != 0, r["theta"], r["sigma"])):
+            target = ell if r["geom"] == "channel" else rad
+            if target is None:
+                continue
+            for key in r["v"]:
+                tc, vm, vt, vn = at_position(r, key, target)
+                ratio = vm / vt if np.isfinite(vt) and abs(vt) > 1e-15 else float("nan")
+                fh.write("%s,%g,%d,%g,%s,%.4e,%.3f,%.3f,%.3f,%.4f,%.3f\n"
+                         % (r["geom"], r["ac"], r["theta"], r["sigma"], key, target, tc / DAY,
+                            vm * NM_DAY, vt * NM_DAY, ratio, vn * NM_DAY))
+    print("wrote velocity_at_position.csv")
 
 
 def pick(runs, geom, ac, sweep):
@@ -502,6 +563,10 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", required=True, help="folder holding the batch_* folders")
     ap.add_argument("--out", default=None, help="output folder (default: <root>/figures)")
+    ap.add_argument("--at-ell", type=float, default=None,
+                    help="channel: also report v when the dry length l passes this value [m]")
+    ap.add_argument("--at-r", type=float, default=None,
+                    help="wedge: also report v when each meniscus passes this radius [m]")
     ap.add_argument("--cmap", default=None,
                     help="diverging matplotlib colormap (default: berlin_r)")
     args = ap.parse_args()
@@ -523,6 +588,8 @@ def main():
               % (ac, b / beta0(ac), real / beta0(ac)))
 
     write_summary(runs, out)
+    if args.at_ell is not None or args.at_r is not None:
+        write_at_position(runs, out, args.at_ell, args.at_r)
     fig_channel_summary(runs, out)
     fig_channel_time_maps(runs, out)
     fig_channel_phase(runs, out)
