@@ -76,8 +76,11 @@ Hypotheses: the user writes them; none recorded yet.
 - Pushed 2026-11-07 (D7 approved).
 - Submit (from the project root on the HPC, after `git pull`):
   `./scripts/HPC/submit_batch.sh --tag <tag> --tests-file studies/cryosuction/<file> --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs -- --time=<t>`
-  with I1: issue1_eps_pair, 2-00:00:00; T3: type3, 3-00:00:00; T4: type4, 4-00:00:00
-  (prefix `TARGET_DOFS_PER_CORE=50000` for T3/T4: small meshes, ~4x shorter wall time).
+  with I1: issue1_eps_pair, 2-00:00:00; T3: type3, 2-00:00:00; T4: type4, 2-00:00:00.
+  Keep the default 200k DoF/core (scripts/lib/alloc.sh): on the 382k-DoF
+  velocity-study channel, 2 ranks gave 4.3-5.0 s/step (~10 core-s/step) and
+  8 ranks 3.2 s/step (~26 core-s/step), so 50k costs ~2.5x the core-hours for
+  ~1.5x speed. Expected wall time at 200k: T3 ~11 h, T4 ~15 h.
 
 ## Done recently
 
