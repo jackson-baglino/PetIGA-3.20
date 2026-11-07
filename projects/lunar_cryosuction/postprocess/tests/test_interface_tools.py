@@ -324,6 +324,91 @@ class TestContactAngle(unittest.TestCase):
             self.assertAlmostEqual(r["theta"], e, delta=tol,
                                    msg=f"{r['meniscus']}@{r['wall']}: {r['theta']:.4f} vs {e:.4f}")
 
+    def test_one_face_left_when_the_other_is_outside_the_domain(self):
+        """Ice reaching x = 0 (left face beyond the domain): the right face is
+        still measured. Before 2026-11-07 contour_points kept only rows with
+        two crossings and every estimate was lost (type 4 runs after contact)."""
+        # (theta, a, b): for the convex case the bridge must stay shorter than
+        # 2R (R = 10 um) or bridge_distance() no longer describes a lens; its
+        # left contact lines are at x = -2 + 10 - 8.66 = -0.66 um.
+        for theta, a, b in ((60, -8e-6, 26e-6), (120, -2e-6, 16e-6)):
+            with self.subTest(theta=theta):
+                res = measure_angle(theta, a=a, b=b)
+                self.assertEqual({r["meniscus"] for r in res}, {"right"})
+                self.assertAngles(res, theta, 0.05, n=2)
+
+    def test_face_points_sorts_by_crossing_direction(self):
+        x = np.linspace(0.0, 1.0, 11)
+        phi = np.array([[1, 1, 1, 0.9, 0.2, 0, 0, 0, 0, 0, 0],      # one face, ice on the left
+                        [0, 0, 0.2, 0.9, 1, 1, 1, 0.8, 0.1, 0, 0],  # both faces
+                        [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0]], float)  # four crossings: dropped
+        Y = np.tile([[0.0], [1.0], [2.0]], (1, x.size))
+        xl, yl, xr, yr = ca.face_points(x, Y, phi)
+        np.testing.assert_allclose(xl, [0.2 + 0.1 * 0.3 / 0.7])
+        np.testing.assert_allclose(yl, [1.0])
+        np.testing.assert_allclose(xr, [0.3 + 0.1 * 0.4 / 0.7, 0.7 + 0.1 * 0.3 / 0.7])
+        np.testing.assert_allclose(yr, [0.0, 1.0])
+
+    def test_fit_rms_zero_for_a_circle(self):
+        for r in measure_angle(60):
+            self.assertLess(r["fit_rms_eps"], 0.02)
+
+    def test_physical_fit_guard(self):
+        """A drifting angle fits to nonsense; the guard refuses it. A clean
+        relaxation passes."""
+        t = np.linspace(0.0, 80 * 86400, 81)
+        good = ca.extrapolate(t, 60.0 + 25.0 * np.exp(-t / (10 * 86400)))
+        self.assertTrue(ca.physical_fit(good, t.max()))
+        drift = ca.extrapolate(t, 60.0 - 0.02 * t / 86400 - 1e-4 * (t / 86400) ** 2)
+        self.assertFalse(ca.physical_fit(drift, t.max()))
+        self.assertFalse(ca.physical_fit(None, t.max()))
+
+    def _cli_run(self, tmp, positions, theta=60.0):
+        """A run whose bridge sits at (a, b) = positions[k] in snapshot k, 1000 s apart."""
+        run = fx.make_run(tmp, geom="chan", exp="ca_exp",
+                          geometry={"-Lx": LX, "-Ly": H, "-eps": EPS, "-wall_faces": "y0,y1"},
+                          experiment={"-gamma_ia": 0.109, "-gamma_as": 0.3, "-gamma_is": 0.2455})
+        steps = list(range(len(positions)))
+        snaps = [(s, (lambda X, Y, a=a, b=b: (fx.profile(bridge_distance(X, Y, a, b, H, theta), EPS),
+                                               T0, 1e-3))) for s, (a, b) in zip(steps, positions)]
+        fx.write_iga_run(run, flat_mesh(), snaps)
+        fx.write_outp(run, steps, [1000.0 * s for s in steps])
+        return run
+
+    def test_static_faces_are_called_static(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = self._cli_run(tmp, [(14e-6, 26e-6)] * 10)
+            p = run_tool("contact_angle.py", "--dir", run, "--save", os.path.join(tmp, "ca.png"))
+            self.assertEqual(p.returncode, 0, p.stderr)
+            with open(os.path.join(run, ca.CSV_NAME)) as fh:
+                head = fh.read()
+            self.assertTrue(os.path.isfile(os.path.join(tmp, "ca.png")))
+        self.assertIn("left static", head)
+        self.assertIn("right static", head)
+        self.assertNotIn("dynamic", head)
+
+    def test_moving_faces_get_speeds_and_no_extrapolation(self):
+        """The left face advances 0.5 um (2.5 eps) per 1000 s, the right face
+        holds: left is moving with speed -5e-10 m/s, right static, and no
+        theta_inf is written."""
+        pos = [(14e-6 - 0.5e-6 * k, 26e-6) for k in range(10)]
+        with tempfile.TemporaryDirectory() as tmp:
+            run = self._cli_run(tmp, pos)
+            p = run_tool("contact_angle.py", "--dir", run, "--save", os.path.join(tmp, "ca.png"))
+            self.assertEqual(p.returncode, 0, p.stderr)
+            with open(os.path.join(run, ca.CSV_NAME)) as fh:
+                text = fh.read()
+            _, rows = read_csv(os.path.join(run, ca.CSV_NAME))
+        self.assertIn("left moving", text)
+        self.assertIn("right static", text)
+        self.assertIn("dynamic", text)
+        self.assertNotIn("theta_inf", text)
+        for r in rows:
+            v = float(r["contact_speed_m_s"])
+            self.assertAlmostEqual(v, -5e-10 if r["meniscus"] == "left" else 0.0, delta=2e-12)
+            self.assertAlmostEqual(float(r["theta_deg"]), 60.0, delta=0.05)
+        self.assertIn("MOVING", p.stdout)
+
     def test_extrapolate_recovers_exponential(self):
         t = np.linspace(0.0, 5e4, 30)
         th = 60.0 + 25.0 * np.exp(-t / 1.2e4)

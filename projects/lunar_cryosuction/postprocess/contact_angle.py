@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
-"""Measure the equilibrium contact angle where ice meets a regolith wall.
+"""Measure the contact angle where ice meets a regolith wall.
+
+STATIC AND MOVING FACES
+
+Young's equation gives the STATIC angle: the one a face reaches when it has
+stopped moving. A face that is growing or sublimating need not show it, and
+in the runs it does not (type 3, 2026-11-07: 25.0 deg on a growing face whose
+Young angle is 30, while still faces match to 0.06 deg). So this script
+measures the angle of every face, reports how fast each face's contact line
+moves, and calls the run's angle an approach to equilibrium -- with the
+exponential extrapolation theta_inf -- ONLY when every face is static:
+
+    static   the contact line travels less than --static-eps eps (default 2)
+             over the fit window (the last 60 % of the record). The closed
+             control 3C-1 relaxing to its arc travels 1.0 um = 1.2 eps there;
+             faces that exchange vapor travel 4.6-49 um.
+
+For moving faces the measured angle is a dynamic angle; Young's is drawn on
+the figure only as the static reference, and no theta_inf is reported.
 
 WHAT IS BEING TESTED
 
@@ -18,7 +36,11 @@ HOW
    reading them as values costs ~1e-9 m of interface position that drifts in
    phase as the interface crosses the grid (wedge_gt_velocity.py:298-333).
 
-2. Extract the phi=0.5 contour row by row (pplib.contour_points).
+2. Extract the phi=0.5 contour row by row (face_points): a crossing where phi
+   rises with x is on the LEFT face (ice to its right), one where phi falls is
+   on the RIGHT face. Rows with more than two crossings are dropped. Unlike
+   pplib.contour_points (rows with exactly two crossings), this keeps the
+   remaining face after the other one has reached the end of the domain.
 
 3. DISCARD contour points within --exclude-eps decay lengths of either wall.
    The diffuse profile bends within a few eps of the contact line; the
@@ -59,7 +81,6 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pplib import (                                    # noqa: E402
     auto_time_unit,
-    contour_points,
     in_time_unit,
     opt_float,
     read_opts,
@@ -158,6 +179,28 @@ def sample_phi(X, Y, phi, px, py, wb, wt):
 # ---------------------------------------------------------------------------
 # The measurement
 # ---------------------------------------------------------------------------
+def face_points(x, Y, phi, level=0.5):
+    """phi = level crossings row by row, sorted into the two faces by the
+    direction phi crosses: rising with x -> left face, falling -> right face.
+
+    x is (nx,), Y and phi are (nrow, nx). Rows with more than two crossings
+    (two bodies, or a wrinkled contour) are dropped. Returns (xl, yl, xr, yr).
+    """
+    d = phi - level
+    hit = (d[:, :-1] * d[:, 1:]) < 0.0
+    jj, ii = np.nonzero(hit)
+    if jj.size == 0:
+        return (np.empty(0),) * 4
+    f = (level - phi[jj, ii]) / (phi[jj, ii + 1] - phi[jj, ii])
+    px = x[ii] + f * (x[ii + 1] - x[ii])
+    py = Y[jj, ii] + f * (Y[jj, ii + 1] - Y[jj, ii])
+    rising = phi[jj, ii + 1] > phi[jj, ii]
+    n_per_row = np.bincount(jj, minlength=phi.shape[0])
+    keep = n_per_row[jj] <= 2
+    L, R = keep & rising, keep & ~rising
+    return px[L], py[L], px[R], py[R]
+
+
 def fit_implicit_circle(px, py):
     """Fit A(x^2+y^2) + Bx + Cy + D = 0 to the contour points.
 
@@ -294,8 +337,8 @@ def measure(X, Y, phi, eps, walls, bounds, exclude_eps, level=0.5):
     # them carries a contact angle.
     wb, wt = bounds
     xs = X[:, 0]
-    xl, yl, xr, yr = contour_points(xs, Y.T, phi.T, level=level)
-    if xl.size == 0:
+    xl, yl, xr, yr = face_points(xs, Y.T, phi.T, level=level)
+    if xl.size == 0 and xr.size == 0:
         return []
 
     # Ice lies to the RIGHT of the left meniscus and to the left of the right
@@ -319,6 +362,14 @@ def measure(X, Y, phi, eps, walls, bounds, exclude_eps, level=0.5):
                 continue
             theta, px, py = res
             xc, yc, R = circle_from_implicit(coef)
+            # How circular the face is: RMS distance of the fitted points from
+            # the fitted circle (or line), in eps.
+            if np.isfinite(R) and R > 0.0:
+                dev = np.hypot(ax[keep] - xc, ay[keep] - yc) - R
+            else:
+                A_, B_, C_, D_ = coef
+                dev = (B_ * ax[keep] + C_ * ay[keep] + D_) / np.hypot(B_, C_)
+            fit_rms = float(np.sqrt(np.mean(dev ** 2)) / eps)
             if np.isfinite(R) and np.isfinite(yc) and R > 0.0:
                 cos_pp = np.clip(wall_distance(xc, yc, w) / R, -1.0, 1.0)
                 theta_pp = float(np.degrees(np.arccos(cos_pp)))
@@ -330,7 +381,7 @@ def measure(X, Y, phi, eps, walls, bounds, exclude_eps, level=0.5):
                             y_wall=wall_y(px, w), theta=theta,
                             theta_plate=float(theta_pp), R_arc=float(R),
                             xc=float(xc), yc=float(yc), x_contact=px,
-                            n_points=int(keep.sum())))
+                            n_points=int(keep.sum()), fit_rms_eps=fit_rms))
     return out
 
 
@@ -385,6 +436,15 @@ def extrapolate(t, th):
             int(sel.sum()), float(p[1]), float(t[sel].min()))
 
 
+def physical_fit(ext, t_max):
+    """True if an extrapolate() result describes a single relaxation: an
+    angle in [0, 180] deg, an uncertainty under 1 deg and a time scale under
+    10 record lengths. A run whose angle drifts for another reason (a moving
+    face, ice reaching the domain edge) fits to nonsense such as
+    theta_inf = -6406 deg, tau = 2e5 d (type 4, 4A-3, 2026-11-07)."""
+    return ext is not None and 0.0 <= ext[0] <= 180.0 and ext[1] < 1.0 and ext[2] < 10.0 * t_max
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -395,6 +455,9 @@ def main():
     ap.add_argument("--exclude-eps", type=float, default=5.0,
                     help="discard contour points within this many eps of a wall")
     ap.add_argument("--level", type=float, default=0.5)
+    ap.add_argument("--static-eps", type=float, default=2.0,
+                    help="a face is static if its contact line travels less than "
+                         "this many eps over the fit window (last 60 %% of the record)")
     args = ap.parse_args()
 
     run = args.dir
@@ -460,13 +523,52 @@ def main():
         raise SystemExit("no contour could be measured in any snapshot")
 
     steps = sorted({r["step"] for r in rows})
-    # Snapshot-averaged trajectory, for the extrapolation.
+    t_all = np.array([r["t"] for r in rows], float)
+    t_max = np.nanmax(t_all) if np.isfinite(t_all).any() else np.nan
+
+    # Per face: angle and contact-line position (mean over its walls) in each
+    # snapshot, the contact-line speed, and whether the face is static over
+    # the fit window (the last 60 % of the record, as in extrapolate()).
+    faces = {}
+    for name in ("left", "right"):
+        sts, ts, th_, xs_ = [], [], [], []
+        for st in steps:
+            sel = [r for r in rows if r["step"] == st and r["meniscus"] == name]
+            if sel:
+                sts.append(st)
+                ts.append(sel[0]["t"])
+                th_.append(float(np.mean([r["theta"] for r in sel])))
+                xs_.append(float(np.mean([r["x_contact"] for r in sel])))
+        if not ts:
+            continue
+        ts, th_, xs_ = np.array(ts), np.array(th_), np.array(xs_)
+        v = np.gradient(xs_, ts) if ts.size > 1 and np.isfinite(ts).all() else np.full(ts.size, np.nan)
+        win = ts > 0.4 * t_max if np.isfinite(t_max) else np.zeros(ts.size, bool)
+        travel = abs(xs_[win][-1] - xs_[win][0]) if win.sum() > 1 else np.nan
+        faces[name] = dict(steps=sts, t=ts, theta=th_, x=xs_, v=v, travel=travel,
+                           static=bool(np.isfinite(travel) and travel < args.static_eps * eps))
+    speed = {(name, st): v for name, f in faces.items() for st, v in zip(f["steps"], f["v"])}
+    all_static = bool(faces) and all(f["static"] for f in faces.values())
+
+    # Equilibrium extrapolation: only for static faces, and only if the fit is
+    # physical (an angle in [0, 180], a time scale within 10 records, and an
+    # uncertainty under 1 deg).
     traj_t, traj_th = [], []
     for st in steps:
         sel = [r for r in rows if r["step"] == st]
         traj_t.append(sel[0]["t"])
         traj_th.append(float(np.mean([r["theta"] for r in sel])))
-    ext = extrapolate(traj_t, traj_th)
+    ext, ext_note = None, ""
+    if not all_static:
+        ext_note = ("faces move: the angle is a dynamic (moving-face) angle; no "
+                    "equilibrium extrapolation")
+    else:
+        ext = extrapolate(traj_t, traj_th)
+        if ext is not None and not physical_fit(ext, t_max):
+            ext_note = (f"extrapolation rejected (theta_inf {ext[0]:.3g} +/- {ext[1]:.3g} deg, "
+                        f"tau {ext[2]/86400:.3g} d): not a single relaxation")
+            ext = None
+
     csv = os.path.join(run, CSV_NAME)
     with open(csv, "w") as fh:
         fh.write("# gamma_ia,gamma_is,gamma_as = %.6g,%.6g,%.6g   "
@@ -477,25 +579,37 @@ def main():
                      "fit_rms = %.5f, n = %d, error_inf = %+.4f deg\n"
                      % (ext[0], ext[1], ext[2], ext[3], ext[4],
                         ext[0] - theta_young))
+        fh.write("# faces: " + "; ".join(
+            (f"{n} {'static' if f['static'] else 'moving'} (contact line travels "
+             f"{f['travel']*1e6:.3f} um over the last 60 %, limit {args.static_eps:g} eps)"
+             if np.isfinite(f["travel"]) else f"{n} gone after t = {f['t'][-1]:.6g} s")
+            for n, f in faces.items()) + (f"; {ext_note}" if ext_note else "") + "\n")
         fh.write("step,time_s,meniscus,wall,y_wall,theta_deg,theta_plate_deg,"
-                 "R_arc_m,x_contact_m,n_points,theta_young_deg,error_deg\n")
+                 "R_arc_m,x_contact_m,n_points,theta_young_deg,error_deg,"
+                 "contact_speed_m_s,fit_rms_eps\n")
         for r in rows:
-            fh.write("%d,%.6e,%s,%s,%.6e,%.4f,%.4f,%.6e,%.6e,%d,%.4f,%.4f\n"
+            fh.write("%d,%.6e,%s,%s,%.6e,%.4f,%.4f,%.6e,%.6e,%d,%.4f,%.4f,%.6e,%.4f\n"
                      % (r["step"], r["t"], r["meniscus"], r.get("wall", "?"),
                         r["y_wall"],
                         r["theta"], r["theta_plate"], r["R_arc"],
                         r["x_contact"], r["n_points"], theta_young,
-                        r["theta"] - theta_young))
+                        r["theta"] - theta_young,
+                        speed.get((r["meniscus"], r["step"]), np.nan), r["fit_rms_eps"]))
 
     last = [r for r in rows if r["step"] == steps[-1]]
-    th = np.array([r["theta"] for r in last])
     print(f"\n  CONTACT ANGLE  ({os.path.basename(run.rstrip('/'))})")
     print(f"    gamma_ia = {g_ia:.6g}  gamma_is = {g_is:.6g}  "
           f"gamma_as = {g_as:.6g}   J/m^2")
-    print(f"    theta_Young    = {theta_young:8.3f} deg   [{source}]")
-    print(f"    theta_measured = {th.mean():8.3f} +/- {th.std():.3f} deg "
-          f"({th.size} estimates, final snapshot)")
-    print(f"    error          = {th.mean() - theta_young:+8.3f} deg")
+    print(f"    theta_Young    = {theta_young:8.3f} deg   [{source}; the STATIC angle]")
+    DAY = 86400.0
+    for n, f in faces.items():
+        print(f"    {n:5s} face     = {f['theta'][-1]:8.3f} deg at t = {f['t'][-1]/DAY:.2f} d, "
+              f"contact line {f['v'][-1]*1e9*DAY:+.2f} nm/day (+x), "
+              + (f"{'static' if f['static'] else 'MOVING'} "
+                 f"(travel {f['travel']*1e6:.3f} um over the last 60 %)"
+                 if np.isfinite(f["travel"]) else
+                 f"gone after t = {f['t'][-1]/DAY:.2f} d (before the last 60 %; not static)"))
+    print(f"    circle-fit RMS = {max(r['fit_rms_eps'] for r in last):.3f} eps (largest, final snapshot)")
 
     # Mean CURVATURE, not 1/mean(radius). The menisci of an asymmetric bridge
     # can differ several-fold in R, and because chi = 1/R the two averages give
@@ -508,6 +622,10 @@ def main():
         print(f"    |chi| mean     = {chi.mean():8.4e} 1/m   "
               f"(min {chi.min():.3e}, max {chi.max():.3e})")
         print(f"    R_arc          = {Rl.min():8.4e} .. {Rl.max():.4e} m")
+    if all_static:
+        th = np.array([r["theta"] for r in last])
+        print(f"    theta_measured = {th.mean():8.3f} +/- {th.std():.3f} deg "
+              f"({th.size} estimates, final snapshot); error {th.mean() - theta_young:+.3f} deg")
     if ext is not None:
         a_inf, sig, tau, rms, n, _A, _t0 = ext
         print(f"    theta_inf      = {a_inf:8.3f} +/- {sig:.3f} deg   "
@@ -519,43 +637,69 @@ def main():
                   f"of its own extrapolated equilibrium; t_final is too small to\n"
                   f"          read the angle directly. Trust theta_inf, or extend to "
                   f"~{-tau*np.log(0.5/max(abs(th.mean()-a_inf),1e-9))/86400:.0f} days.")
+    if ext_note:
+        print(f"    NOTE: {ext_note}.")
     print(f"    -> {csv}")
 
     if args.save:
-        unit = auto_time_unit(max(r["t"] for r in rows if np.isfinite(r["t"]))
-                              if any(np.isfinite(r["t"]) for r in rows) else 1.0)
-        fig, ax = plt.subplots(figsize=(7.0, 4.2), constrained_layout=True)
+        unit = auto_time_unit(t_max if np.isfinite(t_max) else 1.0)
+        fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8.0, 5.6), sharex=True,
+                                      constrained_layout=True,
+                                      gridspec_kw=dict(height_ratios=(2.2, 1)))
         # Group by (meniscus, wall) using the LABEL, not the wall's y. On a
         # wedge the contact point's y varies along the run, so matching on it
         # dropped every series and left only the fit line on the plot.
+        colors = {"left": ("C0", "C1"), "right": ("C3", "C2")}
         for name in ("left", "right"):
-            for wlab in ("y0", "y1"):
+            for k, wlab in enumerate(("y0", "y1")):
                 sel = [r for r in rows
                        if r["meniscus"] == name and r.get("wall") == wlab]
                 if not sel:
                     continue
                 t = in_time_unit([r["t"] for r in sel], unit)
-                ax.plot(t, [r["theta"] for r in sel], marker="o", ms=4.5,
-                        lw=1.3, alpha=0.9, zorder=3,
-                        label=f"{name} meniscus @ {wlab}")
-        # snapshot mean -- this is the series the fit is actually fitting
-        ax.plot(in_time_unit(traj_t, unit), traj_th, color="0.15", lw=1.0,
-                alpha=0.8, zorder=4, label="mean of estimates")
+                # y0: open circles, no line; y1: line and crosses. On a
+                # symmetric pore the two coincide and both stay visible.
+                ax.plot(t, [r["theta"] for r in sel], marker="o" if k == 0 else "x",
+                        ms=5.0 if k == 0 else 3.0, mfc="none" if k == 0 else None,
+                        lw=0.0 if k == 0 else 1.0, alpha=0.9, zorder=3 + k,
+                        color=colors[name][k], label=f"{name} face @ {wlab}")
+            if name in faces:
+                f = faces[name]
+                ax2.plot(in_time_unit(f["t"], unit), f["v"] * 1e9 * DAY, lw=1.3,
+                         color=colors[name][0],
+                         label=f"{name} face ({'static' if f['static'] else 'moving'})")
+        if all_static:
+            ax.plot(in_time_unit(traj_t, unit), traj_th, color="0.15", lw=1.0,
+                    alpha=0.8, zorder=4, label="mean of estimates")
         if ext is not None:
             a_inf, sig, tau, _, _, A, t0 = ext
-            # draw only over the window that was fitted, plus the extrapolation
             tt = np.linspace(t0, max(traj_t) * 1.05, 300)
             ax.plot(in_time_unit(tt, unit), a_inf + A * np.exp(-tt / tau),
                     color="0.35", ls=":", lw=1.6, zorder=2,
                     label=f"fit (last {100*(1-t0/max(traj_t)):.0f}%)  "
                           f"$\\theta_\\infty$={a_inf:.3f}°, $\\tau$={tau/86400:.1f} d")
-        ax.axhline(theta_young, color="k", ls="--", lw=1.4, zorder=1,
-                   label=f"Young  {theta_young:.1f}°")
-        ax.set_xlabel(f"time [{unit}]")
+        ax.axhline(theta_young, color="k", ls="--", lw=1.2, zorder=1,
+                   label=f"Young (static)  {theta_young:.1f}°")
+        ax2.axhline(0.0, color="k", lw=0.6)
+        ax2.set_xlabel(f"time [{unit}]")
         ax.set_ylabel("contact angle [deg]")
-        ax.set_title("Measured contact angle vs Young's equation")
-        ax.legend(fontsize=8)
-        ax.grid(alpha=0.3)
+        ax2.set_ylabel("contact line\nspeed [nm/day]")
+        ax.set_title("Contact angle of static faces vs Young's equation" if all_static else
+                     "Contact angle of moving faces (dynamic); Young's is the static reference",
+                     fontsize=9)
+        # Outside the axes: on a slowly moving run the curves fill the panel
+        # and any inside position covers data (figcheck, 4B-1, 2026-11-07).
+        ax.legend(fontsize=7, loc="upper left", bbox_to_anchor=(1.01, 1.0), frameon=False)
+        ax2.legend(fontsize=7, loc="upper left", bbox_to_anchor=(1.01, 1.0), frameon=False)
+        for a_ in (ax, ax2):
+            a_.grid(alpha=0.3)
+        try:
+            from figcheck import check_figure
+            bad = check_figure(fig)
+            if bad:
+                print(f"    figcheck: {bad}")
+        except ImportError:
+            pass
         fig.savefig(args.save, dpi=150)
         print(f"    -> {args.save}")
 
