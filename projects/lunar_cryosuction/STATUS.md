@@ -69,9 +69,10 @@ Hypotheses: the user writes them; none recorded yet.
 
 ## HPC
 
-- Running: none. Prepared and pushed (user submits): I1-fine
-  (`issue1_eps_pair_tests.txt`), T3 (`type3_tests.txt`, 10 runs), T4
-  (`type4_tests.txt`, 7 runs); commands in RUNS.md rows / below.
+- Running (submitted 2026-11-07): I1-fine (1 run), T3 (10 runs), T4 (7 runs);
+  RUNS.md rows. Nothing else is ready to submit.
+- DoF/core: decide on a scaling test after seeing these runs' s/step
+  (user, 2026-11-07). Compare with Oct 2026 2-3-rank runs: 4.2-7.0 s/step.
 - Next: shakedown (one short run per type) once builders and experiment files exist.
 - Pushed 2026-11-07 (D7 approved).
 - Submit (from the project root on the HPC, after `git pull`):
