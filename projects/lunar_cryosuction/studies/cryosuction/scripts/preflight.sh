@@ -19,7 +19,7 @@ fail=0
 echo "-- open-boundary check (check_open_bc.sh)"
 "$ROOT/studies/cryosuction/scripts/check_open_bc.sh" "$1" || fail=1
 echo "-- solver set-up check"
-while IFS= read -r line; do
+while IFS= read -r line || [[ -n $line ]]; do
   line="${line%%#*}"; line="$(echo "$line" | tr -d '[:space:]')"
   [[ -z $line ]] && continue
   g="${line%%:*}"; e="${line#*:}"

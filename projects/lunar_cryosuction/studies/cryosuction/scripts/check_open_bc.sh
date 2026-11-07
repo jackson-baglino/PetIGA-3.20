@@ -105,7 +105,7 @@ check_pair() {
 fail=0
 if [[ $# -eq 1 ]]; then
     [[ -f $1 ]] || { echo "no such tests file: $1" >&2; exit 2; }
-    while IFS= read -r line; do
+    while IFS= read -r line || [[ -n $line ]]; do
         line="${line%%#*}"; line="$(echo "$line" | tr -d '[:space:]')"
         [[ -z $line ]] && continue
         [[ $line == *:* ]] || { echo "FAIL $line  not a geometry:experiment line"; fail=1; continue; }
