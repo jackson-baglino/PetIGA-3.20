@@ -157,7 +157,7 @@ class TestPlotMass(TmpRun):
         times, _, _, _ = self.pm.compute_masses(run)
         np.testing.assert_array_equal(times, [0.0, 1.0])
 
-    # BUG: postprocess/plot_mass.py:209-217 weights each CONTROL POINT by
+    # Fixed 2026-11-06 (was a bug): postprocess/plot_mass.py:209-217 weights each CONTROL POINT by
     # |det| of np.gradient of the control net. On an open-knot B-spline the
     # end spacing is half the interior one, so the weights sum to
     # (Lx + hx/2)(Ly + hy/2): a uniform phi = 1 on a 20 x 10 element rectangle
@@ -167,7 +167,6 @@ class TestPlotMass(TmpRun):
     # (U[i+p+1] - U[i])/(p+1) per direction (the integral of N_i), times the
     # metric, or evaluate the spline at Gauss points. Only the fallback path
     # (runs whose SSA_evo.dat lacks the integral columns) is affected.
-    @unittest.expectedFailure
     def test_fallback_uniform_field_integrates_exactly(self):
         run = self._fallback_run(20, 10, [(0, 1.0), (3, 0.5)])
         _, mi, mv, _ = self.pm.compute_masses(run)
@@ -175,14 +174,13 @@ class TestPlotMass(TmpRun):
         self.assertAlmostEqual(mi[0] / (919.0 * area), 1.0, delta=1e-6)
         self.assertAlmostEqual(mv[1] / (1e-3 * 0.5 * area), 1.0, delta=1e-6)
 
-    def test_fallback_bias_is_first_order_in_h(self):
-        # Records the size of the error above: (1 + 1/(2 nx))(1 + 1/(2 ny)).
-        for nx, ny in ((20, 10), (40, 20)):
+    def test_fallback_exact_at_every_resolution(self):
+        # Before the fix the error was (1 + 1/(2 nx))(1 + 1/(2 ny)); now none.
+        for nx, ny in ((20, 10), (40, 20), (3, 2)):
             run = self._fallback_run(nx, ny, [(0, 1.0)])
             _, mi, _, _ = self.pm.compute_masses(run)
             with self.subTest(nx=nx):
-                self.assertAlmostEqual(mi[0] / (919.0 * 2e-8),
-                                       (1 + 0.5 / nx) * (1 + 0.5 / ny), places=10)
+                self.assertAlmostEqual(mi[0] / (919.0 * 2e-8), 1.0, places=10)
 
     def test_no_inputs_fails_loudly(self):
         run = fx.make_run(self.root)
@@ -190,12 +188,11 @@ class TestPlotMass(TmpRun):
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("IGA geometry file not found", r.stderr)
 
-    # BUG: postprocess/plot_mass.py:439 prints "Log-log change plot saved to"
+    # Fixed 2026-11-06 (was a bug): postprocess/plot_mass.py:439 prints "Log-log change plot saved to"
     # unconditionally, but _change_loglog_plot (l. 323-326, 341-343) returns
     # without saving when no t > 0 exists (a one-row run) or every m(0) == 0.
     # The log says a file exists that does not (or a stale one from an earlier
     # run is left in place). Right: report only when the file was written.
-    @unittest.expectedFailure
     def test_one_row_run_does_not_claim_a_missing_file(self):
         run = fx.make_run(self.root)
         fx.write_ssa(run, [0.0], [1e-8], rhov=[1e-11])
@@ -206,12 +203,11 @@ class TestPlotMass(TmpRun):
         exists = os.path.isfile(os.path.join(run, "mass_plots", "change_loglog.png"))
         self.assertEqual(claimed, exists)
 
-    # BUG: postprocess/plot_mass.py:376 picks the mass unit from the IGA
+    # Fixed 2026-11-06 (was a bug): postprocess/plot_mass.py:376 picks the mass unit from the IGA
     # dimension only. Under -axisym the solver's integrals carry 2*pi*r
     # (src/assembly.c:399-409), so tot_ice is a VOLUME and the mass is in kg,
     # but the y label says kg m^-1. Right: "kg" when -axisym is set (and the
     # sol_*.dat fallback would also need the 2*pi*r weight).
-    @unittest.expectedFailure
     def test_axisymmetric_mass_unit(self):
         import matplotlib.pyplot as plt
         run = fx.make_run(self.root, geometry={"-axisym": "1"})
@@ -226,8 +222,9 @@ class TestPlotMass(TmpRun):
         finally:
             self.pm.plt.close = orig
             plt.close("all")
-        self.assertTrue(labels)
-        for lab in labels:
+        mass_labels = [lab for lab in labels if lab.startswith("Mass")]   # not the log-log ratio
+        self.assertTrue(mass_labels)
+        for lab in mass_labels:
             self.assertEqual(lab, "Mass  [kg]")
 
 

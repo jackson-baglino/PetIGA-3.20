@@ -38,7 +38,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from pplib import auto_time_unit, load_ssa
+from pplib import auto_time_unit, load_ssa, opt_bool, read_opts
 
 try:
     from igakit.io import PetIGA
@@ -201,20 +201,38 @@ def compute_masses(run_dir: str):
     # 2e-4 m -- the bounding box overstates the true (trapezoidal) domain by
     # a factor of 1.596, and every absolute mass inherited that error.
     #
-    # Instead take the Jacobian of the index -> physical map,
-    # J[..., d, k] = dx_d/dxi_k, with unit spacing in index space; |det J| is
-    # then the physical volume carried by each control point. Summing it
-    # reproduces the analytic trapezoid area of the wedge to 0.25%. On a
-    # genuinely uniform rectangular mesh this reduces to the old constant dV.
+    # Weight of control point i: the exact parametric integral of its basis
+    # function, (U[i+p+1] - U[i]) / (p + 1) per direction, times |det J|, the
+    # Jacobian of the parametric -> physical map taken against the Greville
+    # abscissae (np.gradient with those coordinates). The sum is then exact
+    # for any field on an affinely mapped mesh. Before 2026-11-06 this used
+    # unit index spacing, which gives the half-width end control points a
+    # full cell: a uniform phi = 1 on a 20 x 10 element rectangle reported
+    # 1.076 x its true mass ((1 + 1/(2n)) per direction).
+    pw, grev = [], []
+    for k in range(dim):
+        U = np.asarray(nrb.knots[k], dtype=float)
+        p = int(nrb.degree[k])
+        n = shape[k]
+        pw.append(np.array([(U[i + p + 1] - U[i]) / (p + 1) for i in range(n)]))
+        grev.append(np.array([U[i + 1:i + p + 1].mean() for i in range(n)]) if p > 0
+                    else 0.5 * (U[:-1] + U[1:]))
     J = np.empty(shape + (dim, dim))
     for d in range(dim):
-        gd = np.gradient(ctrl[..., d])
+        gd = np.gradient(ctrl[..., d], *grev)
         if dim == 1:
             gd = [gd]
         for k in range(dim):
             J[..., d, k] = gd[k]
+    W = pw[0]
+    for k in range(1, dim):
+        W = np.multiply.outer(W, pw[k])
+    J_det = np.abs(np.linalg.det(J)) * W
+    # Axisymmetric runs integrate over the full 2*pi*r surface (assembly.c).
+    if dim >= 2 and opt_bool(read_opts(run_dir), "-axisym"):
+        J_det = J_det * 2.0 * np.pi * np.abs(ctrl[..., 1])
 
-    cellV = np.abs(np.linalg.det(J)).reshape(-1)   # per-node volume [m^dim]
+    cellV = J_det.reshape(-1)   # per-control-point volume [m^dim]
 
     # ── Time axis: match each sol_NNNNN.dat to its SSA_evo.dat row by step ──
     if ssa is not None:
@@ -323,7 +341,7 @@ def _change_loglog_plot(times_sec, masses, labels, colors, save_path):
     pos = times_sec > 0
     if not np.any(pos):
         plt.close(fig)
-        return
+        return False
     t = times_sec[pos]
 
     plotted_any = False
@@ -340,7 +358,7 @@ def _change_loglog_plot(times_sec, masses, labels, colors, save_path):
 
     if not plotted_any:
         plt.close(fig)
-        return
+        return False
 
     ax.set_xlabel("Time  [s]", fontsize=12)
     ax.set_ylabel(r"$|m(t) - m(0)| / |m(0)|$", fontsize=12)
@@ -351,6 +369,7 @@ def _change_loglog_plot(times_sec, masses, labels, colors, save_path):
     fig.tight_layout()
     fig.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
+    return True
 
 
 def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
@@ -374,6 +393,8 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
 
     # Mass units label
     unit_suffix = {1: "kg m⁻²", 2: "kg m⁻¹", 3: "kg"}.get(dim, "kg")
+    if opt_bool(read_opts(run_dir), "-axisym"):
+        unit_suffix = "kg"      # integrals carry 2*pi*r (src/assembly.c)
 
     # ── Combined figure (unchanged behaviour) ─────────────────────────────
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -427,7 +448,7 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
     print(f"Per-phase plots saved to: {pp_dir}/")
 
     # ── Log-log relative-change plot ──────────────────────────────────────
-    _change_loglog_plot(
+    saved = _change_loglog_plot(
         times_sec=times,
         masses=[mass_total, mass_ice, mass_vap],
         labels=["Total",
@@ -436,7 +457,10 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
         colors=[COLOR_TOTAL, COLOR_ICE, COLOR_VAP],
         save_path=os.path.join(pp_dir, "change_loglog.png"),
     )
-    print(f"Log-log change plot saved to: {pp_dir}/change_loglog.png")
+    if saved:
+        print(f"Log-log change plot saved to: {pp_dir}/change_loglog.png")
+    else:
+        print("Log-log change plot skipped: needs t > 0 and a nonzero initial mass")
 
 
 # ---------------------------------------------------------------------------
