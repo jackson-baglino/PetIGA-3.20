@@ -22,7 +22,7 @@ Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 
 ## Phase
 
-**First production batches running; next: post-process them and build the
+**First production batches (T3, T4, I1) finished and analyzed; next: build the
 remaining geometries** (plan timeline: builders and experiment files 9-11 Nov;
 shakedown Wed 11 Nov; production from 12-14 Nov).
 
@@ -46,7 +46,7 @@ Hypotheses: the user writes them; none recorded yet.
 
 | # | Issue | State | Next step |
 |---|---|---|---|
-| 1 | Fast phases under-resolved on 0.86 um meshes (Pi ~ 1) | inputs ready (RUNS.md I1-fine) | user submits the 1-day eps 0.328 um run; compare with 0c-C1 day 1 |
+| 1 | Fast phases under-resolved on 0.86 um meshes (Pi ~ 1) | I1-fine passes the preset < 5 % test (area 0.31 %, vanishing time 3.0 %; REPORT_issue1) | user confirms closing it and keeping 0.86 um for production |
 | 2 | B1 series-law slope 1.15x | **closed** 2026-11-06: slope 0.996-1.000x with D_v(-20 C), area-based face (RUNS.md 0c-B1) | D5 can be accepted |
 | 3 | Thermal BCs set the harvest rate | rule adopted | every run table has a thermal column |
 | 4 | Default -phi_open_bc 1 | **closed** | check_open_bc.sh runs in preflight.sh (commit 4db30788) |
@@ -69,13 +69,14 @@ Hypotheses: the user writes them; none recorded yet.
 
 ## HPC
 
-- Running (submitted 2026-11-07): I1-fine (1 run), T4 (7 runs); T3 finished;
-  RUNS.md rows. Nothing else is ready to submit.
+- Nothing running. I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). Nothing
+  else is ready to submit.
 - DoF/core: decide on a scaling test after seeing these runs' s/step
   (user, 2026-11-07). Compare with Oct 2026 2-3-rank runs: 4.2-7.0 s/step.
   T3 result (job wall time / steps, includes setup): 1.5-2.2 s/step at
   47-50k DoF/core (11 ranks for 0.52 M DoF, 5 for 0.25 M), 17-24 core-s/step
   for 0.52 M DoF; in line with the Sept 2026 50k runs (1.5-2.0 s/step).
+  T4: 1.3-1.7 s/step at 42-50k DoF/core (5-8 ranks, 0.22-0.40 M DoF).
 - Next: shakedown (one short run per type) once builders and experiment files exist.
 - Pushed 2026-11-07 (D7 approved).
 - Submit (from the project root on the HPC, after `git pull`):
@@ -92,6 +93,13 @@ Hypotheses: the user writes them; none recorded yet.
   pair in the shakedown. The enceladus 200k optimum is for 24 M DoF meshes.
 
 ## Done recently
+
+- 2026-11-07: T4 (type 4, 7 runs) analyzed: a taper moves ice to the narrow
+  end in every wedge; series law with theta -/+ omega to 3-5 % (beta_eff 8.8e5
+  in the flat pore, as in T3). Every theta 60 lens reached a vapor face (20 deg
+  at day 8): future margins must be longer. I1-fine: 0.86 um mesh within 3 %
+  of the fine mesh. Reports REPORT_type4, REPORT_issue1 in the batch folders.
+  New: analyze_type4.py, compare_issue1.py.
 
 - 2026-11-07: T3 (type 3, 10 runs) finished and analyzed: series law holds to
   1 % with nothing fitted; report `REPORT_type3.md/.pdf` in the batch folder.
