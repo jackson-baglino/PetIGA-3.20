@@ -277,11 +277,10 @@ class SupersatCompare(unittest.TestCase):
         r = run("supersat_compare.py", "--width", 2e-4, "--grad-T", 10, "--theta", 60)
         self.assertIn("l = 0.0002 m, G = 10 K/m", r.stdout)
 
-    # BUG: supersat_compare.py:84 means to skip theta = 90 (zero meniscus drive)
+    # Fixed 2026-11-06 (was a bug): supersat_compare.py:84 means to skip theta = 90 (zero meniscus drive)
     # with `if sm != 0.0`, but cos(pi/2) = 6.1e-17, so it prints "G matching
     # meniscus theta = 90.0: 8.283e-17 K/m", a meaningless number. Right: skip
     # (test abs(sm) against a tolerance, or compute cos with the angle in degrees exact).
-    @unittest.expectedFailure
     def test_theta_90_has_no_matching_gradient_line(self):
         r = run("supersat_compare.py", "--theta", 90, "--grad-T", 1)
         self.assertEqual(r.returncode, 0)

@@ -75,6 +75,14 @@ def main() -> int:
     ap.add_argument("--Lx", type=float, default=8.5e-4, help="simulation channel length [m]")
     ap.add_argument("--h-open", type=float, default=0.99, help="open-end saturation in the runs")
     a = ap.parse_args()
+    if not (a.T_analog > 0.0) or any(not (t > 0.0) for t in a.T_lunar):
+        ap.error("temperatures are in kelvin and must be > 0")
+    if any(not (g > 0.0) for g in a.G):
+        ap.error("--G values must be > 0 (the lengths divide by G)")
+    if not (0.0 < a.h_open < 1.0):
+        ap.error("--h-open must be in (0, 1): at h >= 1 there is no suction")
+    if not (a.Lx > 0.0):
+        ap.error("--Lx must be positive")
 
     print("# inputs:", vars(a))
     print(f"# check Murphy-Koop at 273.16 K: {p_mk(273.16):.2f} Pa (expected ~611.7)")
