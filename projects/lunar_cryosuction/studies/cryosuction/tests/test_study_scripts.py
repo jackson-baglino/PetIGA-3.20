@@ -648,13 +648,12 @@ class AnalyzeStage0A(unittest.TestCase):
         err, rows, v = verdict(analyze(self.b).stdout, "A1 open")
         self.assertEqual((rows, v), (0, "FAIL"))
 
-    # BUG (latent): analyze_stage0.py:43-46 reads -eps from the staged *.opts in
+    # Fixed 2026-11-06 (was a bug): analyze_stage0.py:43-46 reads -eps from the staged *.opts in
     # ALPHABETICAL order, last one wins. The solver reads solver.opts <
     # geometry < experiment, and "solver.opts" sorts last, so an -eps in
     # solver.opts would override the geometry's. Today no inputs/solver.opts sets
     # -eps, so stage-0 numbers are unaffected. Right: read in the solver's order
     # (as pplib now does, commit 18f4bf66) and honor "Extra opts" from outp.txt.
-    @unittest.expectedFailure
     def test_eps_follows_solver_precedence(self):
         r = F.make_run(self.b, A_INT, A_EXP, layout="hpc", solver={"-eps": "1.0e-6"},
                        geometry={"-eps": f"{EPS:e}"})
@@ -749,12 +748,11 @@ class AnalyzeStage0BC(unittest.TestCase):
         o = analyze(self.b).stdout
         self.assertNotRegex(o, r"B2 xi_v 1e-4: .*PASS")
 
-    # BUG: analyze_stage0.py:252-257: when a B2-B4 run (or B1) has no bflux.dat,
+    # Fixed 2026-11-06 (was a bug): analyze_stage0.py:252-257: when a B2-B4 run (or B1) has no bflux.dat,
     # bflux() returns (None, None) and mean_j() does `None <= tc`, so the whole
     # analysis dies with TypeError and part C never runs. Line 232 already
     # handles a missing B1 file with nan. Right: report nan for the mean J of
     # that run and carry on.
-    @unittest.expectedFailure
     def test_missing_bflux_in_b2_does_not_crash(self):
         self.brun("B1")
         self.brun("B2", flux=False)

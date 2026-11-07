@@ -31,7 +31,12 @@ import math
 import re
 from pathlib import Path
 
+import sys
+
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "postprocess"))
+import pplib  # noqa: E402
 
 RHO_ICE = 919.0  # src/cryosuction_main.c user.rho_ice
 
@@ -39,12 +44,9 @@ RHO_ICE = 919.0  # src/cryosuction_main.c user.rho_ice
 def run_value(run: Path, key: str) -> float:
     """eps (from the staged opts) or tau_sub (from the solver header in outp.txt)."""
     if key == "eps":
-        val = float("nan")
-        for f in sorted(run.glob("*.opts")):
-            for line in f.read_text().splitlines():
-                if line.split()[:1] == ["-eps"]:
-                    val = float(line.split()[1])
-        return val
+        # The solver's precedence (solver < geometry < experiment < `--`
+        # flags), not alphabetical order, which let solver.opts win.
+        return float(pplib.opt_float(pplib.read_opts(str(run)), "-eps", float("nan")))
     for name in ("outp.txt", "out.txt"):
         f = run / name
         if f.exists():
@@ -186,6 +188,9 @@ def part_a(batch: Path, tol: float, fig: Path | None = None):
         print("  A3 run not found; A skipped")
         return
     t3, a3 = ssa(r3)
+    if t3.size < 2 or np.ptp(t3) == 0:
+        print(f"  A3 {r3.name}: {t3.size} row(s), no slope can be fitted; A skipped")
+        return
     slope = np.polyfit(t3, a3, 1)[0]
     d_eff = -slope / (2 * math.pi)
     r0 = math.sqrt(a3[0] / math.pi)
@@ -252,6 +257,8 @@ def part_b(batch: Path, tol: float, t_tr: float):
         tbk, jbk = bflux(r)
 
         def mean_j(tb_, jb_, tc=tc):
+            if tb_ is None:                       # no bflux.dat in this run
+                return float("nan")
             m = tb_ <= tc
             return np.trapezoid(jb_[m], tb_[m]) / (tb_[m][-1] - tb_[m][0])
         jk, j1c = mean_j(tbk, jbk), mean_j(tb, jb)
