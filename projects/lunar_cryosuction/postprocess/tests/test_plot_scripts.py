@@ -303,13 +303,12 @@ class TestPlotSSA(TmpRun):
         self.assertEqual(r.returncode, 1)
         self.assertIn("zero throughout", r.stderr)
 
-    # BUG: postprocess/plot_ssa.py:188-191 normalizes the right axis by
+    # Fixed 2026-11-06 (was a bug): postprocess/plot_ssa.py:188-191 normalizes the right axis by
     # area[0] when there is no packing file; when the first interface value is
     # 0 and later ones are positive (ice that appears after t = 0) the limits
     # become inf and matplotlib raises "Axis limits cannot be NaN or Inf"
     # (traceback, exit 1, no figure). The title (l. 200) divides by area[0]
     # too. Right: draw the figure, skipping the normalized axis.
-    @unittest.expectedFailure
     def test_first_value_zero_still_plots(self):
         run = fx.make_run(self.root)
         fx.write_ssa(run, np.arange(6.0), [1e-8] * 6, ssa=np.arange(6.0) * 1e-5)
@@ -403,14 +402,13 @@ class TestPlotPhiBounds(TmpRun):
         self.assertIn("REAL, inspect the run", r.stdout)
         self.assertIn("(guard -0.100)", r.stdout)
 
-    # BUG: postprocess/plot_phi_bounds.py:83 takes the overshoot from phi_ice
+    # Fixed 2026-11-06 (was a bug): postprocess/plot_phi_bounds.py:83 takes the overshoot from phi_ice
     # max only. The solver prints it as %.4e (monitoring.c:146), so any
     # phi_ice max below 1 + 5e-5 prints as "1.0000e+00" and the overshoot reads
     # 0; the same excursion is printed at full precision as phi_air min
     # (= 1 - phi_ice max, here -4.0000e-07), which the script ignores. The
     # real run shows it: "phi_air [-4.4409e-16, ...]" next to phi_ice max
     # "1.0000e+00". Right: overshoot = max(phi_ice_max - 1, -phi_air_min, 0).
-    @unittest.expectedFailure
     def test_small_overshoot_is_resolved(self):
         run = fx.make_run(self.root)
         fx.write_outp(run, [0, 1], [0.0, 1.0])
@@ -454,14 +452,13 @@ class TestPlotPhiBounds(TmpRun):
         self.assertEqual(r.returncode, 1)
         self.assertIn("no BOUNDS lines", r.stderr)
 
-    # BUG: postprocess/plot_phi_bounds.py:82-84 cannot see a NaN field. The
+    # Fixed 2026-11-06 (was a bug): postprocess/plot_phi_bounds.py:82-84 cannot see a NaN field. The
     # solver's min/max loop skips NaN (every comparison is false), so an
     # all-NaN phi prints "phi_ice [1.0000e+30, -1.0000e+30]"
     # (monitoring.c:107-108, 146); a printed "nan" would not match _RE (l. 37)
     # and the line is dropped. Either way under = over = 0 and the script
     # reports "rounding only". Right: flag min > max, |phi| >= 1e29, or a
     # BOUNDS line that fails to parse.
-    @unittest.expectedFailure
     def test_nan_field_is_not_reported_healthy(self):
         run = fx.make_run(self.root)
         fx.write_outp(run, [0, 1], [0.0, 1.0])
@@ -560,13 +557,12 @@ class TestPlotFields(TmpRun):
         self.assertIn("step index as time proxy", r.stdout)
         self.assertEqual([t for t, _ in self.pvd()], [40.0])
 
-    # BUG: postprocess/plot_fields.py:275 uses t = float(step) for a snapshot
+    # Fixed 2026-11-06 (was a bug): postprocess/plot_fields.py:275 uses t = float(step) for a snapshot
     # whose step is missing from outp.txt (truncated log), with no warning
     # when the map is non-empty; _write_pvd (l. 230) then SORTS by that mixed
     # seconds/step value, so ParaView plays the snapshots out of order (here
     # step 12 at "t = 12 s" lands between steps 0 and 5 at 0 and 500 s).
     # Right: keep step order, and fall back to SSA_evo.dat or warn.
-    @unittest.expectedFailure
     def test_partial_outp_keeps_step_order(self):
         fx.write_iga_run(self.run, self.nrb, [(0, field_fn(0)), (5, field_fn(0)), (12, field_fn(0))])
         fx.write_outp(self.run, np.arange(10), np.arange(10) * 100.0)

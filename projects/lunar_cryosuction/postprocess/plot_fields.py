@@ -227,7 +227,7 @@ def _write_pvd(pvd_path: str, entries: list) -> None:
         '<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">',
         '  <Collection>',
     ]
-    for t, rel_path in sorted(entries):
+    for t, rel_path in entries:            # already in step order
         lines.append(
             f'    <DataSet timestep="{t:.6e}" part="0" file="{rel_path}"/>'
         )
@@ -257,13 +257,28 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
         print(f"No sol_*.dat files found in '{run_dir}'")
         return
 
-    # Build step → time mapping from outp.txt.
+    # Build step → time mapping from outp.txt, filled in from SSA_evo.dat
+    # (one row per step) where outp.txt is truncated or missing.
     time_map = _load_time_map(os.path.join(run_dir, "outp.txt"))
-    if not time_map:
-        print("  Warning: outp.txt not found or empty — PVD will use step "
-              "index as time proxy.")
+    ssa_path = os.path.join(run_dir, "SSA_evo.dat")
+    if os.path.isfile(ssa_path):
+        try:
+            a = np.genfromtxt(ssa_path, comments="#", invalid_raise=False, ndmin=2)
+            for row in a:
+                if row.size >= 4 and np.isfinite(row[2]) and np.isfinite(row[3]):
+                    time_map.setdefault(int(row[3]), float(row[2]))
+        except (ValueError, OSError):
+            pass
+    steps_all = [int(os.path.basename(f)[4:-4]) for f in sol_files]
+    missing = [st for st in steps_all if st not in time_map]
+    # A PVD that mixes seconds with step numbers plays out of order. If any
+    # snapshot has no known time, every entry uses its step index instead.
+    use_step_index = bool(missing)
+    if use_step_index:
+        print(f"  WARNING: no time for step(s) {missing[:8]}{' ...' if len(missing) > 8 else ''} "
+              "in outp.txt or SSA_evo.dat; pf.pvd uses the step index as time proxy for every snapshot.")
 
-    pvd_entries = []   # (time, relative_vts_path)
+    pvd_entries = []   # (time, relative_vts_path), in step order
 
     for infile in sol_files:
         name    = os.path.splitext(os.path.basename(infile))[0]  # "sol_00042"
@@ -272,7 +287,7 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
         outfile = os.path.join(out_dir, f"solV{number}.vts")      # XML format
         rel_vts = os.path.join("vtkOut", f"solV{number}.vts")
 
-        t = time_map.get(step, float(step))
+        t = float(step) if use_step_index else time_map[step]
         pvd_entries.append((t, rel_vts))
 
         if not force and os.path.isfile(outfile):
