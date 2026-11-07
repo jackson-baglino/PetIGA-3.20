@@ -58,7 +58,8 @@ def _validate(i: MeshParamsInput) -> None:
             errs.append(msg)
 
     def finite(x):
-        return x is not None and isinstance(x, (int, float)) and math.isfinite(x)
+        # bool is an int subclass: JSON true must not run as 1.
+        return x is not None and isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
 
     need(finite(i.domain_x_m) and i.domain_x_m > 0, f"domain_x_m must be > 0 m (got {i.domain_x_m!r})")
     need(finite(i.domain_y_m) and i.domain_y_m >= 0, f"domain_y_m must be >= 0 m (got {i.domain_y_m!r})")
@@ -77,7 +78,7 @@ def _validate(i: MeshParamsInput) -> None:
     need(finite(i.safety) and 0 < i.safety <= 1, f"safety must be in (0, 1] (got {i.safety!r})")
     need(i.thermal_channel in ("mean", "ice"), f"thermal_channel must be 'mean' or 'ice' (got {i.thermal_channel!r})")
     need(i.xi_v is None or (finite(i.xi_v) and i.xi_v > 0), f"xi_v must be > 0 (got {i.xi_v!r})")
-    need(i.dimension in (None, 1, 2, 3), f"dimension must be 1, 2, 3 or omitted (got {i.dimension!r})")
+    need(not isinstance(i.dimension, bool) and i.dimension in (None, 1, 2, 3), f"dimension must be 1, 2, 3 or omitted (got {i.dimension!r})")
     if errs:
         raise ToolInputError("; ".join(errs))
 
@@ -90,6 +91,12 @@ def compute_mesh_params(inp: MeshParamsInput) -> dict:
     _validate(inp)
     T = inp.temperature_c
     alpha_c = inp.alpha_c if inp.alpha_c is not None else P.alpha_libbrecht(T, inp.sigma_surf)
+    if inp.alpha_c is None and alpha_c <= 1.0e-30:
+        # Below sigma0/69 the Libbrecht law returns its 1e-30 floor, which gave
+        # eps ~ 1e-35 m and Nx ~ 1e30 with every check "ok".
+        raise ToolInputError(
+            f"sigma_surf = {inp.sigma_surf!r} gives alpha_c at the 1e-30 floor of the Libbrecht law "
+            f"(sigma0(T) = {P.sigma0(T):.3g}); the interface would not move. Give a larger sigma_surf or alpha_c.")
 
     rho_vs = P.rho_vs_sat_kg_per_m3(T)
     rho_rat = rho_vs / C.rho_ice_kg_per_m3

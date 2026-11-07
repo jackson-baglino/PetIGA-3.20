@@ -147,12 +147,11 @@ class Limits(unittest.TestCase):
         st = {c["name"]: c["status"] for c in self.ok(xi_v=2 * rat)["checks"]}
         self.assertEqual(st["xi_v_quasi_steady"], "warn")
 
-    # BUG: preprocess/mesh_params/tool.py:92 takes alpha_c from the Libbrecht law
+    # Fixed 2026-11-06 (was a bug): preprocess/mesh_params/tool.py:92 takes alpha_c from the Libbrecht law
     # without checking it. For sigma_surf below sigma0/69 the law returns its
     # 1e-30 floor; the tool then returns eps = 6.4e-35 m, Nx = 2.2e30 and every
     # check "ok". Right: raise ToolInputError (or a "fail" check) when the
     # derived alpha_c is at the floor.
-    @unittest.expectedFailure
     def test_sigma_surf_at_alpha_floor_is_flagged(self):
         try:
             r = compute_mesh_params(MeshParamsInput(domain_x_m=1e-4, sigma_surf=1e-6))
@@ -160,10 +159,9 @@ class Limits(unittest.TestCase):
             return
         self.assertTrue({"fail", "warn"} & {c["status"] for c in r["checks"]}, r["eps_m"])
 
-    # BUG: preprocess/mesh_params/tool.py:60-61 `finite()` accepts bool because
+    # Fixed 2026-11-06 (was a bug): preprocess/mesh_params/tool.py:60-61 `finite()` accepts bool because
     # bool is an int, so JSON {"alpha_c": true} runs as alpha_c = 1. Right:
     # reject booleans.
-    @unittest.expectedFailure
     def test_json_boolean_is_rejected(self):
         r = cli("--json", json.dumps({"domain_x_m": 1e-4, "alpha_c": True}))
         self.assertEqual(r.returncode, 2)

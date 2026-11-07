@@ -104,7 +104,10 @@ def main(argv=None) -> int:
                     front_velocity_m_per_s=a.vn, feature_radius_m=a.vn_feature, safety=a.safety,
                     thermal_channel=a.Dchannel, xi_v=a.xiv, dimension=a.dim)
         if a.alpha_range:
-            lo, hi, k = float(a.alpha_range[0]), float(a.alpha_range[1]), int(a.alpha_range[2])
+            try:
+                lo, hi, k = float(a.alpha_range[0]), float(a.alpha_range[1]), int(a.alpha_range[2])
+            except ValueError:
+                ap.error(f"--alpha_range needs LO HI N with N an integer (got {' '.join(a.alpha_range)})")
             rows = sweep_alpha_c(MeshParamsInput(**base), lo, hi, k)
             print(f"{'alpha_c':>10s} {'eps [m]':>11s} {'Nx':>6s} {'binding':>10s} {'tau_sub [s]':>12s} {'min beta ratio':>15s}")
             for al, r in rows:
