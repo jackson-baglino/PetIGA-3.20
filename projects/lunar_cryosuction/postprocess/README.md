@@ -54,6 +54,17 @@ because it is a format conversion for ParaView, not a figure.
 | `wedge_gt_velocity.py` | `vtkOut/`, staged `.opts` | measured vs. Gibbs-Thomson `v_n` on the two centreline menisci (wedge geometries only) |
 | `vapor_movie.py` | `pf.pvd`, `vtkOut/solV_*.vts`, staged `.opts` | `plots/vapor_movie.mp4`: ice on cmocean ice over the air's supersaturation on cmocean balance; `--tracers` adds particles along the vapor flux (`plots/vapor_movie_tracers.mp4`). 2D only, needs ffmpeg |
 | `pplib.py` | — | shared helpers, not a plotter |
+| `ice_bodies.py` | `sol_*.dat` (or `vtkOut/`), staged `.opts` | plan tool T1: per ice body area, center of mass, extent, faces on the pore axis, wall contacts, their velocities and accelerations, merge/split events; `--at COL=VALUE` samples at a fixed position or gap |
+| `water_budget.py` | `SSA_evo.dat`, `bflux.dat`, snapshots | plan tool T2: ice lost, vapor held, outflow, closure error, heat per kg, recapture fraction |
+| `section_flux.py` | snapshots | plan tool T3: vapor and heat flux through any line; `--check-face` compares with `bflux.dat` |
+| `type_summary.py` | a manifest of runs | plan tool T6: one CSV and one checked figure per simulation type |
+| `figcheck.py` | — | overlap and font-size check for any matplotlib figure (used by the tools above) |
+
+The measurement tools (`ice_bodies`, `water_budget`, `section_flux`) read the
+spline itself from `sol_*.dat` + `igasol.dat` (`pplib.iter_snapshots`), not
+`vtkOut/`: the `.vts` files hold control-point values, which smooth the field
+and sit at uneven points near the boundary. They are on demand, not in the
+sweep. Tests: `venv_cryosuction/bin/python -m unittest discover -s postprocess/tests -t .`
 
 `plot_fields_highres.py` is deliberately **not** in the sweep: it is slow and
 only wanted on demand.
