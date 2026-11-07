@@ -7,7 +7,7 @@ weeks (LOG.md keeps the history), and never let it pass about 150 lines.
 Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 `LOG.md`; the plan itself in the iCloud folder below.
 
-**Last updated:** 2026-11-07 (session be49e5a1, wrap-up)
+**Last updated:** 2026-11-07 (session 6475a664)
 
 ## Goal and deadline
 
@@ -69,7 +69,7 @@ Hypotheses: the user writes them; none recorded yet.
 
 ## HPC
 
-- Running (submitted 2026-11-07): I1-fine (1 run), T3 (10 runs), T4 (7 runs);
+- Running (submitted 2026-11-07): I1-fine (1 run), T3 (10 runs; 3C-1 done), T4 (7 runs);
   RUNS.md rows. Nothing else is ready to submit.
 - DoF/core: decide on a scaling test after seeing these runs' s/step
   (user, 2026-11-07). Compare with Oct 2026 2-3-rank runs: 4.2-7.0 s/step.
@@ -90,6 +90,9 @@ Hypotheses: the user writes them; none recorded yet.
 
 ## Done recently
 
+- 2026-11-07: 3C-1 (closed control) finished and passed: nothing moves, faces
+  relax to the 60 deg meniscus in ~30 d (tau 9.7 d), so 3A/3B/3D face speeds
+  need t > ~40 d or subtraction of 3C-1. water_budget fix 2db33eb8.
 - 2026-11-07: I1-fine, T3, T4 submitted; types 3-4 inputs; DoF/core evidence (LOG.md).
 - 2026-11-06: AGU_SimulationPlan (4 pp.) delivered; issue 2 closed; tool bugs fixed.
 - 2026-11-06: SimulationPlan_v2 (21 pp.) delivered; tools T1-T8 and tests;
