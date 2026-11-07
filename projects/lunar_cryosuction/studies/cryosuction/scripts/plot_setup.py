@@ -45,7 +45,11 @@ UM = 1e6
 
 
 def load(ic_root: Path, name: str):
-    f = sorted((ic_root / name / "vtkOut").glob("solV_*.vts"))[0]
+    found = sorted((ic_root / name / "vtkOut").glob("solV_*.vts"))
+    if not found:
+        raise SystemExit(f"plot_setup: no {ic_root / name / 'vtkOut'}/solV_*.vts "
+                         "(run the 1 ns IC runs and plot_fields.py first)")
+    f = found[0]
     fields, X, Y = read_vts(str(f), want=["IcePhase"])
     return fields["IcePhase"], X * UM, Y * UM
 
