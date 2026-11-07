@@ -29,14 +29,32 @@ import matplotlib.collections
 from matplotlib.text import Text
 
 
+def _tick_labels(fig):
+    """(all tick-label Texts, the ones actually drawn). matplotlib keeps tick
+    objects for ticks outside the view limits and a hidden label2 on each; only
+    the ticks returned by Axis._update_ticks() are drawn."""
+    every, drawn = set(), set()
+    for ax in fig.axes:
+        for axis in (ax.xaxis, ax.yaxis):
+            for tk in axis.majorTicks + axis.minorTicks:
+                every.update((id(tk.label1), id(tk.label2)))
+            for tk in axis._update_ticks():
+                for lab in (tk.label1, tk.label2):
+                    if lab.get_visible():
+                        drawn.add(id(lab))
+    return every, drawn
+
+
 def _visible_texts(fig):
+    every, drawn = _tick_labels(fig)
     out = []
     for t in fig.findobj(Text):
         if not t.get_visible() or not t.get_text().strip():
             continue
         if t.get_gid() == "overlap_ok":
             continue
-        # Skip texts of invisible tick objects (matplotlib keeps spare ticks).
+        if id(t) in every and id(t) not in drawn:
+            continue
         out.append(t)
     return out
 
