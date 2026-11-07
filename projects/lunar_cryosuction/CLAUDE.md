@@ -26,6 +26,12 @@ postprocessing, studies).
 ## What we already know
 @memory/MEMORY.md
 
+## Where we are now
+@STATUS.md
+
+Update `STATUS.md` whenever its state changes (a decision, an issue closed, a
+run submitted or finished, a tool built) and always as part of wrap-up.
+
 ## How we work
 
 - We are scientists and engineers. The goal is to be correct, not to produce an
