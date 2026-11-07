@@ -55,6 +55,29 @@ def main() -> int:
     p.add_argument("--cutoff-h", type=float, nargs="+", default=[0.99, 0.995, 0.999], help="h_open for section 5")
     p.add_argument("--eps", type=float, default=8.584e-7, help="eps for the resolution number Pi [m]")
     a = p.parse_args()
+    if not (-150.0 < a.T0 < -0.001):
+        p.error(f"--T0 must be in (-150, -0.001) C, where the ice formulas apply (got {a.T0})")
+    if not (0.0 < a.alpha <= 1.0):
+        p.error(f"--alpha must be in (0, 1] (got {a.alpha})")
+    if any(not (g > 0.0) for g in a.G):
+        p.error("--G values must be > 0 (sections 2 and 5 divide by G)")
+    Rs_, Rl_, L_ = a.pair
+    if not (0.0 < Rs_ < Rl_):
+        p.error(f"--pair needs 0 < R_small < R_large (got {Rs_:g}, {Rl_:g})")
+    if not (L_ > Rs_ + Rl_):
+        p.error(f"--pair: center distance {L_:g} m must exceed R_small + R_large = {Rs_ + Rl_:g} m "
+                "(the grains would overlap)")
+    if not (0.0 < a.fill <= 1.0):
+        p.error(f"--fill must be in (0, 1] (got {a.fill})")
+    if not (a.l0 >= 0.0):
+        p.error(f"--l0 must be >= 0 (got {a.l0})")
+    if any(not (0.0 < h <= 1.0) for h in a.cutoff_h):
+        p.error("--cutoff-h values must be in (0, 1]")
+    if any(not (0.0 < h < 1.0) for h in a.harvest):
+        p.error("--harvest values must be in (0, 1): at h >= 1 the open end supplies vapor and "
+                "nothing is harvested")
+    if any(not (l1 > a.l0) for l1 in a.l1):
+        p.error(f"--l1 values must exceed --l0 = {a.l0:g} m")
 
     T = a.T0
     rho_vs = physics.rho_vs_sat_kg_per_m3(T)
