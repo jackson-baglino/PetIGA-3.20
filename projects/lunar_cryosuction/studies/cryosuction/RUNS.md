@@ -15,7 +15,7 @@ row when the run is queued, and update Status and Outcome when it ends.
 
 | ID | Queued | Where / folder | Model | Geometry : experiment | Question | Look for | Status |
 |---|---|---|---|---|---|---|---|
-| (none) | | | | | | | |
+| I1-fine | 2026-11-06 (prepared; user submits) | HPC, `--out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs` | v2 | throat_2D_L850um_eps0.33um_narrowL_deadend : cryo_T-20_h0.990_iso_1d_ac1e-2 | Plan issue 1: is the 0.86 um mesh accurate enough for the fast narrow-plug phase (Pi ~ 1.0-1.3 in 0c-C1)? | Narrow-plug vanishing time and the ice-area curve over day 1 against 0c-C1 (same walls, plugs, BCs; eps 0.328 vs 0.858 um). Under 5 % difference: keep 0.86 um for production. Preflight OK (tau_sub 89.4 s, dtmax/tau_sub 2.0, h = eps/sqrt 2). 7.6 M DOF. | prepared |
 
 ## Finished
 
