@@ -6,7 +6,9 @@
 # header only; no time step is taken) and check that it exits cleanly and that
 # the printed boundary table and tau_sub are what the files claim. This is a
 # set-up check like the verification drivers, not a simulation; it writes only
-# to a temporary folder.
+# to a temporary folder. It first runs check_open_bc.sh (plan tool T5), which
+# fails any pair whose open vapor-reservoir face still lets ice through
+# (-phi_open_bc not 0).
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 source "$ROOT/scripts/lib/opts.sh"
@@ -14,6 +16,9 @@ EXEC="$ROOT/lunar_cryosuction"
 [[ -x $EXEC ]] || { echo "missing $EXEC -- run make" >&2; exit 2; }
 WORK="${TMPDIR:-/tmp}/cryo_preflight.$$"; mkdir -p "$WORK"; trap 'rm -rf "$WORK"' EXIT
 fail=0
+echo "-- open-boundary check (check_open_bc.sh)"
+"$ROOT/studies/cryosuction/scripts/check_open_bc.sh" "$1" || fail=1
+echo "-- solver set-up check"
 while IFS= read -r line; do
   line="${line%%#*}"; line="$(echo "$line" | tr -d '[:space:]')"
   [[ -z $line ]] && continue
