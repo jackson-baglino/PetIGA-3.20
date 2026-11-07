@@ -196,8 +196,13 @@ def _iter_igasol(run_dir, y0, nu, nv):
     from igakit.io import PetIGA
     io = PetIGA()
     nrb = io.read(os.path.join(run_dir, "igasol.dat"))
-    u = np.linspace(0.0, 1.0, nu)
-    v = np.linspace(0.25, 0.75, nv)          # nv odd, so v[nv//2] is exactly 0.5
+    # Parametric range from the knots: wedge meshes from build_geometry_wedge
+    # use [0, 1], but a solver-built rectangle has knots in meters, where a
+    # hard-coded [0, 1] died with a bare igakit AssertionError.
+    lo = [float(nrb.knots[i][nrb.degree[i]]) for i in range(2)]
+    hi = [float(nrb.knots[i][-nrb.degree[i] - 1]) for i in range(2)]
+    u = lo[0] + (hi[0] - lo[0]) * np.linspace(0.0, 1.0, nu)
+    v = lo[1] + (hi[1] - lo[1]) * np.linspace(0.25, 0.75, nv)   # nv odd: v[nv//2] is the mid-line
     mid = nv // 2
     files = sorted(f for f in os.listdir(run_dir) if re.fullmatch(r"sol_\d+\.dat", f))
     if not files:

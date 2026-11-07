@@ -560,14 +560,13 @@ class TestMeniscusVelocity(unittest.TestCase):
         np.testing.assert_allclose(d["time_s"], np.r_[tA, tB])
         np.testing.assert_allclose(d["v_mid_m_s"], 1e-9, rtol=1e-4)
 
-    # BUG: meniscus_velocity.py:147-171 -- a restart leg writes sol_00000.dat at
+    # Fixed 2026-11-06 (was a bug): meniscus_velocity.py:147-171 -- a restart leg writes sol_00000.dat at
     # t = t_start (src/monitoring.c:395, step <= 1 always written; step resets to
     # 0 because the solver only calls TSSetTime), which duplicates the previous
     # leg's last snapshot. The tool keeps both rows; np.gradient then divides by
     # dt = 0 and the CSV carries NaN/inf velocities at the join (verified by
     # hand: v = nan at the two duplicated rows). Right: drop or merge rows with
     # equal t (pplib.iter_snapshots keeps one per step; dedupe on t here).
-    @unittest.expectedFailure
     def test_restart_chain_with_duplicate_join(self):
         VA = VB = 1e-9
         tA = np.array([0.0, 200.0, 400.0])
@@ -582,12 +581,11 @@ class TestMeniscusVelocity(unittest.TestCase):
         self.assertTrue(np.isfinite(d["v_mid_m_s"]).all(), d["v_mid_m_s"])
         np.testing.assert_allclose(d["v_mid_m_s"], 1e-9, rtol=1e-4)
 
-    # BUG: meniscus_velocity.py:99-106 and 118-125 -- crossings_in() keeps only the
+    # Fixed 2026-11-06 (was a bug): meniscus_velocity.py:99-106 and 118-125 -- crossings_in() keeps only the
     # first and last phi = 0.5 crossing of each row, so a bridge that has split
     # into two plugs is read as one: the two inner faces drop out of the arc
     # length L and v_mean = (dA/dt)/L comes out 2x too large, with no warning.
     # Right: count every crossing (L = 4H here) or refuse rows with != 2 crossings.
-    @unittest.expectedFailure
     def test_split_lens_mean_speed(self):
         v = 1e-9
         t = np.linspace(0.0, 1000.0, 5)
@@ -601,13 +599,12 @@ class TestMeniscusVelocity(unittest.TestCase):
             p, d = mv_rows(run)
         np.testing.assert_allclose(d["v_mean_m_s"], v, rtol=1e-3)
 
-    # BUG: meniscus_velocity.py:69 and 116 -- the snapshot keeps y1d = C[0, :, 1],
+    # Fixed 2026-11-06 (was a bug): meniscus_velocity.py:69 and 116 -- the snapshot keeps y1d = C[0, :, 1],
     # the node heights of the FIRST column only, and integrates the area with it
     # as if every column had that y. On a mapped (wedge) mesh the channel width
     # varies with x, so area and dA/dt (hence v_mean) are silently wrong (here
     # the area is 0.4x the truth: column 0 is the 10 um throat). Right:
     # integrate with the 2-D physical coordinates (pplib.node_weights).
-    @unittest.expectedFailure
     def test_mapped_mesh_area(self):
         walls = wedge_walls()
         b0, bs, t0_, ts, _ = walls
@@ -786,16 +783,20 @@ class TestWedgeGTVelocity(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 self.analyse(run)
 
-    def test_rectangle_mesh_with_physical_knots_fails(self):
-        """_iter_igasol samples u, v in [0, 1] (wedge_gt_velocity.py:199-200);
-        a solver-built rectangle has knots in metres. The tool must not return
-        numbers; it currently dies with a bare AssertionError from igakit."""
+    def test_rectangle_mesh_with_physical_knots_works(self):
+        """Fixed 2026-11-06: _iter_igasol sampled u, v in [0, 1] and died with a
+        bare igakit AssertionError on a solver-built rectangle (knots in
+        meters). It now samples the knot range: the mid line sits at Ly/2 and
+        the line spans the whole domain."""
         with tempfile.TemporaryDirectory() as tmp:
             run = fx.make_run(tmp)
             fx.write_iga_run(run, fx.iga_rectangle(40e-6, 20e-6, 40, 20),
                              [(0, lambda X, Y: (fx.lens(X, 1e-5, 3e-5, 1e-6), T0, 1e-3))])
-            with self.assertRaises((SystemExit, AssertionError, ValueError)):
-                list(wg._iter_igasol(run, 10e-6, 101, 11))
+            snaps = list(wg._iter_igasol(run, 10e-6, 101, 11))
+        self.assertEqual(len(snaps), 1)
+        x = snaps[0][1]
+        self.assertAlmostEqual(x[0], 0.0, delta=1e-15)
+        self.assertAlmostEqual(x[-1], 40e-6, delta=1e-15)
 
 
 # ===========================================================================
@@ -848,14 +849,13 @@ class TestGTBalance(unittest.TestCase):
             self.assertAlmostEqual(np.median(d["v_n"][sel]) / self.V0, 1.0, delta=0.02)
         np.testing.assert_allclose(d["d0_chi"] / d["chi"], D0, rtol=1e-3)
 
-    # BUG: gt_balance.py:226 -- rho_vs is evaluated at a hard-coded T0_K = 253.15
+    # Fixed 2026-11-06 (was a bug): gt_balance.py:226 -- rho_vs is evaluated at a hard-coded T0_K = 253.15
     # (-20 C) instead of the run's -temp, so d0 = 15 M rho_ice/(alph rho_vs) and
     # beta are off by rho_vs(T)/rho_vs(-20 C) for every other temperature. At
     # -40 C this gives d0 = 0.124 d0_sub0 and v_n = 8.6x the truth; the tool
     # prints "ratio = 0.124311" next to "<- must agree" but still writes the CSV.
     # Verified by hand with this fixture. Right: take T0 from read_opts -temp (and
     # rho_air from -rho_air) and use pplib.rho_vs.
-    @unittest.expectedFailure
     def test_temperature_other_than_minus_20(self):
         with tempfile.TemporaryDirectory() as tmp:
             run, _ = gt_run(tmp, -40.0, self.V0)
