@@ -34,6 +34,12 @@ from preprocess.mesh_params import physics  # noqa: E402
 from preprocess.mesh_params.constants import CONSTANTS as C  # noqa: E402
 
 
+def cosd(deg: float) -> float:
+    """cos of an angle in degrees, exactly 0 at 90 deg (math.cos gives 6e-17)."""
+    c = math.cos(math.radians(deg))
+    return 0.0 if abs(c) < 1e-12 else c
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--temp", type=float, default=-20.0, help="temperature [C]")
@@ -46,6 +52,16 @@ def main() -> int:
     p.add_argument("--grad-T", type=float, nargs="*", default=[], help="temperature gradients G [K/m]")
     p.add_argument("--gap", type=float, default=None, help="ice gap l along G [m] (default: each width H)")
     a = p.parse_args()
+    if not (-150.0 < a.temp < -0.001):
+        p.error(f"--temp must be in (-150, -0.001) C (got {a.temp})")
+    for name, vals in (("--radius", [a.radius]), ("--width", a.width), ("--xi-v", a.xi_v),
+                       ("--length", [a.length]), ("--gap", [] if a.gap is None else [a.gap])):
+        if any(not (v > 0.0) for v in vals):
+            p.error(f"{name} must be positive")
+    if any(not (0.0 <= th <= 180.0) for th in a.theta):
+        p.error("--theta values must be in [0, 180] deg")
+    if any(not (h > 0.0) for h in a.humidity):
+        p.error("--humidity values must be positive")
 
     d0 = physics.capillary_length_m(a.temp)
     rvs = physics.rho_vs_sat_kg_per_m3(a.temp)
@@ -62,7 +78,7 @@ def main() -> int:
     print(f"grain R = {a.radius:g} m: 2D disc {s2:.3e}, 3D sphere {s3:.3e}")
     for H in a.width:
         for th in a.theta:
-            sm = d0 * 2.0 * math.cos(math.radians(th)) / H
+            sm = d0 * 2.0 * cosd(th) / H
             print(f"meniscus H = {H:g} m, theta = {th:5.1f}: {sm:+.3e}")
 
     print("\n# imposed undersaturation sigma_h = h - 1, and ratio to the 3D grain term")
@@ -80,8 +96,8 @@ def main() -> int:
             for G in a.grad_T:
                 print(f"l = {gap:g} m, G = {G:g} K/m: sigma_T = {sl * G * gap:+.3e}")
             for th in a.theta:
-                sm = d0 * 2.0 * math.cos(math.radians(th)) / H
-                if sm != 0.0:
+                sm = d0 * 2.0 * cosd(th) / H
+                if sm != 0.0:      # theta = 90: flat meniscus, no matching gradient
                     print(f"l = {gap:g} m: G matching meniscus theta = {th:5.1f} (H = {H:g}): {abs(sm) / (sl * gap):.3e} K/m")
             for h in a.humidity:
                 print(f"l = {gap:g} m: G matching sigma_h = {h - 1.0:+.3e}: {abs(h - 1.0) / (sl * gap):.3e} K/m")
