@@ -1,0 +1,30 @@
+# experiment/cryosuction/t6ls_T-20_G300warmtop_theta90_30d_ac1e-2.opts   (make_type6_inputs.py, 2026-11-08)
+#
+# Plan type 6B-1: theta = 90 control (flat faces on the straight neck walls).
+# Gradient G = 300 K/m along the pore, WARM at x = 0 (the top; depth is drawn
+# downward): grad_temp0 = -300 K/m, so T(0) = -19.820000 C and T(Lx) = -20.180000 C
+# for Lx = 1.2 mm. T is fixed on both ends; the walls are insulating.
+# Vapor: local-saturation pair, each end at rho_vs of its own temperature
+# (rhov_bc.py --T0 -20 --G -300 --Lx 0.0012 --local-sat). The values depend on Lx:
+# use this file only with the 1.2 mm type-6 pores.
+# theta = 90 deg from Young (gamma_is = 0.3 - 0.109 cos theta), 30 days.
+# -dtmax is in the GEOMETRY file (2 tau_sub depends on its eps).
+#
+-temp -20.0
+-humidity 1.0
+-grad_temp0 -300.0,0.0,0.0
+-flag_BC_Tfix 1
+-Tfix_faces x0,x1
+-flag_BC_rhovfix 1
+-rhovfix_faces x0,x1
+-rhovfix_lo 1.0174279599                 # rho_vs(-19.8200 C) / rho_vs(-20 C), warm end
+-rhovfix_hi 0.9828466144                 # rho_vs(-20.1800 C) / rho_vs(-20 C), cold end
+-phi_open_bc 0                          # 90-degree phi face on both pore ends
+-t_final 2.592000e+06
+-n_out 61                              # 2 snapshot(s) a day
+-beta_sub0 7.9408e+05                     # K&P beta0 at -20 C, alpha_c = 1e-2
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.3000000                     # cos(theta) = +0.000000
+-dtCFL 1
+-outp 0

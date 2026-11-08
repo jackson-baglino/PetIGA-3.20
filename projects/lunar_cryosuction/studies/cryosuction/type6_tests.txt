@@ -1,0 +1,8 @@
+# Plan type 6 (make_type6_inputs.py, 2026-11-08). RUNS.md IDs in the comments.
+dogbone_2D_L1200um_W150um_wc40um_eps0.86um:t6ls_T-20_G100warmtop_theta60_60d_ac1e-2   # 6A-1
+dogbone_2D_L1200um_W150um_wc80um_eps0.86um:t6ls_T-20_G100warmtop_theta60_60d_ac1e-2   # 6A-2
+dogbone_2D_L1200um_W150um_wc150um_eps0.86um:t6ls_T-20_G100warmtop_theta60_60d_ac1e-2   # 6A-3
+dogbone_2D_L1200um_W150um_wc40um_eps0.86um:t6ls_T-20_G300warmtop_theta60_30d_ac1e-2   # 6A-4
+dogbone_2D_L1200um_W150um_wc80um_eps0.86um:t6ls_T-20_G300warmtop_theta60_30d_ac1e-2   # 6A-5
+dogbone_2D_L1200um_W150um_wc150um_eps0.86um:t6ls_T-20_G300warmtop_theta60_30d_ac1e-2   # 6A-6
+dogbone_2D_L1200um_W150um_wc40um_eps0.86um:t6ls_T-20_G300warmtop_theta90_30d_ac1e-2   # 6B-1
