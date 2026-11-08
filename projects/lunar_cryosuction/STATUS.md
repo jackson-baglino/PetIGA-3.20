@@ -7,7 +7,7 @@ weeks (LOG.md keeps the history), and never let it pass about 150 lines.
 Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 `LOG.md`; the plan itself in the iCloud folder below.
 
-**Last updated:** 2026-11-07 (session 6475a664)
+**Last updated:** 2026-11-08 (session 6475a664)
 
 ## Goal and deadline
 
@@ -63,14 +63,15 @@ Hypotheses: the user writes them; none recorded yet.
   `preprocess/tests` (28), all passing; commands in postprocess/README.md. Every
   bug the tests found in the older tools was fixed on 2026-11-06.
 - Types 3 and 4 inputs done (studies/cryosuction/scripts/make_type34_inputs.py).
-- Still to build: geometry builders for the single throat (type 5), dog-bone
-  (type 6), 2 mm regolith pore with its ice layout (type 7), wall caps of a
-  given theta (types 1, 2); experiment files for types 1, 2, 5, 6, 7.
+- Type 6 inputs done 2026-11-08 (build_geometry_dogbone.py, make_type6_inputs.py;
+  type6_tests.txt, preflight OK).
+- Still to build: geometry builders for the single throat (type 5), 2 mm regolith pore with its ice layout (type 7), wall caps of a
+  given theta (types 1, 2); experiment files for types 1, 2, 5, 7.
 
 ## HPC
 
-- Nothing running. I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). Nothing
-  else is ready to submit.
+- Nothing running. I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 (7 runs,
+  1.48 M DoF each) is ready to submit (RUNS.md).
 - DoF/core: decide on a scaling test after seeing these runs' s/step
   (user, 2026-11-07). Compare with Oct 2026 2-3-rank runs: 4.2-7.0 s/step.
   T3 result (job wall time / steps, includes setup): 1.5-2.2 s/step at
