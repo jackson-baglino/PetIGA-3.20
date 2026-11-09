@@ -71,7 +71,10 @@ Hypotheses: the user writes them; none recorded yet.
 ## HPC
 
 - Nothing running. I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 (7 runs,
-  1.36 M DoF each, 1.1 mm pores) is ready to submit (RUNS.md).
+  1.36 M DoF each, 1.1 mm pores) is built but on hold: the user wants lenses to start at
+  the wall-BC angle (60 deg, concave faces), which needs an opt-in IC option
+  (the -bridge_* IC makes only convex faces). Droplets/caps start at liquid
+  water's angle on regolith (value and source still needed).
 - DoF/core: decide on a scaling test after seeing these runs' s/step
   (user, 2026-11-07). Compare with Oct 2026 2-3-rank runs: 4.2-7.0 s/step.
   T3 result (job wall time / steps, includes setup): 1.5-2.2 s/step at
