@@ -1,0 +1,9 @@
+gate,case,value,result
+C1,convex_bitwise_vs_base,identical,PASS
+C1,explicit_zero_bitwise,identical,PASS
+C2,concave_banner,printed,PASS
+C2,concave_area_sharp=2.716943e-09,2.717441e-09,PASS
+C2,convex_area_sharp=2.283057e-09,2.282559e-09,PASS
+C3,c3_bad,rc=63,PASS
+C3,c3_len,rc=60,PASS
+C3,c3_empty,rc=63,PASS
