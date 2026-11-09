@@ -71,13 +71,15 @@ Hypotheses: the user writes them; none recorded yet.
   2026-11-09; layout A (2 mm rough pore, 3 lenses at 60 deg, 4 droplets and
   3 grains at a 40 deg water placeholder, 24.6 % ice, 2.41 M DOF) and the 7A
   experiment are in inputs; 7B-7D experiment files still to write.
-- Still to build: single throat (type 5), wall caps of a given theta
-  (types 1, 2); experiment files for types 1, 2, 5, 7B-D.
+- Types 1, 2, 5 inputs done 2026-11-09 (make_type125_inputs.py; 19 + 14 + 12
+  runs; caps at 40 deg water placeholder, user; lenses at 60 deg). Per-run
+  preview PDFs: preprocess/make_run_previews.py -> preprocess/previews/type<N>/.
+- Still to write: experiment files for 7B-7D; S2, S5.
 
 ## HPC
 
-- Nothing running. I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 (7 runs,
-  1.36 M DoF each, 1.1 mm pores) is ready to submit (2026-11-09): lenses start
+- T6 (7 runs, 1.36 M DoF each) queued on the HPC by the user 2026-11-09.
+  I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 lenses start
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at
   liquid water's angle on regolith: no source in Zotero (user); an effective
