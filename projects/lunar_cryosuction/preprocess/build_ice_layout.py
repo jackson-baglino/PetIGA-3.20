@@ -3,7 +3,8 @@
 ice layout, written as a mesh, a geometry .opts, a node ice-field file for
 -ic_type phi_file, and a preview PDF.
 
-THE PORE. A channel of length Lx whose walls are chains of overlapping
+THE PORE. "walls": {"flat": true} gives straight walls (types 1, 2, 5).
+Otherwise a channel of length Lx whose walls are chains of overlapping
 C-infinity bumps (grain-like roughness), optionally with one throat (a large
 bump on both walls). Bumps are placed by a left-to-right walk so they always
 overlap (no flat stretches). The baseline is set so the mean gap is
@@ -106,10 +107,13 @@ class Pore:
     def __init__(self, spec):
         self.lx = spec["Lx"]
         w = spec["walls"]
-        rb, rt = np.random.default_rng(w["seed_bottom"]), np.random.default_rng(w["seed_top"])
-        args = (w["n_bumps"], w["R_range"], w["height_ratio_range"], w["overlap_range"])
-        self.bot = bump_walk(rb, self.lx, *args)
-        self.top = bump_walk(rt, self.lx, *args)
+        if w.get("flat"):                          # straight walls (types 1, 2, 5)
+            self.bot = self.top = np.zeros((0, 3))
+        else:
+            rb, rt = np.random.default_rng(w["seed_bottom"]), np.random.default_rng(w["seed_top"])
+            args = (w["n_bumps"], w["R_range"], w["height_ratio_range"], w["overlap_range"])
+            self.bot = bump_walk(rb, self.lx, *args)
+            self.top = bump_walk(rt, self.lx, *args)
         xs = np.linspace(0, self.lx, 40001)
         self.H = spec["mean_gap"] + bump_sum(xs, self.bot).mean() + bump_sum(xs, self.top).mean()
         self.throat = None
@@ -388,7 +392,7 @@ def main(argv=None) -> int:
 #
 # Rough-walled pore: Lx {lx*1e6:.1f} um, gap {gap.min()*1e6:.1f}-{gap.max()*1e6:.1f} um (mean {gap.mean()*1e6:.1f}),
 # {len(pore.bot)}+{len(pore.top)} wall bumps{', throat at x = %.1f um' % (pore.throat[0]*1e6) if pore.throat else ''}.
-# Walls are in the mesh; y0, y1 are walls; x0 (collector) and x1 (dead end) are pore ends.
+# Walls are in the mesh; wall faces {spec.get("wall_faces", "y0,y1")}; x0 and x1 are the pore ends.
 # Ice from {rel(phi_path)} (-ic_type phi_file), initial angle {th0:g} deg:
 """ + "".join(f"#   {p_}\n" for p_ in parts) + f"""# ice {frac:.1%} of the pore, sharp area {sharp_area:.4e} m^2, {n} bodies.
 # eps {eps:.4e} m, h = eps/sqrt(2): Nx {nx}, Ny {ny}.
@@ -407,7 +411,7 @@ def main(argv=None) -> int:
 -eps {eps:.4e}
 -eps_valid_temp {T0_C:g}
 -periodic 0
--wall_faces y0,y1
+-wall_faces {spec.get("wall_faces", "y0,y1")}
 """ + (f"-dtmax {spec['dtmax']:.4e}                     # 2 tau_sub at this eps (layout 'dtmax')\n"
        if "dtmax" in spec else ""))
     print(f"wrote {dat}\nwrote {phi_path}  ({rec.shape[1]} x {rec.shape[0]} control points)\nwrote {opts}")
@@ -440,7 +444,7 @@ def render(pore, rs, ice, rec, name, out, nx, ny, eps, frac, n):
     b.contourf(rec[..., 0] * s, rec[..., 1] * s, rec[..., 2], levels=np.linspace(0, 1, 11), cmap="Blues")
     b.set_title(f"phi at the {rec.shape[1]} x {rec.shape[0]} control points (what the solver reads); "
                 f"Nx {nx}, Ny {ny}, eps {eps*1e6:.3f} µm", fontsize=7.5)
-    b.set_xlabel("x [µm]   (x = 0: collector; x = Lx: dead end)")
+    b.set_xlabel("x [µm]   (face x0 at x = 0, face x1 at x = Lx)")
     bad = check_figure(fig)
     fig.savefig(out)
     plt.close(fig)
