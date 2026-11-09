@@ -1,5 +1,18 @@
 # FREEZE.md — the frozen model for paper 2
 
+## Status: UNFROZEN (user, 2026-11-09)
+
+The user unfroze the solver on 2026-11-09: until production runs start, the
+solver (equations, residual/Jacobian, ICs, BCs, defaults) may be changed as
+the work needs. The freeze returns, with a new tag, when production starts;
+the user decides when. Until then this file is a change log: add a ledger row
+for every solver commit so each run can be tied to the code it used, and say
+in the row whether the change alters results of runs that do not use it.
+`scripts/check_freeze.sh` still reports unlogged solver commits; its OK is
+not a gate while unfrozen. Runs made so far (T3, T4, I1) used
+`model-freeze-v2` plus the logged additions.
+
+
 ## What is frozen
 
 The paper-2 results must all come from one model, the two-phase lunar solver as
