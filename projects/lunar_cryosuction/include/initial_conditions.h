@@ -25,4 +25,9 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user);
  * -ice_grain_cx/cy/R would, so FormInitialMultiGrains2D consumes both. */
 PetscErrorCode ReadGrainsFromFile(AppCtx *user);
 
+/* -ic_type phi_file: the ice field is read per control point from
+ * -phi_file, written by preprocess/build_ice_layout.py (format in
+ * initial_conditions.c). T and rho_v are set as in every other IC. */
+PetscErrorCode FormInitialPhiFile2D(IGA iga, Vec U, AppCtx *user);
+
 #endif // INITIAL_CONDITIONS_H

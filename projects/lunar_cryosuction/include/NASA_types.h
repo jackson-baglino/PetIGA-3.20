@@ -370,6 +370,7 @@ typedef struct {
   char initial_cond[PETSC_MAX_PATH_LEN];  // Path for initial condition file
   char initial_PFgeom[PETSC_MAX_PATH_LEN];  // Path for initial geometry file
   char grains_file[PETSC_MAX_PATH_LEN];  // Grain list for -ic_type multi_grains_file
+  char phi_file[PETSC_MAX_PATH_LEN];     // Node field for -ic_type phi_file (preprocess/build_ice_layout.py)
 
   // Capillary neck parameters
   PetscReal R1;  // Radius of capillary neck

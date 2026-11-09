@@ -1113,3 +1113,99 @@ PetscErrorCode ReadGrainsFromFile(AppCtx *user)
         "  -grains_file: %d grains from %s\n", (int)ng, user->grains_file);
     PetscFunctionReturn(0);
 }
+
+
+/* =========================================================================
+ * FormInitialPhiFile2D  (-ic_type phi_file -phi_file <path>)
+ *
+ * The ice field is given per control point by preprocess/build_ice_layout.py,
+ * for ice layouts no shape function here can express (rough-wall pores with
+ * menisci, caps and free grains together). The file is
+ *
+ *     8 bytes   magic "PHIIC001"
+ *     int64     mx, my          control points in x and y (little-endian)
+ *     float64   mx*my records of (x, y, phi), x index fastest (little-endian)
+ *
+ * x, y are the control point's physical position (used for the temperature
+ * field, as FillIC2D uses its mapped position); phi is clamped to [0, 1].
+ * Each rank reads only its own rows. T and rho_v follow SetNodeFields, as in
+ * every other IC.
+ * =========================================================================*/
+PetscErrorCode FormInitialPhiFile2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    if (!user->phi_file[0])
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                "-ic_type phi_file requires -phi_file <path>");
+
+    DM            da;
+    Field       **u;
+    DMDALocalInfo info;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);           CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);          CHKERRQ(ierr);
+
+    FILE *fp = fopen(user->phi_file, "rb");
+    if (!fp)
+        SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+                "cannot open -phi_file %s", user->phi_file);
+    char    magic[8];
+    int64_t dims[2];
+    if (fread(magic, 1, 8, fp) != 8 || memcmp(magic, "PHIIC001", 8) != 0 ||
+        fread(dims, sizeof(int64_t), 2, fp) != 2) {
+        fclose(fp);
+        SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_UNEXPECTED,
+                "-phi_file %s: not a PHIIC001 file", user->phi_file);
+    }
+    if (dims[0] != (int64_t)info.mx || dims[1] != (int64_t)info.my) {
+        fclose(fp);
+        SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_UNEXPECTED,
+                "-phi_file %s is %lld x %lld control points, the mesh has %d x %d",
+                user->phi_file, (long long)dims[0], (long long)dims[1],
+                (int)info.mx, (int)info.my);
+    }
+
+    const PetscReal Lx = user->Lx, Ly = user->Ly;
+    const long      hdr = 8 + 2 * (long)sizeof(int64_t);
+    double         *row;
+    PetscReal       pmin = 1e300, pmax = -1e300;
+    ierr = PetscMalloc1(3 * info.xm, &row); CHKERRQ(ierr);
+
+    const size_t nrow = 3 * (size_t)info.xm;
+    for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+        long off = hdr + 3L * (long)sizeof(double) * ((long)j * (long)info.mx + (long)info.xs);
+        if (fseek(fp, off, SEEK_SET) != 0 ||
+            fread(row, sizeof(double), nrow, fp) != nrow) {
+            fclose(fp);
+            SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_READ,
+                    "-phi_file %s: short read at row %d", user->phi_file, (int)j);
+        }
+        for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+            const double *r   = &row[3 * (i - info.xs)];
+            PetscReal     x   = (PetscReal)r[0], y = (PetscReal)r[1];
+            PetscReal     ice = PetscMin(PetscMax((PetscReal)r[2], 0.0), 1.0);
+            PetscReal     tem = user->temp0
+                              + user->grad_temp0[0] * (x - 0.5 * Lx)
+                              + user->grad_temp0[1] * (y - 0.5 * Ly);
+            pmin = PetscMin(pmin, ice);
+            pmax = PetscMax(pmax, ice);
+            SetNodeFields(&u[j][i], ice, tem, user);
+        }
+    }
+    fclose(fp);
+    ierr = PetscFree(row); CHKERRQ(ierr);
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+
+    PetscReal gmin, gmax;
+    ierr = MPIU_Allreduce(&pmin, &gmin, 1, MPIU_REAL, MPIU_MIN, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPIU_Allreduce(&pmax, &gmax, 1, MPIU_REAL, MPIU_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (2D phi_file) ---\n"
+        "  %s: %d x %d control points, phi in [%.4f, %.4f]\n",
+        user->phi_file, (int)info.mx, (int)info.my, (double)gmin, (double)gmax);
+    PetscFunctionReturn(0);
+}

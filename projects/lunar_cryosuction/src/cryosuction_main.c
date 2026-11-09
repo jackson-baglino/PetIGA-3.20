@@ -757,6 +757,11 @@ int main(int argc, char *argv[]) {
              user.grains_file, user.grains_file,
              sizeof(user.grains_file), &flg); CHKERRQ(ierr);
 
+    /* --- Ice field per control point (-ic_type phi_file) ----------------- */
+    ierr = PetscOptionsString("-phi_file",
+             "Node ice field for -ic_type phi_file (preprocess/build_ice_layout.py)", "",
+             user.phi_file, user.phi_file, sizeof(user.phi_file), &flg); CHKERRQ(ierr);
+
     /* --- Elliptical ice grain semi-axes (-ice_grain_ax / -ice_grain_ay) -- */
     {
         PetscInt  nax = 200, nay = 200;
@@ -907,7 +912,7 @@ int main(int argc, char *argv[]) {
              "overriding -p/-C/-Nx/-Ny/-Nz axis setup with the geometry's own",
              "", geom_file, geom_file, sizeof(geom_file), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-ic_type",
-             "Initial condition geometry (two_ice_grains_boundary|ice_slab|single_ice|multi_grains|multi_grains_file)",
+             "Initial condition geometry (two_ice_grains_boundary|ice_slab|single_ice|multi_grains|multi_grains_file|phi_file)",
              "src/<project>_main.c", ic_type, ic_type, sizeof(ic_type),
              NULL); CHKERRQ(ierr);
 
@@ -1999,10 +2004,12 @@ int main(int argc, char *argv[]) {
              * grains, far past what is reasonable to inline in a .opts). */
             ierr = ReadGrainsFromFile(&user);               CHKERRQ(ierr);
             ierr = FormInitialMultiGrains2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "phi_file") == 0) {
+            ierr = FormInitialPhiFile2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
                     "Unknown -ic_type. Valid: two_ice_grains_boundary ice_slab "
-                    "single_ice multi_grains multi_grains_file");
+                    "single_ice multi_grains multi_grains_file phi_file");
         }
     }
 
