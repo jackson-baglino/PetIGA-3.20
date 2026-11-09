@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # lunar_cryosuction
 
-Paper 2 of the user's thesis: science runs on the frozen two-phase phase-field
+Paper 2 of the user's thesis: science runs on the two-phase phase-field
 model of sublimation-driven ice metamorphism (C, PETSc 3.20 / PetIGA). The
 questions are how ice aggregates in pore channels bounded by regolith, and how
 a cryosuction-like setting can be simulated to understand ice harvesting on the
@@ -14,8 +14,9 @@ The sibling projects are `enceladus_DSM` (paper 1) and `lunar_regolith_DSM`
 (paper 3: agentic literature review and a new model, most likely diffuse
 domain). This project was copied from `lunar_regolith_DSM` on 2026-11-04, at
 tag `lunar_cryosuction/model-freeze-v1`, unfrozen once to `lunar_cryosuction/model-freeze-v2` on 2026-11-05
-(solver safeguards; see the Versions table in `FREEZE.md`). Layout, build and run are in
-`README.md`; the freeze rule and its ledger are in `FREEZE.md`.
+(solver safeguards; see the Versions table in `FREEZE.md`), and unfrozen by the user on
+2026-11-09 until production runs start. Layout, build and run are in
+`README.md`; the solver change log is in `FREEZE.md`.
 Path-scoped rules in `.claude/rules/` load when a session touches matching
 files: `solver-c.md` (`src/`, `include/`) and `inputs.md` (inputs, pre- and
 postprocessing, studies).
@@ -51,24 +52,27 @@ run submitted or finished, a tool built) and always as part of wrap-up.
 - Before creating any new file, look for an existing one that already does the
   job. Keep one place for each kind of thing.
 
-## The model is frozen
+## The solver is unfrozen (until production)
 
-Every paper-2 result comes from the model at the freeze tag. The governing
-equations, constitutive laws, the residual and Jacobian of existing terms, and
-all solver defaults (`inputs/solver.opts` and the option defaults in
-`src/cryosuction_main.c`) do not change. Allowed: new ICs, geometries, opt-in
-BC or forcing options that are off by default, output, and bug fixes (ask
-first if a fix changes results). Each one is committed by itself and logged in
-the `FREEZE.md` ledger. `scripts/check_freeze.sh` must print OK before any run
-meant for the paper. Only the user can unfreeze, and that gets a new tag.
-New physics belongs in `lunar_regolith_DSM`, not here.
+The user unfroze the solver on 2026-11-09: until production runs start, the
+equations, residual/Jacobian, ICs, BCs and defaults may change as the work
+needs. Never give "the model is frozen" as a reason not to do something.
+The user re-freezes it, with a new tag, when production starts.
+
+Until then: commit each solver change by itself, add a row to the `FREEZE.md`
+ledger (the change log, so every run can be tied to its code), and say in the
+row whether runs that do not use the change are affected; check that with the
+G1 gate of `studies/contact_angle/verification/verify_wall_bc.sh` when the
+change is meant to be inert. Changes that alter existing results (physics,
+defaults) are discussed with the user first. `scripts/check_freeze.sh` reports
+unlogged solver commits; it is not a gate while unfrozen.
 
 ## Hard limits
 
 - Never launch more than one simulation without specific instructions to do
   so. An HPC submission counts as all the runs it contains. For anything
   more, prepare the exact command and hand it to the user.
-- Never change solver physics or defaults (see above).
+- Discuss solver physics or default changes with the user before making them (see above).
 - Never force-push `main`; never use `--no-verify`; never commit secrets or
   paper texts.
 
@@ -78,7 +82,7 @@ New physics belongs in `lunar_regolith_DSM`, not here.
 make            # optimized build -> ./lunar_cryosuction   (make debug for -g3 -O0)
                 # needs PETSC_DIR, PETSC_ARCH, PETIGA_DIR
 ./scripts/Studio/run_cryosuction.sh <geometry> <experiment> [tag] [-- extra flags]
-scripts/check_freeze.sh              # the model is still the frozen model
+scripts/check_freeze.sh              # every solver commit since the tag is in the FREEZE.md log
 scripts/check_ic_types.sh            # every 2D/3D .opts -ic_type is in the solver dispatch
 venv_cryosuction/bin/ruff check [paths]   # Python lint (ruff.toml); check only, never `ruff format`
 scripts/lint_c.sh [src/file.c ...]   # C lint (clang-tidy via venv_cryosuction, .clang-tidy)

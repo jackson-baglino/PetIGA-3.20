@@ -23,9 +23,10 @@ Run every step, then report what was done in a short list.
 3. **Open work.** If a task is unfinished, write its next concrete step and
    the files involved under "Remaining", so a fresh session can resume from
    the log alone.
-4. **Freeze.** If the session touched `src/`, `include/` or
+4. **Solver log.** If the session touched `src/`, `include/` or
    `inputs/solver.opts`, run `scripts/check_freeze.sh` and report the result;
-   a missing ledger row is added before the session ends.
+   a missing `FREEZE.md` ledger row is added before the session ends (the
+   solver is unfrozen until production, but every change is logged).
 5. **Memory.** If the session produced a durable fact or a user preference,
    propose the line for `memory/MEMORY.md` or `memory/USER.md` (dated and
    sourced). Add it only if the user agrees.
