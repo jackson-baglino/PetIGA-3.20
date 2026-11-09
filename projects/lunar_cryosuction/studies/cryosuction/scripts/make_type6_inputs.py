@@ -3,8 +3,8 @@ through a constriction).
 
 Plan (SimulationPlan_v2, type 6):
   pore    dog-bone: wide sections W = 150 um, straight neck wc = 40, 80 or
-          150 um (150 = no constriction), neck 300 um long, total 1.2 mm,
-          symmetric about the pore axis (preprocess/build_geometry_dogbone.py)
+          150 um (150 = no constriction), neck 300 um long, total 1.2 mm in
+          the plan (1.1 mm here, see below), symmetric about the pore axis (preprocess/build_geometry_dogbone.py)
   ice     lens 150 um long in the cold wide section
   vapor   local-saturation pair: each end at rho_vs of its own temperature
   thermal gradient, warm top. Depth is drawn downward (plan tool T7), so the
@@ -16,9 +16,11 @@ Plan (SimulationPlan_v2, type 6):
 
 Choices made here, not in the plan (printed, and in the file headers):
   shoulders  C-infinity, 100 um long each (steepest wall slope 1.10 at
-             wc = 40 um); the straight neck is the full 300 um, so the wide
-             sections are flat for 350 um at each end
-  lens       150 um long, centered in the cold flat section (x = 950-1100 um),
+             wc = 40 um); the straight neck is the full 300 um
+  length     1.1 mm: each wide section is flat for 300 um, the lens plus 75 um
+             on either side of it; the warm side gets the same 300 um so the
+             pore is symmetric (user, 2026-11-09)
+  lens       150 um long, centered in the cold flat section (x = 875-1025 um),
              flat faces at t = 0 (as in types 3 and 4)
   eps        8.5840e-7 m, the production value (issue 1); comp_eps at the
              G = 300 speed (5e-10 m/s, Rave 20 um) allows up to 1.28e-6 m
@@ -44,20 +46,20 @@ sys.path.insert(0, str(ROOT / "studies/cryosuction/scripts"))
 from make_type34_inputs import BETA0, DAY, EPS, EXP, G_AS, G_IA, GEO, MESH, STUDY, T0, gamma_is, tau_sub  # noqa: E402
 from rhov_bc import fracs  # noqa: E402
 
-LX, W = 1.2e-3, 1.5e-4
+LX, W = 1.1e-3, 1.5e-4
 NECKS = (4.0e-5, 8.0e-5, 1.5e-4)
 TODAY = datetime.date.today().isoformat()
 
 
 def geom_name(wc):
-    return f"dogbone_2D_L1200um_W150um_wc{wc*1e6:.0f}um_eps0.86um"
+    return f"dogbone_2D_L{LX*1e6:.0f}um_W150um_wc{wc*1e6:.0f}um_eps0.86um"
 
 
 def build_geometry(wc, dtmax, dry):
     name = geom_name(wc)
     dat = MESH / f"dogbone_wc{wc*1e6:.0f}um.dat"
     opts = GEO / f"{name}.opts"
-    png = ROOT / f"preprocess/dogbone_wc{wc*1e6:.0f}um.pdf"
+    png = ROOT / f"preprocess/{name}.pdf"
     head = (f"Plan type 6 (make_type6_inputs.py, {TODAY}): dog-bone pore, neck wc = {wc*1e6:.0f} um"
             + (" (= W: no constriction)" if wc >= W else "") + ".")
     cmd = [sys.executable, str(ROOT / "preprocess/build_geometry_dogbone.py"), "--wc", f"{wc:.6e}",

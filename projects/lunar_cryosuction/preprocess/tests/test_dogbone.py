@@ -54,7 +54,7 @@ class Builder(unittest.TestCase):
             out, opts = Path(d) / "m.dat", Path(d) / "g.opts"
             buf = io.StringIO()
             with contextlib.redirect_stdout(buf):
-                rc = db.main(["--out", str(out), "--opts", str(opts), "--png", str(Path(d) / "p.png"), *args])
+                rc = db.main(["--out", str(out), "--opts", str(opts), "--png", str(Path(d) / "p.pdf"), *args])
             return rc, buf.getvalue(), opts.read_text() if opts.exists() else ""
 
     def test_opts_carries_lens_walls_and_profile(self):

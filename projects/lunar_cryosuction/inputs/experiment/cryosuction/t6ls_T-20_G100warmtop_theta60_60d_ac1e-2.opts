@@ -1,12 +1,12 @@
-# experiment/cryosuction/t6ls_T-20_G100warmtop_theta60_60d_ac1e-2.opts   (make_type6_inputs.py, 2026-11-08)
+# experiment/cryosuction/t6ls_T-20_G100warmtop_theta60_60d_ac1e-2.opts   (make_type6_inputs.py, 2026-11-09)
 #
 # Plan type 6A-1..3: lens crossing a constriction, G = 100 K/m.
 # Gradient G = 100 K/m along the pore, WARM at x = 0 (the top; depth is drawn
-# downward): grad_temp0 = -100 K/m, so T(0) = -19.940000 C and T(Lx) = -20.060000 C
-# for Lx = 1.2 mm. T is fixed on both ends; the walls are insulating.
+# downward): grad_temp0 = -100 K/m, so T(0) = -19.945000 C and T(Lx) = -20.055000 C
+# for Lx = 1.1 mm. T is fixed on both ends; the walls are insulating.
 # Vapor: local-saturation pair, each end at rho_vs of its own temperature
-# (rhov_bc.py --T0 -20 --G -100 --Lx 0.0012 --local-sat). The values depend on Lx:
-# use this file only with the 1.2 mm type-6 pores.
+# (rhov_bc.py --T0 -20 --G -100 --Lx 0.0011 --local-sat). The values depend on Lx:
+# use this file only with the 1.1 mm type-6 pores.
 # theta = 60 deg from Young (gamma_is = 0.3 - 0.109 cos theta), 60 days.
 # -dtmax is in the GEOMETRY file (2 tau_sub depends on its eps).
 #
@@ -17,8 +17,8 @@
 -Tfix_faces x0,x1
 -flag_BC_rhovfix 1
 -rhovfix_faces x0,x1
--rhovfix_lo 1.0057786159                 # rho_vs(-19.9400 C) / rho_vs(-20 C), warm end
--rhovfix_hi 0.9942518919                 # rho_vs(-20.0600 C) / rho_vs(-20 C), cold end
+-rhovfix_lo 1.0052958958                 # rho_vs(-19.9450 C) / rho_vs(-20 C), warm end
+-rhovfix_hi 0.9947297392                 # rho_vs(-20.0550 C) / rho_vs(-20 C), cold end
 -phi_open_bc 0                          # 90-degree phi face on both pore ends
 -t_final 5.184000e+06
 -n_out 61                              # 1 snapshot(s) a day

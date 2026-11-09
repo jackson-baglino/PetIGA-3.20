@@ -63,7 +63,7 @@ sys.path.insert(0, str(ROOT / "postprocess"))
 T0_C = -20.0
 EPS = 8.5840e-7          # production eps (issue 1 closed 2026-11-07)
 P, C = 2, 1
-LX, W, NECK_LEN, SHOULDER = 1.2e-3, 1.5e-4, 3.0e-4, 1.0e-4
+LX, W, NECK_LEN, SHOULDER = 1.1e-3, 1.5e-4, 3.0e-4, 1.0e-4
 LENS_LEN = 1.5e-4
 MIN_MARGIN_EPS = 20.0    # lens to shoulder and lens to pore end, in eps
 
@@ -106,66 +106,6 @@ def build_surface(lx, w, wc, x_n0, x_n1, ls, nx, ny):
     return NURBS([ux, uy], control=ctrl)
 
 
-def preview(surf, lx, w, wc, x_n0, x_n1, ls, x_a, x_b, eps, fname, title):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from figcheck import check_figure
-
-    x = np.linspace(0, lx, 3000)
-    yb, yt = walls(x, w, wc, x_n0, x_n1, ls)
-    s = 1e6
-    fig, ax = plt.subplots(2, 1, figsize=(7.5, 4.6), constrained_layout=True,
-                           gridspec_kw=dict(height_ratios=[1.0, 1.25]))
-    a = ax[0]
-    a.fill_between(x * s, 0, yb * s, color="0.6", lw=0)
-    a.fill_between(x * s, yt * s, w * s, color="0.6", lw=0)
-    a.plot(x * s, yb * s, "k-", lw=0.8)
-    a.plot(x * s, yt * s, "k-", lw=0.8)
-    xl = np.linspace(x_a, x_b, 50)
-    a.fill_between(xl * s, 0, w * s, color="#66b3ff", lw=0)
-    for xx in (x_n0, x_n1):
-        a.axvline(xx * s, color="0.3", lw=0.6, ls=":")
-    a.set_aspect("equal")
-    a.set_xlim(0, lx * s)
-    a.set_ylim(0, w * s)
-    a.set_xlabel("x [µm]")
-    a.set_ylabel("y [µm]")
-    a.set_title(title, fontsize=8)
-
-    # Mesh. A PDF gets every element line over the whole pore (vector: zoom in to
-    # inspect it); a raster image gets every 4th line near the cold-side shoulder.
-    from matplotlib.collections import LineCollection
-    b = ax[1]
-    vec = str(fname).lower().endswith(".pdf")
-    every = 1 if vec else 4
-    xs0, xs1 = (0.0, lx) if vec else (x_n1 - 0.2 * ls, x_n1 + 1.2 * ls)
-    u = np.linspace(xs0 / lx, xs1 / lx, 6000 if vec else 1500)
-    segs = []
-    for ub in surf.breaks(0)[::every]:          # constant-u lines are straight: x = Lx u
-        if xs0 <= ub * lx <= xs1:
-            y0, y1 = walls(np.array([ub * lx]), w, wc, x_n0, x_n1, ls)
-            segs.append([(ub * lx * s, y0[0] * s), (ub * lx * s, y1[0] * s)])
-    for vb in surf.breaks(1)[::every]:
-        pts = surf(u, [vb])[:, 0]
-        segs.append(pts[:, :2] * s)
-    b.add_collection(LineCollection(segs, colors="#1f6fd0", linewidths=0.05 if vec else 0.3))
-    b.plot(x * s, yb * s, "k-", lw=0.8)
-    b.plot(x * s, yt * s, "k-", lw=0.8)
-    b.set_xlim(xs0 * s, xs1 * s)
-    b.set_ylim(0, w * s)
-    b.set_aspect("equal")
-    b.set_xlabel("x [µm]")
-    b.set_ylabel("y [µm]")
-    b.set_title("mesh, every element line (zoom in)" if vec else
-                "mesh at the cold-side shoulder (every 4th element line)", fontsize=8)
-    bad = check_figure(fig)
-    fig.savefig(fname, dpi=200)
-    plt.close(fig)
-    print(f"wrote {fname}  figcheck: {bad or 'OK'}")
-    return bad
-
-
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--Lx", type=float, default=LX, help="pore length [m]")
@@ -180,7 +120,7 @@ def main(argv=None) -> int:
     ap.add_argument("--eps", type=float, default=EPS, help="interface parameter [m]")
     ap.add_argument("--out", required=True, help="mesh .dat path")
     ap.add_argument("--opts", required=True, help="geometry .opts path")
-    ap.add_argument("--png", default=None, help="preview figure (default: next to the .dat)")
+    ap.add_argument("--png", default=None, help="preview PDF (default preprocess/<opts name>.pdf)")
     ap.add_argument("--header", default="", help="extra comment lines for the top of the .opts")
     a = ap.parse_args(argv)
 
@@ -235,11 +175,6 @@ def main(argv=None) -> int:
     dat.parent.mkdir(parents=True, exist_ok=True)
     PetIGA().write(str(dat), surf)
     print(f"wrote {dat}")
-    png = Path(a.png).resolve() if a.png else dat.with_suffix(".png")
-    bad = preview(surf, lx, w, wc, x_n0, x_n1, ls, x_a, x_b, eps, png,
-                  f"dog-bone: W {w*1e6:.0f} µm, neck {wc*1e6:.0f} µm x {a.neck_len*1e6:.0f} µm, "
-                  f"lens {x_a*1e6:.0f}-{x_b*1e6:.0f} µm (blue)")
-
     R = 50.0 * max(w, 1.25e-4)                  # far discs: face sag (W/2)^2/(2R)
     sag = (0.5 * w) ** 2 / (2 * R)
     try:
@@ -287,6 +222,10 @@ def main(argv=None) -> int:
 -wall_faces y0,y1
 """)
     print(f"wrote {opts}")
+    from plot_geometry import render
+    png = Path(a.png).resolve() if a.png else ROOT / "preprocess" / (opts.stem + ".pdf")
+    bad = render(opts, png, f"dog-bone: W {w*1e6:.0f} µm, neck {wc*1e6:.0f} µm x {a.neck_len*1e6:.0f} µm, "
+                            f"wide sections {flat_lo*1e6:.0f} µm, lens {x_a*1e6:.0f}-{x_b*1e6:.0f} µm (blue)")
     return 1 if bad else 0
 
 

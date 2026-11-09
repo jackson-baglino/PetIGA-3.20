@@ -264,7 +264,6 @@ def main():
     tag = args.tag if args.tag else args.orientation.replace("-", "_")
     dat = ROOT / f"inputs/geometry/two_throat_{tag}.dat"
     opts = ROOT / f"inputs/geometry/2D_two_throat_{tag}.opts"
-    png = ROOT / f"preprocess/two_throat_{tag}.png"
 
     cy = 0.5 * Ly
     bumps, gaps = build_walls(args.gap_narrow, args.gap_wide, args.orientation)
@@ -356,16 +355,13 @@ def main():
            "--bumps", bstr(bumps), "--top-bumps", bstr(bumps),
            "--Lx", f"{Lx}", "--Ly", f"{Ly}", "--Nx", f"{Nx}", "--Ny", f"{Ny}",
            "--P", str(P), "--C", str(C), "--out", str(dat),
-           "--plot", str(png.with_name(png.stem + "_mesh.png")), "--vtk", "/dev/null"]
+           "--plot", "/dev/null", "--vtk", "/dev/null"]
     r = subprocess.run(cmd, capture_output=True, text=True)
     print(r.stdout[-200:])
     if r.returncode != 0:
         print("MESH BUILD FAILED:\n", r.stderr[-2000:]); sys.exit(1)
 
-    preview(bumps, bridges, png,
-            f"two-throat pore channel ({args.orientation}) — gaps "
-            f"{gaps[0]:.1e} / {gaps[1]:.1e} m, throat plugs at 90 deg; "
-            f"source = throat {src} ({'narrow' if report[src]['gap'] < report[1-src]['gap'] else 'wide'})")
+    # preview: plot_geometry.render() after the opts file is written (PDF)
 
     def arr(v):
         return ",".join(f"{z:.6e}" for z in v)
@@ -457,6 +453,9 @@ def main():
 -eps_valid_temp {T0_C:g}   # C: temperature eps/mesh were sized for; solver ABORTS if -temp differs (override: -eps_temp_override 1)
 -periodic 0
 """)
+    sys.path.insert(0, str(ROOT / "preprocess"))
+    from plot_geometry import render
+    render(opts, ROOT / "preprocess" / (Path(opts).stem + ".pdf"))
     print(f"\nwrote {opts}\nwrote {dat}")
 
 

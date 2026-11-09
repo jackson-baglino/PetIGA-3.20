@@ -453,7 +453,6 @@ def main():
     else:
         dat = ROOT / "inputs/geometry/meshes/regolith_pore.dat"
     opts = Path(args.opts) if args.opts else ROOT / f"inputs/geometry/regolithpore_2D_L814um_eps0.86um{tag}.opts"
-    png = ROOT / f"preprocess/regolith_pore{tag}.png"
 
     # ---- Walls from the regolith GSD, with a central throat ----
     bump_hr, h_mult = WALL_PARAMS[args.ice_placement]
@@ -550,7 +549,7 @@ def main():
            "--bumps", bstr(bot_b), "--top-bumps", bstr(top_b),
            "--Lx", f"{Lx}", "--Ly", f"{Ly}", "--Nx", f"{Nx}", "--Ny", f"{Ny}",
            "--P", str(P), "--C", str(C), "--out", str(dat),
-           "--plot", str(png.with_name(png.stem + "_mesh.png")),
+           "--plot", "/dev/null",
            "--vtk", "/dev/null"]  # skip the large structured-grid VTK dump
     r = subprocess.run(cmd, capture_output=True, text=True)
     print(r.stdout[-300:])
@@ -558,9 +557,7 @@ def main():
         print("MESH BUILD FAILED:\n", r.stderr[-2000:])
         sys.exit(1)
 
-    preview_ice(bot_b, top_b, ice, png,
-                f"regolith pore channel — ice placement: {args.ice_placement} "
-                f"({len(ice)} grains)")
+    # preview: plot_geometry.render() after the opts file is written (PDF)
 
     # ---- Write the .opts ----
     def arr(v):
@@ -631,6 +628,9 @@ def main():
 -eps_valid_temp {T0_C:g}   # C: temperature eps/mesh were sized for; solver ABORTS if -temp differs (override: -eps_temp_override 1)
 -periodic 0
 """)
+    sys.path.insert(0, str(ROOT / "preprocess"))
+    from plot_geometry import render
+    render(opts, ROOT / "preprocess" / (Path(opts).stem + ".pdf"))
     print(f"\nwrote {opts}\nwrote {dat}")
     print(f"eps={EPS:.4e} is the comp_eps.py value for T={T0_C:g}C "
           f"(eps/R_smallest={EPS/Rmin*100:.1f}%). Valid ONLY at T={T0_C:g}C — "

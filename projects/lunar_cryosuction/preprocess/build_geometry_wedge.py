@@ -220,7 +220,6 @@ def main():
            else ROOT / f"inputs/geometry/wedge{tag}.dat")
     opts = (Path(args.opts).resolve() if args.opts
             else ROOT / f"inputs/geometry/wedge_2D_L300um_eps0.86um{tag}.opts")
-    png = ROOT / f"preprocess/wedge{tag}.png"
 
     assert w_m > w_t > 0, f"need w_mouth > w_throat > 0 (got {w_t:.3e}, {w_m:.3e})"
     assert w_m <= ly, f"mouth {w_m:.3e} exceeds Ly={ly:.3e}"
@@ -373,7 +372,7 @@ def main():
            "--top-y0", f"{top_y0}", "--top-slope", f"{m_top}",
            "--Lx", f"{lx}", "--Ly", f"{ly}", "--Nx", f"{Nx}", "--Ny", f"{Ny}",
            "--P", str(P), "--C", str(C), "--out", str(dat),
-           "--plot", str(png.with_name(png.stem + "_mesh.png")),
+           "--plot", "/dev/null",
            "--vtk", "/dev/null"]
     r = subprocess.run(cmd, capture_output=True, text=True)
     print(r.stdout[-300:])
@@ -381,20 +380,7 @@ def main():
         print("MESH BUILD FAILED:\n", r.stderr[-2000:])
         sys.exit(1)
 
-    if args.ice_shape == "lens":
-        mask = lambda gx, gy: np.hypot(gx - ice_cx, gy - ice_cy) <= R
-        shape_txt = f"convex lens, R/h={args.lens_R_over_h:.2f}, contact {contact_deg:.0f} deg"
-    else:
-        def mask(gx, gy, _b=band_report):
-            rho = np.hypot(gx - apex_x, gy - apex_y)
-            out = np.zeros_like(gx, dtype=bool)
-            for a1, a2, _ in _b:
-                out |= (rho >= a1) & (rho <= a2)
-            return out
-        shape_txt = f"{len(band_report)} apex-centred band(s), contact 90 deg"
-    preview(y_bot, y_top, mask, lx, ly, png,
-            f"wedge pore — half-angle {math.degrees(alpha):.1f} deg, {shape_txt}, "
-            f"at x={ice_cx:.2e} m (sustained drive {drive/RIPENING_REF:.2f}x ripening)")
+    # preview: plot_geometry.render() after the opts file is written (PDF)
 
     rel_dat = dat.relative_to(ROOT)
     if args.ice_shape == "lens":
@@ -498,6 +484,9 @@ def main():
 -eps_valid_temp {T0_C:g}   # C: temperature eps/mesh were sized for; solver ABORTS if -temp differs (override: -eps_temp_override 1)
 -periodic 0
 """)
+    sys.path.insert(0, str(ROOT / "preprocess"))
+    from plot_geometry import render
+    render(opts, ROOT / "preprocess" / (Path(opts).stem + ".pdf"))
     print(f"\nwrote {opts}\nwrote {dat}")
     print(f"eps={eps_run:.4e} (comp_eps.py bound {EPS:.4e} at T={T0_C:g}C) "
           f"(eps/r1={eps_run/r1*100:.1f}%). Valid ONLY at T={T0_C:g}C — pair with a "
