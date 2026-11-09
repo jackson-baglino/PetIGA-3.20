@@ -680,8 +680,15 @@ static PetscReal BridgeField(PetscReal x, PetscReal y, const AppCtx *user)
         PetscReal cyk = user->bridge_cy[k];
         PetscReal dL  = PetscSqrtReal(SQ(x - user->bridge_cxL[k]) + SQ(y - cyk));
         PetscReal dR  = PetscSqrtReal(SQ(x - user->bridge_cxR[k]) + SQ(y - cyk));
-        PetscReal sdf = PetscMax(dL - user->bridge_rL[k],
-                                 dR - user->bridge_rR[k]);
+        /* Per face: convex = inside the disc (legacy); concave (opt-in) =
+         * outside the disc and beyond its centre, toward the other face. */
+        PetscReal sL  = user->bridge_concaveL[k]
+                      ? PetscMax(user->bridge_rL[k] - dL, user->bridge_cxL[k] - x)
+                      : dL - user->bridge_rL[k];
+        PetscReal sR  = user->bridge_concaveR[k]
+                      ? PetscMax(user->bridge_rR[k] - dR, x - user->bridge_cxR[k])
+                      : dR - user->bridge_rR[k];
+        PetscReal sdf = PetscMax(sL, sR);
         ice += 0.5 - 0.5 * PetscTanhReal(tc * sdf);
     }
     return ice;
@@ -910,6 +917,12 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
             "right meniscus (%.4e, r=%.4e)\n",
             (int)k, user->bridge_cy[k], user->bridge_cxL[k], user->bridge_rL[k],
             user->bridge_cxR[k], user->bridge_rR[k]);
+    for (PetscInt k = 0; k < user->n_bridges; k++)
+        if (user->bridge_concaveL[k] || user->bridge_concaveR[k])
+            PetscPrintf(PETSC_COMM_WORLD,
+                "  throat plug %d faces: left %s, right %s\n", (int)k,
+                user->bridge_concaveL[k] ? "CONCAVE" : "convex",
+                user->bridge_concaveR[k] ? "CONCAVE" : "convex");
     for (PetscInt k = 0; k < ng; k++) {
         PetscReal ax = user->ice_grain_ax[k];
         PetscReal ay = user->ice_grain_ay[k];

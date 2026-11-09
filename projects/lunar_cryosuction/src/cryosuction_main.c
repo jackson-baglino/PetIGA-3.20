@@ -570,10 +570,52 @@ int main(int argc, char *argv[]) {
                             "-bridge_cxL and %s must have the same length (%d vs %d)",
                             req[q].name, (int)n, (int)nq);
             }
+            /* Opt-in concave faces (default 0 = convex, legacy behavior). */
+            for (PetscInt k = 0; k < MAX_SED_GRAINS; k++) {
+                user.bridge_concaveL[k] = 0;
+                user.bridge_concaveR[k] = 0;
+            }
+            struct { const char *name; PetscInt *arr; const char *desc; } cq[] = {
+                {"-bridge_concaveL", user.bridge_concaveL,
+                 "1 = LEFT face concave (ice outside disc L, x >= cxL); one 0/1 per bridge"},
+                {"-bridge_concaveR", user.bridge_concaveR,
+                 "1 = RIGHT face concave (ice outside disc R, x <= cxR); one 0/1 per bridge"},
+            };
+            for (PetscInt q = 0; q < 2; q++) {
+                PetscInt  nq = MAX_SED_GRAINS;
+                PetscBool set;
+                ierr = PetscOptionsIntArray(cq[q].name, cq[q].desc, "",
+                         cq[q].arr, &nq, &set); CHKERRQ(ierr);
+                if (set && nq != n)
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                            "-bridge_cxL and %s must have the same length (%d vs %d)",
+                            cq[q].name, (int)n, (int)nq);
+                for (PetscInt k = 0; set && k < n; k++)
+                    if (cq[q].arr[k] != 0 && cq[q].arr[k] != 1)
+                        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                                "%s: entries must be 0 or 1 (bridge %d is %d)",
+                                cq[q].name, (int)k, (int)cq[q].arr[k]);
+            }
             for (PetscInt k = 0; k < n; k++) {
                 if (user.bridge_rL[k] <= 0.0 || user.bridge_rR[k] <= 0.0)
                     SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
                             "bridge %d: meniscus radii must be > 0", (int)k);
+                if (user.bridge_concaveL[k] || user.bridge_concaveR[k]) {
+                    /* Non-empty on the axis: the left apex lies left of the
+                     * right apex. */
+                    PetscReal aL = user.bridge_concaveL[k]
+                                 ? user.bridge_cxL[k] + user.bridge_rL[k]
+                                 : user.bridge_cxL[k] - user.bridge_rL[k];
+                    PetscReal aR = user.bridge_concaveR[k]
+                                 ? user.bridge_cxR[k] - user.bridge_rR[k]
+                                 : user.bridge_cxR[k] + user.bridge_rR[k];
+                    if (aL >= aR)
+                        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                                "bridge %d: left apex %g >= right apex %g on the "
+                                "axis -- the plug would be empty", (int)k,
+                                (double)aL, (double)aR);
+                    continue;
+                }
                 /* Intersection of the two discs must be non-empty: their
                  * centres must be closer together than the sum of the radii. */
                 if (PetscAbsReal(user.bridge_cxR[k] - user.bridge_cxL[k]) >=

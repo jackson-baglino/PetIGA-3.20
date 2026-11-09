@@ -268,6 +268,17 @@ typedef struct {
   PetscReal bridge_cxL[MAX_SED_GRAINS], bridge_rL[MAX_SED_GRAINS];
   PetscReal bridge_cxR[MAX_SED_GRAINS], bridge_rR[MAX_SED_GRAINS];
   PetscReal bridge_cy[MAX_SED_GRAINS];
+  // Opt-in (FREEZE ledger): -bridge_concaveL / -bridge_concaveR, one 0/1 per
+  // bridge, default 0 (the convex faces above, bit-for-bit unchanged). A 1
+  // flips that face: the disc is centred OUTSIDE the ice and the ice lies
+  // outside it, on the far side of the disc centre:
+  //     concave left face : dL >= rL and x >= cxL   (axis apex at cxL + rL)
+  //     concave right face: dR >= rR and x <= cxR   (axis apex at cxR - rR)
+  // giving a CONCAVE face that meets a flat wall of half-gap a at the angle
+  // theta (through the ice) when r = a / cos(theta) > a. Used for lenses that
+  // start at a wall-BC angle below 90 degrees. The disc must span the pore
+  // (r > local half-gap) or ice leaks round it; the builder checks that.
+  PetscInt  bridge_concaveL[MAX_SED_GRAINS], bridge_concaveR[MAX_SED_GRAINS];
 
   // Initial normal vector components (possibly for a structured interface)
   PetscReal norm0[3];  // Per-DOF initial residual norms for SNES convergence check
