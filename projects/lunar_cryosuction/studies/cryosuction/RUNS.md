@@ -15,7 +15,7 @@ row when the run is queued, and update Status and Outcome when it ends.
 
 | ID | Queued | Where / folder | Model | Geometry : experiment | Question | Look for | Status |
 |---|---|---|---|---|---|---|---|
-| T6 (6A-1…6, 6B-1) | inputs ready 2026-11-08, not submitted (`studies/cryosuction/type6_tests.txt`; preflight OK) | HPC, `--tag type6` | v2 | dogbone_2D_L1200um_W150um_wc{40,80,150}um_eps0.86um : t6ls_T-20_G{100,300}warmtop_theta{60,90}_{60,30}d_ac1e-2 | Plan type 6 (Q10): how much does a constriction slow vapor-driven transfer of a lens, and does it scale with neck width? | Lens moves toward the warm end (x = 0) and through the neck; transit time vs wc; mass flux through the neck (section_flux at x = 600 um) vs face speed. Pi in the neck: v_n above 7.4e-10 m/s puts Pi over 0.5 (G 300, wc 40 most at risk). Ice reaching x = 0 (RESERVOIR-FACE WARNING): G 300 for 30 d may carry the lens there. | prepared |
+| T6 (6A-1…6, 6B-1) | inputs ready 2026-11-08, not submitted (`studies/cryosuction/type6_tests.txt`; preflight OK) | HPC, `--tag type6` | v2 | dogbone_2D_L1200um_W150um_wc{40,80,150}um_eps0.86um : t6ls_T-20_G{100,300}warmtop_theta{60,90}_{60,30}d_ac1e-2 | Plan type 6 (Q10): how much does a constriction slow vapor-driven transfer of a lens, and does it scale with neck width? | Lens moves toward the warm end (x = 0) and through the neck; transit time vs wc; mass flux through the neck (section_flux at x = 600 um) vs face speed. Pi in the neck: v_n above 7.4e-10 m/s puts Pi over 0.5 (G 300, wc 40 most at risk). Ice reaching x = 0 is trimmed in postprocessing (user, 2026-11-09). | prepared |
 
 ## Finished
 

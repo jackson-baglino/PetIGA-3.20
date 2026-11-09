@@ -78,7 +78,8 @@ Hypotheses: the user writes them; none recorded yet.
   47-50k DoF/core (11 ranks for 0.52 M DoF, 5 for 0.25 M), 17-24 core-s/step
   for 0.52 M DoF; in line with the Sept 2026 50k runs (1.5-2.0 s/step).
   T4: 1.3-1.7 s/step at 42-50k DoF/core (5-8 ranks, 0.22-0.40 M DoF).
-- Next: shakedown (one short run per type) once builders and experiment files exist.
+- No shakedown batch (user, 2026-11-09): cheap runs are submitted, inspected and
+  rerun; pre-check only jobs above ~30-40 cores (type 7, 2.5 M DOF).
 - Pushed 2026-11-07 (D7 approved).
 - Submit (from the project root on the HPC, after `git pull`):
   `./scripts/HPC/submit_batch.sh --tag <tag> --tests-file studies/cryosuction/<file> --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs -- --time=<t>`
