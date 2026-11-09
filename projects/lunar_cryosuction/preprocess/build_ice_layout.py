@@ -37,6 +37,12 @@ theta for plugs and caps is the layout's "theta_ice_init" (the user's rule,
 2026-11-09: droplets start at liquid water's angle, lenses at the wall-BC
 angle; a feature may override with its own "theta").
 
+ROUNDING. The sharp union is then opened and closed with a disc of radius
+"round_eps" x eps (default 3): no ice-air corner sharper than that radius and
+no spike or notch narrower than twice it survives. A first type-7 test without
+this step (2026-11-09) drove phi past the 1.01 band within 4 s at corners
+where lens faces meet rough walls, and the run aborted.
+
 THE FIELD. phi = 1/2 - 1/2 tanh(d / (2 eps)) at each control point, with d
 the signed distance to the sharp ice (positive in air), computed on a raster
 of spacing eps/4. Walls are not interfaces: distances are measured to ice and
@@ -210,6 +216,25 @@ def grain(rs: Raster, xc, yc, ax, ay):
     return rs.inside & (((rs.X - xc) / ax) ** 2 + ((rs.Y - yc) / ay) ** 2 <= 1.0), yc
 
 
+def _erode(a, dx, rho):
+    return ndi.distance_transform_edt(a, sampling=dx) > rho
+
+
+def _dilate(a, dx, rho):
+    return ndi.distance_transform_edt(~a, sampling=dx) <= rho
+
+
+def round_features(ice, inside, dx, rho):
+    """Opening then closing of (ice OR solid) by a disc of radius rho, cut back to
+    the pore. Removes ice spikes and air notches narrower than 2 rho and rounds
+    every ice-air corner to a radius of at least rho. The solid counts as ice, so
+    the ice-wall contacts are not eroded (only ice-air corners are rounded)."""
+    a = ice | ~inside
+    a = _dilate(_erode(a, dx, rho), dx, rho)      # opening: rounds convex ice corners
+    a = _erode(_dilate(a, dx, rho), dx, rho)      # closing: rounds concave ice corners
+    return a & inside
+
+
 def bodies_report(ice, inside, dx, eps):
     lab, n = ndi.label(ice)
     half = ndi.distance_transform_edt(ice, sampling=dx)
@@ -232,6 +257,12 @@ def node_field(surf, rs: Raster, ice, eps):
     air = rs.inside & ~ice
     d_air = ndi.distance_transform_edt(~air, sampling=rs.dx)
     sd = np.where(ice, -d_air, d_ice)
+    # Control points on a wall can land in a raster cell just outside the pore. Give
+    # every outside cell the value of its nearest pore cell, so a wall point inside a
+    # lens is not read as air (a first build did that: isolated phi = 0.6 dips on the
+    # wall drove phi past the 1.01 band within 4 s, 2026-11-09).
+    _, (ii, jj) = ndi.distance_transform_edt(~rs.inside, return_indices=True)
+    sd = sd[ii, jj]
     cp = surf.control[:, :, :2]                       # (mx, my, 2)
     fi = cp[..., 0] / rs.dx
     fj = cp[..., 1] / rs.dx
@@ -306,6 +337,11 @@ def main(argv=None) -> int:
     for p_ in parts:
         print("  " + p_)
 
+    rho = spec.get("round_eps", 3.0) * eps
+    before = ice.sum()
+    ice = round_features(ice, rs.inside, rs.dx, rho)
+    print(f"  rounded ice-air corners to radius >= {rho*1e6:.2f} um ({rho/eps:g} eps): area change "
+          f"{(ice.sum() - before) / max(before, 1):+.2%}")
     lab, nb = ndi.label(ice)
     half = ndi.distance_transform_edt(ice, sampling=rs.dx)
     th_b = np.array(ndi.maximum(half, lab, index=np.arange(1, nb + 1)))

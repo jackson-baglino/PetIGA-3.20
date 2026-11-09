@@ -58,6 +58,20 @@ class Pieces(unittest.TestCase):
             self.assertGreater(back[..., 2].max(), 0.99)
             self.assertLess(back[..., 2].min(), 0.01)
 
+    def test_wall_points_inside_a_plug_are_ice(self):
+        # regression (2026-11-09): wall control points that fell in a raster cell just
+        # outside the pore were read as air, leaving isolated phi ~ 0.6 dips on the wall
+        rough = dict(FLAT, n_bumps=10, R_range=[2.0e-5, 2.2e-5], height_ratio_range=[0.3, 0.5])
+        pore = bl.Pore({"Lx": 3e-4, "mean_gap": 8e-5, "walls": rough})
+        rs = bl.Raster(pore, 2.5e-7)
+        ice, _ = bl.plug(None, rs, 1.0e-4, 2.0e-4, 60.0)
+        surf = bl.build_surface(pore, 300, 80)
+        rec = bl.node_field(surf, rs, ice, 1.0e-6)
+        x = rec[0, :, 0]
+        bulk = (x > 1.3e-4) & (x < 1.7e-4)             # well inside the plug on both walls
+        for row in (0, -1):
+            self.assertGreater(rec[row, bulk, 2].min(), 0.999)
+
     def test_main_writes_files(self):
         spec = dict(self.spec, name="t", theta_ice_init=40,
                     plugs=[{"x0": 2.2e-4, "x1": 3e-4}], grains=[{"x": 1e-4, "y": "axis", "R": 1.5e-5}])
