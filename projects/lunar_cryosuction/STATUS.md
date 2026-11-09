@@ -75,7 +75,14 @@ Hypotheses: the user writes them; none recorded yet.
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at
   liquid water's angle on regolith: no source in Zotero (user); an effective
-  value from the mineral mix is to be engineered (user, 2026-11-09).
+  value from the mineral mix is to be engineered (user, 2026-11-09). Lit
+  search 2026-11-09: only lunar value is Zhang et al. 2025 (Chang'E-5,
+  10.1016/j.apsusc.2025.163331), 108.7 deg apparent on rough particles
+  (Cassie-Baxter); minerals ~15-45 deg; Cassie 1948 (10.1039/df9480300011)
+  rule applied to mineral fractions in Arismendi Florez et al. 2024
+  (10.1016/j.jmrt.2024.07.177, mercury). No pyroxene/glass data. Near-0 deg
+  becomes a stated limitation (user). Realistic-pore ice: equal-curvature
+  rule (draft shown 2026-11-09).
 - DoF/core: decide on a scaling test after seeing these runs' s/step
   (user, 2026-11-07). Compare with Oct 2026 2-3-rank runs: 4.2-7.0 s/step.
   T3 result (job wall time / steps, includes setup): 1.5-2.2 s/step at
