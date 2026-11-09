@@ -1,0 +1,86 @@
+{
+  "name": "type7_mixed_A_2D_L2000um_eps0.86um",
+  "comment": "Plan type 7 draft: 2 mm rough pore, collector at x = 0 (no ice within 200 um), dead end at x = Lx; every simple case together: lenses (one mid-pore, one in the throat, one on the dead end) at the wall-BC angle (60 deg, D1), wall droplets of four sizes and free grains of three sizes at liquid water's angle. theta_ice_init 40 deg is a placeholder for water on regolith (literature 2026-11-09: ~20-45 deg, user to confirm).",
+  "Lx": 0.002,
+  "mean_gap": 0.000125,
+  "walls": {
+    "seed_bottom": 11,
+    "seed_top": 23,
+    "n_bumps": 35,
+    "R_range": [
+      2e-05,
+      5.5e-05
+    ],
+    "height_ratio_range": [
+      0.35,
+      0.65
+    ],
+    "overlap_range": [
+      0.15,
+      0.3
+    ]
+  },
+  "throat": {
+    "x": 0.001,
+    "R": 0.00012,
+    "gap": 5e-05
+  },
+  "theta_ice_init": 40,
+  "plugs": [
+    {
+      "x0": 0.00055,
+      "x1": 0.00065,
+      "theta": 60
+    },
+    {
+      "x0": 0.00096,
+      "x1": 0.00104,
+      "theta": 60
+    },
+    {
+      "x0": 0.00175,
+      "x1": 0.002,
+      "theta": 60
+    }
+  ],
+  "caps": [
+    {
+      "x": 0.00026,
+      "wall": "bottom",
+      "R": 5e-05
+    },
+    {
+      "x": 0.00039,
+      "wall": "top",
+      "R": 6.5e-05
+    },
+    {
+      "x": 0.0013,
+      "wall": "bottom",
+      "R": 6e-05
+    },
+    {
+      "x": 0.00145,
+      "wall": "top",
+      "R": 4e-05
+    }
+  ],
+  "grains": [
+    {
+      "x": 0.0008,
+      "y": "axis",
+      "R": 2.2e-05
+    },
+    {
+      "x": 0.0012,
+      "y": "axis",
+      "R": 1.2e-05
+    },
+    {
+      "x": 0.00158,
+      "y": "axis",
+      "R": 3e-05
+    }
+  ],
+  "dtmax": 1341.2
+}

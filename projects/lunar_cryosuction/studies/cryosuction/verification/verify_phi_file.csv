@@ -1,0 +1,7 @@
+gate,case,value,result
+P1,ice_area_vs_sharp_7.2326e-09,7.238371e-09,PASS
+P2,phi_range,[0,1],PASS
+P3,badmesh,rc=79,PASS
+P3,short,rc=66,PASS
+P3,missing,rc=65,PASS
+P3,noopt,rc=62,PASS

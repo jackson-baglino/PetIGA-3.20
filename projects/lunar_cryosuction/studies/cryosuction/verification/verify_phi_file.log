@@ -1,0 +1,17 @@
+builder sharp area: 7.2326e-09
+
+=== P1/P2: IC area and phi range ===
+  P1 ice_area_vs_sharp_7.2326e-09 (7.238371e-09): PASS
+  P2 phi_range ([0,1]): PASS
+
+=== P3: guards ===
+    badmesh: [0]PETSC ERROR: -phi_file /private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/verify_phi_file.16729/pf_test_phi.bin is 285 x 91 control points, the mesh ha
+  P3 badmesh (rc=79): PASS
+    short: [0]PETSC ERROR: -phi_file /var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T//verify_phi_file.16729/short.bin: short read at row 0
+  P3 short (rc=66): PASS
+    missing: [0]PETSC ERROR: cannot open -phi_file /var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T//verify_phi_file.16729/nope.bin
+  P3 missing (rc=65): PASS
+    noopt: [0]PETSC ERROR: -ic_type phi_file requires -phi_file <path>
+  P3 noopt (rc=62): PASS
+
+verify_phi_file: ALL PASS
