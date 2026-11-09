@@ -1,0 +1,2 @@
+# Plan type 7 (draft, 2026-11-09): layout A, 7A only so far; 7B-7D files to come. RUNS.md IDs in the comments.
+type7_mixed_A_2D_L2000um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_ac1e-2   # 7A

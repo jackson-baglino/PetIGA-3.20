@@ -1,0 +1,28 @@
+# =============================================================================
+# geometry/cryosuction/t1_box600x300um_capR25_x300um_th40_eps0.86um.opts   (make_type125_inputs.py, 2026-11-09)
+#
+# Plan type 1: one cap, arc radius 25 um, centered at x = 300 um.
+# Box 600 x 300 um. Regolith wall y0 (contact-angle BC from the experiment);
+# y1 is not a wall (90-degree phi face, sealed, insulating). Caps start at theta =
+# 40 deg (liquid water on regolith, user 2026-11-09, placeholder value): each is a
+# disc of arc radius R centered R cos(theta) below the wall (-ice_grain_*):
+#   cap at x = 300.0 um, arc radius 25.0 um, base 32.1 um, height 5.85 um, area 1.2858e-10 m^2
+# eps 8.5840e-07 m, h = eps/sqrt(2): Nx 989, Ny 495. dtmax = 2 tau_sub = 1.3412e+03 s.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nx 989
+-Ny 495
+-Nz 1
+-Lx 6.000000e-04
+-Ly 3.000000e-04
+-Lz 0
+-ice_grain_cx 3.000000e-04
+-ice_grain_cy -1.915111e-05
+-ice_grain_R  2.500000e-05
+-eps 8.5840e-07
+-eps_valid_temp -20
+-delt_t 1.0e-4
+-periodic 0
+-wall_faces y0
+-dtmax 1.3412e+03

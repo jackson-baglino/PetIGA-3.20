@@ -1,0 +1,27 @@
+# =============================================================================
+# geometry t5_pore800x150um_wt40um_lens120up_eps0.80um.opts   (preprocess/build_ice_layout.py preprocess/layouts/t5_pore800x150um_wt40um_lens120up_eps0.80um.json)
+#
+# Rough-walled pore: Lx 800.0 um, gap 40.0-150.0 um (mean 108.5),
+# 0+0 wall bumps, throat at x = 400.0 um.
+# Walls are in the mesh; wall faces y0,y1; x0 and x1 are the pore ends.
+# Ice from inputs/geometry/meshes/t5_pore800x150um_wt40um_lens120up_eps0.80um_phi.bin (-ic_type phi_file), initial angle 40 deg:
+#   plug 240-360 um, theta 60, faces r 39.3 um
+# ice 8.7% of the pore, sharp area 7.5779e-09 m^2, 1 bodies.
+# eps 8.0000e-07 m, h = eps/sqrt(2): Nx 1415, Ny 266.
+# =============================================================================
+# DOF_GRID: 1417 268
+-geom_file inputs/geometry/meshes/t5_pore800x150um_wt40um_lens120up_eps0.80um.dat
+-p 2
+-C 1
+-ic_type phi_file
+-phi_file inputs/geometry/meshes/t5_pore800x150um_wt40um_lens120up_eps0.80um_phi.bin
+-dim 2
+-Lx 8.000000e-04
+-Ly 1.500000e-04
+-Lz 0
+-delt_t 1.0e-4
+-eps 8.0000e-07
+-eps_valid_temp -20
+-periodic 0
+-wall_faces y0,y1
+-dtmax 1.1538e+03                     # 2 tau_sub at this eps (layout 'dtmax')

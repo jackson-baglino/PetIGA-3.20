@@ -1,0 +1,13 @@
+# Plan type 5 (make_type125_inputs.py, 2026-11-09). RUNS.md IDs in the comments.
+t5_pore800x150um_wt40um_lens120c_eps0.80um:t5_T-20_iso_res1_theta60_120d_ac1e-2   # 5A-1
+t5_pore800x150um_wt40um_lens120c_eps0.80um:t5_T-20_G1warmtop_ls_theta60_120d_ac1e-2   # 5A-2
+t5_pore800x150um_wt40um_lens120c_eps0.80um:t5_T-20_G3warmtop_ls_theta60_120d_ac1e-2   # 5A-3
+t5_pore800x150um_wt40um_lens120c_eps0.80um:t5_T-20_G10warmtop_ls_theta60_120d_ac1e-2   # 5A-4
+t5_pore800x150um_wt40um_lens120c_eps0.80um:t5_T-20_G30warmtop_ls_theta60_120d_ac1e-2   # 5A-5
+t5_pore800x150um_wt80um_lens120c_eps0.80um:t5_T-20_iso_res1_theta60_120d_ac1e-2   # 5A-6
+t5_pore800x150um_wt80um_lens120c_eps0.80um:t5_T-20_G3warmtop_ls_theta60_120d_ac1e-2   # 5A-7
+t5_pore800x150um_wt80um_lens120c_eps0.80um:t5_T-20_G10warmtop_ls_theta60_120d_ac1e-2   # 5A-8
+t5_pore800x150um_wt40um_lens120c_caps_grain_eps0.80um:t5_T-20_iso_closed_theta60_120d_ac1e-2   # 5B-1
+t5_pore800x150um_wt40um_lens120c_caps_grain_eps0.80um:t5_T-20_G3warmtop_closed_theta60_120d_ac1e-2   # 5B-2
+t5_pore800x150um_wt40um_lens120up_eps0.80um:t5_T-20_G3warmtop_ls_theta60_120d_ac1e-2   # 5C-1
+t5_pore800x150um_wt40um_lens120dn_eps0.80um:t5_T-20_G3warmtop_ls_theta60_120d_ac1e-2   # 5C-2

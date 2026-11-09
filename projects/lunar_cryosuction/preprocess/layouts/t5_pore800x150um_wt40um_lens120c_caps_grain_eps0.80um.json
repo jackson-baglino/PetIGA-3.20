@@ -1,0 +1,43 @@
+{
+  "name": "t5_pore800x150um_wt40um_lens120c_caps_grain_eps0.80um",
+  "eps": 8e-07,
+  "Lx": 0.0008,
+  "mean_gap": 0.00015,
+  "comment": "Plan 5B: lens + 2 caps + 1 grain.",
+  "walls": {
+    "flat": true
+  },
+  "throat": {
+    "x": 0.0004,
+    "R": 0.00025,
+    "gap": 4e-05
+  },
+  "theta_ice_init": 40.0,
+  "plugs": [
+    {
+      "x0": 0.00034,
+      "x1": 0.00046,
+      "theta": 60.0
+    }
+  ],
+  "caps": [
+    {
+      "x": 0.00018,
+      "wall": "bottom",
+      "R": 4e-05
+    },
+    {
+      "x": 0.00064,
+      "wall": "top",
+      "R": 3e-05
+    }
+  ],
+  "grains": [
+    {
+      "x": 0.00066,
+      "y": 5.5e-05,
+      "R": 2e-05
+    }
+  ],
+  "dtmax": 1153.8102189348072
+}

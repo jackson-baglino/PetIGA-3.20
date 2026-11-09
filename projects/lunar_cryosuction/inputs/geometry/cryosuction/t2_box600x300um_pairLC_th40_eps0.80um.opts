@@ -1,0 +1,29 @@
+# =============================================================================
+# geometry/cryosuction/t2_box600x300um_pairLC_th40_eps0.80um.opts   (make_type125_inputs.py, 2026-11-09)
+#
+# Plan type 2: ripening pair, large cap on the cold side (2B-6).
+# Box 600 x 300 um. Regolith wall y0 (contact-angle BC from the experiment);
+# y1 is not a wall (90-degree phi face, sealed, insulating). Caps start at theta =
+# 40 deg (liquid water on regolith, user 2026-11-09, placeholder value): each is a
+# disc of arc radius R centered R cos(theta) below the wall (-ice_grain_*):
+#   cap at x = 200.0 um, arc radius 20.0 um, base 25.7 um, height 4.68 um, area 8.2291e-11 m^2
+#   cap at x = 400.0 um, arc radius 50.0 um, base 64.3 um, height 11.70 um, area 5.1432e-10 m^2
+# eps 8.0000e-07 m, h = eps/sqrt(2): Nx 1061, Ny 531. dtmax = 2 tau_sub = 1.1538e+03 s.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nx 1061
+-Ny 531
+-Nz 1
+-Lx 6.000000e-04
+-Ly 3.000000e-04
+-Lz 0
+-ice_grain_cx 2.000000e-04,4.000000e-04
+-ice_grain_cy -1.532089e-05,-3.830222e-05
+-ice_grain_R  2.000000e-05,5.000000e-05
+-eps 8.0000e-07
+-eps_valid_temp -20
+-delt_t 1.0e-4
+-periodic 0
+-wall_faces y0
+-dtmax 1.1538e+03

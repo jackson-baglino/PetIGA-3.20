@@ -1,0 +1,32 @@
+# =============================================================================
+# geometry/cryosuction/t2_box900x300um_chain5rand_th40_eps0.80um.opts   (make_type125_inputs.py, 2026-11-09)
+#
+# Plan type 2: five caps, arc radii uniform 20-60 um (numpy default_rng(7)).
+# Box 900 x 300 um. Regolith wall y0 (contact-angle BC from the experiment);
+# y1 is not a wall (90-degree phi face, sealed, insulating). Caps start at theta =
+# 40 deg (liquid water on regolith, user 2026-11-09, placeholder value): each is a
+# disc of arc radius R centered R cos(theta) below the wall (-ice_grain_*):
+#   cap at x = 150.0 um, arc radius 45.0 um, base 57.9 um, height 10.53 um, area 4.1667e-10 m^2
+#   cap at x = 300.0 um, arc radius 55.9 um, base 71.8 um, height 13.08 um, area 6.4260e-10 m^2
+#   cap at x = 450.0 um, arc radius 51.0 um, base 65.6 um, height 11.94 um, area 5.3567e-10 m^2
+#   cap at x = 600.0 um, arc radius 29.0 um, base 37.3 um, height 6.79 um, area 1.7312e-10 m^2
+#   cap at x = 750.0 um, arc radius 32.0 um, base 41.1 um, height 7.49 um, area 2.1075e-10 m^2
+# eps 8.0000e-07 m, h = eps/sqrt(2): Nx 1591, Ny 531. dtmax = 2 tau_sub = 1.1538e+03 s.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nx 1591
+-Ny 531
+-Nz 1
+-Lx 9.000000e-04
+-Ly 3.000000e-04
+-Lz 0
+-ice_grain_cx 1.500000e-04,3.000000e-04,4.500000e-04,6.000000e-04,7.500000e-04
+-ice_grain_cy -3.447493e-05,-4.281311e-05,-3.908928e-05,-2.222164e-05,-2.451852e-05
+-ice_grain_R  4.500382e-05,5.588855e-05,5.102743e-05,2.900829e-05,3.200665e-05
+-eps 8.0000e-07
+-eps_valid_temp -20
+-delt_t 1.0e-4
+-periodic 0
+-wall_faces y0
+-dtmax 1.1538e+03

@@ -1,0 +1,20 @@
+# Plan type 1 (make_type125_inputs.py, 2026-11-09). RUNS.md IDs in the comments.
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_iso_closed_theta60_10d_ac1e-2   # 1A-0
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_G10warmtop_closed_theta60_30d_ac1e-2   # 1A-1
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_G30warmtop_closed_theta60_30d_ac1e-2   # 1A-2
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_G100warmtop_closed_theta60_30d_ac1e-2   # 1A-3
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_G300warmtop_closed_theta60_30d_ac1e-2   # 1A-4
+t1_box600x300um_capR50_x500um_th40_eps0.86um:t1_T-20_G100warmtop_resR50_theta60_10d_ac1e-2   # 1B-1
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_G100warmtop_resR50_theta60_10d_ac1e-2   # 1B-2
+t1_box600x300um_capR50_x100um_th40_eps0.86um:t1_T-20_G100warmtop_resR50_theta60_10d_ac1e-2   # 1B-3
+t1_box600x300um_capR50_x500um_th40_eps0.86um:t1_T-20_G100warmtop_ls_theta60_10d_ac1e-2   # 1B-4
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_G100warmtop_ls_theta60_10d_ac1e-2   # 1B-5
+t1_box600x300um_capR50_x100um_th40_eps0.86um:t1_T-20_G100warmtop_ls_theta60_10d_ac1e-2   # 1B-6
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_iso_resR50_theta60_10d_ac1e-2   # 1B-7
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_G30warmtop_ls_theta60_10d_ac1e-2   # 1B-8
+t1_box600x300um_capR25_x300um_th40_eps0.86um:t1_T-20_G100warmtop_closed_theta60_30d_ac1e-2   # 1C-1
+t1_box600x300um_capR100_x300um_th40_eps0.86um:t1_T-20_G100warmtop_closed_theta60_30d_ac1e-2   # 1C-2
+t1_box600x300um_capR25_x300um_th40_eps0.86um:t1_T-20_G100warmtop_ls_theta60_10d_ac1e-2   # 1C-3
+t1_box600x300um_capR100_x300um_th40_eps0.86um:t1_T-20_G100warmtop_ls_theta60_10d_ac1e-2   # 1C-4
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_iso_dh-G100_theta60_10d_ac1e-2   # 1D-1
+t1_box600x300um_capR50_x300um_th40_eps0.86um:t1_T-20_iso_dh-G30_theta60_10d_ac1e-2   # 1D-2

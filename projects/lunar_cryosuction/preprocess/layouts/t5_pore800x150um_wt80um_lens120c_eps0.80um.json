@@ -1,0 +1,26 @@
+{
+  "name": "t5_pore800x150um_wt80um_lens120c_eps0.80um",
+  "eps": 8e-07,
+  "Lx": 0.0008,
+  "mean_gap": 0.00015,
+  "comment": "Plan 5A-6..8: 80 um throat, lens centered.",
+  "walls": {
+    "flat": true
+  },
+  "throat": {
+    "x": 0.0004,
+    "R": 0.00025,
+    "gap": 8e-05
+  },
+  "theta_ice_init": 40.0,
+  "plugs": [
+    {
+      "x0": 0.00034,
+      "x1": 0.00046,
+      "theta": 60.0
+    }
+  ],
+  "caps": [],
+  "grains": [],
+  "dtmax": 1153.8102189348072
+}

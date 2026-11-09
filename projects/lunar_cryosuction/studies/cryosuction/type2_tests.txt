@@ -1,0 +1,15 @@
+# Plan type 2 (make_type125_inputs.py, 2026-11-09). RUNS.md IDs in the comments.
+t2_box600x300um_pairLW_th40_eps0.80um:t2_T-20_iso_closed_theta60_60d_ac1e-2   # 2A-1
+t2_box600x300um_pairLW_th40_eps0.80um:t2_T-20_iso_resavg_theta60_60d_ac1e-2   # 2A-2
+t2_box600x300um_pairLW_th40_eps0.80um:t2_T-20_G0.8warmtop_closed_theta60_60d_ac1e-2   # 2B-1
+t2_box600x300um_pairLW_th40_eps0.80um:t2_T-20_G1.6warmtop_closed_theta60_60d_ac1e-2   # 2B-2
+t2_box600x300um_pairLW_th40_eps0.80um:t2_T-20_G3.2warmtop_closed_theta60_60d_ac1e-2   # 2B-3
+t2_box600x300um_pairLW_th40_eps0.80um:t2_T-20_G8warmtop_closed_theta60_60d_ac1e-2   # 2B-4
+t2_box600x300um_pairLW_th40_eps0.80um:t2_T-20_G32warmtop_closed_theta60_60d_ac1e-2   # 2B-5
+t2_box600x300um_pairLC_th40_eps0.80um:t2_T-20_G3.2warmtop_closed_theta60_60d_ac1e-2   # 2B-6
+t2_box900x300um_chain3eq_th40_eps0.80um:t2_T-20_G100warmtop_closed_L900_theta60_10d_ac1e-2   # 2C-1
+t2_box900x300um_chain3small_th40_eps0.80um:t2_T-20_G100warmtop_closed_L900_theta60_10d_ac1e-2   # 2C-2
+t2_box900x300um_chain5rand_th40_eps0.80um:t2_T-20_G100warmtop_closed_L900_theta60_10d_ac1e-2   # 2C-3
+t2_box600x300um_gap20_th40_eps0.80um:t2_T-20_G100warmtop_closed_theta60_10d_ac1e-2   # 2D-1
+t2_box600x300um_gap80_th40_eps0.80um:t2_T-20_G100warmtop_closed_theta60_10d_ac1e-2   # 2D-2
+t2_box600x300um_gap200_th40_eps0.80um:t2_T-20_G100warmtop_closed_theta60_10d_ac1e-2   # 2D-3
