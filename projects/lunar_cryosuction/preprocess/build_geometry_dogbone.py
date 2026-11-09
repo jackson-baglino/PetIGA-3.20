@@ -21,10 +21,19 @@ exactly straight on [x_n0, x_n1] and each wide section is exactly flat
 outside the shoulders. The steepest wall slope is 2 (W - wc)/(2 Ls), at the
 middle of each shoulder.
 
-THE ICE. A lens of length --lens-len that fills the pore (a plug), with flat
-faces at t = 0 (90 degrees), built as in plan types 3 and 4: the
-intersection of two far, crossed discs (-bridge_*). It relaxes to the run's
-Young angle within the first days.
+THE ICE. A lens of length --lens-len (measured on the pore axis, apex to
+apex) that fills the pore (a plug). Its faces start at --lens-theta, the
+contact angle measured through the ice, which should be the run's wall-BC
+angle (user, 2026-11-09: a lens first relaxes to the BC angle, so start it
+there):
+  theta = 90   flat faces: the intersection of two far, crossed discs, as in
+               plan types 3 and 4 (-bridge_*).
+  theta < 90   concave faces, arcs of radius R = (W/2)/cos(theta) centered on
+               the axis outside the ice (-bridge_concaveL/R 1, FREEZE ledger
+               18270f6f). The ice reaches sag = R - sqrt(R^2 - (W/2)^2) past
+               each apex along the walls.
+  theta > 90   convex faces, R = (W/2)/|cos(theta)|, centered inside the ice;
+               the wall contacts sit sag inside the apexes.
 
 WHY THE OPTS FILE GIVES FLAT WALLS. The solver lays the initial condition out
 by mapping each node through WallBottom(x)/WallTop(x) (src/initial_conditions.c),
@@ -115,6 +124,8 @@ def main(argv=None) -> int:
     ap.add_argument("--shoulder", type=float, default=SHOULDER, help="length of each shoulder [m]")
     ap.add_argument("--neck-x", type=float, default=None, help="neck center [m] (default Lx/2)")
     ap.add_argument("--lens-len", type=float, default=LENS_LEN, help="lens length [m]")
+    ap.add_argument("--lens-theta", type=float, default=90.0,
+                    help="initial face angle through the ice [deg] (use the wall-BC angle)")
     ap.add_argument("--lens-x", type=float, default=None,
                     help="lens center [m] (default: middle of the flat wide section at x = Lx)")
     ap.add_argument("--eps", type=float, default=EPS, help="interface parameter [m]")
@@ -131,7 +142,17 @@ def main(argv=None) -> int:
     flat_lo, flat_hi = x_n0 - ls, x_n1 + ls          # wide sections: [0, flat_lo] and [flat_hi, Lx]
     assert flat_lo > 0 and flat_hi < lx, "neck and shoulders do not fit in the pore"
     x_l = 0.5 * (flat_hi + lx) if a.lens_x is None else a.lens_x
-    x_a, x_b = x_l - 0.5 * a.lens_len, x_l + 0.5 * a.lens_len
+    x_a, x_b = x_l - 0.5 * a.lens_len, x_l + 0.5 * a.lens_len   # apexes on the axis
+    th = a.lens_theta
+    assert 0.0 < th < 180.0, "--lens-theta must be in (0, 180) deg"
+    ct = math.cos(math.radians(th))
+    if abs(ct) < 1e-12:                         # flat faces: far discs (face sag (W/2)^2/(2R))
+        R, concave = 50.0 * max(w, 1.25e-4), False
+    else:
+        R, concave = 0.5 * w / abs(ct), ct > 0
+    sag = R - math.sqrt(R * R - (0.5 * w) ** 2)
+    # extent of the ice along x, at the walls for concave faces, on the axis otherwise
+    x_a, x_b, ax_a, ax_b = (x_a - sag, x_b + sag, x_a, x_b) if concave else (x_a, x_b, x_a, x_b)
     if x_a > flat_hi:
         m_shoulder, m_end = x_a - flat_hi, lx - x_b
     elif x_b < flat_lo:
@@ -151,7 +172,12 @@ def main(argv=None) -> int:
           f"on x {x_n0*1e6:.1f}-{x_n1*1e6:.1f} um, shoulders {ls*1e6:.1f} um")
     print(f"  wide sections flat on x 0-{flat_lo*1e6:.1f} and {flat_hi*1e6:.1f}-{lx*1e6:.1f} um")
     print(f"  steepest wall slope {slope:.3f} ({math.degrees(math.atan(slope)):.1f} deg), mid-shoulder")
-    print(f"  lens x {x_a*1e6:.1f}-{x_b*1e6:.1f} um (area {a.lens_len*w:.4e} m^2); margins "
+    hw = 0.5 * w        # sharp lens area: rectangle -/+ 2 circular segments beyond the axis chord
+    seg = 2 * hw * R - hw * math.sqrt(R * R - hw * hw) - R * R * math.asin(hw / R)
+    area = a.lens_len * w + (2 * seg if concave else -2 * seg)
+    print(f"  lens apexes {ax_a*1e6:.1f}-{ax_b*1e6:.1f} um, ice x {x_a*1e6:.1f}-{x_b*1e6:.1f} um, "
+          f"faces at {th:g} deg (R {R:.3e} m, {'concave' if concave else 'convex/flat'})")
+    print(f"  lens area {area:.4e} m^2; margins "
           f"{m_shoulder*1e6:.1f} um to the shoulder, {m_end*1e6:.1f} um to the end "
           f"({m_shoulder/eps:.0f} and {m_end/eps:.0f} eps)")
     print(f"  eps {eps:.4e} m, Nx {nx}, Ny {ny}, DOF {(nx+P)*(ny+P)*3/1e6:.2f} M; element "
@@ -175,8 +201,16 @@ def main(argv=None) -> int:
     dat.parent.mkdir(parents=True, exist_ok=True)
     PetIGA().write(str(dat), surf)
     print(f"wrote {dat}")
-    R = 50.0 * max(w, 1.25e-4)                  # far discs: face sag (W/2)^2/(2R)
-    sag = (0.5 * w) ** 2 / (2 * R)
+    if concave:      # disc centers outside the ice; apex = cxL + R = ax_a, cxR - R = ax_b
+        bridge = (f"-bridge_cxL {ax_a - R:.6e}\n-bridge_rL  {R:.6e}\n-bridge_cxR {ax_b + R:.6e}\n"
+                  f"-bridge_rR  {R:.6e}\n-bridge_cy  {0.5*w:.6e}\n-bridge_concaveL 1\n-bridge_concaveR 1\n")
+        face = f"concave faces at {th:g} deg (R = {R:.3e} m, the ice reaches {sag*1e6:.3f} um past each apex at the walls)"
+    else:            # disc centers inside the ice; apex = cxL - R = ax_a, cxR + R = ax_b
+        bridge = (f"-bridge_cxL {ax_a + R:.6e}\n-bridge_rL  {R:.6e}\n-bridge_cxR {ax_b - R:.6e}\n"
+                  f"-bridge_rR  {R:.6e}\n-bridge_cy  {0.5*w:.6e}\n")
+        face = (f"flat faces (90 deg) from two far, crossed discs (R = {R:.3e} m, face sag {sag*1e6:.3f} um)"
+                if abs(ct) < 1e-12 else
+                f"convex faces at {th:g} deg (R = {R:.3e} m, wall contacts {sag*1e6:.3f} um inside each apex)")
     try:
         rel = dat.relative_to(ROOT)
     except ValueError:
@@ -197,8 +231,8 @@ def main(argv=None) -> int:
 # Postprocessing must take wall positions from the mesh or from this line:
 # DOGBONE: W {w:.6e} wc {wc:.6e} x_n0 {x_n0:.6e} x_n1 {x_n1:.6e} shoulder {ls:.6e}
 #
-# Lens: x = {x_a*1e6:.1f}-{x_b*1e6:.1f} um, area {a.lens_len*w:.4e} m^2, flat faces (90 deg at
-# t = 0) from two far, crossed discs (R = {R:.3e} m, face sag {sag*1e6:.3f} um).
+# Lens: apexes on the axis x = {ax_a*1e6:.1f}-{ax_b*1e6:.1f} um, ice x = {x_a*1e6:.1f}-{x_b*1e6:.1f} um,
+# {face}.
 # eps {eps:.4e} m (production value, issue 1), h = eps/sqrt(2): Nx {nx}, Ny {ny}.
 # =============================================================================
 # DOF_GRID: {nx+P} {ny+P}
@@ -210,12 +244,7 @@ def main(argv=None) -> int:
 -Lx {lx:.6e}
 -Ly {w:.6e}
 -Lz 0
--bridge_cxL {x_a + R:.6e}
--bridge_rL  {R:.6e}
--bridge_cxR {x_b - R:.6e}
--bridge_rR  {R:.6e}
--bridge_cy  {0.5*w:.6e}
--delt_t 1.0e-4
+{bridge}-delt_t 1.0e-4
 -eps {eps:.4e}
 -eps_valid_temp {T0_C:g}
 -periodic 0
@@ -225,7 +254,7 @@ def main(argv=None) -> int:
     from plot_geometry import render
     png = Path(a.png).resolve() if a.png else ROOT / "preprocess" / (opts.stem + ".pdf")
     bad = render(opts, png, f"dog-bone: W {w*1e6:.0f} µm, neck {wc*1e6:.0f} µm x {a.neck_len*1e6:.0f} µm, "
-                            f"wide sections {flat_lo*1e6:.0f} µm, lens {x_a*1e6:.0f}-{x_b*1e6:.0f} µm (blue)")
+                            f"wide sections {flat_lo*1e6:.0f} µm, lens {ax_a*1e6:.0f}-{ax_b*1e6:.0f} µm at {th:g}° (blue)")
     return 1 if bad else 0
 
 

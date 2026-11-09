@@ -20,8 +20,11 @@ Choices made here, not in the plan (printed, and in the file headers):
   length     1.1 mm: each wide section is flat for 300 um, the lens plus 75 um
              on either side of it; the warm side gets the same 300 um so the
              pore is symmetric (user, 2026-11-09)
-  lens       150 um long, centered in the cold flat section (x = 875-1025 um),
-             flat faces at t = 0 (as in types 3 and 4)
+  lens       150 um long on the axis, centered in the cold flat section
+             (apexes x = 875-1025 um); faces start at the run's wall-BC angle
+             (user, 2026-11-09), so the theta 60 runs start with concave faces
+             (-bridge_concaveL/R, FREEZE 18270f6f) and 6B-1 with flat ones.
+             One geometry file per (neck, lens angle); they share the mesh.
   eps        8.5840e-7 m, the production value (issue 1); comp_eps at the
              G = 300 speed (5e-10 m/s, Rave 20 um) allows up to 1.28e-6 m
   output     one snapshot a day at G = 100, two a day at G = 300
@@ -51,19 +54,19 @@ NECKS = (4.0e-5, 8.0e-5, 1.5e-4)
 TODAY = datetime.date.today().isoformat()
 
 
-def geom_name(wc):
-    return f"dogbone_2D_L{LX*1e6:.0f}um_W150um_wc{wc*1e6:.0f}um_eps0.86um"
+def geom_name(wc, theta):
+    return f"dogbone_2D_L{LX*1e6:.0f}um_W150um_wc{wc*1e6:.0f}um_lens{theta:g}_eps0.86um"
 
 
-def build_geometry(wc, dtmax, dry):
-    name = geom_name(wc)
+def build_geometry(wc, theta, dtmax, dry):
+    name = geom_name(wc, theta)
     dat = MESH / f"dogbone_wc{wc*1e6:.0f}um.dat"
     opts = GEO / f"{name}.opts"
     png = ROOT / f"preprocess/{name}.pdf"
     head = (f"Plan type 6 (make_type6_inputs.py, {TODAY}): dog-bone pore, neck wc = {wc*1e6:.0f} um"
-            + (" (= W: no constriction)" if wc >= W else "") + ".")
+            + (" (= W: no constriction)" if wc >= W else "") + f", lens faces at {theta:g} deg.")
     cmd = [sys.executable, str(ROOT / "preprocess/build_geometry_dogbone.py"), "--wc", f"{wc:.6e}",
-           "--Lx", f"{LX:.6e}", "--W", f"{W:.6e}", "--eps", f"{EPS:.4e}",
+           "--Lx", f"{LX:.6e}", "--W", f"{W:.6e}", "--eps", f"{EPS:.4e}", "--lens-theta", f"{theta:g}",
            "--out", str(dat), "--opts", str(opts), "--png", str(png), "--header", head]
     print("  " + " ".join(c.replace(str(ROOT) + "/", "") for c in cmd[1:-2]) + " --header ...")
     if dry:
@@ -124,7 +127,8 @@ def main() -> int:
     dtmax = 2.0 * tau_sub(EPS)
     print(f"eps {EPS:.4e} m, dtmax = 2 tau_sub = {dtmax:.4e} s")
     print("\nType 6 geometry")
-    geo = {wc: build_geometry(wc, dtmax, a.dry_run) for wc in NECKS}
+    geo = {wc: build_geometry(wc, 60, dtmax, a.dry_run) for wc in NECKS}
+    geo90 = build_geometry(NECKS[0], 90, dtmax, a.dry_run)
     print("\nExperiments")
     e100 = experiment("t6ls_T-20_G100warmtop_theta60_60d_ac1e-2", 60, 100.0, 60, 1,
                       "Plan type 6A-1..3: lens crossing a constriction, G = 100 K/m.", a.dry_run)
@@ -135,7 +139,7 @@ def main() -> int:
     lines = [f"# Plan type 6 (make_type6_inputs.py, {TODAY}). RUNS.md IDs in the comments."]
     lines += [f"{geo[wc]}:{e100}   # 6A-{i}" for i, wc in enumerate(NECKS, 1)]
     lines += [f"{geo[wc]}:{e300}   # 6A-{i}" for i, wc in enumerate(NECKS, 4)]
-    lines += [f"{geo[NECKS[0]]}:{e90}   # 6B-1"]
+    lines += [f"{geo90}:{e90}   # 6B-1"]
     path = STUDY / "type6_tests.txt"
     print(f"\n  {'(dry) ' if a.dry_run else ''}wrote {path.relative_to(ROOT)}")
     if not a.dry_run:

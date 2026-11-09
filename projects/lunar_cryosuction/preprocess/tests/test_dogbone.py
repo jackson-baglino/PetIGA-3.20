@@ -71,6 +71,31 @@ class Builder(unittest.TestCase):
         self.assertAlmostEqual((cxr + r) * 1e6, 365.0, places=3)
         self.assertIn("mesh wall vs profile", log)
 
+    def test_concave_lens_at_60_deg(self):
+        rc, log, text = self._run("--wc", "4e-5", "--Lx", "4e-4", "--W", "5e-5", "--neck-len", "1e-4",
+                                  "--shoulder", "4e-5", "--lens-len", "4e-5", "--eps", "1.2e-6",
+                                  "--lens-theta", "60")   # 1.5e-6: the 6.7 um sag breaks the 20 eps margin
+        self.assertEqual(rc, 0, log)
+        self.assertIn("-bridge_concaveL 1", text)
+        self.assertIn("-bridge_concaveR 1", text)
+        g = {k: float(re.search(rf"-bridge_{k}\s+(\S+)", text).group(1)) for k in ("cxL", "rL", "cxR", "rR", "cy")}
+        a = 0.5 * 5e-5
+        self.assertAlmostEqual(g["rL"] / a, 2.0, places=6)          # R = a / cos 60
+        self.assertAlmostEqual((g["cxL"] + g["rL"]) * 1e6, 325.0, places=3)   # apexes on the axis
+        self.assertAlmostEqual((g["cxR"] - g["rR"]) * 1e6, 365.0, places=3)
+        # angle at the wall contact, through the ice: the face normal (from the disc center)
+        # makes angle theta with the wall normal, i.e. cos(theta) = a / R
+        self.assertAlmostEqual(np.degrees(np.arccos(a / g["rL"])), 60.0, places=6)
+        # the IC mask (plot_geometry) agrees with the printed sharp area
+        import plot_geometry as pg
+        o = {f"-bridge_{k}": f"{v:.12e}" for k, v in g.items()}
+        o["-bridge_concaveL"] = o["-bridge_concaveR"] = "1"
+        x, y = np.linspace(2.9e-4, 4.0e-4, 2201), np.linspace(0, 5e-5, 1001)
+        X, Y = np.meshgrid(x, y, indexing="ij")
+        area = pg.ice_mask(o, X, Y).sum() * (x[1] - x[0]) * (y[1] - y[0])
+        want = float(re.search(r"lens area (\S+) m\^2", log).group(1))
+        self.assertAlmostEqual(area / want, 1.0, delta=3e-3)
+
     def test_lens_on_a_shoulder_is_refused(self):
         with self.assertRaises(SystemExit):
             self._run("--wc", "4e-5", "--lens-x", "8.0e-4")

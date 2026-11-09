@@ -49,8 +49,13 @@ def ice_mask(o, X, Y):
     ice = np.zeros_like(X, dtype=bool)
     cxl, rl, cxr, rr, cy = (floats(o, k) for k in ("-bridge_cxL", "-bridge_rL", "-bridge_cxR",
                                                      "-bridge_rR", "-bridge_cy"))
-    for k in range(len(cxl)):        # intersection of two discs (src/initial_conditions.c BridgeField)
-        ice |= (np.hypot(X - cxl[k], Y - cy[k]) <= rl[k]) & (np.hypot(X - cxr[k], Y - cy[k]) <= rr[k])
+    ccl = [int(v) for v in floats(o, "-bridge_concaveL")] or [0] * len(cxl)
+    ccr = [int(v) for v in floats(o, "-bridge_concaveR")] or [0] * len(cxl)
+    for k in range(len(cxl)):        # src/initial_conditions.c BridgeField
+        dl, dr = np.hypot(X - cxl[k], Y - cy[k]), np.hypot(X - cxr[k], Y - cy[k])
+        left = ((dl >= rl[k]) & (X >= cxl[k])) if ccl[k] else (dl <= rl[k])   # concave: outside, beyond center
+        right = ((dr >= rr[k]) & (X <= cxr[k])) if ccr[k] else (dr <= rr[k])
+        ice |= left & right
     r1, r2 = floats(o, "-wedge_band_r1"), floats(o, "-wedge_band_r2")
     if r1 and "-wedge_apex_x" in o:
         rho = np.hypot(X - float(o["-wedge_apex_x"]), Y - float(o["-wedge_apex_y"]))
