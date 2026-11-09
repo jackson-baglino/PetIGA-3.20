@@ -133,18 +133,23 @@ def preview(surf, lx, w, wc, x_n0, x_n1, ls, x_a, x_b, eps, fname, title):
     a.set_ylabel("y [µm]")
     a.set_title(title, fontsize=8)
 
-    # mesh close-up of one shoulder: every 4th element line
+    # Mesh. A PDF gets every element line over the whole pore (vector: zoom in to
+    # inspect it); a raster image gets every 4th line near the cold-side shoulder.
+    from matplotlib.collections import LineCollection
     b = ax[1]
-    u = np.linspace(0, 1, 1500)
-    xs0, xs1 = x_n1 - 0.2 * ls, x_n1 + 1.2 * ls
-    for ub in surf.breaks(0)[::4]:
+    vec = str(fname).lower().endswith(".pdf")
+    every = 1 if vec else 4
+    xs0, xs1 = (0.0, lx) if vec else (x_n1 - 0.2 * ls, x_n1 + 1.2 * ls)
+    u = np.linspace(xs0 / lx, xs1 / lx, 6000 if vec else 1500)
+    segs = []
+    for ub in surf.breaks(0)[::every]:          # constant-u lines are straight: x = Lx u
         if xs0 <= ub * lx <= xs1:
-            pts = surf([ub], u)[0]
-            b.plot(pts[:, 0] * s, pts[:, 1] * s, color="#1f6fd0", lw=0.3)
-    for vb in surf.breaks(1)[::4]:
+            y0, y1 = walls(np.array([ub * lx]), w, wc, x_n0, x_n1, ls)
+            segs.append([(ub * lx * s, y0[0] * s), (ub * lx * s, y1[0] * s)])
+    for vb in surf.breaks(1)[::every]:
         pts = surf(u, [vb])[:, 0]
-        m = (pts[:, 0] >= xs0) & (pts[:, 0] <= xs1)
-        b.plot(pts[m, 0] * s, pts[m, 1] * s, color="#1f6fd0", lw=0.3)
+        segs.append(pts[:, :2] * s)
+    b.add_collection(LineCollection(segs, colors="#1f6fd0", linewidths=0.05 if vec else 0.3))
     b.plot(x * s, yb * s, "k-", lw=0.8)
     b.plot(x * s, yt * s, "k-", lw=0.8)
     b.set_xlim(xs0 * s, xs1 * s)
@@ -152,7 +157,8 @@ def preview(surf, lx, w, wc, x_n0, x_n1, ls, x_a, x_b, eps, fname, title):
     b.set_aspect("equal")
     b.set_xlabel("x [µm]")
     b.set_ylabel("y [µm]")
-    b.set_title("mesh at the cold-side shoulder (every 4th element line)", fontsize=8)
+    b.set_title("mesh, every element line (zoom in)" if vec else
+                "mesh at the cold-side shoulder (every 4th element line)", fontsize=8)
     bad = check_figure(fig)
     fig.savefig(fname, dpi=200)
     plt.close(fig)

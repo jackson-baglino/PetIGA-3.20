@@ -57,7 +57,7 @@ def build_geometry(wc, dtmax, dry):
     name = geom_name(wc)
     dat = MESH / f"dogbone_wc{wc*1e6:.0f}um.dat"
     opts = GEO / f"{name}.opts"
-    png = ROOT / f"preprocess/dogbone_wc{wc*1e6:.0f}um.png"
+    png = ROOT / f"preprocess/dogbone_wc{wc*1e6:.0f}um.pdf"
     head = (f"Plan type 6 (make_type6_inputs.py, {TODAY}): dog-bone pore, neck wc = {wc*1e6:.0f} um"
             + (" (= W: no constriction)" if wc >= W else "") + ".")
     cmd = [sys.executable, str(ROOT / "preprocess/build_geometry_dogbone.py"), "--wc", f"{wc:.6e}",
