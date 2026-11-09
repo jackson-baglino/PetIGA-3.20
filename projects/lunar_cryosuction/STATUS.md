@@ -65,8 +65,14 @@ Hypotheses: the user writes them; none recorded yet.
 - Types 3 and 4 inputs done (studies/cryosuction/scripts/make_type34_inputs.py).
 - Type 6 inputs done 2026-11-08 (build_geometry_dogbone.py, make_type6_inputs.py;
   type6_tests.txt, preflight OK).
-- Still to build: geometry builders for the single throat (type 5), 2 mm regolith pore with its ice layout (type 7), wall caps of a
-  given theta (types 1, 2); experiment files for types 1, 2, 5, 7.
+- Solver UNFROZEN by the user 2026-11-09 until production (FREEZE.md status;
+  keep logging solver commits there as a change log).
+- Type 7: build_ice_layout.py + -ic_type phi_file (044a2cf4) built and gated
+  2026-11-09; layout A (2 mm rough pore, 3 lenses at 60 deg, 4 droplets and
+  3 grains at a 40 deg water placeholder, 24.6 % ice, 2.41 M DOF) and the 7A
+  experiment are in inputs; 7B-7D experiment files still to write.
+- Still to build: single throat (type 5), wall caps of a given theta
+  (types 1, 2); experiment files for types 1, 2, 5, 7B-D.
 
 ## HPC
 
