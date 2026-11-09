@@ -1,0 +1,36 @@
+# =============================================================================
+# geometry type7_mixed_A_2D_L2000um_eps0.86um.opts   (preprocess/build_ice_layout.py preprocess/layouts/type7_mixed_A.json)
+#
+# Rough-walled pore: Lx 2000.0 um, gap 50.0-146.9 um (mean 120.1),
+# 35+35 wall bumps, throat at x = 1000.0 um.
+# Walls are in the mesh; y0, y1 are walls; x0 (collector) and x1 (dead end) are pore ends.
+# Ice from inputs/geometry/meshes/type7_mixed_A_2D_L2000um_eps0.86um_phi.bin (-ic_type phi_file), initial angle 40 deg:
+#   plug 550-650 um, theta 60, faces r 103.7 um
+#   plug 960-1040 um, theta 60, faces r 60.8 um
+#   plug 1750-2000 um, theta 60, faces r 111.4 um
+#   cap x 260 um on the bottom wall, R 50 um, theta 40
+#   cap x 390 um on the top wall, R 65 um, theta 40
+#   cap x 1300 um on the bottom wall, R 60 um, theta 40
+#   cap x 1450 um on the top wall, R 40 um, theta 40
+#   grain (800, 76) um, 22 x 22 um
+#   grain (1200, 83) um, 12 x 12 um
+#   grain (1580, 76) um, 30 x 30 um
+# ice 24.6% of the pore, sharp area 5.9002e-08 m^2, 10 bodies.
+# eps 8.5840e-07 m, h = eps/sqrt(2): Nx 3295, Ny 242.
+# =============================================================================
+# DOF_GRID: 3297 244
+-geom_file inputs/geometry/meshes/type7_mixed_A_2D_L2000um_eps0.86um.dat
+-p 2
+-C 1
+-ic_type phi_file
+-phi_file inputs/geometry/meshes/type7_mixed_A_2D_L2000um_eps0.86um_phi.bin
+-dim 2
+-Lx 2.000000e-03
+-Ly 1.549276e-04
+-Lz 0
+-delt_t 1.0e-4
+-eps 8.5840e-07
+-eps_valid_temp -20
+-periodic 0
+-wall_faces y0,y1
+-dtmax 1.3412e+03                     # 2 tau_sub at this eps (layout 'dtmax')
