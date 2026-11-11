@@ -7,7 +7,7 @@ weeks (LOG.md keeps the history), and never let it pass about 150 lines.
 Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 `LOG.md`; the plan itself in the iCloud folder below.
 
-**Last updated:** 2026-11-09 (session 6475a664)
+**Last updated:** 2026-11-11 (session 6475a664)
 
 ## Goal and deadline
 
@@ -78,7 +78,10 @@ Hypotheses: the user writes them; none recorded yet.
 
 ## HPC
 
-- T6 (7 runs, 1.36 M DoF each) queued on the HPC by the user 2026-11-09.
+- T6 ran 2026-11-09/11: 5 of 7 finished; wc 40 G 300 (theta 60, 90) will hit the
+  48 h limit near day 10-12 of 30 (RUNS.md). Lens splits into wall films;
+  only the 40 um neck delays transit. Overview of every type:
+  `studies/cryosuction/RUN_PROGRESS.md`.
   I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 lenses start
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at
