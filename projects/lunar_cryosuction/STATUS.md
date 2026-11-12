@@ -7,7 +7,7 @@ weeks (LOG.md keeps the history), and never let it pass about 150 lines.
 Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 `LOG.md`; the plan itself in the iCloud folder below.
 
-**Last updated:** 2026-11-11 (session 6475a664)
+**Last updated:** 2026-11-12 (session 6475a664)
 
 ## Goal and deadline
 
@@ -84,6 +84,11 @@ Hypotheses: the user writes them; none recorded yet.
   `studies/cryosuction/RUN_PROGRESS.md`. User (11 Nov): G 100/300 too large
   (summer runs <= 50 K/m). Run plan 2026-11-11 proposes G 1-10 (+30), S7 scan
   first; T1/T2 gradient runs and T6/T7C-D on hold until approved.
+- 2026-11-12: 6B-1 restart prepared in place (`resume_run.sh`, solver option
+  -restart_append eae44490); 6B-2 (wc 80, theta 90, G 300) inputs built. User:
+  G 1-3 K/m too slow; plan_estimates.py section 7 gives the G window (wide-gas
+  G below ~18.5 K/m for 150 um faces; below ~44 K/m runs are dtmax-bound, wall
+  time ~ 1/G). Run plan v2 (<= 7 pp.) in progress; G pending the user's check.
   I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 lenses start
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at
