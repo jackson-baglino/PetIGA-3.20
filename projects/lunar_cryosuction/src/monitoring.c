@@ -4,6 +4,34 @@
 #include <petscstring.h>
 #include <petsc/private/tsimpl.h>   /* for direct access to ts->dtmin */
 
+/* Open a per-step log file. Normally the file is created (truncated) and the
+ * caller writes its header. Under -restart_append the file is opened for
+ * append and *append is set, so the caller skips the header: the first leg's
+ * header and rows (trimmed to step <= N by the job script) stay in place. */
+static PetscErrorCode OpenLogViewer(AppCtx *user, const char *fn, PetscViewer *v,
+                                    PetscBool *append)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  *append = user->restart_append;
+  if (!*append) {
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, fn, v); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  ierr = PetscViewerCreate(PETSC_COMM_WORLD, v); CHKERRQ(ierr);
+  ierr = PetscViewerSetType(*v, PETSCVIEWERASCII); CHKERRQ(ierr);
+  ierr = PetscViewerFileSetMode(*v, FILE_MODE_APPEND); CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(*v, fn); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+/* True on the monitor call for the state loaded by -restart_append: that
+ * step's rows are already in the logs and its sol_N.dat is on disk. */
+static PetscBool RestartLoadedStep(const AppCtx *user, PetscInt step)
+{
+  return (PetscBool)(user->restart_append && step == user->restart_step);
+}
+
 PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 {
   PetscErrorCode ierr;
@@ -327,15 +355,20 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       const char *sdir = getenv("folder");
       if (sdir) { sprintf(fname,"%s/solver_evo.dat",sdir); }
       else      { sprintf(fname,"solver_evo.dat"); }
-      ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,fname,&user->solver_view);CHKERRQ(ierr);
-      ierr = PetscViewerASCIIPrintf(user->solver_view,
+      PetscBool app;
+      ierr = OpenLogViewer(user, fname, &user->solver_view, &app);CHKERRQ(ierr);
+      if (!app) {
+        ierr = PetscViewerASCIIPrintf(user->solver_view,
                  "# step t dt newton_its krylov_its krylov_per_newton rejections\n");CHKERRQ(ierr);
+      }
     }
+    if (!RestartLoadedStep(user, step)) {
     ierr = PetscViewerASCIIPrintf(user->solver_view,"%d %e %e %d %d %.2f %d\n",
                                   (int)step, (double)t, (double)dt, (int)d_snes, (int)d_ksp,
                                   d_snes > 0 ? (double)d_ksp/(double)d_snes : 0.0,
                                   (int)d_rej);CHKERRQ(ierr);
     ierr = PetscViewerFlush(user->solver_view);CHKERRQ(ierr);
+    }
   }
 
   if(print==1) {
@@ -349,12 +382,15 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       const char *dir = getenv("folder");
       if (dir) { sprintf(filedata,"%s/SSA_evo.dat",dir); }
       else     { sprintf(filedata,"SSA_evo.dat"); }
-      ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,filedata,&user->ssa_view);CHKERRQ(ierr);
+      PetscBool app;   /* SSA_evo.dat has no header either way */
+      ierr = OpenLogViewer(user, filedata, &user->ssa_view, &app);CHKERRQ(ierr);
     }
-    ierr = PetscViewerASCIIPrintf(user->ssa_view,"%e %e %e %d %e %e %e %e\n",
-                                  sub_interf/user->eps, tot_ice, t, step, dt,
-                                  tot_air, tot_rhov, tot_mass);CHKERRQ(ierr);
-    ierr = PetscViewerFlush(user->ssa_view);CHKERRQ(ierr);
+    if (!RestartLoadedStep(user, step)) {
+      ierr = PetscViewerASCIIPrintf(user->ssa_view,"%e %e %e %d %e %e %e %e\n",
+                                    sub_interf/user->eps, tot_ice, t, step, dt,
+                                    tot_air, tot_rhov, tot_mass);CHKERRQ(ierr);
+      ierr = PetscViewerFlush(user->ssa_view);CHKERRQ(ierr);
+    }
   }
 
   PetscFunctionReturn(0);
@@ -394,6 +430,14 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
    * any percentile range computed across the series. Forcing step 1 gives
    * an "initial frame" that is a real solution, so the IC can be skipped. */
   PetscInt print = (step <= 1) ? 1 : 0;
+
+  /* -restart_append: sol_N.dat is the file just loaded. Do not rewrite it;
+   * only move the next output time past t, on the same t_interv grid as the
+   * first leg (t_out starts at 0 and steps by t_interv either way). */
+  if (RestartLoadedStep(user, step)) {
+    if (user->outp <= 0) { while (user->t_out <= t) user->t_out += user->t_interv; }
+    PetscFunctionReturn(0);
+  }
 
   // Check if it's time to print output
   if (!print) {
@@ -681,7 +725,9 @@ PetscErrorCode BoundaryFluxMonitor(TS ts, PetscInt step, PetscReal t, Vec U, voi
     const char *dir = getenv("folder");
     if (dir) { snprintf(filedata, sizeof(filedata), "%s/bflux.dat", dir); }
     else     { snprintf(filedata, sizeof(filedata), "bflux.dat"); }
-    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, filedata, &user->bflux_view); CHKERRQ(ierr);
+    PetscBool app;
+    ierr = OpenLogViewer(user, filedata, &user->bflux_view, &app); CHKERRQ(ierr);
+    if (!app) {
     ierr = PetscViewerASCIIPrintf(user->bflux_view,
              "# outward physical flux (unscaled D_v, k); vapor kg/s, heat W; %s\n# t step",
              user->axisym ? "axisymmetric, full 2*pi*r surface" : "per unit depth in 2D");
@@ -693,7 +739,9 @@ PetscErrorCode BoundaryFluxMonitor(TS ts, PetscInt step, PetscReal t, Vec U, voi
                                         axes[l], (int)m, axes[l], (int)m); CHKERRQ(ierr);
         }
     ierr = PetscViewerASCIIPrintf(user->bflux_view, "\n"); CHKERRQ(ierr);
+    }
   }
+  if (RestartLoadedStep(user, step)) PetscFunctionReturn(0);
   ierr = PetscViewerASCIIPrintf(user->bflux_view, "%.10e %d", (double)t, (int)step); CHKERRQ(ierr);
   for (PetscInt l = 0; l < dim; l++)
     for (PetscInt m = 0; m < 2; m++)
@@ -826,11 +874,14 @@ PetscErrorCode ResolutionMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void 
     const char *dir = getenv("folder");
     if (dir) { snprintf(fn, sizeof(fn), "%s/resolution.dat", dir); }
     else     { snprintf(fn, sizeof(fn), "resolution.dat"); }
-    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, fn, &user->res_view); CHKERRQ(ierr);
+    PetscBool app;
+    ierr = OpenLogViewer(user, fn, &user->res_view, &app); CHKERRQ(ierr);
+    if (!app) {
     ierr = PetscViewerASCIIPrintf(user->res_view,
              "# K&P Eq. 45 check: Pi = beta0 v_n eps/d0 (<= 0.5 design, > 1 violated); "
              "eps %.6e m, beta0 %.6e s/m, d0 %.6e m\n# t step dt vn_max Pi phi_max_reservoir_face\n",
              (double)user->eps, (double)user->beta_sub0, (double)user->d0_sub0); CHKERRQ(ierr);
+    }
   }
   ierr = PetscViewerASCIIPrintf(user->res_view, "%.10e %d %.6e %.6e %.6e %.6e\n",
            (double)t, (int)step, (double)dt, (double)vmax, (double)Pi, (double)open_max); CHKERRQ(ierr);

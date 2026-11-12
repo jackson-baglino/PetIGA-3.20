@@ -443,6 +443,14 @@ typedef struct {
   PetscViewer solver_view;
   PetscInt    solver_snes_prev, solver_ksp_prev, solver_rej_prev;
 
+  // In-place continuation (-restart_append, with -initial_cond sol_N.dat):
+  // the step counter resumes at N, the log files are opened for append with no
+  // new header, and the monitor call on the loaded state (step N, already in
+  // the logs and on disk as sol_N.dat) writes nothing. The job script trims
+  // every log to step <= N first (scripts/HPC/resume_run.sh).
+  PetscBool   restart_append;
+  PetscInt    restart_step;
+
 } AppCtx;/* Field definitions for node data */
 
 #endif // NASA_TYPES_H

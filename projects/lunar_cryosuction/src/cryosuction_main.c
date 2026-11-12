@@ -57,7 +57,8 @@ static PetscErrorCode SNESTSFormFunction_DomainErrSync(SNES snes, Vec X, Vec F, 
  * own defaults otherwise and says so.
  * ------------------------------------------------------------------------ */
 static PetscBool RestartStateFromLog(const char *sol_path, PetscReal *t_out,
-                                     PetscReal *dt_out)
+                                     PetscReal *dt_out, PetscInt *step_out,
+                                     PetscReal base0[4])
 {
   char        dir[PETSC_MAX_PATH_LEN], logpath[PETSC_MAX_PATH_LEN];
   const char *base;
@@ -89,7 +90,12 @@ static PetscBool RestartStateFromLog(const char *sol_path, PetscReal *t_out,
     int    step;
     if (sscanf(line, "%lf %lf %lf %d %lf %lf %lf %lf",  // NOLINT(bugprone-unchecked-string-to-number-conversion)
                &ssa, &ice, &t, &step, &dt, &air, &rhov, &mass) != 8) continue;
+    if (step == 0 && base0) {   /* step-0 integrals: the %-change baseline */
+      base0[0] = (PetscReal)ice; base0[1] = (PetscReal)air;
+      base0[2] = (PetscReal)rhov; base0[3] = (PetscReal)mass;
+    }
     if (step == want) {
+      if (step_out) *step_out = (PetscInt)want;
       *t_out = (PetscReal)t;
       *dt_out = (PetscReal)dt;
       found = PETSC_TRUE;
@@ -203,6 +209,7 @@ int main(int argc, char *argv[]) {
     user.bflux_view = NULL;            /* bflux.dat viewer, opened lazily in BoundaryFluxMonitor() */
     user.solver_view = NULL;           /* solver_evo.dat viewer, opened lazily in Monitor() */
     user.solver_snes_prev = 0; user.solver_ksp_prev = 0; user.solver_rej_prev = 0;
+    user.restart_append = PETSC_FALSE; user.restart_step = -1; /* see NASA_types.h */
     user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
 
     user.phase_lo   = -0.01;   /* physics band: excursion -> rollback (NASA_types.h) */
@@ -901,6 +908,10 @@ int main(int argc, char *argv[]) {
 
     /* --- Restart / initialization files --------------------------------- */
     ierr = PetscOptionsString("-initial_cond", "Load initial solution from file", "", initial, initial, sizeof(initial), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-restart_append",
+             "With -initial_cond: continue in the snapshot's own folder (step counter "
+             "resumes, logs appended). Default off: a restart starts its own logs",
+             "", user.restart_append, &user.restart_append, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_start", "Clock to resume from [s]. Default: read from the snapshot's SSA_evo.dat", "", t_start, &t_start, &t_start_set); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-dt_start",
@@ -996,7 +1007,21 @@ int main(int argc, char *argv[]) {
     restarting = (PetscBool)(user.initial_cond[0] != '\0');
     if (restarting) {
         PetscReal t_log = 0.0, dt_log = 0.0;
-        PetscBool got = RestartStateFromLog(user.initial_cond, &t_log, &dt_log);
+        PetscInt  step_log = -1;
+        PetscReal base0[4] = {0.0, 0.0, 0.0, 0.0};
+        PetscBool got = RestartStateFromLog(user.initial_cond, &t_log, &dt_log,
+                                            &step_log, base0);
+        if (user.restart_append) {
+            /* In-place continuation needs the snapshot's step number; without
+             * it the appended rows would repeat step numbers already logged. */
+            if (!got || step_log < 0)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                        "-restart_append: could not read the step of %s from the "
+                        "SSA_evo.dat beside it", user.initial_cond);
+            user.restart_step = step_log;
+            user.tot_ice_0  = base0[0]; user.tot_air_0  = base0[1];
+            user.tot_rhov_0 = base0[2]; user.tot_mass_0 = base0[3];
+        }
         if (got) {
             if (!t_start_set)  t_start  = t_log;
             if (!dt_start_set) dt_start = dt_log;
@@ -1479,6 +1504,13 @@ int main(int argc, char *argv[]) {
      * NRmin/NRmax heuristic before doing any new physics. */
     if (restarting && dt_start > 0.0) {
         ierr = TSSetTimeStep(ts, dt_start); CHKERRQ(ierr);
+    }
+    /* -restart_append: number the new steps after the snapshot's, so the
+     * continuation's rows and sol_*.dat names follow the first leg's. TSSolve
+     * keeps a nonzero step count (PETSc 3.20 ts.c, TSSolve: steps are reset
+     * only when ts->steps == 0). */
+    if (restarting && user.restart_append) {
+        ierr = TSSetStepNumber(ts, user.restart_step); CHKERRQ(ierr);
     }
     ierr = TSSetType(ts, TSALPHA); CHKERRQ(ierr);
     ierr = TSAlphaSetRadius(ts, 0.5); CHKERRQ(ierr);
