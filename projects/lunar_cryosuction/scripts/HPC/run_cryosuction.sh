@@ -114,6 +114,32 @@ GEOM_OPTS="$(resolve_opts "$INPUTS_DIR/geometry"   "$geom_name")" \
 EXP_OPTS="$(resolve_opts "$INPUTS_DIR/experiment" "$exp_name")" \
     || EXP_OPTS="$INPUTS_DIR/experiment/${exp_name}.opts"
 
+###############################################################################
+# Resume mode (RESUME_DIR=<run folder>, set by scripts/HPC/resume_run.sh).
+#
+# Continues a run that stopped (time limit, node failure) in its own folder,
+# from its last sol_N.dat, so the folder ends up as if the job had not stopped:
+#   - the three .opts are the copies staged in the run folder, not today's
+#     inputs/ (an edit since the first leg cannot leak into the second);
+#   - every per-step log is trimmed to step <= N (the rows written between the
+#     last snapshot and the kill are recomputed), after a backup of the
+#     untrimmed files to resume_backup_<ts>/;
+#   - the solver gets -initial_cond sol_N.dat -restart_append, which resumes
+#     t, dt and the step counter and appends to the logs (cryosuction_main.c);
+#   - outp.txt is appended to, after a marker line.
+# The generalized-alpha integrator restarts from the state alone (its
+# time-derivative vector is not saved), so the first steps of the second leg
+# differ slightly from an uninterrupted run.
+###############################################################################
+RESUME_DIR="${RESUME_DIR:-}"
+if [[ -n "$RESUME_DIR" ]]; then
+    [[ -d "$RESUME_DIR" ]] || { echo "❌ RESUME_DIR is not a directory: $RESUME_DIR"; exit 1; }
+    RESUME_DIR="$(cd "$RESUME_DIR" && pwd)"
+    SOLVER_OPTS="$RESUME_DIR/solver.opts"
+    GEOM_OPTS="$RESUME_DIR/${geom_name}.opts"
+    EXP_OPTS="$RESUME_DIR/${exp_name}.opts"
+fi
+
 # Discover mpiexec: prefer the PETSC-bundled binary (always present when
 # PETSc downloaded MPICH), fall back to whatever is on PATH.
 MPIEXEC=""
@@ -239,6 +265,61 @@ create_folder() {
     folder="${base_dir}/${geom_name}/${name}"
     mkdir -p "$folder"
     echo "Output folder: $folder"
+}
+
+###############################################################################
+# Resume: pick the last snapshot, back up and trim the logs (see RESUME_DIR)
+###############################################################################
+prepare_resume() {
+    echo ""
+    echo "--- Preparing in-place resume ---"
+    folder="$RESUME_DIR"
+    name="$(basename "$folder")"
+
+    local last n ts bk f
+    last="$(find "$folder" -maxdepth 1 -name 'sol_*.dat' | sort | tail -n1)"
+    [[ -n "$last" ]] || { echo "❌ No sol_*.dat in $folder"; exit 1; }
+    n="$(basename "$last" .dat)"; n="$((10#${n#sol_}))"
+    [[ -f "$folder/SSA_evo.dat" ]] || { echo "❌ No SSA_evo.dat in $folder"; exit 1; }
+    awk -v n="$n" '$4 == n {found=1} END {exit !found}' "$folder/SSA_evo.dat" \
+        || { echo "❌ SSA_evo.dat has no row for step $n"; exit 1; }
+
+    ts="$(date +%Y-%m-%d__%H.%M.%S)"
+    bk="$folder/resume_backup_${ts}"
+    mkdir -p "$bk"
+    for f in SSA_evo.dat solver_evo.dat bflux.dat resolution.dat outp.txt; do
+        [[ -f "$folder/$f" ]] && cp -p "$folder/$f" "$bk/"
+    done
+    echo "  Backed up the logs to $bk"
+
+    # Keep comment lines and rows with step <= n. Step column: SSA_evo 4,
+    # solver_evo 1, bflux 2, resolution 2 (headers in monitoring.c).
+    trim() {   # <file> <step column>
+        [[ -f "$folder/$1" ]] || return 0
+        awk -v n="$n" -v c="$2" '/^#/ || $c + 0 <= n' "$bk/$1" > "$folder/$1"
+        echo "  $1: kept rows with step <= $n ($(wc -l < "$bk/$1") -> $(wc -l < "$folder/$1") lines)"
+    }
+    trim SSA_evo.dat 4
+    trim solver_evo.dat 1
+    trim bflux.dat 2
+    trim resolution.dat 2
+
+    # Snapshots past N (none unless a write was interrupted) would be stale.
+    while IFS= read -r f; do
+        local k; k="$(basename "$f" .dat)"; k="$((10#${k#sol_}))"
+        (( k > n )) && { echo "  Removing stale $(basename "$f")"; rm -f "$f"; }
+    done < <(find "$folder" -maxdepth 1 -name 'sol_*.dat')
+
+    RESUME_SOL="$last"
+    EXTRA_OPTS+=(-initial_cond "$RESUME_SOL" -restart_append)
+    {
+        echo ""
+        echo "=========================================================================="
+        echo "  RESUMED $(date '+%Y-%m-%d %H:%M:%S') from $(basename "$last") (step $n)"
+        echo "  job ${SLURM_JOB_ID:-local}; log backup: $(basename "$bk")"
+        echo "=========================================================================="
+    } >> "$folder/outp.txt"
+    echo "  Resuming from $(basename "$last") (step $n)"
 }
 
 ###############################################################################
@@ -396,7 +477,7 @@ run_simulation() {
             -options_file "$EXP_OPTS"    \
             -output_path  "$folder" \
             "${EXTRA_OPTS[@]}" \
-            | tee "$folder/outp.txt"
+            | tee ${RESUME_DIR:+-a} "$folder/outp.txt"
     else
         echo "No SLURM environment detected; running locally with mpiexec."
         echo "Using NPROCS = ${NPROCS}"
@@ -408,7 +489,7 @@ run_simulation() {
             -options_file "$EXP_OPTS"    \
             -output_path  "$folder" \
             "${EXTRA_OPTS[@]}" \
-            | tee "$folder/outp.txt"
+            | tee ${RESUME_DIR:+-a} "$folder/outp.txt"
     fi
 
     sim_exit=${PIPESTATUS[0]}
@@ -473,8 +554,12 @@ echo "  Title        : $title"
 echo "========================================================================="
 
 compile_code
-create_folder
-stage_output_folder
+if [[ -n "$RESUME_DIR" ]]; then
+    prepare_resume
+else
+    create_folder
+    stage_output_folder
+fi
 compute_optimal_nprocs
 run_simulation
 copy_source_code

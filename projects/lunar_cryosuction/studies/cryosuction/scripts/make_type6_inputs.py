@@ -13,6 +13,8 @@ Plan (SimulationPlan_v2, type 6):
           6A-4..6  wc 40, 80, 150 um, G 300 K/m, theta 60, 30 days
           6B-1     wc 40 um, G 300 K/m, theta 90, 30 days (no capillary force
                    on the flat neck walls)
+          6B-2     wc 80 um, otherwise as 6B-1 (user, 2026-11-12); --only-6b2
+                   writes just its geometry file and type6b2_tests.txt
 
 Choices made here, not in the plan (printed, and in the file headers):
   shoulders  C-infinity, 100 um long each (steepest wall slope 1.10 at
@@ -58,9 +60,13 @@ def geom_name(wc, theta):
     return f"dogbone_2D_L{LX*1e6:.0f}um_W150um_wc{wc*1e6:.0f}um_lens{theta:g}_eps0.86um"
 
 
-def build_geometry(wc, theta, dtmax, dry):
+def build_geometry(wc, theta, dtmax, dry, keep_mesh=False):
+    """keep_mesh: the mesh file exists and is used by runs already made; build
+    into a temporary file and require it to be byte-identical, so the shared
+    mesh is never silently replaced."""
     name = geom_name(wc, theta)
-    dat = MESH / f"dogbone_wc{wc*1e6:.0f}um.dat"
+    final = MESH / f"dogbone_wc{wc*1e6:.0f}um.dat"
+    dat = final.with_suffix(".new.dat") if keep_mesh else final
     opts = GEO / f"{name}.opts"
     png = ROOT / f"preprocess/{name}.pdf"
     head = (f"Plan type 6 (make_type6_inputs.py, {TODAY}): dog-bone pore, neck wc = {wc*1e6:.0f} um"
@@ -75,6 +81,13 @@ def build_geometry(wc, theta, dtmax, dry):
     print("    " + r.stdout.replace("\n", "\n    ").rstrip())
     if r.returncode != 0:
         raise SystemExit(f"dog-bone builder failed for wc {wc}:\n{r.stderr[-1500:]}")
+    if keep_mesh:
+        same = dat.read_bytes() == final.read_bytes()
+        dat.unlink()
+        if not same:
+            raise SystemExit(f"rebuilt mesh differs from {final.relative_to(ROOT)}; not replacing it")
+        print(f"    mesh identical to {final.relative_to(ROOT)} (kept)")
+        opts.write_text(opts.read_text().replace(dat.name, final.name))
     opts.write_text(opts.read_text() + f"-dtmax {dtmax:.4e}\n")
     return name
 
@@ -123,9 +136,23 @@ def experiment(name, theta, G, days, per_day, purpose, dry):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true", help="print what would be written")
+    ap.add_argument("--only-6b2", action="store_true",
+                    help="write only the 6B-2 geometry (wc 80, theta 90) and type6b2_tests.txt")
     a = ap.parse_args()
     dtmax = 2.0 * tau_sub(EPS)
     print(f"eps {EPS:.4e} m, dtmax = 2 tau_sub = {dtmax:.4e} s")
+    if a.only_6b2:
+        g = build_geometry(NECKS[1], 90, dtmax, a.dry_run, keep_mesh=True)
+        e90 = "t6ls_T-20_G300warmtop_theta90_30d_ac1e-2"   # the 6B-1 experiment, unchanged
+        if not (EXP / f"{e90}.opts").exists():
+            raise SystemExit(f"missing experiment {e90}.opts")
+        path = STUDY / "type6b2_tests.txt"
+        text = (f"# Plan type 6B-2 (make_type6_inputs.py --only-6b2, {TODAY}): theta 90 lens, "
+                f"80 um neck, G 300 K/m; pairs with 6B-1 (40 um neck).\n{g}:{e90}   # 6B-2\n")
+        print(f"\n  {'(dry) ' if a.dry_run else ''}wrote {path.relative_to(ROOT)}\n{text}")
+        if not a.dry_run:
+            path.write_text(text)
+        return 0
     print("\nType 6 geometry")
     geo = {wc: build_geometry(wc, 60, dtmax, a.dry_run) for wc in NECKS}
     geo90 = build_geometry(NECKS[0], 90, dtmax, a.dry_run)
