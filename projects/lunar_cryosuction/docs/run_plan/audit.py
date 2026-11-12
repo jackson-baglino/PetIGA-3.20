@@ -1,5 +1,7 @@
 """List text outside Word equations that still holds symbols or relations."""
-import re, sys, zipfile
+import re
+import sys
+import zipfile
 from lxml import etree
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 M = "{http://schemas.openxmlformats.org/officeDocument/2006/math}"

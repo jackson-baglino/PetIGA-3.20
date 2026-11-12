@@ -2,7 +2,6 @@
 (lines 1-310, 2026-11-11): page setup, styles, LaTeX -> Word equations (omath,
 mathify), paragraphs, tables, boxes and figures. Import * and use doc."""
 
-import sys
 
 from docx import Document
 from docx.enum.section import WD_ORIENT  # noqa: F401
@@ -13,7 +12,10 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 
+import os  # noqa: E402
 import re  # noqa: E402
+
+FOOTER_DATE = os.environ.get("RUNPLAN_DATE", "2026-11-11")
 
 from mathify import mathify  # noqa: E402
 from omath import omml  # noqa: E402
@@ -80,7 +82,7 @@ for name in ("List Bullet", "List Number"):
 # footer page numbers
 fp = sec.footer.paragraphs[0]
 fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-r = fp.add_run("Run plan, paper 2 / AGU 2026 · 2026-11-11 · page ")
+r = fp.add_run(f"Run plan, paper 2 / AGU 2026 · {FOOTER_DATE} · page ")
 r.font.size, r.font.color.rgb = Pt(8), GRAYT
 for t, txt in (("begin", None), (None, "PAGE"), ("end", None)):
     run = fp.add_run()

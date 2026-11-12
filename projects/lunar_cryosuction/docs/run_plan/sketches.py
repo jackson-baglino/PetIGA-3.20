@@ -89,8 +89,9 @@ def rng(h):
     return f"{lo:.2f}" if abs(hi - lo) < 0.01 else f"{lo:.2f}–{hi:.2f}"
 
 
-def mesh_line(g):
-    return (f"mesh: {g['nx']} × {g['ny']} quadratic $C^1$ elements;  $h_x$ = {rng(g['hx'])} µm,  "
+def mesh_line(g, br=False):
+    sep = "\n" if br else ";  "
+    return (f"mesh: {g['nx']} × {g['ny']} quadratic $C^1$ elements{sep}$h_x$ = {rng(g['hx'])} µm,  "
             f"$h_y$ = {rng(g['hy'])} µm;  $\\varepsilon$ = {g['eps'] * UM:.3f} µm;  "
             f"{g['dof'] / 1e6:.2f} M DOF")
 
@@ -149,8 +150,11 @@ def panel(ax, g, ex, dims=(), title=None, note=None):
     ax.axis("off")
 
 
-def figure(name, panels, left, right, walls, ax_w=6.3):
-    """panels: list of (geom, dims, title, note); left/right: face BC text; walls: wall BC text."""
+def figure(name, panels, left, right, walls, ax_w=6.3, side=False):
+    """panels: list of (geom, dims, title, note); left/right: face BC text; walls: wall BC text.
+    side=True: panels in a left column of width ax_w, all text in a column to their right."""
+    if side:
+        return figure_side(name, panels, left, right, walls, ax_w)
     heights, exs = [], []
     for g, *_ in panels:
         def hgt(ex, g=g):
@@ -186,6 +190,42 @@ def figure(name, panels, left, right, walls, ax_w=6.3):
     print(f"{name}: {len(bad)} problems, {FIG_W} x {H:.2f} in")
 
 
+def figure_side(name, panels, left, right, walls, ax_w):
+    heights, exs = [], []
+    for g, *_ in panels:
+        _, xl, yl = extent(g, 1.0)
+        heights.append(ax_w * (yl[1] - yl[0]) / (xl[1] - xl[0]))
+        exs.append(1.0)
+    meshes = [(f"({chr(97 + k)}) " if len(panels) > 1 else "") + mesh_line(g, br=True)
+              for k, (g, *_) in enumerate(panels)]
+    notes = [(f"({chr(97 + k)}) " if len(panels) > 1 else "") + nt
+             for k, (_, _, _, nt) in enumerate(panels) if nt]
+    text = "\n\n".join(notes + [left, right, walls])
+    n_lines = text.count("\n") + 1 + sum(m.count("\n") + 2 for m in meshes)
+    text_h = n_lines * FS * 1.40 / 72 + 0.2
+    H = max(sum(heights) + 0.1, text_h)
+    fig = plt.figure(figsize=(FIG_W, H))
+    y = H - 0.05 - (H - 0.1 - sum(heights)) / 2
+    for k, ((g, dims, title, _), h, ex) in enumerate(zip(panels, heights, exs)):
+        y -= h
+        ax = fig.add_axes((0.05 / FIG_W, y / H, ax_w / FIG_W, h / H))
+        tag = f"({chr(97 + k)}) " if len(panels) > 1 else ""
+        panel(ax, g, ex, dims, (tag + (title or "")) or None, None)
+    x0 = (ax_w + 0.25) / FIG_W
+    t = fig.text(x0, 1 - 0.06 / H, text, ha="left", va="top", linespacing=1.35)
+    fig.canvas.draw()
+    bb = t.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    fig.text(x0, (bb.y0 - 0.12) / H, "\n\n".join(meshes), ha="left", va="top", color=GRAY,
+             linespacing=1.35)
+    bad = check_figure(fig, min_pt=7.0, placed_width_in=FIG_W)
+    for b in bad:
+        print(f"  FAIL {name}: {b}")
+    FAIL.extend(bad)
+    fig.savefig(OUT / f"{name}.png", dpi=250)
+    plt.close(fig)
+    print(f"{name}: {len(bad)} problems, {FIG_W} x {H:.2f} in")
+
+
 # ------------------------------------------------------------------ labels
 PH90 = r"$\phi$: 90° face"
 WALL = (r"walls (hatched): regolith; $\phi$: contact angle $\theta$ = 60° (wall energy); "
@@ -196,49 +236,56 @@ TFIX = r"$T$ fixed at $T_0 \mp G L_x/2$"
 def fig_type1():
     g = load(GEO / "t1_box600x300um_capR50_x300um_th40_eps0.86um.opts")
     figure("type1", [(g, [("h", 0, 600, 0, r"$L_x$ = 600 µm"), ("v", 0, 300, 560, r"$L_y$ = 300 µm")],
-                      None, "cap: arc radius 50 µm, 40° start (variants: 25, 100 µm; x = 100, 500 µm)")],
-           r"$x = 0$ (warm end): " + TFIX + "\n" + r"$\rho_v$: zero flux (closed) or fixed (res, ls, dh); " + PH90,
-           r"$x = L_x$ (cold end): $T$ fixed" + "\n" + r"$\rho_v$ as at $x = 0$; " + PH90,
-           r"wall $y = 0$ (hatched): regolith, $\theta$ = 60°, zero flux;   "
-           r"far side $y = L_y$ (gray): zero flux of $T$, $\rho_v$; $\phi$: 90° face", ax_w=3.0)
+                      None, "cap: arc radius 50 µm at x = 300 µm, 40° start" + "\n" + "(variants: radius 25, 100 µm; x = 100, 500 µm)")],
+           r"$x = 0$ (warm end): " + TFIX + "\n" + r"$\rho_v$: zero flux (closed) or fixed" + "\n"
+           + r"(res, ls, dh); " + PH90,
+           r"$x = L_x$ (cold end): $T$ fixed;" + "\n" + r"$\rho_v$ as at $x = 0$; " + PH90,
+           r"wall $y = 0$ (hatched): regolith, $\theta$ = 60°," + "\n" + r"zero flux of $T$ and $\rho_v$" + "\n"
+           r"far side $y = L_y$ (gray): zero flux of $T$, $\rho_v$;" + "\n" + r"$\phi$: 90° face",
+           ax_w=2.6, side=True)
 
 
 def fig_type2():
     g1 = load(GEO / "t2_box600x300um_pairLW_th40_eps0.80um.opts")
     g2 = load(GEO / "t2_box900x300um_chain5rand_th40_eps0.80um.opts")
     figure("type2", [(g1, [("h", 0, 600, 0, r"$L_x$ = 600 µm")], "2A, 2B: pair",
-                      "50 µm cap (warm side), 20 µm cap"),
+                      "pair: 50 µm cap (warm side), 20 µm cap"),
                      (g2, [("h", 0, 900, 0, r"$L_x$ = 900 µm"), ("v", 0, 300, 860, r"$L_y$ = 300 µm")],
-                      "2C: chain", "five caps, 20–60 µm")],
-           r"$x = 0$: " + TFIX + r" (2B–2D) or $T_0$ (2A)" + "\n" + r"$\rho_v$: zero flux (closed); 2A-2: fixed; "
-           + PH90,
-           r"$x = L_x$: $T$ fixed" + "\n" + r"$\rho_v$ as at $x = 0$; " + PH90,
-           r"wall $y = 0$: regolith, $\theta$ = 60°, zero flux;   far side $y = L_y$: zero flux, $\phi$: 90° face", ax_w=3.0)
+                      "2C: chain", "chain: five caps, 20–60 µm")],
+           r"$x = 0$: " + TFIX + "\n" + r"(2B–2D) or $T_0$ (2A)" + "\n" + r"$\rho_v$: zero flux (closed); 2A-2: fixed;"
+           + "\n" + PH90,
+           r"$x = L_x$: $T$ fixed; $\rho_v$ as at $x = 0$;" + "\n" + PH90,
+           r"wall $y = 0$: regolith, $\theta$ = 60°, zero flux" + "\n"
+           + r"far side $y = L_y$: zero flux; $\phi$: 90° face", ax_w=2.6, side=True)
 
 
 def fig_type3():
     g = load(GEO / "channel_2D_H125um_L500um_eps0.86um_lens150.opts")
-    figure("type3", [(g, [("h", 0, 500, 0, r"$L_x$ = 500 µm"), ("v", 0, 125, 470, r"$H$ = 125 µm (also 60)")],
-                      None, "lens 150 µm, flat start")],
-           r"$x = 0$: $T = T_0$ (isothermal)" + "\n" + r"$\rho_v = \rho_{vs}(T_0)$ (3A, 3B, 3D) or zero flux (3C); "
-           + PH90,
-           r"$x = L_x$: $T = T_0$" + "\n" + r"$\rho_v = \rho_{vs}(T_0)$ (3A, 3B) or zero flux (3C, 3D); " + PH90,
-           WALL)
+    figure("type3", [(g, [("h", 0, 500, 0, r"$L_x$ = 500 µm"), ("v", 0, 125, 120, r"$H$ = 125 µm")],
+                      None, "lens 150 µm, flat start; $H$ = 125 µm (also 60)")],
+           r"$x = 0$: $T = T_0$ (isothermal)" + "\n" + r"$\rho_v = \rho_{vs}(T_0)$ (3A, 3B, 3D)" + "\n"
+           + r"or zero flux (3C); " + PH90,
+           r"$x = L_x$: $T = T_0$" + "\n" + r"$\rho_v = \rho_{vs}(T_0)$ (3A, 3B)" + "\n"
+           + r"or zero flux (3C, 3D); " + PH90,
+           r"walls (hatched): regolith; $\phi$: contact angle" + "\n" + r"$\theta$ = 30–150° by run (wall energy);"
+           + "\n" + r"zero flux of $T$ and $\rho_v$", ax_w=3.3, side=True)
 
 
 def fig_type4():
     g = load(GEO / "wedge_2D_om10deg_gap100um_eps0.86um.opts")
     figure("type4", [(g, [("h", 0, g["lx"] * UM, 0, r"$L_x$ ≈ 270 µm")], None,
-                      r"$\omega$ = 10° shown (2.5, 5, 20°); gap 100 µm at the lens")],
+                      r"$\omega$ = 10° shown (2.5, 5, 20°);" + "\n" + "gap 100 µm at the lens")],
            r"$x = 0$ (wide end): $T = T_0$" + "\n" + r"$\rho_v = \rho_{vs}(T_0)$; " + PH90,
            r"$x = L_x$ (narrow end): $T = T_0$" + "\n" + r"$\rho_v = \rho_{vs}(T_0)$; " + PH90,
-           WALL, ax_w=3.0)
+           r"walls (hatched): regolith; $\phi$: contact angle" + "\n" + r"$\theta$ = 60° (wall energy);"
+           + "\n" + r"zero flux of $T$ and $\rho_v$", ax_w=2.4, side=True)
 
 
 def fig_type5():
     g = load(GEO / "t5_pore800x150um_wt40um_lens120c_eps0.80um.opts")
-    figure("type5", [(g, [("h", 0, 800, 0, r"$L_x$ = 800 µm"), ("v", 55, 95, 412, r"$w_t$ = 40 µm (also 80)"),
-                          ("v", 0, 150, 760, "150 µm")], None, "lens 120 µm at the throat (also 100 µm above, below)")],
+    figure("type5", [(g, [("h", 0, 800, 0, r"$L_x$ = 800 µm"), ("v", 0, 150, 760, "150 µm")], None,
+                      r"throat $w_t$ = 40 µm (also 80) at $x$ = 400 µm; lens 120 µm at the throat"
+                      + "\n" + "(also 100 µm toward either end)")],
            r"$x = 0$ (warm end): " + TFIX + "\n" + r"$\rho_v = \rho_{vs}(T(0))$ (ls) or $\rho_{vs}(T_0)$; 5B: zero flux; "
            + PH90,
            r"$x = L_x$: $T$ fixed" + "\n" + r"$\rho_v$ as at $x = 0$; " + PH90,
@@ -247,8 +294,8 @@ def fig_type5():
 
 def fig_type6():
     g1 = load(GEO / "dogbone_2D_L1100um_W150um_wc40um_lens60_eps0.86um.opts")
-    panels = [(g1, [("h", 0, 1100, 0, r"$L_x$ = 1100 µm")], "ran (T6, G = 100, 300 K/m)",
-               r"neck $w_c$ = 40 µm shown (80, 150), 300 µm long")]
+    panels = [(g1, [("h", 0, 1100, 0, r"$L_x$ = 1100 µm"), ("v", 0, 150, 200, r"$W$ = 150 µm")], None,
+               r"neck $w_c$ = 40 µm shown (80, 150), $x$ = 400–700 µm; shoulders 100 µm; lens 150 µm")]
     if SCR and (SCR / "dogbone_L720_wc40.opts").exists():
         g2 = load(SCR / "dogbone_L720_wc40.opts")
         panels.append((g2, [("h", 0, 720, 0, r"$L_x$ = 720 µm"), ("v", 0, 150, 690, r"$W$ = 150 µm")],
@@ -256,7 +303,7 @@ def fig_type6():
     figure("type6", panels,
            r"$x = 0$ (warm end): " + TFIX + "\n" + r"$\rho_v = \rho_{vs}(T(0))$ (local saturation); " + PH90,
            r"$x = L_x$ (cold end): $T$ fixed" + "\n" + r"$\rho_v = \rho_{vs}(T(L_x))$; " + PH90,
-           WALL)
+           WALL.replace("60°", "60° (90° for 6B)"))
 
 
 def fig_type7():
@@ -264,8 +311,8 @@ def fig_type7():
     figure("type7", [(g, [("h", 0, 2000, 0, r"$L_x$ = 2000 µm")], None,
                       "layout A: 3 lenses (60°), 4 caps and 3 grains (40°); 24.6 % ice")],
            r"$x = 0$ (collector): $\rho_v = h_{\mathrm{open}}\,\rho_{vs}(T_0)$, $h_{\mathrm{open}}$ = 0.99" + "\n"
-           + r"$T$ fixed ($T_0$, or warm for 7C); " + PH90,
-           r"$x = L_x$ (dead end): $\rho_v$ zero flux" + "\n" + r"$T$ fixed, insulated (7B) or warm (7D); " + PH90,
+           + r"$T$ fixed ($T_0$; warm for 7C); " + PH90,
+           r"$x = L_x$ (dead end): $\rho_v$ zero flux; " + PH90 + "\n" + r"$T$ fixed (warm for 7D) or zero flux (7B)",
            WALL)
 
 
@@ -276,12 +323,12 @@ def fig_S():
         panels.append((g, [("h", 0, 800, 0, r"$L_x$ = 800 µm"), ("v", 0, 150, 520, r"$W$ = 150 µm")],
                        "S7: face-stability scan", "lens 150 µm, 60° faces"))
     g5 = load(GEO / "throat_2D_L850um_eps0.86um_narrowL_deadend.opts")
-    panels.append((g5, [("h", 0, 850, 0, r"$L_x$ = 850 µm")], "S5: two throats",
-                   "throats 30 and 90 µm, plugged"))
+    panels.append((g5, [("h", 0, 850, 0, r"$L_x$ = 850 µm")], None,
+                   "throats 30 and 90 µm, both plugged with ice"))
     figure("S", panels,
-           r"S7: $x = 0$ warm, $T$ fixed; $\rho_v = \rho_{vs}(T(0))$" + "\n"
-           + r"S5: $x = 0$ collector, $h_{\mathrm{open}}$ = 0.999, 0.9995; " + PH90,
-           r"S7: $x = L_x$ cold, $\rho_v = \rho_{vs}(T(L_x))$" + "\n" + r"S5: $x = L_x$ sealed (wall)",
+           r"$x = 0$ (collector, warm end): $T$ fixed at $T_0 + G L_x/2$" + "\n"
+           + r"$\rho_v = h_{\mathrm{open}}\,\rho_{vs}(T_0)$; " + PH90,
+           r"$x = L_x$ (dead end): sealed wall," + "\n" + r"zero flux of $\rho_v$; $T$ fixed at $T_0 - G L_x/2$",
            WALL)
 
 
