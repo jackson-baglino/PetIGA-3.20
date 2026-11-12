@@ -7,6 +7,13 @@ state. Detail for each run (folder, model version, full outcome) is in
 
 **Last updated:** 2026-11-11
 
+**Full run plan (setup, schematics, every matrix):** `RunPlan_2026-11-11.docx`
+in the iCloud plan folder, built by `docs/run_plan/build_runplan.py`. It
+proposes production gradients G = 1, 3, 10 K/m (30 as one above-threshold
+point) instead of 100/300, pending the user and the S7 face-stability scan;
+types 1, 2 (gradient runs), 6 and 7C/7D change accordingly. Type 5 is
+unaffected.
+
 States: **done** (ran and analyzed) · **ran** (ran, analysis open) ·
 **running/queued** (on the HPC) · **ready** (inputs built and preflight OK, not
 submitted) · **to build** (inputs not written yet).

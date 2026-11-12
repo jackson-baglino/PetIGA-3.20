@@ -81,7 +81,9 @@ Hypotheses: the user writes them; none recorded yet.
 - T6 ran 2026-11-09/11: 5 of 7 finished; wc 40 G 300 (theta 60, 90) will hit the
   48 h limit near day 10-12 of 30 (RUNS.md). Lens splits into wall films;
   only the 40 um neck delays transit. Overview of every type:
-  `studies/cryosuction/RUN_PROGRESS.md`.
+  `studies/cryosuction/RUN_PROGRESS.md`. User (11 Nov): G 100/300 too large
+  (summer runs <= 50 K/m). Run plan 2026-11-11 proposes G 1-10 (+30), S7 scan
+  first; T1/T2 gradient runs and T6/T7C-D on hold until approved.
   I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 lenses start
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at

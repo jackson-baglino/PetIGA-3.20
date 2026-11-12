@@ -22,6 +22,20 @@ Sections
      (src/cryosuction_main.c:1415). Ice colder than T_c, where
      rho_vs(T_c) = rho_open, cannot lose vapor to the collector. Cutoff
      distance on the cold side of the T0 point: dz = ln(1/h_open) / (s G).
+  6. Gradient against capillarity (added 2026-11-11 after the type-6 runs).
+     (a) Crossover: the gradient whose saturation change over a length l equals
+     the Gibbs-Thomson change of a feature of curvature chi, G_x = d0 chi /
+     (s l). Below G_x curvature (ripening, contact angle) controls the ice;
+     above it the gradient does. (b) Stability of a depositing face
+     (Mullins-Sekerka, quasi-static one-sided diffusion, kinetics left out:
+     they slow the growth of a mode but do not move its neutral wavenumber).
+     A face growing into a relative vapor gradient g = s G is unstable to
+     modes with k^2 < g / d0. Across a pore of width W with no-flux walls the
+     symmetric mode (both contact lines ahead of the axis, the shape a
+     theta < 90 meniscus already has) has k = 2 pi / W, so the face is stable
+     for G < G_s = (2 pi / W)^2 d0 / s; the antisymmetric (tilting) mode,
+     k = pi / W, gives a 4x lower bound. A sublimating face is stable.
+     These are linear, flat-face estimates; the threshold is to be measured.
 
     venv_cryosuction/bin/python studies/cryosuction/scripts/plan_estimates.py
 """
@@ -53,6 +67,8 @@ def main() -> int:
     p.add_argument("--l1", type=float, nargs="+", default=[0.85e-3, 2e-3, 5e-3], help="harvest: end distances [m]")
     p.add_argument("--fill", type=float, default=1.0, help="harvest: ice fraction of the pore cross-section")
     p.add_argument("--cutoff-h", type=float, nargs="+", default=[0.99, 0.995, 0.999], help="h_open for section 5")
+    p.add_argument("--widths", type=float, nargs="+", default=[40e-6, 80e-6, 125e-6, 150e-6, 300e-6],
+                   help="section 6: pore widths or feature sizes [m]")
     p.add_argument("--eps", type=float, default=8.584e-7, help="eps for the resolution number Pi [m]")
     a = p.parse_args()
     if not (-150.0 < a.T0 < -0.001):
@@ -135,6 +151,19 @@ def main() -> int:
     for h in a.cutoff_h:
         for G in a.G:
             print(f"h_open = {h:6.4f}, G = {G:7.1f} K/m: dz = {math.log(1 / h) / (s * G) * 1e3:9.3f} mm")
+    print("\n# 6a. Gradient-capillarity crossover G_x = d0 chi / (s l), chi = 2/W (2D meniscus at theta 60: cos60*2/W = 1/W)")
+    for W in a.widths:
+        for chi_name, chi in (("1/W", 1 / W), ("2/W", 2 / W)):
+            print(f"W = {W * 1e6:6.1f} um, chi = {chi_name}: G_x over l = W: {d0 * chi / (s * W):8.3f} K/m;"
+                  f" over l = 1 mm: {d0 * chi / (s * 1e-3):8.4f} K/m")
+    print("\n# 6b. Depositing-face stability: G_s = (2 pi/W)^2 d0/s (symmetric), (pi/W)^2 d0/s (tilting)")
+    for W in a.widths:
+        Gs = (2 * math.pi / W) ** 2 * d0 / s
+        Gt = (math.pi / W) ** 2 * d0 / s
+        print(f"W = {W * 1e6:6.1f} um: G_s = {Gs:8.2f} K/m, tilting {Gt:8.2f} K/m")
+    for G in a.G:
+        lam = 2 * math.pi * math.sqrt(d0 / (s * G))
+        print(f"G = {G:7.1f} K/m: marginal wavelength 2 pi sqrt(d0/(s G)) = {lam * 1e6:8.1f} um")
     return 0
 
 
