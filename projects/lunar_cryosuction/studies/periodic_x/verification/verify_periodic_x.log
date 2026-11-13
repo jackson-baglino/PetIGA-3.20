@@ -5,29 +5,26 @@ pore px_flat120x40_lens_mid_eps1.5um: Lx 120.0 um, H 40.0 um, gap 40.0-40.0 um (
   plug 50-70 um, theta 60, faces r 40.0 um
   rounded ice-air corners to radius >= 4.50 um (3 eps): area change -0.18%
   ice 20.0% of the pore area (9.6089e-10 m^2), 1 bodies; thinnest half-thickness 14.09 um (9.4 eps); 0 below 3 eps
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um.dat
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um_phi.bin  (114 x 40 control points)
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um.opts
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um.pdf  figcheck: OK
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um.dat
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um_phi.bin  (114 x 40 control points)
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um.opts
   periodic in x: seam wall jump 0.00e+00 m, slope jump 0.00e+00
 pore px_flat120x40_lens_seam_eps1.5um: Lx 120.0 um, H 40.0 um, gap 40.0-40.0 um (mean 40.0), steepest wall slope 0.00, 0+0 wall bumps
   eps 1.5000e-06 m, Nx 114, Ny 38, DOF 0.01 M; element 1.053 um long, 1.053-1.053 um across
   plug -10-10 um, theta 60, faces r 40.0 um
   rounded ice-air corners to radius >= 4.50 um (3 eps): area change -0.18%
   ice 20.0% of the pore area (9.6089e-10 m^2), 1 bodies; thinnest half-thickness 14.09 um (9.4 eps); 0 below 3 eps
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_seam_eps1.5um.dat
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_seam_eps1.5um_phi.bin  (114 x 40 control points)
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_seam_eps1.5um.opts
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_seam_eps1.5um.pdf  figcheck: OK
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_seam_eps1.5um.dat
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_seam_eps1.5um_phi.bin  (114 x 40 control points)
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_flat120x40_lens_seam_eps1.5um.opts
 pore px_open_flat120x40_lens_mid_eps1.5um: Lx 120.0 um, H 40.0 um, gap 40.0-40.0 um (mean 40.0), steepest wall slope 0.00, 0+0 wall bumps
   eps 1.5000e-06 m, Nx 114, Ny 38, DOF 0.01 M; element 1.053 um long, 1.053-1.053 um across
   plug 50-70 um, theta 60, faces r 40.0 um
   rounded ice-air corners to radius >= 4.50 um (3 eps): area change -0.18%
   ice 19.9% of the pore area (9.6089e-10 m^2), 1 bodies; thinnest half-thickness 14.09 um (9.4 eps); 0 below 3 eps
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_open_flat120x40_lens_mid_eps1.5um.dat
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_open_flat120x40_lens_mid_eps1.5um_phi.bin  (116 x 40 control points)
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_open_flat120x40_lens_mid_eps1.5um.opts
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_open_flat120x40_lens_mid_eps1.5um.pdf  figcheck: OK
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_open_flat120x40_lens_mid_eps1.5um.dat
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_open_flat120x40_lens_mid_eps1.5um_phi.bin  (116 x 40 control points)
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_open_flat120x40_lens_mid_eps1.5um.opts
   periodic in x: seam wall jump 0.00e+00 m, slope jump 0.00e+00
 pore px_cd120_W40_wt16_lens_eps1.5um: Lx 120.0 um, H 40.0 um, gap 16.0-40.0 um (mean 29.3), steepest wall slope 0.31, 0+0 wall bumps
   eps 1.5000e-06 m, Nx 114, Ny 38, DOF 0.01 M; element 1.053 um long, 1.053-0.421 um across
@@ -35,10 +32,9 @@ pore px_cd120_W40_wt16_lens_eps1.5um: Lx 120.0 um, H 40.0 um, gap 16.0-40.0 um (
   rounded ice-air corners to radius >= 4.50 um (3 eps): area change +3.27%
   dropped 2 slivers thinner than 3 eps (wall crevices next to plug faces), total area 8.438e-13 m^2
   ice 11.0% of the pore area (3.8588e-10 m^2), 1 bodies; thinnest half-thickness 7.88 um (5.2 eps); 0 below 3 eps
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_lens_eps1.5um.dat
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_lens_eps1.5um_phi.bin  (114 x 40 control points)
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_lens_eps1.5um.opts
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_lens_eps1.5um.pdf  figcheck: OK
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_lens_eps1.5um.dat
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_lens_eps1.5um_phi.bin  (114 x 40 control points)
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_lens_eps1.5um.opts
   periodic in x: seam wall jump 0.00e+00 m, slope jump 0.00e+00
 pore px_cd120_W40_wt16_shift_lens_eps1.5um: Lx 120.0 um, H 40.0 um, gap 16.0-40.0 um (mean 29.3), steepest wall slope 0.31, 0+0 wall bumps
   eps 1.5000e-06 m, Nx 114, Ny 38, DOF 0.01 M; element 1.053 um long, 1.053-0.421 um across
@@ -46,12 +42,11 @@ pore px_cd120_W40_wt16_shift_lens_eps1.5um: Lx 120.0 um, H 40.0 um, gap 16.0-40.
   rounded ice-air corners to radius >= 4.50 um (3 eps): area change +3.27%
   dropped 2 slivers thinner than 3 eps (wall crevices next to plug faces), total area 8.438e-13 m^2
   ice 11.0% of the pore area (3.8588e-10 m^2), 1 bodies; thinnest half-thickness 7.88 um (5.2 eps); 0 below 3 eps
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_shift_lens_eps1.5um.dat
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_shift_lens_eps1.5um_phi.bin  (114 x 40 control points)
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_shift_lens_eps1.5um.opts
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_shift_lens_eps1.5um.pdf  figcheck: OK
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_shift_lens_eps1.5um.dat
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_shift_lens_eps1.5um_phi.bin  (114 x 40 control points)
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/geometry/periodic_x/px_cd120_W40_wt16_shift_lens_eps1.5um.opts
 eps 1.5000e-06 m, dtmax = 2 tau_sub = 4.5257e+03 s
-wrote /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/inputs/experiment/periodic_x/px_T-20_iso_theta60_2d_ac1e-2.opts
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/inputs/experiment/periodic_x/px_T-20_iso_theta60_2d_ac1e-2.opts
 
 === a: mesh and phi-file periodicity ===
 a1,px_flat120x40_lens_seam_eps1.5um,knot_vs_petiga_periodic,0.00e+00,0,1e-14,PASS
@@ -83,8 +78,19 @@ a5,px_flat120x40_lens_seam_eps1.5um,y_vs_shifted_flat120x40_m,0.00e+00,0,1e-15,P
 a5,px_cd120_W40_wt16_shift_lens_eps1.5um,phi_vs_shifted_cd120,1.49e-14,0,1e-9,PASS
 a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,PASS
 
+=== runs (run_cryosuction.sh, one at a time) ===
+  run P_mid: px_flat120x40_lens_mid_eps1.5um 
+  run O_mid: px_open_flat120x40_lens_mid_eps1.5um 
+  run P_seam: px_flat120x40_lens_seam_eps1.5um 
+  run CD: px_cd120_W40_wt16_lens_eps1.5um 
+  run CD_shift: px_cd120_W40_wt16_shift_lens_eps1.5um 
+  run RECT_mid: px_flat120x40_lens_mid_eps1.5um -geom_file  -Nx 114 -Ny 38
+  run CD_mpi: px_cd120_W40_wt16_lens_eps1.5um 
+  run CD_tight: px_cd120_W40_wt16_lens_eps1.5um -snes_rtol 1e-10 -snes_atol 1e-30 -snes_stol 1e-14
+  run CD_shift_tight: px_cd120_W40_wt16_shift_lens_eps1.5um -snes_rtol 1e-10 -snes_atol 1e-30 -snes_stol 1e-14
+
 === b, c, d, f, g, h: runs ===
-# P_mid: 2026-11-13__12.05.09_px_T-20_iso_theta60_2d_ac1e-2_verify_P_mid, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
+# P_mid: 2026-11-13__13.13.56_px_T-20_iso_theta60_2d_ac1e-2_verify_P_mid, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
 #   step     0 t 0.000000e+00  A 9.5771558108e-10  X_c 60.000000 um  Q 8.8340150923e-10
 #   step     1 t 1.000000e-04  A 9.5771558132e-10  X_c 60.000000 um  Q 8.8340150923e-10
 #   step    63 t 2.169520e+04  A 9.5771567210e-10  X_c 60.000000 um  Q 8.8340150961e-10
@@ -95,7 +101,7 @@ a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,P
 #   step    87 t 1.303120e+05  A 9.5771567168e-10  X_c 60.000000 um  Q 8.8340150962e-10
 #   step    92 t 1.529400e+05  A 9.5771567167e-10  X_c 60.000000 um  Q 8.8340150962e-10
 #   step    97 t 1.733860e+05  A 9.5771567166e-10  X_c 60.000000 um  Q 8.8340150963e-10
-# O_mid: 2026-11-13__12.06.06_px_T-20_iso_theta60_2d_ac1e-2_verify_O_mid, 1 rank(s), periodic_x=False, 10 snapshots, t_end 1.733860e+05 s
+# O_mid: 2026-11-13__13.14.50_px_T-20_iso_theta60_2d_ac1e-2_verify_O_mid, 1 rank(s), periodic_x=False, 10 snapshots, t_end 1.733860e+05 s
 #   step     0 t 0.000000e+00  A 9.5771558108e-10  X_c 60.000000 um  Q 8.8340150923e-10
 #   step     1 t 1.000000e-04  A 9.5771558132e-10  X_c 60.000000 um  Q 8.8340150923e-10
 #   step    63 t 2.169520e+04  A 9.5771567213e-10  X_c 60.000000 um  Q 8.8340150963e-10
@@ -106,7 +112,7 @@ a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,P
 #   step    87 t 1.303120e+05  A 9.5771567169e-10  X_c 60.000000 um  Q 8.8340150963e-10
 #   step    92 t 1.529400e+05  A 9.5771567167e-10  X_c 60.000000 um  Q 8.8340150963e-10
 #   step    97 t 1.733860e+05  A 9.5771567166e-10  X_c 60.000000 um  Q 8.8340150963e-10
-# P_seam: 2026-11-13__12.07.03_px_T-20_iso_theta60_2d_ac1e-2_verify_P_seam, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
+# P_seam: 2026-11-13__13.15.45_px_T-20_iso_theta60_2d_ac1e-2_verify_P_seam, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
 #   step     0 t 0.000000e+00  A 9.5771558108e-10  X_c 120.000000 um  Q 8.8340150923e-10
 #   step     1 t 1.000000e-04  A 9.5771558132e-10  X_c 120.000000 um  Q 8.8340150923e-10
 #   step    63 t 2.169520e+04  A 9.5771567175e-10  X_c 120.000000 um  Q 8.8340150928e-10
@@ -117,7 +123,7 @@ a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,P
 #   step    87 t 1.303120e+05  A 9.5771567137e-10  X_c 120.000000 um  Q 8.8340150933e-10
 #   step    92 t 1.529400e+05  A 9.5771567135e-10  X_c 120.000000 um  Q 8.8340150934e-10
 #   step    97 t 1.733860e+05  A 9.5771567134e-10  X_c 120.000000 um  Q 8.8340150933e-10
-# CD: 2026-11-13__12.07.58_px_T-20_iso_theta60_2d_ac1e-2_verify_CD, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
+# CD: 2026-11-13__13.16.39_px_T-20_iso_theta60_2d_ac1e-2_verify_CD, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
 #   step     0 t 0.000000e+00  A 3.8974626889e-10  X_c 42.294254 um  Q 3.6083014934e-10
 #   step     1 t 1.000000e-04  A 3.8974626905e-10  X_c 42.294254 um  Q 3.6083014934e-10
 #   step    63 t 2.169520e+04  A 3.8974638045e-10  X_c 42.432638 um  Q 3.6083015194e-10
@@ -128,7 +134,7 @@ a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,P
 #   step    87 t 1.303120e+05  A 3.8974640784e-10  X_c 43.437884 um  Q 3.6083017695e-10
 #   step    92 t 1.529400e+05  A 3.8974641187e-10  X_c 43.647684 um  Q 3.6083018076e-10
 #   step    97 t 1.733860e+05  A 3.8974641192e-10  X_c 43.836755 um  Q 3.6083018091e-10
-# CD_shift: 2026-11-13__12.08.54_px_T-20_iso_theta60_2d_ac1e-2_verify_CD_shift, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
+# CD_shift: 2026-11-13__13.17.33_px_T-20_iso_theta60_2d_ac1e-2_verify_CD_shift, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
 #   step     0 t 0.000000e+00  A 3.8974626889e-10  X_c 102.294254 um  Q 3.6083014934e-10
 #   step     1 t 1.000000e-04  A 3.8974626905e-10  X_c 102.294254 um  Q 3.6083014934e-10
 #   step    63 t 2.169520e+04  A 3.8974637825e-10  X_c 102.432638 um  Q 3.6083014992e-10
@@ -139,7 +145,7 @@ a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,P
 #   step    87 t 1.303120e+05  A 3.8974638531e-10  X_c 103.437885 um  Q 3.6083015626e-10
 #   step    92 t 1.529400e+05  A 3.8974638551e-10  X_c 103.647684 um  Q 3.6083015656e-10
 #   step    97 t 1.733860e+05  A 3.8974638568e-10  X_c 103.836756 um  Q 3.6083015681e-10
-# RECT_mid: 2026-11-13__12.09.51_px_T-20_iso_theta60_2d_ac1e-2_verify_RECT_mid, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
+# RECT_mid: 2026-11-13__13.18.28_px_T-20_iso_theta60_2d_ac1e-2_verify_RECT_mid, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
 #   step     0 t 0.000000e+00  A 9.5771558108e-10  X_c 60.000000 um  Q 8.8340150923e-10
 #   step     1 t 1.000000e-04  A 9.5771558132e-10  X_c 60.000000 um  Q 8.8340150923e-10
 #   step    63 t 2.169520e+04  A 9.5771567208e-10  X_c 60.000000 um  Q 8.8340150959e-10
@@ -150,7 +156,7 @@ a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,P
 #   step    87 t 1.303120e+05  A 9.5771567166e-10  X_c 60.000000 um  Q 8.8340150960e-10
 #   step    92 t 1.529400e+05  A 9.5771567164e-10  X_c 60.000000 um  Q 8.8340150960e-10
 #   step    97 t 1.733860e+05  A 9.5771567164e-10  X_c 60.000000 um  Q 8.8340150961e-10
-# CD_mpi: 2026-11-13__12.10.20_px_T-20_iso_theta60_2d_ac1e-2_verify_CD_mpi, 4 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
+# CD_mpi: 2026-11-13__13.18.55_px_T-20_iso_theta60_2d_ac1e-2_verify_CD_mpi, 4 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
 #   step     0 t 0.000000e+00  A 3.8974626889e-10  X_c 42.294254 um  Q 3.6083014934e-10
 #   step     1 t 1.000000e-04  A 3.8974626905e-10  X_c 42.294254 um  Q 3.6083014934e-10
 #   step    63 t 2.169520e+04  A 3.8974637854e-10  X_c 42.432638 um  Q 3.6083015019e-10
@@ -161,7 +167,7 @@ a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,P
 #   step    87 t 1.303120e+05  A 3.8974635840e-10  X_c 43.437885 um  Q 3.6083013156e-10
 #   step    92 t 1.529400e+05  A 3.8974636561e-10  X_c 43.647684 um  Q 3.6083013828e-10
 #   step    97 t 1.733860e+05  A 3.8974637281e-10  X_c 43.836756 um  Q 3.6083014499e-10
-# CD_tight: 2026-11-13__12.11.53_px_T-20_iso_theta60_2d_ac1e-2_verify_CD_tight, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
+# CD_tight: 2026-11-13__13.19.22_px_T-20_iso_theta60_2d_ac1e-2_verify_CD_tight, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
 #   step     0 t 0.000000e+00  A 3.8974626889e-10  X_c 42.294254 um  Q 3.6083014934e-10
 #   step     1 t 1.000000e-04  A 3.8974626905e-10  X_c 42.294254 um  Q 3.6083014934e-10
 #   step    63 t 2.169520e+04  A 3.8974637762e-10  X_c 42.432661 um  Q 3.6083014934e-10
@@ -172,7 +178,7 @@ a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,P
 #   step    87 t 1.303120e+05  A 3.8974637777e-10  X_c 43.437919 um  Q 3.6083014934e-10
 #   step    92 t 1.529400e+05  A 3.8974637766e-10  X_c 43.647723 um  Q 3.6083014934e-10
 #   step    97 t 1.733860e+05  A 3.8974637754e-10  X_c 43.836796 um  Q 3.6083014934e-10
-# CD_shift_tight: 2026-11-13__12.13.43_px_T-20_iso_theta60_2d_ac1e-2_verify_CD_shift_tight, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
+# CD_shift_tight: 2026-11-13__13.21.08_px_T-20_iso_theta60_2d_ac1e-2_verify_CD_shift_tight, 1 rank(s), periodic_x=True, 10 snapshots, t_end 1.733860e+05 s
 #   step     0 t 0.000000e+00  A 3.8974626889e-10  X_c 102.294254 um  Q 3.6083014934e-10
 #   step     1 t 1.000000e-04  A 3.8974626905e-10  X_c 102.294254 um  Q 3.6083014934e-10
 #   step    63 t 2.169520e+04  A 3.8974637762e-10  X_c 102.432661 um  Q 3.6083014934e-10
@@ -212,4 +218,4 @@ g,CD_mpi(4 ranks)_vs_CD,max_area_rel_diff,1.269e-07,0,1e-6,PASS
 g,CD_mpi(4 ranks)_vs_CD,max_center_diff_m,2.621e-13,0,1.5e-10,PASS
 g,CD_mpi(4 ranks),center_move_toward_throat_m,1.543e-06,> 0,-,PASS
 
-verify_periodic_x: ALL PASS (see /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-ad5633d326e0ee032/projects/lunar_cryosuction/studies/periodic_x/verification/verify_periodic_x.csv)
+verify_periodic_x: ALL PASS (see /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/studies/periodic_x/verification/verify_periodic_x.csv)

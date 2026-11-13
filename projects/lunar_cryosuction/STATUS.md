@@ -102,6 +102,13 @@ Hypotheses: the user writes them; none recorded yet.
   snapshots -outp_dphi (e5a593e7), flat-face seed -ice_flat_seed (fe8a7334).
   Type 7: six candidate layouts (A-F) for the user to choose on 13 Nov
   (review_scratch/2026-11-13_type7_layouts). No eps halving (user).
+- 2026-11-13: merged and verified on main: thermal face conditions
+  (-qflux_faces, -Twall_faces erfc/linear, Nitsche; 42 PASS) and -periodic_x
+  (56 PASS); G1 bitwise PASS. Resolution start-up check uses the mapped
+  element size (81c257f0; 7A now passes preflight). Type 5 redesign: periodic
+  cell at G 0, ends at h_net with a gradient (plan_estimates 8c). Type 7 v4:
+  one new pore, 7 ice configurations (review_scratch/.../v4). SI drafts in
+  iCloud lunar_regolith_DSM/SupplementalInfo_paper2/.
   I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 lenses start
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at
