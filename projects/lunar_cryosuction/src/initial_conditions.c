@@ -287,6 +287,13 @@ static PetscErrorCode FillIC2D(IGA iga, Vec U, AppCtx *user,
         ierr = GrevilleAbscissae(iga, 0, info.mx, &gx); CHKERRQ(ierr);
         ierr = GrevilleAbscissae(iga, 1, info.my, &gy); CHKERRQ(ierr);
     }
+    /* -periodic_x: the x nodes are the N periodic Greville points, the first
+     * at -h/2 (p = 2), so x always comes from the knots, wrapped into [0, Lx).
+     * The i/(mx+per) map assumes the open layout (mx = N + p). */
+    PetscReal *gxp = NULL;
+    if (user->periodic_x) {
+        ierr = GrevilleAbscissae(iga, 0, info.mx, &gxp); CHKERRQ(ierr);
+    }
 
     for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
         for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
@@ -294,6 +301,7 @@ static PetscErrorCode FillIC2D(IGA iga, Vec U, AppCtx *user,
             PetscReal x = (mode == IC_COORD_GREVILLE)
                         ? Lx * gx[i]
                         : Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            if (gxp) x = Lx * (gxp[i] - PetscFloorReal(gxp[i]));
 
             PetscReal y;
             if (mode == IC_COORD_UNIFORM) {
@@ -322,6 +330,7 @@ static PetscErrorCode FillIC2D(IGA iga, Vec U, AppCtx *user,
         ierr = PetscFree(gx); CHKERRQ(ierr);
         ierr = PetscFree(gy); CHKERRQ(ierr);
     }
+    ierr = PetscFree(gxp); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 
@@ -443,7 +452,9 @@ static PetscReal UnionBoundaryDistance(PetscReal px, PetscReal py,
                                        PetscInt kmin, PetscInt occ,
                                        const AppCtx *user)
 {
-    const PetscBool wrap = (PetscBool)(user->periodic == 1);
+    /* -periodic 1 wraps both axes; -periodic_x wraps x only. */
+    const PetscBool wrapx = (PetscBool)(user->periodic == 1 || user->periodic_x);
+    const PetscBool wrapy = (PetscBool)(user->periodic == 1);
     const PetscReal Lx = user->Lx, Ly = user->Ly;
 
     const PetscReal R0  = user->ice_grain_ax[kmin];
@@ -451,10 +462,8 @@ static PetscReal UnionBoundaryDistance(PetscReal px, PetscReal py,
 
     PetscReal R1  = user->ice_grain_ax[occ];
     PetscReal c1x = user->cent[0][occ], c1y = user->cent[1][occ];
-    if (wrap) {
-        c1x = c0x + MinImage(c1x - c0x, Lx);
-        c1y = c0y + MinImage(c1y - c0y, Ly);
-    }
+    if (wrapx) c1x = c0x + MinImage(c1x - c0x, Lx);
+    if (wrapy) c1y = c0y + MinImage(c1y - c0y, Ly);
 
     PetscReal best = PETSC_MAX_REAL;
 
@@ -491,7 +500,9 @@ static PetscInt OccludingGrain(PetscReal qx, PetscReal qy,
                                PetscReal c0x, PetscReal c0y, PetscInt kmin,
                                const AppCtx *user)
 {
-    const PetscBool wrap = (PetscBool)(user->periodic == 1);
+    /* -periodic 1 wraps both axes; -periodic_x wraps x only. */
+    const PetscBool wrapx = (PetscBool)(user->periodic == 1 || user->periodic_x);
+    const PetscBool wrapy = (PetscBool)(user->periodic == 1);
     const PetscReal Lx = user->Lx, Ly = user->Ly;
 
     for (PetscInt jg = 0; jg < user->n_act; jg++) {
@@ -501,10 +512,8 @@ static PetscInt OccludingGrain(PetscReal qx, PetscReal qy,
         if (PetscAbsReal(axj - ayj) > 1e-12 * axj) continue;   /* circles only */
 
         PetscReal cjx = user->cent[0][jg], cjy = user->cent[1][jg];
-        if (wrap) {
-            cjx = c0x + MinImage(cjx - c0x, Lx);
-            cjy = c0y + MinImage(cjy - c0y, Ly);
-        }
+        if (wrapx) cjx = c0x + MinImage(cjx - c0x, Lx);
+        if (wrapy) cjy = c0y + MinImage(cjy - c0y, Ly);
         if (SQ(qx - cjx) + SQ(qy - cjy) < SQ(axj)) return jg;
     }
     return -1;
@@ -524,7 +533,9 @@ static PetscInt OccludingGrain(PetscReal qx, PetscReal qy,
  * a 4 um contact gap), so it costs nothing there. */
 static PetscReal GrainFieldUnion(PetscReal x, PetscReal y, const AppCtx *user)
 {
-    const PetscBool wrap = (PetscBool)(user->periodic == 1);
+    /* -periodic 1 wraps both axes; -periodic_x wraps x only. */
+    const PetscBool wrapx = (PetscBool)(user->periodic == 1 || user->periodic_x);
+    const PetscBool wrapy = (PetscBool)(user->periodic == 1);
     const PetscReal Lx = user->Lx, Ly = user->Ly;
 
     PetscReal sdf  = PETSC_MAX_REAL;
@@ -535,10 +546,8 @@ static PetscReal GrainFieldUnion(PetscReal x, PetscReal y, const AppCtx *user)
         PetscReal ay = user->ice_grain_ay[k];
         PetscReal dx = x - user->cent[0][k];
         PetscReal dy = y - user->cent[1][k];
-        if (wrap) {
-            dx = MinImage(dx, Lx);
-            dy = MinImage(dy, Ly);
-        }
+        if (wrapx) dx = MinImage(dx, Lx);
+        if (wrapy) dy = MinImage(dy, Ly);
         PetscReal d     = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay));
         PetscReal sdf_k = (d - 1.0) * PetscSqrtReal(ax * ay);
         if (sdf_k < sdf) { sdf = sdf_k; kmin = k; }
@@ -557,10 +566,8 @@ static PetscReal GrainFieldUnion(PetscReal x, PetscReal y, const AppCtx *user)
             PetscReal c0x = user->cent[0][kmin], c0y = user->cent[1][kmin];
 
             PetscReal px = x, py = y;
-            if (wrap) {
-                px = c0x + MinImage(px - c0x, Lx);
-                py = c0y + MinImage(py - c0y, Ly);
-            }
+            if (wrapx) px = c0x + MinImage(px - c0x, Lx);
+            if (wrapy) py = c0y + MinImage(py - c0y, Ly);
             PetscReal ddx = px - c0x, ddy = py - c0y;
             PetscReal L   = PetscSqrtReal(ddx * ddx + ddy * ddy);
 
