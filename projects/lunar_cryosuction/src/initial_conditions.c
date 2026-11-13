@@ -896,11 +896,17 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
     /* The wedge band is a standalone ice body, so a run may legitimately have
      * zero ice_grain_* circles. Only demand grains when nothing else would put
      * ice in the domain. */
-    if (ng <= 0 && user->n_wedge_bands <= 0 && user->n_bridges <= 0)
+    if (ng <= 0 && user->n_wedge_bands <= 0 && user->n_bridges <= 0 && user->n_ice_flats <= 0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
                 "-ic_type multi_grains requires -ice_grain_cx/-ice_grain_cy/-ice_grain_R "
-                "(or -wedge_band_r1/-wedge_band_r2 for a wedge-bridging band, or "
-                "-bridge_cxL/... for throat-spanning ice plugs)");
+                "(or -wedge_band_r1/-wedge_band_r2 for a wedge-bridging band, "
+                "-bridge_cxL/... for throat-spanning ice plugs, or -ice_flat_x/... for "
+                "flat-faced ice)");
+    for (PetscInt k = 0; k < user->n_ice_flats; k++)
+        PetscPrintf(PETSC_COMM_WORLD,
+            "  flat ice %d: x = %.4e +/- %.4e m, below y = %.4e m\n", (int)k,
+            (double)user->ice_flat_x[k], (double)user->ice_flat_R[k],
+            (double)user->ice_flat_height[k]);
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (2D multi-grain) ---\n"
