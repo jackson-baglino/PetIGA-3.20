@@ -109,6 +109,12 @@ Hypotheses: the user writes them; none recorded yet.
   cell at G 0, ends at h_net with a gradient (plan_estimates 8c). Type 7 v4:
   one new pore, 7 ice configurations (review_scratch/.../v4). SI drafts in
   iCloud lunar_regolith_DSM/SupplementalInfo_paper2/.
+- 2026-11-13 (user): type 5 periodic cell uses the sinhyp wall profile.
+  Type 7 v5 (narrower lenses, a lens in every config, droplet radii 35-60 um,
+  film ends at 60 deg via rind end_theta) in review_scratch/.../v5. SI drafts
+  3.1 after three independent read-back rounds (both rated 3/5; open items
+  need user inputs). Model note: rho_vs = 0.62 p_vs/(p_atm - p_vs) x fixed
+  rho_air 1.341 kg/m3 (Wexler 1977 p_vs) is ~4 % below p_vs M/(RT) at -20 C.
   I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 lenses start
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at

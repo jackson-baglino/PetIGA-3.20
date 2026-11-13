@@ -13,20 +13,22 @@ from si_common import EQ, TBL, H, P, save, title  # noqa: I001  (sets the path f
 from docx_helpers import figure
 
 title("Supplementary Methods: thermal boundary conditions for heating of the regolith",
-      "Draft 3, 13 November 2026.")
+      "Draft 3.1, 13 November 2026.")
 
 H("Purpose and setting", 1)
 P("The computational domain is a single pore (ice and gas, 2D); the regolith around it is not meshed "
-  "(Fig. S2). The pore is oriented along the direction of heating: its axis $x$ points down from the heated "
-  "surface, and the walls are the pore's sides. To represent warming of the regolith, two optional conditions "
+  "(Fig. S2). The model solves ice sublimation and deposition with a phase field, in air at 1 atm and −20 °C "
+  "(a laboratory analog). The pore is oriented along the direction of heating: its axis $x$ points away from "
+  "the heated surface (to the right in Fig. S2), its end nearest the surface lies at depth $z_0$, and the walls "
+  "are the pore's sides. To represent warming of the regolith, two optional conditions "
   "can be set on the walls: a prescribed heat flux, or a wall temperature equal to that of the regolith "
   "computed by one-dimensional heat diffusion from the surface. The two pore ends keep the condition chosen "
   "for the run (a fixed temperature or insulation).")
 figure(str(Path(__file__).parent / "fig/fig_thermal.png"),
        "Figure S2. Left: the pore is the mesh; its walls (red) carry the thermal condition, $n$ is the outward "
-       "normal and $s$ the depth below the heated surface measured along the wall (the surface may lie outside "
-       "the pore). Right: the wall temperature of Eq. (S4) against depth at three times; $\\ell_s$ is any "
-       "reference length.", width=6.3)
+       "normal and $s$ the depth below the heated surface measured along the wall; the surface lies a distance "
+       "$z_0$ beyond the left end. Right: the wall temperature of Eq. (S4) against depth at three times; "
+       "$\\ell_s$ is any reference length.", width=6.3)
 
 H("Symbols", 1)
 TBL(["Symbol", "Meaning"], [
@@ -41,9 +43,9 @@ TBL(["Symbol", "Meaning"], [
      "$k$ = 2.29 (ice), 0.02 (air) $\\mathrm{W/(m\\,K)}$; $\\rho c = 919\\times1960$ (ice), $1.341\\times1044$ (air) $\\mathrm{J/(m^3\\,K)}$"],
     ["$\\kappa = k/\\rho c$", "diffusivity in the pore: $1.3\\times10^{-6}$ (ice), $1.4\\times10^{-5}$ (air) "
      "$\\mathrm{m^2/s}$"],
-    ["$\\rho_{\\mathrm{ice}}$, $L_s$", "ice density; latent heat of sublimation"],
-    ["$\\xi_T$", "factor that rescales the time of the heat equation in the model; $\\xi_T = 1$ in every run, "
-     "so all equations below hold with $\\xi_T = 1$"],
+    ["$\\rho_{\\mathrm{ice}}$, $L_s$", "ice density, 919 $\\mathrm{kg/m^3}$; latent heat of sublimation, "
+     "$2.83\\times10^{6}$ J/kg"],
+    ["$t_{\\mathrm{run}}$, $\\ell_s$", "length of a run; a reference length used only in Fig. S2"],
     ["$q$", "prescribed heat flux into the pore ($\\mathrm{W/m^2}$)"],
     ["$T_{\\mathrm{init}}$, $\\Delta T$, $t_0$", "regolith temperature before heating; temperature step at the "
      "surface; time heating starts"],
@@ -55,21 +57,22 @@ TBL(["Symbol", "Meaning"], [
 
 H("Discretization", 1)
 P("The heat equation is")
-EQ(r"\rho c\,\frac{\partial T}{\partial t} = \xi_T\,\nabla\cdot(k\nabla T) + "
-   r"\xi_T\,\rho_{\mathrm{ice}}L_s\,\frac{\partial\phi}{\partial t}")
-P("It is solved with quadratic B-splines (isogeometric Galerkin method) and the generalized-$\\alpha$ time integrator. "
+EQ(r"\rho c\,\frac{\partial T}{\partial t} = \nabla\cdot(k\nabla T) + "
+   r"\rho_{\mathrm{ice}}L_s\,\frac{\partial\phi}{\partial t}")
+P("(The model carries a time-scaling factor on the conduction and latent terms; it equals 1 in every run and "
+  "is omitted here.) It is solved with quadratic B-splines (isogeometric Galerkin method) and the generalized-$\\alpha$ time integrator. "
   "Multiplying by $N_a$, integrating over the pore and integrating the conduction term by parts gives the "
   "residual, which is set to zero at every step:")
-EQ(r"R_a = \int\Bigl[\rho c\,\frac{\partial T}{\partial t}N_a + \xi_T k\,\nabla T\cdot\nabla N_a - "
-   r"\xi_T\rho_{\mathrm{ice}}L_s\frac{\partial\phi}{\partial t}N_a\Bigr]dV - "
-   r"\xi_T\int_{\Gamma} N_a\,k\,\frac{\partial T}{\partial n}\,d\Gamma")
+EQ(r"R_a = \int\Bigl[\rho c\,\frac{\partial T}{\partial t}N_a + k\,\nabla T\cdot\nabla N_a - "
+   r"\rho_{\mathrm{ice}}L_s\frac{\partial\phi}{\partial t}N_a\Bigr]dV - "
+   r"\int_{\Gamma} N_a\,k\,\frac{\partial T}{\partial n}\,d\Gamma")
 P("The last term is the heat entering through the boundary. It is zero on an insulated face; the two "
   "conditions below specify it.")
 
 H("Prescribed heat flux", 1)
 P("On $\\Gamma_q$ the heat entering the pore is $k\\,\\partial T/\\partial n = q$ from time $t_0$ on, so the "
   "boundary term becomes the known quantity")
-EQ(r"-\,\xi_T\int_{\Gamma_q} q\,N_a\,d\Gamma")
+EQ(r"-\int_{\Gamma_q} q\,N_a\,d\Gamma")
 P("It does not depend on $T$ or $\\phi$, so the Jacobian of the residual is unchanged.")
 
 H("Wall temperature from one-dimensional diffusion", 1)
@@ -84,7 +87,9 @@ P("Two simpler forms are available: the same profile held at $t = t_0 + t_{\\mat
 P("**Scales.** Heat crosses a pore $\\ell$ = 150 µm wide in $\\ell^2/\\kappa$ ≈ 2 ms (air) to 20 ms (ice), "
   "while the ice changes over days, so the pore temperature follows the wall without lag. The wall "
   "temperature at depth $z_0$ changes over about $z_0^2/\\kappa_r$ (for example 12 days for $z_0$ = 10 cm and "
-  "$\\kappa_r = 10^{-8}$ $\\mathrm{m^2/s}$), and varies little across a pore a few millimeters long. The frozen profile "
+  "$\\kappa_r = 10^{-8}$ $\\mathrm{m^2/s}$). Along the wall it changes at "
+  "$\\partial T_w/\\partial s = -\\Delta T\\,e^{-s^2/(4\\kappa_r(t - t_0))}/\\sqrt{\\pi\\kappa_r(t - t_0)}$; this "
+  "along-wall gradient is what the pore feels, and it varies little across a pore a few millimeters long. The frozen profile "
   "replaces the time-dependent one when the run is much shorter than $t_{\\mathrm{ref}}$: the profile changes "
   "with $\\sqrt{t - t_0}$, so over a run of length $t_{\\mathrm{run}}$ its argument changes by about "
   "$t_{\\mathrm{run}}/(2t_{\\mathrm{ref}})$.")
@@ -92,7 +97,7 @@ P("**Scales.** Heat crosses a pore $\\ell$ = 150 µm wide in $\\ell^2/\\kappa$ �
 H("Imposing the wall temperature weakly (Nitsche)", 1)
 P("The wall temperature is imposed with the symmetric Nitsche method (Nitsche, 1971). On $\\Gamma_w$ the "
   "boundary term of $R_a$ is replaced by")
-EQ(r"\xi_T\int_{\Gamma_w}\Bigl[-N_a\,k\,\frac{\partial T}{\partial n}"
+EQ(r"\int_{\Gamma_w}\Bigl[-N_a\,k\,\frac{\partial T}{\partial n}"
    r" - k\,\frac{\partial N_a}{\partial n}\,(T - T_w) + \beta\,N_a\,(T - T_w)\Bigr]d\Gamma,"
    r"\qquad \beta = \frac{C\,k(\phi)}{h_n},\quad C = 10")
 P("The first term is the heat entering through the wall; the second keeps the discrete problem symmetric; the "

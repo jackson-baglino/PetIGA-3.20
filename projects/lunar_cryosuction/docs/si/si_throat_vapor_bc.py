@@ -13,18 +13,25 @@ from si_common import EQ, TBL, H, P, save, title  # noqa: I001  (sets the path f
 from docx_helpers import figure
 
 title("Supplementary Methods: vapor boundary conditions for the throat simulations",
-      "Draft 3, 13 November 2026.")
+      "Draft 3.1, 13 November 2026.")
 
 H("Purpose", 1)
-P("In the throat simulations an ice lens spans a pore that narrows to a throat (Fig. S1). The lens moves only "
+P("The simulations solve a phase-field model of ice sublimation and deposition in 2D pores at −20 °C "
+  "in air at 1 atm, a laboratory analog of ice in regolith pores. In the throat simulations an ice lens spans "
+  "a pore that narrows to a throat (Fig. S1). The lens moves only "
   "by sublimation at one face and deposition at the other; the vapor travels through the gas between each face "
   "and the end of the pore on that side. The vapor density held at the two ends therefore decides whether the "
-  "lens also grows or shrinks while it moves. This section derives the end condition that keeps the amount of "
-  "ice constant, and explains why the runs without a temperature gradient use a periodic pore instead.")
+  "lens also grows or shrinks while it moves. This section derives the end condition that returns the lens to "
+  "its initial area at the end of a run, and explains why the runs without a temperature gradient use a "
+  "periodic pore instead. The effects are small and of similar size: curvature shifts a face's equilibrium "
+  "humidity by $d_0\\chi \\approx 2.5\\times10^{-5}$ (40 µm gap), a gradient of 1 K/m shifts the ends by "
+  "$sGL \\approx 4\\times10^{-5}$, and an error of $10^{-7}$ in the end humidity changes the lens area by "
+  "about 1 % over 300 days. This is why the end humidity is given to seven digits.")
 figure(str(Path(__file__).parent / "fig/fig_throat.png"),
        "Figure S1. Pore with a throat and an ice lens (2D, per unit depth). Each face exchanges vapor with the "
        "end of the pore on its side through the gas column between them. The ends hold the vapor density at a "
-       "fraction $h$ of saturation at the local temperature. The walls are impermeable and insulating.",
+       "fraction $h$ of saturation at the local temperature. The walls are impermeable and insulating. Schematic: "
+       "the lens of Table S1 starts 70 µm to the right of the throat.",
        width=6.3)
 
 H("Setting and symbols", 1)
@@ -48,8 +55,10 @@ TBL(["Symbol", "Meaning", "Value at −20 °C"], [
      "face) / $\\rho_{vs}(T_{\\mathrm{lens}})$", ""],
     ["$d_0$", "capillary length $\\gamma v_m/(k_B T)$; $\\gamma$ = 0.109 $\\mathrm{J/m^2}$, $v_m$ = volume of one water "
      "molecule in ice, $k_B$ Boltzmann's constant", "$1.015\\times10^{-9}$ m"],
-    ["$\\beta_0$", "attachment coefficient (Hertz–Knudsen, deposition coefficient 0.01); a face moves at "
-     "$\\Delta/\\beta_0$ when attachment alone limits it", "$7.94\\times10^{5}$ s/m"],
+    ["$\\beta_0$", "attachment coefficient, $\\beta_0 = \\alpha^{-1}\\sqrt{2\\pi m/(k_B T)}\\,"
+     "\\rho_{\\mathrm{ice}}/\\rho_{vs}$ (Hertz–Knudsen) with deposition coefficient $\\alpha$ = 0.01 and "
+     "$m$ the mass of a water molecule; a face moves at $\\Delta/\\beta_0$ when attachment alone limits it",
+     "$7.94\\times10^{5}$ s/m"],
     ["$D_v$", "vapor diffusivity in air at 1 atm, $2.178\\times10^{-5}(T/273.15)^{1.81}$ $\\mathrm{m^2/s}$",
      "$1.90\\times10^{-5}\\ \\mathrm{m^2/s}$"],
     ["$K$", "$\\rho_{\\mathrm{ice}}/(D_v\\,\\rho_{vs})$, with $\\rho_{\\mathrm{ice}}$ = 919 $\\mathrm{kg/m^3}$",
@@ -119,8 +128,9 @@ TBL(["$w_t$, $G$", "$h_{\\mathrm{net}}$", "area at $h_{\\mathrm{net}}$", "at $1 
 ], [1.05, 1.0, 1.05, 1.05, 0.8, 1.55], size=8.5)
 P("Weighting matters: the unweighted mean curvature leaves the lens 2–29 % smaller. A change of $10^{-7}$ in "
   "$h$ changes the area by about 1 % over 300 days, and the approximations listed below can shift $h_0$ by "
-  "a few times $10^{-7}$, so $h_{\\mathrm{net}}$ is a starting value: the lens area is monitored in each run "
-  "and $h$ is corrected if it drifts.", after=4)
+  "a few times $10^{-7}$, so $h_{\\mathrm{net}}$ is a starting value and the lens area is monitored in each run. "
+  "The final lens positions are not monotonic in $G$ (80 µm throat: 58, 3 and 63 µm for $G$ = 0, 1, 2 K/m); we "
+  "have not traced why, and only the $G = 0$ rows are used below.", after=4)
 
 H("Runs without a temperature gradient: periodic pore", 1)
 P("Table S1 shows that even at $h_{\\mathrm{net}}$ the ends move the lens: with no gradient it does not stop at "
@@ -129,8 +139,9 @@ P("Table S1 shows that even at $h_{\\mathrm{net}}$ the ends move the lens: with 
   "difference between the two face equilibria. The runs without a gradient therefore use a pore that is "
   "periodic in $x$: one cell of an infinite chain of identical throats, 400 µm long, throat at the center, "
   "$g = \\sqrt{w_t^2 + (c_pL/\\pi)^2\\sin^2(\\pi\\xi/L)}$ with $\\xi = x - L/2$ and "
-  "$c_p = \\pi\\sqrt{W^2 - w_t^2}/L$, so that $g = W$ at the cell edges. Near the throat this matches the pore "
-  "above; unlike it, the wall slope is zero at the cell edges, where the cells join. The two faces are "
+  "$c_p = \\pi\\sqrt{W^2 - w_t^2}/L$, so that $g = W$ at the cell edges. It has the same throat and widest "
+  "gaps as the pore above, but near the throat its walls are $\\pi/2$ times steeper, and the wall slope is zero "
+  "at the cell edges, where the cells join. The two faces are "
   "connected by one gas column through the neighboring cell, so")
 EQ(r"Q_1 = -Q_2 = \frac{h_2^{\mathrm{eq}} - h_1^{\mathrm{eq}}}{\beta_0/g_1 + \beta_0/g_2 + "
    r"K\int_{\mathrm{gas}} dx/g(x)}")

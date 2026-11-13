@@ -115,13 +115,13 @@ def fig_thermal(out: Path) -> int:
     ax.text(Lx / 2, W / 2 + 12, "pore: ice and gas (the mesh)", ha="center", va="center", color=INK)
     ax.text(Lx / 2, -11, "wall face $\Gamma_w$: $T = T_w(s,t)$", ha="center", va="center", color="#b2182b")
     ax.annotate("", (8, W / 2 - 18), (Lx - 8, W / 2 - 18), arrowprops=dict(arrowstyle="<-", color=GRAY, lw=0.6))
-    ax.text(Lx / 2, W / 2 - 23, "$s$: distance along the wall from the heated end", ha="center", va="top",
+    ax.text(Lx / 2, W / 2 - 23, "$s = x + z_0$: depth below the heated surface", ha="center", va="top",
             color=GRAY)
     ax.annotate("", (40, W + 19), (40, W + 1), arrowprops=dict(arrowstyle="->", color=INK, lw=0.8))
     ax.text(45, W + 15, "$n$", ha="left", va="center", color=INK)
     ax.annotate("", (40, -19), (40, -1), arrowprops=dict(arrowstyle="->", color=INK, lw=0.8))
     ax.text(45, -15, "$n$", ha="left", va="center", color=INK)
-    ax.text(4, W / 2 + 32, "heated\nend", ha="left", va="center", color="#b2182b")
+    ax.text(4, W / 2 + 32, "toward the\nsurface", ha="left", va="center", color="#b2182b")
     ax.set_xlim(-6, Lx + 6)
     ax.set_ylim(-26, W + 26)
     ax.axis("off")
