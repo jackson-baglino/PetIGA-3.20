@@ -3,9 +3,9 @@
     venv_cryosuction/bin/python docs/si/si_figures.py docs/si/fig
     ../lunar_regolith_DSM/venv_docparse/bin/python docs/si/si_thermal_bc.py
 
-Formulation: src/assembly.c (commit 4d7e0a61); property mixtures: src/material_properties.c.
-Verification numbers: studies/heatflux_bc/verification/README.md and verify_heatflux.csv (rerun on
-main after the merge, 42 PASS).
+Formulation: src/assembly.c (commit 4d7e0a61); material constants: src/cryosuction_main.c lines
+171-178; mixtures: src/material_properties.c. Verification: studies/heatflux_bc/verification/
+(verify_heatflux.csv, rerun on main after the merge, 42 PASS). Nitsche (1971) DOI checked on Crossref.
 """
 from pathlib import Path
 
@@ -13,109 +13,134 @@ from si_common import EQ, TBL, H, P, save, title  # noqa: I001  (sets the path f
 from docx_helpers import figure
 
 title("Supplementary Methods: thermal boundary conditions for heating of the regolith",
-      "Draft 2, 13 November 2026. Implementation: src/assembly.c (commit 4d7e0a61); checks: "
-      "studies/heatflux_bc/verification/.")
+      "Draft 3, 13 November 2026.")
 
-H("Purpose", 1)
-P("The computational domain is the pore (ice and gas); the regolith around it is not meshed (Fig. S2). To "
-  "represent heating of the regolith, for example warming that starts at the surface and diffuses downward, "
-  "two optional conditions can be set on the pore walls: a prescribed heat flux, or a wall temperature that "
-  "follows one-dimensional heat diffusion through the regolith. Faces not named keep the condition chosen for "
-  "the run (a fixed temperature on the pore ends, or insulation).")
+H("Purpose and setting", 1)
+P("The computational domain is a single pore (ice and gas, 2D); the regolith around it is not meshed "
+  "(Fig. S2). The pore is oriented along the direction of heating: its axis $x$ points down from the heated "
+  "surface, and the walls are the pore's sides. To represent warming of the regolith, two optional conditions "
+  "can be set on the walls: a prescribed heat flux, or a wall temperature equal to that of the regolith "
+  "computed by one-dimensional heat diffusion from the surface. The two pore ends keep the condition chosen "
+  "for the run (a fixed temperature or insulation).")
 figure(str(Path(__file__).parent / "fig/fig_thermal.png"),
-       "Figure S2. Left: the pore is the mesh; its walls (red) are faces of the mesh, $n$ is the outward normal "
-       "and $s$ the distance along the wall from the heated end. Right: the wall temperature of Eq. (S4) at "
-       "three times; $\\ell_s$ is any reference length along the wall.", width=6.3)
+       "Figure S2. Left: the pore is the mesh; its walls (red) carry the thermal condition, $n$ is the outward "
+       "normal and $s$ the depth below the heated surface measured along the wall (the surface may lie outside "
+       "the pore). Right: the wall temperature of Eq. (S4) against depth at three times; $\\ell_s$ is any "
+       "reference length.", width=6.3)
 
 H("Symbols", 1)
 TBL(["Symbol", "Meaning"], [
+    ["$x$, $L_x$, $\\ell$", "position along the pore axis; pore length; pore width (gap)"],
+    ["$\\Gamma$, $\\Gamma_q$, $\\Gamma_w$", "boundary of the pore; faces with a prescribed flux; faces with a "
+     "prescribed wall temperature"],
+    ["$n$", "outward unit normal; $\\partial T/\\partial n = \\nabla T\\cdot n$"],
+    ["$s$", "depth below the heated surface along the wall, $s = x + z_0$, with $z_0$ the depth of the pore's "
+     "upper end"],
     ["$\\phi$", "ice phase field: 1 in ice, 0 in gas"],
-    ["$k(\\phi)$, $\\rho c(\\phi)$", "thermal conductivity and volumetric heat capacity, linear in $\\phi$ between "
-     "the values for ice and air ($k_{\\mathrm{ice}}/k_{\\mathrm{air}} = 115$)"],
+    ["$k(\\phi)$, $\\rho c(\\phi)$", "conductivity and volumetric heat capacity, linear in $\\phi$: "
+     "$k$ = 2.29 (ice), 0.02 (air) $\\mathrm{W/(m\\,K)}$; $\\rho c = 919\\times1960$ (ice), $1.341\\times1044$ (air) $\\mathrm{J/(m^3\\,K)}$"],
+    ["$\\kappa = k/\\rho c$", "diffusivity in the pore: $1.3\\times10^{-6}$ (ice), $1.4\\times10^{-5}$ (air) "
+     "$\\mathrm{m^2/s}$"],
     ["$\\rho_{\\mathrm{ice}}$, $L_s$", "ice density; latent heat of sublimation"],
-    ["$\\xi_T$", "the model's scaling factor for the heat equation; $\\xi_T = 1$ in every run"],
-    ["$n$", "outward unit normal of a face; $\\partial T/\\partial n = \\nabla T\\cdot n$"],
-    ["$N_a$, $R_a$", "spline basis function $a$ (quadratic); the residual of the heat equation for $N_a$"],
-    ["$q$", "prescribed heat flux into the pore [$\\mathrm{W/m^2}$]; positive heats the pore"],
-    ["$T_{\\mathrm{init}}$, $\\Delta T$, $t_0$", "wall temperature before heating; temperature step at the "
-     "heated end; time heating starts"],
-    ["$\\kappa_r$", "thermal diffusivity of the regolith [$\\mathrm{m^2/s}$]"],
-    ["$\\kappa$, $\\ell$", "thermal diffusivity in the pore; pore width"],
-], [1.6, 4.9], size=8.5)
+    ["$\\xi_T$", "factor that rescales the time of the heat equation in the model; $\\xi_T = 1$ in every run, "
+     "so all equations below hold with $\\xi_T = 1$"],
+    ["$q$", "prescribed heat flux into the pore ($\\mathrm{W/m^2}$)"],
+    ["$T_{\\mathrm{init}}$, $\\Delta T$, $t_0$", "regolith temperature before heating; temperature step at the "
+     "surface; time heating starts"],
+    ["$\\kappa_r$", "thermal diffusivity of the regolith (an input of the run)"],
+    ["$t_{\\mathrm{ref}}$, $L_h$", "fixed time of the frozen profile; length of the linear profile"],
+    ["$N_a$, $R_a$", "quadratic B-spline basis function $a$; the Galerkin residual for $N_a$ (below)"],
+    ["$h_n$, $C$", "element size normal to a face; Nitsche constant"],
+], [1.5, 5.0], size=8.5)
 
-H("Heat equation and its boundary term", 1)
-P("The temperature satisfies")
+H("Discretization", 1)
+P("The heat equation is")
 EQ(r"\rho c\,\frac{\partial T}{\partial t} = \xi_T\,\nabla\cdot(k\nabla T) + "
    r"\xi_T\,\rho_{\mathrm{ice}}L_s\,\frac{\partial\phi}{\partial t}")
-P("Multiplying by $N_a$ and integrating by parts gives, besides the volume terms, the boundary term")
-EQ(r"-\,\xi_T\int_{\Gamma} N_a\,k\,\frac{\partial T}{\partial n}\,d\Gamma")
-P("over the boundary $\\Gamma$ of the pore. On an insulated face the term is zero. The two conditions below "
-  "specify it on the faces where they are set.")
+P("It is solved with quadratic B-splines (isogeometric Galerkin method) and the generalized-$\\alpha$ time integrator. "
+  "Multiplying by $N_a$, integrating over the pore and integrating the conduction term by parts gives the "
+  "residual, which is set to zero at every step:")
+EQ(r"R_a = \int\Bigl[\rho c\,\frac{\partial T}{\partial t}N_a + \xi_T k\,\nabla T\cdot\nabla N_a - "
+   r"\xi_T\rho_{\mathrm{ice}}L_s\frac{\partial\phi}{\partial t}N_a\Bigr]dV - "
+   r"\xi_T\int_{\Gamma} N_a\,k\,\frac{\partial T}{\partial n}\,d\Gamma")
+P("The last term is the heat entering through the boundary. It is zero on an insulated face; the two "
+  "conditions below specify it.")
 
 H("Prescribed heat flux", 1)
-P("On the faces $\\Gamma_q$ the heat flowing into the pore is $k\\,\\partial T/\\partial n = q$ from time "
-  "$t_0$ on. The boundary term becomes a known quantity and is added to the residual:")
-EQ(r"R_a \leftarrow R_a - \xi_T\int_{\Gamma_q} q\,N_a\,d\Gamma")
-P("It does not depend on $T$ or $\\phi$, so the Jacobian is unchanged.")
+P("On $\\Gamma_q$ the heat entering the pore is $k\\,\\partial T/\\partial n = q$ from time $t_0$ on, so the "
+  "boundary term becomes the known quantity")
+EQ(r"-\,\xi_T\int_{\Gamma_q} q\,N_a\,d\Gamma")
+P("It does not depend on $T$ or $\\phi$, so the Jacobian of the residual is unchanged.")
 
 H("Wall temperature from one-dimensional diffusion", 1)
-P("The regolith along a wall is treated as a semi-infinite one-dimensional conductor whose end ($s = 0$) is "
-  "raised by $\\Delta T$ at time $t_0$. Its temperature, imposed on the wall faces $\\Gamma_w$, is")
+P("The regolith along the wall is treated as a semi-infinite conductor whose surface ($s = 0$) is raised by "
+  "$\\Delta T$ at $t_0$. Its temperature at depth $s$ is imposed on $\\Gamma_w$:")
 EQ(r"T_w(s,t) = T_{\mathrm{init}} + \Delta T\,\mathrm{erfc}\!\left(\frac{s}{2\sqrt{\kappa_r\,(t - t_0)}}\right),"
    r"\qquad T_w = T_{\mathrm{init}}\ \ (t < t_0)")
-P("Two simpler forms are available: the same profile held at one time $t_0 + t_{\\mathrm{ref}}$, and a linear "
-  "profile $T_w = T_{\\mathrm{init}} + \\Delta T\\,(1 - s/L_h)$ for $s < L_h$ and $T_w = T_{\\mathrm{init}}$ "
-  "beyond. The coupling is one-way: the pore does not change $T_w$, so heat drawn by the pore, including latent "
-  "heat of deposition at the wall, is supplied by the wall without limit.")
-P("Three times set which form applies. Heat relaxes across the pore in about $\\ell^2/\\kappa$; the ice "
-  "changes over days or longer; the heated zone along the wall advances over about $s^2/\\kappa_r$. When "
-  "$\\ell^2/\\kappa$ is much shorter than the ice time, the pore temperature follows the wall without lag. The "
-  "profile held at $t_{\\mathrm{ref}}$ is a valid replacement for the time-dependent one when the run is much "
-  "shorter than $t_{\\mathrm{ref}}$, because the erfc profile changes with $\\sqrt{t - t_0}$.")
+P("Two simpler forms are available: the same profile held at $t = t_0 + t_{\\mathrm{ref}}$, and a linear "
+  "profile $T_w = T_{\\mathrm{init}} + \\Delta T\\,(1 - s/L_h)$ for $s < L_h$, $T_w = T_{\\mathrm{init}}$ beyond. "
+  "The coupling is one-way: heat drawn by the pore, including latent heat, does not change $T_w$; this "
+  "assumes the pore draws little heat compared with what the regolith conducts.")
+P("**Scales.** Heat crosses a pore $\\ell$ = 150 µm wide in $\\ell^2/\\kappa$ ≈ 2 ms (air) to 20 ms (ice), "
+  "while the ice changes over days, so the pore temperature follows the wall without lag. The wall "
+  "temperature at depth $z_0$ changes over about $z_0^2/\\kappa_r$ (for example 12 days for $z_0$ = 10 cm and "
+  "$\\kappa_r = 10^{-8}$ $\\mathrm{m^2/s}$), and varies little across a pore a few millimeters long. The frozen profile "
+  "replaces the time-dependent one when the run is much shorter than $t_{\\mathrm{ref}}$: the profile changes "
+  "with $\\sqrt{t - t_0}$, so over a run of length $t_{\\mathrm{run}}$ its argument changes by about "
+  "$t_{\\mathrm{run}}/(2t_{\\mathrm{ref}})$.")
 
 H("Imposing the wall temperature weakly (Nitsche)", 1)
-P("On $\\Gamma_w$ the residual of $N_a$ receives")
-EQ(r"R_a \leftarrow R_a + \xi_T\int_{\Gamma_w}\Bigl[-N_a\,k\,\frac{\partial T}{\partial n}"
+P("The wall temperature is imposed with the symmetric Nitsche method (Nitsche, 1971). On $\\Gamma_w$ the "
+  "boundary term of $R_a$ is replaced by")
+EQ(r"\xi_T\int_{\Gamma_w}\Bigl[-N_a\,k\,\frac{\partial T}{\partial n}"
    r" - k\,\frac{\partial N_a}{\partial n}\,(T - T_w) + \beta\,N_a\,(T - T_w)\Bigr]d\Gamma,"
-   r"\qquad \beta = \frac{C\,k(\phi)}{h_n}")
-P("with $h_n$ the physical size of the boundary element normal to the face and $C = 10$. The first term is the "
-  "boundary term of the weak form, the second makes the formulation symmetric, and the third drives $T$ to "
-  "$T_w$. The method is consistent: an exact solution that lies in the spline space satisfies these equations "
-  "exactly (check H5). The terms are evaluated at the same intermediate time as the rest of the residual in "
-  "each step of the time integrator, and their Jacobian with respect to $T$ and $\\phi$ is included. We use "
-  "this rather than fixing nodal values because the solver's fixed values are one constant per face, "
-  "quadratic spline coefficients do not equal the temperature on the face, and the time integrator sets the "
-  "rate of change of a fixed value to zero, which would drop the heat-capacity term of a time-varying wall "
-  "temperature. $C = 10$ is a choice; its sensitivity was not tested.")
+   r"\qquad \beta = \frac{C\,k(\phi)}{h_n},\quad C = 10")
+P("The first term is the heat entering through the wall; the second keeps the discrete problem symmetric; the "
+  "third drives $T$ toward $T_w$, with a strength that scales with the conductivity and the inverse element "
+  "size. The method is consistent: the exact solution of the boundary-value problem satisfies these equations, "
+  "so, for example, a linear temperature field is reproduced to round-off (check H5). Stability requires $C$ "
+  "above a constant that depends on the spline degree; $C = 10$ was chosen and passed all checks, but its "
+  "sensitivity was not tested. The terms are evaluated at the same intermediate time of each generalized-$\\alpha$ "
+  "step as the rest of the residual, and their derivatives with respect to $T$ and $\\phi$ are included in "
+  "the Jacobian. Fixing nodal values instead would not work here: spline coefficients on a face are not "
+  "temperatures on the face, the solver's fixed values are one constant per face, and fixed values have zero "
+  "rate of change in the time integrator.")
 
 H("Verification", 1)
-P("Each check compares a scripted simulation (verify_heatflux.sh) with an exact solution or a conservation law. "
-  "Every field is a single phase (all air or all ice); errors are maximum differences over the domain.",
-  after=3)
+P("Each check runs a simulation and compares it with an exact solution or a conservation law. Every field is "
+  "a single phase (all air or all ice). Errors are maximum differences over the domain, divided by the scale "
+  "given.", after=3)
 TBL(["ID", "Setup", "Quantity", "Measured", "Tolerance"], [
-    ["H1", "Box; flux $q$ on one end, $T$ fixed on the other, insulated walls; steady; two meshes",
-     "error in $T$ / $(q L_x/k)$", "1.1e-14", "1e-8"],
-    ["H2", "Long box (600 µm), flux $q$ on one end; air and ice; four output times",
-     "error vs $(2q/k)\\sqrt{\\kappa t/\\pi}$", "≤ 3.4e-5", "1e-3"],
-    ["H3", "Box with the erfc wall temperature on all faces and $\\kappa = \\kappa_r$; two meshes",
-     "error in $T$ / $\\Delta T$", "≤ 4.0e-4", "1e-3"],
-    ["H4", "H3 at $t_f/4$, mesh halved", "order of convergence", "1.98", "> 1.5"],
+    ["H1", "Air box $200\\times20$ µm; flux $q$ = 100 $\\mathrm{W/m^2}$ on one end, $T$ fixed on the other, walls insulated; "
+     "steady; element sizes 5 and 2.5 µm", "error in $T$ / $(qL_x/k)$", "1.1e-14", "1e-8"],
+    ["H2", "Box 600 µm long, flux on one end; air ($q$ = 100 $\\mathrm{W/m^2}$, $t$ = 0.25–2 ms) and ice ($q$ = 1000 $\\mathrm{W/m^2}$, "
+     "$t$ = 2.5–20 ms): heated depth ≤ 170 µm", "error / surface rise $(2q/k)\\sqrt{\\kappa t/\\pi}$", "≤ 3.4e-5",
+     "1e-3"],
+    ["H3", "Air box; erfc wall temperature on all faces with $\\kappa_r = \\kappa_{\\mathrm{air}}$; element "
+     "sizes 8 and 4 µm; four times", "error in $T$ / $\\Delta T$", "≤ 4.0e-4", "1e-3"],
+    ["H4", "H3 at the time where a run with $\\Delta t/4$ changes the error by 0.2 % (spatial error dominant)",
+     "order, element size halved", "1.98", "> 1.5"],
     ["H5", "Linear wall temperature on all faces; steady", "error in $T$ / $\\Delta T$", "7.1e-15", "1e-8"],
-    ["H6", "H2: stored heat against heat supplied", "difference / supplied", "1.0e-5", "1e-4"],
+    ["H6", "H2: stored heat against heat supplied, all output times", "difference / heat supplied",
+     "1.0e-5", "1e-4"],
     ["H7", "Nitsche terms of the Jacobian against finite differences", "relative error", "2.8e-8", "1e-6"],
-    ["H8", "Runs that name no thermal face, with and without contact-angle walls",
+    ["H8", "Runs without thermal faces, with and without contact-angle walls",
      "output against the previous code", "identical bit for bit", "exact"],
-], [0.35, 2.75, 1.45, 0.95, 0.75], size=8.5)
-P("The tolerances lie well above the round-off or discretization error expected for each check and well below "
-  "an error a wrong sign or factor would give. The difference in H6 arises in the first step only: the time "
-  "integrator starts from a zero heating rate while the flux switches on at $t = 0$, and the offset is constant "
-  "afterwards. The order in H4 is 2 although quadratic splines can give 3 for smooth solutions; the erfc "
-  "solution has a step at $s = 0$ and $t = t_0$, and the cause of the lower order has not been isolated.",
-  after=4)
+], [0.35, 2.85, 1.45, 0.85, 0.75], size=8.5)
+P("H6: the difference arises in the first time step, where the integrator starts from a zero heating rate "
+  "while the flux switches on, and is the same at every later output time. H4: quadratic splines can reach "
+  "third order in this norm for smooth solutions; the measured second order has not been traced to a cause "
+  "(the erfc profile has a step at $s = 0$, $t = t_0$).", after=4)
 
 H("Not covered", 1)
-P("Ice–gas interfaces at a heated wall (latent heat in the budget, the jump of $k$ inside $\\beta$ at a contact "
-  "line, the $\\phi$ part of the Jacobian with $\\phi$ varying), mapped (curved-wall) meshes, axisymmetric runs, "
-  "and runs on several processes have not been checked for these conditions.")
+P("Ice–gas interfaces at a heated wall (latent heat in the budget, the jump of $k$ inside $\\beta$ where an "
+  "interface meets the wall, the $\\phi$ part of the Jacobian with $\\phi$ varying), curved-wall meshes, "
+  "axisymmetric runs and runs on several processes.")
+
+H("Reference", 2)
+P("Nitsche, J. (1971). Über ein Variationsprinzip zur Lösung von Dirichlet-Problemen bei Verwendung von "
+  "Teilräumen, die keinen Randbedingungen unterworfen sind. Abh. Math. Sem. Univ. Hamburg 36, 9–15. "
+  "doi:10.1007/BF02995904", size=8.5)
+P("Code: src/assembly.c and studies/heatflux_bc/verification/ (commit 4d7e0a61).", size=8.5)
 
 save("SI_thermal_BC.docx")

@@ -480,6 +480,7 @@ def optimal_h(a, d0, s, beta0, K):
         def run(h, G, xs=a.start8c, days=300, state=state, area=area):
             xm, A = xs, area(xs, a.lens8c)
             A0, t, dt, hist = A, 0.0, 6 * 3600.0, []
+            run.maxdev = 0.0
             while t < days * DAY:
                 st = state(xm, A, h, G)
                 if st is None:
@@ -489,6 +490,7 @@ def optimal_h(a, d0, s, beta0, K):
                 xm -= v * dt
                 A += dA * dt
                 t += dt
+                run.maxdev = max(run.maxdev, abs(A / A0 - 1))
             return xm, A / A0 - 1, hist, t
 
         # G_crit for this pore (lens held on the warm side of the throat), with h at the lens' start value
@@ -528,7 +530,8 @@ def optimal_h(a, d0, s, beta0, K):
             res = []
             for lab, hh in (("h_LS", h_ls), ("h_net", h_net), ("h_chi", h_chi), ("h 1", 1.0)):
                 xm2, dA2, _, t2 = run(hh, G)
-                res.append(f"{lab} {hh:.8f}: area {dA2 * 100:+6.2f} %, center {-xm2 * 1e6:+6.1f} um"
+                res.append(f"{lab} {hh:.8f}: area {dA2 * 100:+6.2f} % (max {run.maxdev * 100:.2f} %), "
+                           f"center {-xm2 * 1e6:+6.1f} um"
                            + (f" (left at {t2 / DAY:.0f} d)" if t2 < 300 * DAY - 1 else ""))
             print(f"   G {G:4.1f} K/m (passes LS {k_ls}, net {k_net}): " + "; ".join(res))
 
