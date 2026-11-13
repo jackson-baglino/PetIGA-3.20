@@ -1,0 +1,51 @@
+{
+  "name": "type7_F_bodychain_pendular_2D_L1600um_eps0.86um",
+  "comment": "Pore-body chain, 1.6 mm: wall bumps of half-width 30-40 um (grain radius for an assumed 60-80 um median grain diameter; not sourced in the repo, docs/material_parameters.md gives ~50 um without a reference), three throats (50, 70, 45 um) between wide bodies, the last body (1.25-1.6 mm) a dead-end pocket behind the 45 um throat (ink bottle). Ice by one rule only, the equal-curvature fill (build_ice_layout 'fill'): one ice-gas face radius r for the whole pore at the wall-BC angle 60 deg (D1), so ice spans every stretch whose gap is below 2 r cos(60) = r (narrow gaps, throats, opposing grain tips), with faces of radius r; r is set by bisection for the target ice fraction (the fraction jumps with r, so the result can differ from the target; the builder prints it). No ice faces within 200 um of the collector at x = 0. Target 8 %.",
+  "Lx": 0.0016,
+  "mean_gap": 0.00016,
+  "walls": {
+    "seed_bottom": 5,
+    "seed_top": 17,
+    "n_bumps": 30,
+    "R_range": [
+      3e-05,
+      4e-05
+    ],
+    "height_ratio_range": [
+      0.35,
+      0.6
+    ],
+    "overlap_range": [
+      0.15,
+      0.3
+    ]
+  },
+  "throats": [
+    {
+      "x": 0.00045,
+      "R": 0.00011,
+      "gap": 5e-05
+    },
+    {
+      "x": 0.00085,
+      "R": 0.00011,
+      "gap": 7e-05
+    },
+    {
+      "x": 0.00125,
+      "R": 0.00011,
+      "gap": 4.5e-05
+    }
+  ],
+  "theta_ice_init": 60,
+  "fill": {
+    "ice_frac": 0.08,
+    "theta": 60,
+    "x0": 0.0002,
+    "x1": 0.0016
+  },
+  "plugs": [],
+  "caps": [],
+  "grains": [],
+  "dtmax": 1341.2
+}

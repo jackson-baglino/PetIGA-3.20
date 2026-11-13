@@ -5,10 +5,11 @@ ice layout, written as a mesh, a geometry .opts, a node ice-field file for
 
 THE PORE. "walls": {"flat": true} gives straight walls (types 1, 2, 5).
 Otherwise a channel of length Lx whose walls are chains of overlapping
-C-infinity bumps (grain-like roughness), optionally with one throat (a large
-bump on both walls). Bumps are placed by a left-to-right walk so they always
-overlap (no flat stretches). The baseline is set so the mean gap is
---mean-gap (spec "mean_gap"). Each wall is the sum of its bumps:
+C-infinity bumps (grain-like roughness), optionally with throats (a large
+bump on both walls; "throats" takes a list, each sized after the ones
+before it). Bumps are placed by a left-to-right walk so they always overlap
+(no flat stretches). The baseline is set so the mean gap is --mean-gap (spec
+"mean_gap"). Each wall is the sum of its bumps:
 
     y_bot(x) = sum_k b_k(x),   y_top(x) = H - sum_k t_k(x),
     b(x) = h exp(1 - 1/(1 - s^2)), s = (x - c)/R, |s| < 1.
@@ -31,6 +32,11 @@ as a sharp region and then combined:
             A plug with x1 >= Lx ends at the dead end.
   caps      droplets on a wall: a disc of radius R whose center sits R cos(theta)
             behind the local wall along its normal, cut by the pore.
+  fill      (optional, at most one) equal-curvature fill of the whole pore: one
+            face radius r for every body, so ice spans each stretch whose gap
+            is below 2 r cos(theta), as plugs (above) with that r.
+            {"r": ...} or {"ice_frac": ...} (r found by bisection), with
+            optional "theta", "x0", "x1" (ice kept only in [x0, x1]).
   grains    free ice discs (or ellipses ax, ay) at (x, y); y may be given as
             "axis" (the local mid-gap).
 
@@ -116,26 +122,29 @@ class Pore:
             self.top = bump_walk(rt, self.lx, *args)
         xs = np.linspace(0, self.lx, 40001)
         self.H = spec["mean_gap"] + bump_sum(xs, self.bot).mean() + bump_sum(xs, self.top).mean()
-        self.throat = None
-        th = spec.get("throat")
-        if th:
+        # "throat" (one) or "throats" (a list, added in order; each later throat is
+        # sized against the walls with the earlier throats already in place)
+        self.throats = []
+        for th in spec.get("throats") or ([spec["throat"]] if spec.get("throat") else []):
             # throat height chosen so the NARROWEST gap within the throat bump is th["gap"]
             xw = np.linspace(th["x"] - th["R"], th["x"] + th["R"], 4001)
-            g0 = (self.H - bump_sum(xw, self.top)) - bump_sum(xw, self.bot)
+            yb0, yt0 = self.walls(xw)
+            g0 = yt0 - yb0
             assert g0.min() > th["gap"], f"throat gap {th['gap']:.3e} is wider than the pore there"
             lo, hi = 0.0, 0.5 * g0.max()
             for _ in range(60):
                 hth = 0.5 * (lo + hi)
                 gmin = (g0 - 2 * _bump(xw, th["x"], th["R"], hth)).min()
                 lo, hi = (hth, hi) if gmin > th["gap"] else (lo, hth)
-            self.throat = (th["x"], th["R"], 0.5 * (lo + hi))
+            self.throats.append((th["x"], th["R"], 0.5 * (lo + hi)))
+        self.throat = self.throats[0] if self.throats else None
 
     def walls(self, x):
         x = np.asarray(x, float)
         yb, yt = bump_sum(x, self.bot), self.H - bump_sum(x, self.top)
-        if self.throat:
-            yb = yb + _bump(x, *self.throat)
-            yt = yt - _bump(x, *self.throat)
+        for t_ in self.throats:
+            yb = yb + _bump(x, *t_)
+            yt = yt - _bump(x, *t_)
         return yb, yt
 
 
@@ -194,6 +203,48 @@ def plug(r, rs: Raster, x0, x1, theta):
     gas = ndi.distance_transform_edt(~centers, sampling=rs.dx) <= rad
     ice = rs.inside & ~gas & (rs.X >= x0 - rad) & (rs.X <= x1 + rad)
     return ice, rad
+
+
+def fill(rs: Raster, r, theta, x0, x1):
+    """equal-curvature fill (sharp mask): one ice-gas face radius r for the whole
+    pore. In a channel a face of radius r meeting the walls at theta stands where
+    the local gap is g_c = 2 r cos(theta) (flat-wall estimate; a sloped wall shifts
+    it, theta -/+ the wall angle). Ice therefore spans every stretch with gap < g_c:
+    each stretch becomes a plug with faces of radius r (plug()); stretches closer
+    than about 2 r merge, since no gas body of that curvature fits between them.
+    Stretches are looked for in [x0 + r, x1] so the faces stay at x >= x0.
+    (A global disc opening was tried first, 2026-11-12: discs of radius r centered
+    in a wide body reach through a short throat, leaving the throat gas.)"""
+    ct = math.cos(math.radians(theta))
+    assert ct > 0, "fill needs theta < 90"
+    g = rs.yt - rs.yb
+    narrow = (g < 2.0 * r * ct) & (rs.x >= x0 + r) & (rs.x <= x1)
+    lab, n = ndi.label(narrow)
+    ivs = [(rs.x[sl[0]][0], rs.x[sl[0]][-1]) for sl in ndi.find_objects(lab)]
+    merged = []
+    for a, b in ivs:
+        if merged and a - merged[-1][1] < 2.0 * r:
+            merged[-1] = (merged[-1][0], b)
+        else:
+            merged.append((a, b))
+    ice = np.zeros_like(rs.inside)
+    for a, b in merged:
+        ice |= plug(r, rs, a, b, theta)[0]
+    return ice
+
+
+def fill_for_fraction(rs: Raster, target, theta, x0, x1):
+    """r that gives the ice fraction target (of the whole pore) by bisection on r;
+    the ice fraction grows with r."""
+    g = rs.yt - rs.yb
+    ct = math.cos(math.radians(theta))
+    lo, hi = 0.5 * float(g.min()) / ct, 0.5 * float(g.max()) / ct
+    area = rs.inside.sum()
+    for _ in range(30):
+        r = 0.5 * (lo + hi)
+        f = fill(rs, r, theta, x0, x1).sum() / area
+        lo, hi = (r, hi) if f < target else (lo, r)
+    return 0.5 * (lo + hi)
 
 
 def wall_normal_point(rs: Raster, xc, wall):
@@ -291,6 +342,12 @@ def read_phi(path):
         return np.frombuffer(f.read(), dtype="<f8").reshape(my, mx, 3)
 
 
+def throat_txt(pore):
+    if len(pore.throats) == 1:
+        return ", throat at x = %.1f um" % (pore.throat[0] * 1e6)
+    return "".join(", throat at x = %.1f um" % (t_[0] * 1e6) for t_ in pore.throats)
+
+
 # ----------------------------------------------------------------- main ----
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -316,8 +373,7 @@ def main(argv=None) -> int:
     slope = max(np.abs(np.gradient(yb, xs)).max(), np.abs(np.gradient(yt, xs)).max())
     print(f"pore {name}: Lx {lx*1e6:.1f} um, H {H*1e6:.1f} um, gap {gap.min()*1e6:.1f}-{gap.max()*1e6:.1f} um "
           f"(mean {gap.mean()*1e6:.1f}), steepest wall slope {slope:.2f}, "
-          f"{len(pore.bot)}+{len(pore.top)} wall bumps" + (", throat at x = %.1f um" % (pore.throat[0]*1e6)
-                                                           if pore.throat else ""))
+          f"{len(pore.bot)}+{len(pore.top)} wall bumps" + throat_txt(pore))
     print(f"  eps {eps:.4e} m, Nx {nx}, Ny {ny}, DOF {(nx+P)*(ny+P)*3/1e6:.2f} M; element "
           f"{lx/nx*1e6:.3f} um long, {gap.max()/ny*1e6:.3f}-{gap.min()/ny*1e6:.3f} um across")
 
@@ -329,6 +385,14 @@ def main(argv=None) -> int:
         m, rad = plug(f.get("r"), rs, f["x0"], f["x1"], th)
         ice |= m
         parts.append(f"plug {f['x0']*1e6:.0f}-{f['x1']*1e6:.0f} um, theta {th:g}, faces r {rad*1e6:.1f} um")
+    if spec.get("fill"):
+        f = spec["fill"]
+        th = f.get("theta", th0)
+        fx0, fx1 = f.get("x0", 0.0), f.get("x1", lx)
+        rad = f.get("r") or fill_for_fraction(rs, f["ice_frac"], th, fx0, fx1)
+        ice |= fill(rs, rad, th, fx0, fx1)
+        parts.append(f"fill {fx0*1e6:.0f}-{fx1*1e6:.0f} um, theta {th:g}, one face radius r {rad*1e6:.1f} um"
+                     + (f" (set for {f['ice_frac']:.0%} ice before the other features)" if "r" not in f else ""))
     for f in spec.get("caps", []):
         th = f.get("theta", th0)
         ice |= cap(rs, f["x"], f["wall"], f["R"], th)
@@ -391,7 +455,7 @@ def main(argv=None) -> int:
 # geometry {opts.name}   (preprocess/build_ice_layout.py {rel(Path(a.layout))})
 #
 # Rough-walled pore: Lx {lx*1e6:.1f} um, gap {gap.min()*1e6:.1f}-{gap.max()*1e6:.1f} um (mean {gap.mean()*1e6:.1f}),
-# {len(pore.bot)}+{len(pore.top)} wall bumps{', throat at x = %.1f um' % (pore.throat[0]*1e6) if pore.throat else ''}.
+# {len(pore.bot)}+{len(pore.top)} wall bumps{throat_txt(pore)}.
 # Walls are in the mesh; wall faces {spec.get("wall_faces", "y0,y1")}; x0 and x1 are the pore ends.
 # Ice from {rel(phi_path)} (-ic_type phi_file), initial angle {th0:g} deg:
 """ + "".join(f"#   {p_}\n" for p_ in parts) + f"""# ice {frac:.1%} of the pore, sharp area {sharp_area:.4e} m^2, {n} bodies.
