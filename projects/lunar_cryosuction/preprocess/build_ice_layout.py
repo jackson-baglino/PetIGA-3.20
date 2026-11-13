@@ -14,6 +14,11 @@ before it). Bumps are placed by a left-to-right walk so they always overlap
     y_bot(x) = sum_k b_k(x),   y_top(x) = H - sum_k t_k(x),
     b(x) = h exp(1 - 1/(1 - s^2)), s = (x - c)/R, |s| < 1.
 
+Overlapping bumps leave valleys with a radius of curvature of ~1 um (layout A:
+1.1 um, 1.3 eps). Optional walls "smooth": sigma [m] convolves each wall (bumps
+and throats) with a Gaussian of that standard deviation (see Pore._init_smooth);
+without the key the walls are as before, bit for bit.
+
 The mesh maps the unit square onto the pore: control points at the Greville
 abscissae, x = Lx g_x, y = y_bot(x) + g_y (y_top(x) - y_bot(x)).
 
@@ -39,6 +44,17 @@ as a sharp region and then combined:
             optional "theta", "x0", "x1" (ice kept only in [x0, x1]).
   grains    free ice discs (or ellipses ax, ay) at (x, y); y may be given as
             "axis" (the local mid-gap).
+  rinds     uniform wall films: {"t", "wall": bottom|top|both, "x0", "x1"}; the
+            wall stretch in [x0, x1] dilated by a disc of radius t (thickness t
+            everywhere, round ends meeting the wall at 90 deg). See rind().
+  necks     ice at the grain-grain contacts: {"R", "x0", "x1", "wall", "depth",
+            "theta", "skip": [[a, b], ...]}; at every wall valley (local extremum
+            of the wall with prominence >= depth, default 2 um) in [x0, x1] a disc
+            of radius R whose depth is set so its mean contact angle with the two
+            flanks is theta. See neck().
+  bubbles   gas discs {"x", "y" (or "axis"), "R"} cut out of the ice after every
+            other feature; the build fails (exit 2) if a bubble is not enclosed
+            by ice or lies closer than 6 eps to a wall or to other gas.
 
 theta for plugs and caps is the layout's "theta_ice_init" (the user's rule,
 2026-11-09: droplets start at liquid water's angle, lenses at the wall-BC
@@ -120,6 +136,10 @@ class Pore:
             args = (w["n_bumps"], w["R_range"], w["height_ratio_range"], w["overlap_range"])
             self.bot = bump_walk(rb, self.lx, *args)
             self.top = bump_walk(rt, self.lx, *args)
+        self.smooth = float(w.get("smooth", 0.0))
+        if self.smooth > 0:
+            self._init_smooth(spec)
+            return
         xs = np.linspace(0, self.lx, 40001)
         self.H = spec["mean_gap"] + bump_sum(xs, self.bot).mean() + bump_sum(xs, self.top).mean()
         # "throat" (one) or "throats" (a list, added in order; each later throat is
@@ -139,8 +159,48 @@ class Pore:
             self.throats.append((th["x"], th["R"], 0.5 * (lo + hi)))
         self.throat = self.throats[0] if self.throats else None
 
+    def _init_smooth(self, spec):
+        """walls "smooth": sigma [m]. Each wall (bumps and throats) is convolved with a
+        Gaussian of standard deviation sigma, which rounds the valleys between
+        overlapping bumps (radius of curvature ~1 um without it, 2026-11-13) while the
+        bumps stay where the seeds put them. The bump sums are sampled on a grid of
+        spacing sigma/40 that extends 6 sigma past both pore ends (the bumps are
+        defined there, so the ends need no padding rule), smoothed, and read back
+        through cubic splines. Smoothing is linear, so a throat's height is found by
+        bisection on the smoothed walls plus h times the smoothed unit throat bump."""
+        from scipy.interpolate import CubicSpline
+        from scipy.ndimage import gaussian_filter1d
+        sig = self.smooth
+        dg = sig / 40.0
+        pad = 6.0 * sig + 2.0 * dg
+        xg = np.arange(-pad, self.lx + pad + 0.5 * dg, dg)
+
+        def sm(y):
+            return gaussian_filter1d(y, sig / dg, mode="nearest", truncate=5.0)
+        yb, yt_dn = sm(bump_sum(xg, self.bot)), sm(bump_sum(xg, self.top))
+        inn = (xg >= 0) & (xg <= self.lx)
+        self.H = spec["mean_gap"] + yb[inn].mean() + yt_dn[inn].mean()
+        self.throats = []
+        for th in spec.get("throats") or ([spec["throat"]] if spec.get("throat") else []):
+            unit = sm(_bump(xg, th["x"], th["R"], 1.0))
+            win = np.abs(xg - th["x"]) <= th["R"] + 3 * sig
+            g0 = (self.H - yt_dn - yb)[win]
+            assert g0.min() > th["gap"], f"throat gap {th['gap']:.3e} is wider than the pore there"
+            lo, hi = 0.0, g0.max()
+            for _ in range(60):
+                hth = 0.5 * (lo + hi)
+                gmin = (g0 - 2 * hth * unit[win]).min()
+                lo, hi = (hth, hi) if gmin > th["gap"] else (lo, hth)
+            hth = 0.5 * (lo + hi)
+            yb, yt_dn = yb + hth * unit, yt_dn + hth * unit
+            self.throats.append((th["x"], th["R"], hth))
+        self.throat = self.throats[0] if self.throats else None
+        self._spl = (CubicSpline(xg, yb), CubicSpline(xg, self.H - yt_dn))
+
     def walls(self, x):
         x = np.asarray(x, float)
+        if self.smooth > 0:
+            return self._spl[0](x), self._spl[1](x)
         yb, yt = bump_sum(x, self.bot), self.H - bump_sum(x, self.top)
         for t_ in self.throats:
             yb = yb + _bump(x, *t_)
@@ -271,6 +331,95 @@ def grain(rs: Raster, xc, yc, ax, ay):
     return rs.inside & (((rs.X - xc) / ax) ** 2 + ((rs.Y - yc) / ay) ** 2 <= 1.0), yc
 
 
+def rind(rs: Raster, t, wall="both", x0=0.0, x1=None):
+    """uniform wall film (sharp mask): every pore point within distance t of the
+    stretch of wall with x in [x0, x1] (bottom, top or both walls). That is the
+    wall stretch dilated by a disc of radius t, so the film has thickness t
+    everywhere, a surface parallel to the wall (radius rho + t on a grain tip of
+    radius rho, rho - t in a valley), and round ends that meet the wall at 90 deg."""
+    x1 = rs.x[-1] if x1 is None else x1
+    m = np.pad(rs.inside, ((0, 0), (1, 1)), constant_values=False)
+    near = np.zeros_like(m)
+    near[:, :-1] |= m[:, 1:]
+    near[:, 1:] |= m[:, :-1]
+    near[:-1, :] |= m[1:, :]
+    near[1:, :] |= m[:-1, :]
+    seed = ~m & near                                 # solid cells next to the pore
+    jy = np.arange(m.shape[1])[None, :] - 1          # raster y index of each padded column
+    mid = 0.5 * (rs.yb + rs.yt)[:, None] / rs.dx
+    sel = {"bottom": jy < mid, "top": jy > mid, "both": np.ones_like(seed)}[wall]
+    xin = ((rs.x >= x0) & (rs.x <= x1))[:, None]
+    seed &= sel & xin
+    d = ndi.distance_transform_edt(~seed, sampling=rs.dx)[:, 1:-1]
+    return rs.inside & (d <= t)
+
+
+def wall_valleys(rs: Raster, wall, x0, x1, depth):
+    """x of the valley bottoms (grain-grain contacts) of a wall: local minima of
+    the bottom wall, local maxima of the top wall, with prominence >= depth."""
+    from scipy.signal import find_peaks
+    y = -rs.yb if wall == "bottom" else rs.yt
+    k, _ = find_peaks(y, prominence=depth)
+    xs = rs.x[k]
+    return xs[(xs >= x0) & (xs <= x1)]
+
+
+def neck(rs: Raster, xv, wall, R, theta):
+    """ice neck at a wall valley (sharp mask): a disc of radius R centered on the
+    vertical through the valley bottom xv, set at the depth where its mean contact
+    angle with the two valley flanks is theta (angle through the ice, between the
+    disc's outward normal and the wall's normal into the pore, at the two points
+    where the disc leaves the wall). On a flat wall this is the cap of cap().
+    Returns the mask and the two contact angles [deg]."""
+    i0 = int(round(xv / rs.dx))
+    yw = rs.yb if wall == "bottom" else rs.yt
+    sgn = 1.0 if wall == "bottom" else -1.0          # into the pore
+    slope = np.gradient(yw, rs.dx)
+
+    def angles(d):
+        c = np.array([xv, yw[i0] - sgn * d])
+        out = []
+        for step in (-1, 1):
+            i = i0
+            while 0 < i < len(rs.x) - 1 and math.hypot(rs.x[i] - c[0], yw[i] - c[1]) < R:
+                i += step
+            q = np.array([rs.x[i], yw[i]])
+            nd = (q - c) / np.linalg.norm(q - c)
+            nw = sgn * np.array([-slope[i], 1.0]) / math.hypot(slope[i], 1.0)
+            out.append(math.degrees(math.acos(float(np.clip(nd @ nw, -1, 1)))))
+        return out, c
+    lo, hi = -0.98 * R, 0.98 * R                     # d: center depth behind the valley bottom
+    for _ in range(50):
+        d = 0.5 * (lo + hi)
+        th, _ = angles(d)
+        lo, hi = (d, hi) if np.mean(th) > theta else (lo, d)
+    th, c = angles(0.5 * (lo + hi))
+    return rs.inside & (np.hypot(rs.X - c[0], rs.Y - c[1]) <= R), th
+
+
+def bubble_report(rs: Raster, ice, bubbles):
+    """for each gas bubble: is it closed (enclosed by ice), its clearance to the
+    walls and to the nearest other gas [m]."""
+    air = rs.inside & ~ice
+    lab, _ = ndi.label(air)
+    out = []
+    for b in bubbles:
+        i = int(round(b["x"] / rs.dx))
+        j = int(round(b["yc"] / rs.dx))
+        k = lab[i, j]
+        if k == 0:
+            out.append((False, 0.0, 0.0))
+            continue
+        me = lab == k
+        n_cells = int(me.sum())
+        closed = n_cells < 1.5 * math.pi * (b["R"] / rs.dx) ** 2
+        wall_cl = float(rs.D[me].min())
+        others = air & ~me
+        d_o = ndi.distance_transform_edt(~others, sampling=rs.dx)
+        out.append((closed, wall_cl, float(d_o[me].min()) if others.any() else np.inf))
+    return out
+
+
 def _erode(a, dx, rho):
     return ndi.distance_transform_edt(a, sampling=dx) > rho
 
@@ -295,15 +444,18 @@ def bodies_report(ice, inside, dx, eps):
     half = ndi.distance_transform_edt(ice, sampling=dx)
     thick = np.array(ndi.maximum(half, lab, index=np.arange(1, n + 1))) if n else np.array([])
     # narrowest air gap between two different bodies (through the pore)
-    min_gap = np.inf
+    min_gap, where = np.inf, None
     if n > 1:
         for k in range(1, n + 1):
             others = ice & (lab != k)
             if not others.any():
                 continue
             dk = ndi.distance_transform_edt(lab != k, sampling=dx)
-            min_gap = min(min_gap, float(dk[others].min()))
-    return n, thick, min_gap
+            dmin = float(dk[others].min())
+            if dmin < min_gap:
+                min_gap = dmin
+                where = np.argwhere(others & (dk == dk[others].min()))[0] * dx
+    return n, thick, min_gap, where
 
 
 def node_field(surf, rs: Raster, ice, eps):
@@ -402,6 +554,35 @@ def main(argv=None) -> int:
         m, yc = grain(rs, f["x"], f["y"], ax_, ay_)
         ice |= m
         parts.append(f"grain ({f['x']*1e6:.0f}, {yc*1e6:.0f}) um, {ax_*1e6:.0f} x {ay_*1e6:.0f} um")
+    for f in spec.get("rinds", []):
+        w_, fx0, fx1 = f.get("wall", "both"), f.get("x0", 0.0), f.get("x1", lx)
+        ice |= rind(rs, f["t"], w_, fx0, fx1)
+        parts.append(f"rind {f['t']*1e6:.2f} um ({f['t']/eps:.1f} eps) thick on the {w_} wall(s), "
+                     f"x {fx0*1e6:.0f}-{fx1*1e6:.0f} um")
+    for f in spec.get("necks", []):
+        th = f.get("theta", th0)
+        fx0, fx1 = f.get("x0", 0.0), f.get("x1", lx)
+        skip = [tuple(s_) for s_ in f.get("skip", [])]
+        walls_ = ["bottom", "top"] if f.get("wall", "both") == "both" else [f["wall"]]
+        nn, angs = 0, []
+        for w_ in walls_:
+            for xv in wall_valleys(rs, w_, fx0, fx1, f.get("depth", 2e-6)):
+                if any(a_ <= xv <= b_ for a_, b_ in skip):
+                    continue
+                m, th_lr = neck(rs, xv, w_, f["R"], th)
+                ice |= m
+                nn += 1
+                angs += th_lr
+        parts.append(f"{nn} necks (valley caps) R {f['R']*1e6:.1f} um at the wall valleys in x "
+                     f"{fx0*1e6:.0f}-{fx1*1e6:.0f} um, mean angle {th:g} deg (flank angles "
+                     f"{min(angs, default=0):.0f}-{max(angs, default=0):.0f})")
+    bubbles = []
+    for f in spec.get("bubbles", []):
+        m, yc = grain(rs, f["x"], f["y"], f["R"], f["R"])
+        ice &= ~m
+        bubbles.append(dict(f, yc=yc))
+        parts.append(f"gas bubble ({f['x']*1e6:.0f}, {yc*1e6:.0f}) um, radius {f['R']*1e6:.1f} um "
+                     f"({f['R']/eps:.1f} eps)")
     for p_ in parts:
         print("  " + p_)
 
@@ -420,15 +601,21 @@ def main(argv=None) -> int:
         print(f"  dropped {len(drop)} slivers thinner than 3 eps (wall crevices next to plug faces), "
               f"total area {sum(area):.3e} m^2")
     frac = ice.sum() / rs.inside.sum()
-    n, thick, min_gap = bodies_report(ice, rs.inside, rs.dx, eps)
+    n, thick, min_gap, gap_at = bodies_report(ice, rs.inside, rs.dx, eps)
     nthin = int((thick < 3 * eps).sum())
     print(f"  ice {frac:.1%} of the pore area ({ice.sum()*rs.dx**2:.4e} m^2), {n} bodies; thinnest "
           f"half-thickness {thick.min()*1e6:.2f} um ({thick.min()/eps:.1f} eps); {nthin} below 3 eps")
     if n > 1:
-        print(f"  narrowest air gap between bodies {min_gap*1e6:.2f} um ({min_gap/eps:.1f} eps)")
+        print(f"  narrowest air gap between bodies {min_gap*1e6:.2f} um ({min_gap/eps:.1f} eps)"
+              + (f" at ({gap_at[0]*1e6:.0f}, {gap_at[1]*1e6:.0f}) um" if min_gap < 6 * eps else ""))
     ok = nthin == 0 and (n < 2 or min_gap >= 6 * eps)
+    for b, (closed, wcl, ocl) in zip(bubbles, bubble_report(rs, ice, bubbles)):
+        print(f"  bubble at x {b['x']*1e6:.0f} um: {'closed' if closed else 'NOT CLOSED'}, clearance to the "
+              f"wall {wcl*1e6:.1f} um ({wcl/eps:.1f} eps), to other gas {ocl*1e6:.1f} um ({ocl/eps:.1f} eps)")
+        ok = ok and closed and wcl >= 6 * eps and ocl >= 6 * eps
     if not ok:
-        print("  WARNING: a body is below 3 eps or two bodies are closer than 6 eps (see above)")
+        print("  WARNING: a body is below 3 eps, two bodies are closer than 6 eps, or a bubble is open "
+              "or closer than 6 eps to a wall or other gas (see above)")
 
     outdir = Path(a.outdir) if a.outdir else None
     mesh_dir = outdir or ROOT / "inputs/geometry/meshes"
