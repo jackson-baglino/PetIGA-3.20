@@ -930,12 +930,58 @@ PetscErrorCode ResolutionStaticCheck(AppCtx *user)
   const char ax[3] = {'x', 'y', 'z'};
   PetscBool bad = PETSC_FALSE;
   PetscPrintf(PETSC_COMM_WORLD, "\nRESOLUTION CHECK (start-up)\n");
+  /* A mesh read with -geom_file maps the elements onto the pore, so L/N with
+   * L the bounding box overstates the element size wherever the pore is
+   * narrower than the box (rough walls, throats). For such meshes the check
+   * uses, for axis l, the largest |X_l| difference between neighboring
+   * control points of one element along parametric direction l, over the
+   * whole mesh: for a uniform knot vector that is the element's extent along
+   * that coordinate (the coordinate extent, not the slanted edge length,
+   * which along a sloped wall is h sqrt(1 + slope^2)). L/N is still printed.
+   * Diagnostic only; the solve is not affected. */
+  PetscInt  gdim = 0;
+  PetscReal hmap[3] = {0.0, 0.0, 0.0};
+  PetscErrorCode ierr;
+  if (user->iga) { ierr = IGAGetGeometryDim(user->iga, &gdim); CHKERRQ(ierr); }
+  if (gdim > 0) {
+    PetscInt deg[3] = {0, 0, 0};
+    for (PetscInt l = 0; l < user->dim; l++) {
+      IGAAxis axis;
+      ierr = IGAGetAxis(user->iga, l, &axis); CHKERRQ(ierr);
+      ierr = IGAAxisGetDegree(axis, &deg[l]); CHKERRQ(ierr);
+    }
+    PetscInt n0 = deg[0] + 1, n1 = (user->dim > 1) ? deg[1] + 1 : 1, n2 = (user->dim > 2) ? deg[2] + 1 : 1;
+    PetscReal loc[3] = {0.0, 0.0, 0.0};
+    IGAElement el;
+    ierr = IGABeginElement(user->iga, &el); CHKERRQ(ierr);
+    while (IGANextElement(user->iga, el)) {
+      const PetscReal *X = el->geometryX;
+      for (PetscInt k = 0; k < n2; k++)
+        for (PetscInt j = 0; j < n1; j++)
+          for (PetscInt i = 0; i < n0; i++) {
+            PetscInt a = i + n0 * (j + n1 * k);
+            PetscInt nb[3] = {(i + 1 < n0) ? a + 1 : -1, (j + 1 < n1) ? a + n0 : -1,
+                              (k + 1 < n2) ? a + n0 * n1 : -1};
+            for (PetscInt l = 0; l < user->dim; l++) {
+              if (nb[l] < 0) continue;
+              loc[l] = PetscMax(loc[l], PetscAbsReal(X[nb[l] * gdim + l] - X[a * gdim + l]));
+            }
+          }
+    }
+    ierr = IGAEndElement(user->iga, &el); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(loc, hmap, 3, MPIU_REAL, MPI_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+  }
   for (PetscInt l = 0; l < user->dim; l++) {
     if (N[l] <= 0 || L[l] <= 0.0) continue;
     PetscReal h = L[l] / (PetscReal)N[l];
-    PetscPrintf(PETSC_COMM_WORLD, "   h_%c = L/N = %.4e m   eps/sqrt(2) = %.4e m   ratio %.3f\n",
-                ax[l], (double)h, (double)hmax, (double)(h / hmax));
-    if (h > 1.05 * hmax) bad = PETSC_TRUE;
+    PetscPrintf(PETSC_COMM_WORLD, "   h_%c = L/N = %.4e m   eps/sqrt(2) = %.4e m   ratio %.3f%s\n",
+                ax[l], (double)h, (double)hmax, (double)(h / hmax),
+                gdim > 0 ? "   (bounding box; not judged for a mapped mesh)" : "");
+    if (gdim > 0) {
+      PetscPrintf(PETSC_COMM_WORLD, "   h_%c = mapped element (largest coordinate extent) = %.4e m   ratio %.3f\n",
+                  ax[l], (double)hmap[l], (double)(hmap[l] / hmax));
+      if (hmap[l] > 1.05 * hmax) bad = PETSC_TRUE;
+    } else if (h > 1.05 * hmax) bad = PETSC_TRUE;
   }
   PetscReal rmin = PETSC_MAX_REAL;
   for (PetscInt k = 0; k < user->n_act; k++)
