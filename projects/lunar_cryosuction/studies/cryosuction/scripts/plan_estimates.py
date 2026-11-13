@@ -97,6 +97,12 @@ def main() -> int:
     p.add_argument("--dtmax", type=float, default=1341.2, help="section 7d: dtmax = 2 tau_sub [s]")
     p.add_argument("--cfl-step", type=float, default=0.12e-6, help="section 7d: face travel per CFL-capped step [m]")
     p.add_argument("--s-per-step", type=float, default=17.0, help="section 7d: wall seconds per step (T6: 13-28)")
+    p.add_argument("--wt", type=float, nargs="+", default=[30e-6, 40e-6, 60e-6, 80e-6, 100e-6, 120e-6],
+                   help="section 8: throat widths [m]")
+    p.add_argument("--W8", type=float, default=150e-6, help="section 8: pore width [m]")
+    p.add_argument("--bump-R", type=float, default=250e-6, help="section 8: bump half-width (fixed) [m]")
+    p.add_argument("--lens-len", type=float, default=120e-6, help="section 8: lens length on the axis [m]")
+    p.add_argument("--Lx8", type=float, default=800e-6, help="section 8: pore length, throat at Lx/2 [m]")
     a = p.parse_args()
     if not (-150.0 < a.T0 < -0.001):
         p.error(f"--T0 must be in (-150, -0.001) C, where the ice formulas apply (got {a.T0})")
@@ -233,7 +239,88 @@ def main() -> int:
                   f" v = {v * DAY * 1e6:6.2f} um/day, t_move = {t / DAY:7.1f} d,"
                   f" e-folds in t_move {sig * t:+6.1f}, dt {dt:6.0f} s, steps {n:8.0f},"
                   f" wall {n * a.s_per_step / 3600:6.1f} h")
+    throat_arrest(a, d0, s, beta0, K)
     return 0
+
+
+def throat_arrest(a, d0, s, beta0, K):
+    """8. Lens arrested in a throat, and the gradient that pulls it out (added 2026-11-13).
+
+    Walls: y = b(x) and W - b(x), one C-infinity bump per wall, b = h exp(1 - 1/(1 - u^2)),
+    u = (x - Lx/2)/R (preprocess/build_ice_layout.py), h = (W - wt)/2, R fixed. A face at x
+    meets walls that open toward its gas side at the local slope angle omega, so its
+    meniscus curvature is chi(x) = 2 cos(theta + omega)/g(x), g = W - 2b (as the type-4 law
+    with theta -/+ omega). At G = 0 with vapor reservoirs at both ends the lens drifts
+    toward the face of larger chi, so a lens straddling the throat is held at its center
+    (a displacement lowers chi on the leading face and raises it on the trailing one).
+    With a gradient and local-saturation ends, the ice is nearly isothermal (k_ice/k_air
+    115), so the reservoirs differ from the ice by s dT on each side and dT_w + dT_c = G Lx.
+    With equal gas-column resistances on both sides (lens centered in the pore; kinetic
+    resistances equal), the drift is zero when s G Lx = d0 [chi(x_c) - chi(x_w)], x_w and
+    x_c the warm and cold faces. The largest restoring term over all lens positions gives
+    G_crit = d0 max[chi(x_c) - chi(x_w)] / (s Lx): below it the lens stays at a displaced
+    rest position in the throat, above it the lens is pulled out toward the warm end.
+    Approximations: lens length fixed (the ls lens grows), isothermal ice, 1D series
+    resistances, Young angle at a moving contact line."""
+    th = math.radians(a.theta)
+    W, R, L, Lx = a.W8, a.bump_R, a.lens_len, a.Lx8
+    print(f"\n# 8. Throat arrest: W {W * 1e6:g} um, bump half-width {R * 1e6:g} um (fixed), lens {L * 1e6:g} um,"
+          f" Lx {Lx * 1e6:g} um, theta {a.theta:g} deg")
+    print("   G_crit = d0 max[chi(x_c) - chi(x_w)] / (s Lx),  chi(x) = 2 cos(theta + omega)/g")
+    x = [Lx / 2 + R * (k / 4000.0 - 1.0) * 0.999 for k in range(8001)]
+
+    def wall(xx, h):
+        u = (xx - Lx / 2) / R
+        if abs(u) >= 1:
+            return 0.0, 0.0
+        b = h * math.exp(1 - 1 / (1 - u * u))
+        db = b * (-2 * u / (1 - u * u) ** 2) / R
+        return b, db
+
+    for wt in a.wt:
+        h = 0.5 * (W - wt)
+
+        def chi(xx, h=h):
+            b, db = wall(xx, h)
+            return 2 * math.cos(th + math.atan(abs(db))) / (W - 2 * b)
+
+        om = max(math.degrees(math.atan(abs(wall(xx, h)[1]))) for xx in x)
+        # Lens displaced d toward x = 0 (the warm end). Gas columns l_w = Lx/2 - d - L/2 and
+        # l_c = Lx/2 + d - L/2; the ice is isothermal, so the drop G Lx splits in proportion to
+        # them. Reservoirs at h_eq rho_vs(T_end), h_eq = 1 - d0 chi of a centered face, so a
+        # centered lens neither grows nor shrinks. Face speeds (type-3 series law):
+        #   v_w = (s dT_w + d0 (chi_w - chi0)) / (beta0 + K l_w)   deposition, toward x = 0
+        #   v_c = (s dT_c - d0 (chi_c - chi0)) / (beta0 + K l_c)   sublimation, toward x = 0
+        # center speed v = (v_w + v_c)/2. G_crit = max over d of the G that makes v = 0.
+        chi0 = chi(Lx / 2 + L / 2)
+
+        def vel(d, G, chi=chi, chi0=chi0):
+            lw, lc = Lx / 2 - d - L / 2, Lx / 2 + d - L / 2
+            dTw, dTc = G * Lx * lw / (lw + lc), G * Lx * lc / (lw + lc)
+            vw = (s * dTw + d0 * (chi(Lx / 2 - d - L / 2) - chi0)) / (beta0 + K * lw)
+            vc = (s * dTc - d0 * (chi(Lx / 2 - d + L / 2) - chi0)) / (beta0 + K * lc)
+            return 0.5 * (vw + vc)
+
+        ds = [(R - L / 2) * k / 2000.0 for k in range(1, 2001)]   # warm face still on the bump
+        g0 = [(-vel(d, 0.0) / (vel(d, 1.0) - vel(d, 0.0)), d) for d in ds]
+        Gc, dpk = max(g0)
+        print(f"wt = {wt * 1e6:5.1f} um: bump h {h * 1e6:5.1f} um, steepest wall {om:5.1f} deg"
+              f"{' (theta + omega > 90: convex faces)' if a.theta + om >= 90 else ''};"
+              f" chi(throat) {chi(Lx / 2):.3e}, chi(wide) {2 * math.cos(th) / W:.3e} 1/m;"
+              f" G_crit {Gc:.3f} K/m (equal-column formula {d0 * max(chi(Lx / 2 - d + L / 2) - chi(Lx / 2 - d - L / 2) for d in ds) / (s * Lx):.3f}),"
+              f" weakest hold at lens center {dpk * 1e6:5.1f} um off the throat")
+        out = []
+        for lab, G, d_start, stop in (("G 0: 40 -> 10 um off", 0.0, 40e-6, lambda d: d < 10e-6),
+                                      ("4 G_crit: center -> past the hold", 4 * Gc, 0.0, lambda d, p=dpk: d > p),
+                                      ("10 G_crit: center -> out of the bump", 10 * Gc, 0.0, lambda d: d > R - L / 2)):
+            d, t, dt = d_start, 0.0, 6 * 3600.0
+            while not stop(d) and t < 2e4 * DAY:
+                d += vel(d, G) * dt
+                t += dt
+            out.append(f"{lab} {t / DAY:6.0f} d" + (" (>20000)" if t >= 2e4 * DAY else ""))
+        v40 = [vel(d, 0.0) * DAY * 1e6 for d in (20e-6, 40e-6, dpk)]
+        print(f"      G 0 restoring speed at 20, 40 um and the hold point: {v40[0]:+.4f}, {v40[1]:+.4f},"
+              f" {v40[2]:+.4f} um/d; " + "; ".join(out))
 
 
 if __name__ == "__main__":
