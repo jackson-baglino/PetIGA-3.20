@@ -195,6 +195,12 @@ int main(int argc, char *argv[]) {
                                        * 0.28 elements/step, overshoot at machine
                                        * precision, rho_v/rho_vs in [0.99, 1.00]. */
     user.cfl_U_prev   = NULL;
+    user.outp_dphi        = 0.0;   /* event-triggered snapshots off */
+    user.outp_dphi_min_dt = 0.0;
+    user.out_U_last       = NULL;
+    user.out_diff         = NULL;
+    user.t_last_out       = 0.0;
+    user.n_event_out      = 0;
     user.cfl_diff     = NULL;
     user.cfl_n_reject = 0;
     user.res_U_prev = NULL; user.res_view = NULL; user.res_t_prev = 0.0;   /* ResolutionMonitor */
@@ -893,6 +899,10 @@ int main(int argc, char *argv[]) {
     /* --- Output control -------------------------------------------------- */
     ierr = PetscOptionsInt("-outp", "Output control flag", "", user.outp, &user.outp, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_interv", "Output interval", "", user.t_interv, &user.t_interv, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-outp_dphi", "Extra snapshot when max|phi - phi(last snapshot)| reaches this (0 = off)", "", user.outp_dphi, &user.outp_dphi, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-outp_dphi_min_dt", "Minimum time between event-triggered snapshots [s]", "", user.outp_dphi_min_dt, &user.outp_dphi_min_dt, NULL); CHKERRQ(ierr);
+    if (user.outp_dphi < 0.0 || user.outp_dphi_min_dt < 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE, "-outp_dphi and -outp_dphi_min_dt must be >= 0");
     ierr = PetscOptionsBool("-pf_output", "Enable output files", "", output, &output, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-pf_monitor", "Monitor the solution", "", monitor, &monitor, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-output_path", "Output file path", "", user.output_path, user.output_path, sizeof(user.output_path), NULL); CHKERRQ(ierr);
@@ -2267,6 +2277,11 @@ cleanup:
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = VecDestroy(&user.cfl_U_prev); CHKERRQ(ierr);
     ierr = VecDestroy(&user.cfl_diff);   CHKERRQ(ierr);
+    ierr = VecDestroy(&user.out_U_last); CHKERRQ(ierr);
+    ierr = VecDestroy(&user.out_diff);   CHKERRQ(ierr);
+    if (user.outp_dphi > 0.0)
+        PetscPrintf(PETSC_COMM_WORLD, "Event-triggered snapshots (-outp_dphi %g, min dt %g s): %d\n",
+                    (double)user.outp_dphi, (double)user.outp_dphi_min_dt, (int)user.n_event_out);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     for (PetscInt d = 0; d < 3; d++) { ierr = PetscFree(user.cent[d]); CHKERRQ(ierr); }

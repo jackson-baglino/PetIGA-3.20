@@ -398,6 +398,16 @@ typedef struct {
   PetscBool flag_dtCFL;      // -dtCFL (default 1)
   PetscReal cfl_dphimax;     // -dtCFL_dphimax
   Vec       cfl_U_prev;      // previous ACCEPTED solution (lazy-created)
+  /* Event-triggered snapshots (-outp_dphi, opt-in; 0 = off): an extra
+   * sol_N.dat whenever max |phi - phi(last snapshot)| reaches outp_dphi,
+   * at most one per outp_dphi_min_dt seconds. The regular schedule is
+   * unchanged. */
+  PetscReal outp_dphi;
+  PetscReal outp_dphi_min_dt;
+  Vec       out_U_last;      // state at the last written snapshot (lazy)
+  Vec       out_diff;        // scratch for U - out_U_last
+  PetscReal t_last_out;
+  PetscInt  n_event_out;
   Vec       cfl_diff;        // scratch for U - cfl_U_prev (never cfl_U_prev
                              // itself: the rollback path returns early)
   PetscReal cfl_t_prev;      // time of previous accepted step

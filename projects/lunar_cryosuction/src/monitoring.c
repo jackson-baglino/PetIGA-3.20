@@ -436,6 +436,11 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
    * first leg (t_out starts at 0 and steps by t_interv either way). */
   if (RestartLoadedStep(user, step)) {
     if (user->outp <= 0) { while (user->t_out <= t) user->t_out += user->t_interv; }
+    if (user->outp_dphi > 0.0) {            /* event baseline = the loaded snapshot */
+      if (!user->out_U_last) { ierr = VecDuplicate(U, &user->out_U_last); CHKERRQ(ierr); }
+      ierr = VecCopy(U, user->out_U_last); CHKERRQ(ierr);
+      user->t_last_out = t;
+    }
     PetscFunctionReturn(0);
   }
 
@@ -449,13 +454,36 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
     }
   }
 
+  /* -outp_dphi (opt-in): an extra snapshot once phi has changed by outp_dphi
+   * anywhere since the last one (a face moved about an interface width, a
+   * film or bubble appeared or vanished), so fast events such as a lens
+   * splitting are caught between the regular snapshots. */
+  PetscBool event = PETSC_FALSE;
+  if (!print && user->outp_dphi > 0.0 && user->out_U_last &&
+      t - user->t_last_out >= user->outp_dphi_min_dt) {
+    PetscReal dmax;
+    if (!user->out_diff) { ierr = VecDuplicate(U, &user->out_diff); CHKERRQ(ierr); }
+    ierr = VecWAXPY(user->out_diff, -1.0, user->out_U_last, U); CHKERRQ(ierr);
+    ierr = VecStrideNorm(user->out_diff, 0, NORM_INFINITY, &dmax); CHKERRQ(ierr);
+    if (dmax >= user->outp_dphi) {
+      print = 1; event = PETSC_TRUE; user->n_event_out++;
+      PetscPrintf(PETSC_COMM_WORLD, "OUTPUT event: max|dphi| since last snapshot %.3f >= %.3f at t = %.6e s\n",
+                  (double)dmax, (double)user->outp_dphi, (double)t);
+    }
+  }
+
   // If it's time to print output, do the following
   if (print == 1) {
     PetscPrintf(PETSC_COMM_WORLD, "OUTPUT print!\n");
     /* Advance t_out past the current time: a single += degenerates to
      * every-step output whenever dt > t_interv (t_out falls permanently
      * behind t), defeating the 1000-snapshot output cap. */
-    while (user->t_out <= t) user->t_out += user->t_interv;
+    if (!event) { while (user->t_out <= t) user->t_out += user->t_interv; }
+    if (user->outp_dphi > 0.0) {
+      if (!user->out_U_last) { ierr = VecDuplicate(U, &user->out_U_last); CHKERRQ(ierr); }
+      ierr = VecCopy(U, user->out_U_last); CHKERRQ(ierr);
+      user->t_last_out = t;
+    }
 
     // Get the directory path from the environment variable
     const char *env = "folder";
