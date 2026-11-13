@@ -244,6 +244,10 @@ typedef struct {
   PetscReal ice_flat_x[MAX_SED_GRAINS];
   PetscReal ice_flat_R[MAX_SED_GRAINS];
   PetscReal ice_flat_height[MAX_SED_GRAINS];
+  /* -ice_flat_seed A (opt-in, 0 = off): the low-x face of every flat body is
+   * x = x_f - R_f + A cos(2 pi y / Ly), so for A > 0 the axis leads the
+   * walls toward x = 0 by 2A (symmetric mode of a pore of width Ly). */
+  PetscReal ice_flat_seed;
 
   // Ice plug spanning a pore throat. Each plug is the INTERSECTION of two
   // meniscus discs, both centred ON the channel axis y=bridge_cy:

@@ -675,6 +675,10 @@ int main(int argc, char *argv[]) {
 
     /* --- Flat ice layer encapsulating a floor bump -------------------------- */
     user.n_ice_flats = 0;
+    user.ice_flat_seed = 0.0;
+    ierr = PetscOptionsReal("-ice_flat_seed",
+             "Cosine seed on the low-x face of each flat ice body, x = x_f - R_f + A cos(2 pi y/Ly) [m]; 0 = flat",
+             "", user.ice_flat_seed, &user.ice_flat_seed, NULL); CHKERRQ(ierr);
     {
         PetscInt n = MAX_SED_GRAINS;
         ierr = PetscOptionsRealArray("-ice_flat_x",

@@ -624,6 +624,11 @@ static PetscReal IceFlatField(PetscReal x, PetscReal y, const AppCtx *user)
         PetscReal Hf   = user->ice_flat_height[k];
         PetscReal dlat = PetscAbsReal(x - xf) / Rf;                /* =1 at edge */
         PetscReal w    = 0.5 - 0.5 * PetscTanhReal((tc * Rf) * (dlat - 1.0));
+        if (user->ice_flat_seed != 0.0) {  /* seeded low-x face (opt-in) */
+            PetscReal xl = xf - Rf + user->ice_flat_seed
+                         * PetscCosReal(2.0 * PETSC_PI * y / user->Ly);
+            w = 0.5 - 0.5 * PetscTanhReal(tc * PetscMax(xl - x, x - (xf + Rf)));
+        }
         /* flat threshold, same interface width as everywhere else (no
          * R-dependent sharpening) */
         PetscReal flat = 0.5 - 0.5 * PetscTanhReal(tc * (y - Hf));
@@ -907,6 +912,10 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
             "  flat ice %d: x = %.4e +/- %.4e m, below y = %.4e m\n", (int)k,
             (double)user->ice_flat_x[k], (double)user->ice_flat_R[k],
             (double)user->ice_flat_height[k]);
+    if (user->n_ice_flats > 0 && user->ice_flat_seed != 0.0)
+        PetscPrintf(PETSC_COMM_WORLD,
+            "  flat ice seed: low-x face x_f - R_f + %.4e cos(2 pi y / %.4e) m\n",
+            (double)user->ice_flat_seed, (double)user->Ly);
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (2D multi-grain) ---\n"
