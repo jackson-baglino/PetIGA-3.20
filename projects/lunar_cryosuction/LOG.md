@@ -1,5 +1,26 @@
 # LOG.md — running session log (newest first)
 
+## 2026-11-13 — Slate slide template (AGU talk and defense)
+- Session: ffbfac7f-55b4-489f-86d5-ae0ff9f85390
+- Done: Designed a PowerPoint template for the AGU talk and later the defense.
+  Concepts A-D, then four variations of B; the user chose B option 1 (burgundy
+  accent, slate text, Franklin Gothic) with the frost background (#EEF2F5) from
+  option 3. Built `Slate.potx` (15 layouts; official Caltech and JPL logos per
+  identity.caltech.edu; autofit off), a 19-slide example deck from the
+  2026-11-05 update, and `tools/update_outline.py` (uv script: draws the
+  section-outline row from PowerPoint Sections, fills the Outline slide,
+  numbers dividers; "_" sections excluded, "Full | Short" labels). Checked:
+  validator passes; PowerPoint-measured text fit, 0 overflow in a 40-slide,
+  408-box stress deck. Everything is in iCloud
+  `Documents/Research/SlideTemplate/` (builder scripts in `source/`); the
+  .potx is installed in PowerPoint's personal Templates folder. Nothing in
+  this repository changed.
+- Remaining: user to confirm Slate appears under File > New from Template >
+  Personal, and to try a real figure in a figure layout. Then build the AGU
+  deck on it.
+- Bottlenecks: LibreOffice hangs here; renders and fit checks go through
+  PowerPoint via AppleScript (scripts in SlideTemplate/source/).
+
 ## 2026-11-06/07 — simulation plan, analysis tools and tests, first production batches
 - Session: be49e5a1-66f2-4f54-9dcf-073a3f0d6550
 - Done: SimulationPlan_v2 (21 pp.) and AGU_SimulationPlan (4 pp., chi for

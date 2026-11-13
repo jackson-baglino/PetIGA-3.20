@@ -7,7 +7,7 @@ weeks (LOG.md keeps the history), and never let it pass about 150 lines.
 Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 `LOG.md`; the plan itself in the iCloud folder below.
 
-**Last updated:** 2026-11-12 (session 6475a664)
+**Last updated:** 2026-11-13 (session ffbfac7f)
 
 ## Goal and deadline
 
@@ -134,6 +134,10 @@ Hypotheses: the user writes them; none recorded yet.
   pair in the shakedown. The enceladus 200k optimum is for 24 M DoF meshes.
 
 ## Done recently
+
+- 2026-11-13: Slate PowerPoint template for the AGU talk built and installed
+  (iCloud Documents/Research/SlideTemplate/; outline script tools/update_outline.py).
+  User to confirm it shows in File > New from Template.
 
 - 2026-11-07: T4 (type 4, 7 runs) analyzed: a taper moves ice to the narrow
   end in every wedge; series law with theta -/+ omega to 3-5 % (beta_eff 8.8e5
