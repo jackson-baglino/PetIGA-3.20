@@ -1,0 +1,57 @@
+gate,case,quantity,measured,expected,tolerance,result
+a1,px_flat120x40_lens_seam_eps1.5um,knot_vs_petiga_periodic,0.00e+00,0,1e-14,PASS
+a2,px_flat120x40_lens_seam_eps1.5um,wrapped_ctrl_dx_minus_Lx_m,0.00e+00,0,1e-16,PASS
+a2,px_flat120x40_lens_seam_eps1.5um,wrapped_ctrl_dy_m,0.00e+00,0,0 (copied),PASS
+a3,px_flat120x40_lens_seam_eps1.5um,wall_y_jump_at_seam_m,0.00e+00,0,1e-16,PASS
+a3,px_flat120x40_lens_seam_eps1.5um,seam_x_minus_Lx_m,0.00e+00,0,1e-16,PASS
+a3,px_flat120x40_lens_seam_eps1.5um,wall_slope_jump_at_seam,4.45e-15,0,1e-9,PASS
+a4,px_flat120x40_lens_seam_eps1.5um,phi_file_columns,114,114,exact,PASS
+a4,px_flat120x40_lens_seam_eps1.5um,phi_file_xy_vs_ctrl_m,0.00e+00,0,0,PASS
+a1,px_cd120_W40_wt16_lens_eps1.5um,knot_vs_petiga_periodic,0.00e+00,0,1e-14,PASS
+a2,px_cd120_W40_wt16_lens_eps1.5um,wrapped_ctrl_dx_minus_Lx_m,0.00e+00,0,1e-16,PASS
+a2,px_cd120_W40_wt16_lens_eps1.5um,wrapped_ctrl_dy_m,0.00e+00,0,0 (copied),PASS
+a3,px_cd120_W40_wt16_lens_eps1.5um,wall_y_jump_at_seam_m,0.00e+00,0,1e-16,PASS
+a3,px_cd120_W40_wt16_lens_eps1.5um,seam_x_minus_Lx_m,0.00e+00,0,1e-16,PASS
+a3,px_cd120_W40_wt16_lens_eps1.5um,wall_slope_jump_at_seam,4.46e-15,0,1e-9,PASS
+a4,px_cd120_W40_wt16_lens_eps1.5um,phi_file_columns,114,114,exact,PASS
+a4,px_cd120_W40_wt16_lens_eps1.5um,phi_file_xy_vs_ctrl_m,0.00e+00,0,0,PASS
+a1,px_cd120_W40_wt16_shift_lens_eps1.5um,knot_vs_petiga_periodic,0.00e+00,0,1e-14,PASS
+a2,px_cd120_W40_wt16_shift_lens_eps1.5um,wrapped_ctrl_dx_minus_Lx_m,0.00e+00,0,1e-16,PASS
+a2,px_cd120_W40_wt16_shift_lens_eps1.5um,wrapped_ctrl_dy_m,0.00e+00,0,0 (copied),PASS
+a3,px_cd120_W40_wt16_shift_lens_eps1.5um,wall_y_jump_at_seam_m,0.00e+00,0,1e-16,PASS
+a3,px_cd120_W40_wt16_shift_lens_eps1.5um,seam_x_minus_Lx_m,0.00e+00,0,1e-16,PASS
+a3,px_cd120_W40_wt16_shift_lens_eps1.5um,wall_slope_jump_at_seam,1.18e-15,0,1e-9,PASS
+a4,px_cd120_W40_wt16_shift_lens_eps1.5um,phi_file_columns,114,114,exact,PASS
+a4,px_cd120_W40_wt16_shift_lens_eps1.5um,phi_file_xy_vs_ctrl_m,0.00e+00,0,0,PASS
+a5,px_flat120x40_lens_seam_eps1.5um,phi_vs_shifted_flat120x40,7.11e-15,0,1e-9,PASS
+a5,px_flat120x40_lens_seam_eps1.5um,y_vs_shifted_flat120x40_m,0.00e+00,0,1e-15,PASS
+a5,px_cd120_W40_wt16_shift_lens_eps1.5um,phi_vs_shifted_cd120,1.49e-14,0,1e-9,PASS
+a5,px_cd120_W40_wt16_shift_lens_eps1.5um,y_vs_shifted_cd120_m,1.36e-20,0,1e-15,PASS
+b,P_mid,lens_center_drift_m,4.504e-15,0,1.5e-10,PASS
+b,O_mid(ref),lens_center_drift_m,-1.526e-14,0,info,PASS
+b,P_mid,water_Q_rel_change,4.500e-10,0,1.0e-08,PASS
+b,O_mid(ref),water_Q_rel_change,4.521e-10,0,info,PASS
+b,P_mid_vs_O_mid,final_area_rel_diff,2.123e-12,0,info,PASS
+c,c1_flat,snapshot_steps_and_times_match,10/10,10/10,exact,PASS
+c,c1_flat,max_area_rel_diff,3.672e-10,0,1e-6,PASS
+c,c1_flat,max_center_diff_mod_Lx_m,6.304e-15,0,1.5e-10,PASS
+c,c2_cd,snapshot_steps_and_times_match,10/10,10/10,exact,PASS
+c,c2_cd,max_area_rel_diff,6.763e-08,0,1e-6,PASS
+c,c2_cd,max_center_diff_mod_Lx_m,1.525e-13,0,1.5e-10,PASS
+d,CD,center_move_toward_throat_m,1.543e-06,> 0,> 1.5e-08 (100x b tol),PASS
+d,CD,distance_to_throat_start_end_um,17.706 -> 16.163,decreasing,-,PASS
+d,CD,water_Q_rel_change,8.747e-08,0,1e-6 (Newton tol; see h),PASS
+d,CD,Q_change_per_ice_moved,1.392e-06,0,info,PASS
+h,CD_tight,water_Q_rel_change,-5.897e-13,< |CD| 8.7e-08/10,10x smaller,PASS
+h,CD_shift_tight,water_Q_rel_change,-5.896e-13,< |CD_shift| 2.1e-08/10,10x smaller,PASS
+h,c2_tight,snapshots_in_common,10/10,10/10,exact,PASS
+h,c2_tight,max_area_rel_diff,5.306e-16,0,1e-8,PASS
+h,c2_tight,max_center_diff_mod_Lx_m,2.406e-18,0,1.5e-12,PASS
+h,CD_tight,center_move_toward_throat_m,1.543e-06,> 0; within 1 % of CD,1 %,PASS
+f,RECT_mid_vs_P_mid,final_time_match,True,True,exact,PASS
+f,RECT_mid_vs_P_mid,final_area_rel_diff,2.411e-11,0,1e-6,PASS
+f,RECT_mid_vs_P_mid,final_center_diff_m,1.038e-15,0,1.5e-10,PASS
+g,CD_mpi(4 ranks)_vs_CD,snapshots_in_common,10/10,10/10,exact,PASS
+g,CD_mpi(4 ranks)_vs_CD,max_area_rel_diff,1.269e-07,0,1e-6,PASS
+g,CD_mpi(4 ranks)_vs_CD,max_center_diff_m,2.621e-13,0,1.5e-10,PASS
+g,CD_mpi(4 ranks),center_move_toward_throat_m,1.543e-06,> 0,-,PASS

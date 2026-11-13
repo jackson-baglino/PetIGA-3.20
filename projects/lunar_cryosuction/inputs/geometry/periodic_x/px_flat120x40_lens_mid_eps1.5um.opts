@@ -1,0 +1,28 @@
+# =============================================================================
+# geometry px_flat120x40_lens_mid_eps1.5um.opts   (preprocess/build_ice_layout.py preprocess/layouts/px_flat120x40_lens_mid_eps1.5um.json)
+#
+# Rough-walled pore: Lx 120.0 um, gap 40.0-40.0 um (mean 40.0),
+# 0+0 wall bumps.
+# Walls are in the mesh; wall faces y0,y1; periodic in x (-periodic_x 1): x = 0 and x = Lx are one seam.
+# Ice from inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um_phi.bin (-ic_type phi_file), initial angle 60 deg:
+#   plug 50-70 um, theta 60, faces r 40.0 um
+# ice 20.0% of the pore, sharp area 9.6089e-10 m^2, 1 bodies.
+# eps 1.5000e-06 m, h = eps/sqrt(2): Nx 114, Ny 38.
+# =============================================================================
+# DOF_GRID: 114 40
+-geom_file inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um.dat
+-p 2
+-C 1
+-ic_type phi_file
+-phi_file inputs/geometry/periodic_x/px_flat120x40_lens_mid_eps1.5um_phi.bin
+-dim 2
+-Lx 1.200000e-04
+-Ly 4.000000e-05
+-Lz 0
+-delt_t 1.0e-4
+-eps 1.5000e-06
+-eps_valid_temp -20
+-periodic 0
+-periodic_x 1
+-wall_faces y0,y1
+-dtmax 4.5257e+03                     # 2 tau_sub at this eps (layout 'dtmax')

@@ -814,6 +814,13 @@ int main(int argc, char *argv[]) {
 
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
+    user.periodic_x = PETSC_FALSE;
+    ierr = PetscOptionsBool("-periodic_x",
+             "Periodic in x only: one pore cell repeats along x, the x faces are a "
+             "seam (no Dirichlet, no wall there); y (and z) faces keep their "
+             "conditions, so -wall_faces y0,y1 is allowed. With -geom_file the mesh "
+             "must have a periodic x knot vector (build_ice_layout.py \"periodic\")",
+             "", user.periodic_x, &user.periodic_x, NULL); CHKERRQ(ierr);
     user.thin_iface_corr = PETSC_TRUE;   /* ON by default since 2026-09-13 */
     ierr = PetscOptionsBool("-thin_iface_corr",
              "Include the Karma thin-interface counter-terms in tau_sub. Default 0: "
@@ -1227,6 +1234,43 @@ int main(int argc, char *argv[]) {
                     "-Twall_nitsche must be > 0.");
     }
 
+    /* ---- -periodic_x: one pore cell, periodic along x only ----------------
+     * The x faces are a seam, not a boundary: nothing may be imposed there.
+     * Requests that would impose something on them are refused here rather
+     * than silently dropped. A temperature gradient along x is refused too:
+     * temp0 + G (x - Lx/2) is not periodic, so the seam would join T = temp0
+     * - G Lx/2 to T = temp0 + G Lx/2 (a jump of G Lx). */
+    if (user.periodic_x) {
+        if (user.periodic == 1)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-periodic_x 1 and -periodic 1 are both set; -periodic 1 already "
+                    "wraps every axis. Use one.");
+        if (dim < 2)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-periodic_x needs -dim 2 or 3 (in 1D use -periodic 1).");
+        if (user.wall_face[0][0] || user.wall_face[0][1])
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-wall_faces \"%s\" names an x face, but -periodic_x 1 makes the "
+                    "x faces a periodic seam. Use y (and z) faces only.", wall_faces);
+        if (user.grad_temp0[0] != 0.0)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-grad_temp0 has an x component (%g K/m) but -periodic_x 1: a linear "
+                    "T(x) is not periodic (it would jump by G*Lx at the seam). Set it to 0.",
+                    (double)user.grad_temp0[0]);
+        if (flag_BC_rhovfix && user.rhovfix_axis == 0)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-rhovfix_axis 0 pins vapor on the x faces, which -periodic_x 1 "
+                    "makes a periodic seam. Use -flag_BC_rhovfix 0.");
+        if (rhovfix_face[0][0] || rhovfix_face[0][1] || Tfix_face[0][0] || Tfix_face[0][1])
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-rhovfix_faces/-Tfix_faces name an x face, which -periodic_x 1 "
+                    "makes a periodic seam.");
+        if (user.qflux_face[0][0] || user.qflux_face[0][1] || user.twall_face[0][0] || user.twall_face[0][1])
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-qflux_faces/-Twall_faces name an x face, which -periodic_x 1 "
+                    "makes a periodic seam.");
+    }
+
     /* Allow CLI override of the physical attachment-kinetics coefficient
      * beta_sub0 via -beta_sub0 <value> (default 1.4e5, set above). Unlike
      * overriding -alph_sub directly (which only rescales the phase-change
@@ -1402,11 +1446,24 @@ int main(int argc, char *argv[]) {
      * or from a uniform tensor-product Cartesian patch (default). */
     if (geom_file[0] != '\0') {
         PetscPrintf(PETSC_COMM_WORLD, "Reading IGA geometry from %s\n", geom_file);
+        /* -periodic_x: the flag must be on the axis BEFORE IGARead. IGALoad
+         * (petigaio.c) resets the IGA but not its axes' periodic flag, sets
+         * the knots, and only then sizes the node grid (IGASetUp_Basic ->
+         * IGAAxisSetUp: nnp = n - C on a periodic axis). The control net in
+         * the file is the same either way (geom_sizes = n + 1), so a periodic
+         * file differs from an open one only in its knot vector and in its
+         * last C + 1 control columns repeating the first ones shifted by Lx. */
+        if (user.periodic_x) {
+            IGAAxis ax0;
+            ierr = IGAGetAxis(iga, 0, &ax0); CHKERRQ(ierr);
+            ierr = IGAAxisSetPeriodic(ax0, PETSC_TRUE); CHKERRQ(ierr);
+        }
         ierr = IGARead(iga, geom_file); CHKERRQ(ierr);
     } else {
         IGAAxis axis0, axis1, axis2;
         ierr = IGAGetAxis(iga, 0, &axis0); CHKERRQ(ierr);
         if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis0, PETSC_TRUE); CHKERRQ(ierr); }
+        if (user.periodic_x)    { ierr = IGAAxisSetPeriodic(axis0, PETSC_TRUE); CHKERRQ(ierr); }
         ierr = IGAAxisSetDegree(axis0, p); CHKERRQ(ierr);
         ierr = IGAAxisInitUniform(axis0, Nx, 0.0, Lx, C); CHKERRQ(ierr);
 
@@ -1429,6 +1486,41 @@ int main(int argc, char *argv[]) {
     ierr = IGASetUp(iga); CHKERRQ(ierr);
     user.iga = iga;
 
+    /* -periodic_x: check the x knot vector really is periodic. PetIGA reads
+     * the seam continuity from the knot multiplicity at index n + 1 and
+     * wraps C + 1 basis functions; an open (clamped) knot vector would be
+     * taken as a C0 seam joining x = 0 to x = Lx, which is not what the cell
+     * means. The periodic extension (petigaaxis.c, IGAAxisInitUniform) is
+     * U[C-k] = U[p] - (U[m-p] - U[n-k]) and U[m-C+k] = U[m-p] + (U[p+1+k] - U[p]). */
+    if (user.periodic_x) {
+        IGAAxis    ax0;
+        PetscInt   pp, mm, nnp, nel;
+        PetscReal *UU;
+        ierr = IGAGetAxis(iga, 0, &ax0); CHKERRQ(ierr);
+        ierr = IGAAxisGetDegree(ax0, &pp); CHKERRQ(ierr);
+        ierr = IGAAxisGetKnots(ax0, &mm, &UU); CHKERRQ(ierr);
+        ierr = IGAAxisGetSizes(ax0, &nel, &nnp); CHKERRQ(ierr);
+        const PetscInt  nn  = mm - pp - 1;
+        const PetscInt  Cs  = nn - nnp;            /* seam continuity, nnp = n - C */
+        const PetscReal per = UU[mm - pp] - UU[pp];
+        PetscReal       err = 0.0;
+        if (Cs < 0) err = 1.0;
+        for (PetscInt k = 0; k <= Cs && Cs >= 0; k++) {
+            err = PetscMax(err, PetscAbsReal(UU[Cs - k] - (UU[nn - k] - per)));
+            err = PetscMax(err, PetscAbsReal(UU[mm - Cs + k] - (UU[pp + 1 + k] + per)));
+        }
+        if (err > 1e-10 * per)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-periodic_x 1: the x knot vector is not periodic "
+                    "(seam continuity C%d, knot mismatch %.3e of the period). A -geom_file "
+                    "mesh must be written periodic (preprocess/build_ice_layout.py with "
+                    "\"periodic\": true); an open mesh cannot be wrapped.",
+                    (int)Cs, (double)(err / per));
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "periodic_x: x axis periodic, %d elements, %d x nodes (C%d seam)\n",
+                    (int)nel, (int)nnp, (int)Cs);
+    }
+
     /* Number of quadrature points on this rank (used for alph and mob arrays).
      * Read the per-axis degree from the IGA itself (rather than trusting the
      * CLI -p) since -geom_file can set a different degree than -p. */
@@ -1445,6 +1537,12 @@ int main(int argc, char *argv[]) {
      * that user.Nx/Ny/Nz, user.npoints, and the printed header are correct. */
     if (geom_file[0] != '\0') {
         Nx = iga->node_sizes[0] - p_axis[0];
+        /* a periodic x axis has nnp = N nodes, not N + p: read N directly */
+        if (user.periodic_x) {
+            IGAAxis ax0;
+            ierr = IGAGetAxis(iga, 0, &ax0); CHKERRQ(ierr);
+            ierr = IGAAxisGetSizes(ax0, &Nx, NULL); CHKERRQ(ierr);
+        }
         Ny = (dim >= 2) ? iga->node_sizes[1] - p_axis[1] : 1;
         Nz = (dim == 3) ? iga->node_sizes[2] - p_axis[2] : 1;
         user.Nx = Nx;  user.Ny = Ny;  user.Nz = Nz;
@@ -1517,6 +1615,7 @@ int main(int argc, char *argv[]) {
              * so a wall-bounded channel wants -rhovfix_axis 0 (x-faces only),
              * not the legacy all-faces behaviour (-1). */
             if (user.rhovfix_axis >= 0 && l != user.rhovfix_axis) continue;
+            if (user.periodic_x && l == 0) continue;   /* seam, not a face */
             for (PetscInt m = 0; m < 2; m++) {
                 if (rhovfix_faces_any && !rhovfix_face[l][m]) continue;
                 /* Axisymmetric mode: the y = 0 face is the symmetry AXIS —
@@ -1573,6 +1672,7 @@ int main(int argc, char *argv[]) {
                                          user.grad_temp0[1] != 0.0 ||
                                          user.grad_temp0[2] != 0.0);
         for (PetscInt l = 0; l < dim; l++) {
+            if (user.periodic_x && l == 0) continue;   /* seam, not a face */
             /* Face parallel to the gradient (no component along axis l): leave
              * it insulating so the transverse gradient survives on that edge. */
             if (has_grad && user.grad_temp0[l] == 0.0) {
@@ -2009,6 +2109,11 @@ int main(int argc, char *argv[]) {
                      * there is the exact axis condition, not a modelling
                      * choice about a boundary. */
                     if (user.axisym && l == 1 && m == 0) name = "r = 0   (axis)";
+                    if (user.periodic_x && l == 0) {
+                        PetscPrintf(PETSC_COMM_WORLD, "   %-18s %-22s %-24s %s\n",
+                                    name, "periodic seam", "periodic seam", "periodic seam");
+                        continue;
+                    }
                     if (user.wall_face[l][m] && user.costhet != 0.0)
                         PetscSNPrintf(cell[0], sizeof(cell[0]),
                                       "regolith  theta=%.1f°",

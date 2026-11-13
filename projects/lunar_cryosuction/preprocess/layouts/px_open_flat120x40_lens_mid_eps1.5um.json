@@ -1,0 +1,21 @@
+{
+  "name": "px_open_flat120x40_lens_mid_eps1.5um",
+  "eps": 1.5e-06,
+  "Lx": 0.00012,
+  "theta_ice_init": 60.0,
+  "dtmax": 4525.704343152059,
+  "caps": [],
+  "grains": [],
+  "periodic": false,
+  "mean_gap": 4e-05,
+  "walls": {
+    "flat": true
+  },
+  "plugs": [
+    {
+      "x0": 5e-05,
+      "x1": 7e-05
+    }
+  ],
+  "comment": "periodic_x verification b reference: the mid lens in a sealed, non-periodic channel"
+}

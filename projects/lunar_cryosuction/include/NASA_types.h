@@ -336,6 +336,7 @@ typedef struct {
   PetscInt dim;  // Spatial dimension of the problem (2D or 3D)
   PetscInt dof;  // Degrees of freedom per node (ice, temperature, vapor)
   PetscInt periodic;  // Periodicity flag (0 = non-periodic, 1 = periodic boundaries)
+  PetscBool periodic_x;  // -periodic_x: periodic in x only (pore cell); y/z keep their faces (walls, -wall_faces)
 
   // Time stepping parameters
   PetscReal t_out;  // Output time interval

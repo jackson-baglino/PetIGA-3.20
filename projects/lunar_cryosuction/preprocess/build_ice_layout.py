@@ -19,8 +19,33 @@ Overlapping bumps leave valleys with a radius of curvature of ~1 um (layout A:
 and throats) with a Gaussian of that standard deviation (see Pore._init_smooth);
 without the key the walls are as before, bit for bit.
 
+"walls": {"profile": "cos" | "sinhyp", "W": ..., "wt": ...} gives a smooth
+converging-diverging cell (plan type 5): gap g(x) about a throat at x_t
+("x_throat", default Lx/2), walls symmetric about y = W/2 (y_bot = (W - g)/2,
+y_top = (W + g)/2), narrowest (g = wt) at the throat and widest (g = W) half a
+period away (at x = 0 and x = Lx for the default x_t). With xi = x - x_t,
+
+    cos     g = wt + (W - wt) (1 - cos(2 pi xi / Lx)) / 2
+    sinhyp  g = sqrt(wt^2 + (c Lx/pi)^2 sin^2(pi xi / Lx)),  c = pi sqrt(W^2 - wt^2) / Lx
+
+sinhyp is the hyperbolic throat g = sqrt(wt^2 + c^2 xi^2) with xi replaced by
+(Lx/pi) sin(pi xi/Lx): equal to it to O(xi^2/Lx^2) near the throat, but
+Lx-periodic and C-infinity with zero slope at the seam. Both are periodic, so
+they serve "periodic": true (one cell of an infinite chain of pores).
+
 The mesh maps the unit square onto the pore: control points at the Greville
 abscissae, x = Lx g_x, y = y_bot(x) + g_y (y_top(x) - y_bot(x)).
+
+PERIODIC ("periodic": true, walls flat or a profile). The x knot vector is the
+periodic uniform one PetIGA builds itself (petigaaxis.c, IGAAxisInitUniform):
+U = (-p, ..., N + p)/N, N + p control columns, of which the last p repeat the
+first p shifted by Lx (x + Lx, same y), so the mapping, the walls and their
+slope are continuous across the seam. The solver (-periodic_x 1) wraps the
+last p basis functions onto the first p: it has N x nodes, and the phi file
+holds those N columns only. The ice is drawn on a raster three periods long
+([-Lx, 2Lx), an integer number of cells per period) and folded: a feature may
+cross the seam (a plug with x0 < 0 or x1 > Lx). Rounding and distances are
+taken on the periodic (tiled) field.
 
 THE ICE (a JSON layout file; see preprocess/layouts/). Features, each drawn
 as a sharp region and then combined:
@@ -129,10 +154,33 @@ def bump_sum(x, bumps):
     return y
 
 
+def gap_profile(x, lx, W, wt, kind, xt=None):
+    """gap of the converging-diverging cell: wt at the throat xt (default Lx/2),
+    W half a period away."""
+    xi = np.asarray(x, float) - (0.5 * lx if xt is None else xt)
+    if kind == "cos":
+        return wt + (W - wt) * 0.5 * (1.0 - np.cos(2.0 * np.pi * xi / lx))
+    if kind == "sinhyp":
+        a2 = W * W - wt * wt                       # (c Lx / pi)^2
+        return np.sqrt(wt * wt + a2 * np.sin(np.pi * xi / lx) ** 2)
+    raise ValueError(f"unknown wall profile {kind!r} (cos or sinhyp)")
+
+
 class Pore:
     def __init__(self, spec):
         self.lx = spec["Lx"]
+        self.periodic = bool(spec.get("periodic", False))
         w = spec["walls"]
+        self.profile = w.get("profile")
+        if self.profile:                           # converging-diverging cell (type 5)
+            self.W, self.wt = float(w["W"]), float(w["wt"])
+            self.xt = float(w.get("x_throat", 0.5 * self.lx))
+            assert 0 < self.wt < self.W, "profile needs 0 < wt < W"
+            gap_profile(0.0, self.lx, self.W, self.wt, self.profile)   # name check
+            self.bot = self.top = np.zeros((0, 3))
+            self.H = self.W
+            self.throats, self.throat = [], None
+            return
         if w.get("flat"):                          # straight walls (types 1, 2, 5)
             self.bot = self.top = np.zeros((0, 3))
         else:
@@ -162,6 +210,9 @@ class Pore:
                 lo, hi = (hth, hi) if gmin > th["gap"] else (lo, hth)
             self.throats.append((th["x"], th["R"], 0.5 * (lo + hi)))
         self.throat = self.throats[0] if self.throats else None
+        if self.periodic:
+            assert not (len(self.bot) or self.throats), \
+                "periodic pores take flat walls or a wall profile (bumps are not periodic)"
 
     def _init_smooth(self, spec):
         """walls "smooth": sigma [m]. Each wall (bumps and throats) is convolved with a
@@ -203,6 +254,9 @@ class Pore:
 
     def walls(self, x):
         x = np.asarray(x, float)
+        if self.profile:
+            g = gap_profile(x, self.lx, self.W, self.wt, self.profile, self.xt)
+            return 0.5 * (self.W - g), 0.5 * (self.W + g)
         if self.smooth > 0:
             return self._spl[0](x), self._spl[1](x)
         yb, yt = bump_sum(x, self.bot), self.H - bump_sum(x, self.top)
@@ -212,12 +266,31 @@ class Pore:
         return yb, yt
 
 
+def periodic_uniform_knots(N, p):
+    """Periodic uniform knots on [0, 1] (continuity p - 1): the vector PetIGA's
+    IGAAxisInitUniform builds for a periodic axis, U[k] = (k - p)/N, k = 0..N + 2p.
+    N + p basis functions; the last p are the first p shifted by one period."""
+    return (np.arange(N + 2 * p + 1, dtype=float) - p) / N
+
+
 def build_surface(pore, nx, ny):
     from igakit.nurbs import NURBS
-    ux, uy = open_uniform_knots(nx, P, C), open_uniform_knots(ny, P, C)
-    gx, gy = greville_abscissae(ux, P), greville_abscissae(uy, P)
-    x = pore.lx * gx
-    yb, yt = pore.walls(x)
+    uy = open_uniform_knots(ny, P, C)
+    gy = greville_abscissae(uy, P)
+    if pore.periodic:
+        assert C == P - 1
+        ux = periodic_uniform_knots(nx, P)
+        gx = greville_abscissae(ux, P)                  # nx + P values, first is -1/(2 nx)
+        x = pore.lx * gx[:nx]
+        yb, yt = pore.walls(x)
+        # the last P columns are the first P shifted by exactly one period
+        x = np.concatenate([x, x[:P] + pore.lx])
+        yb, yt = np.concatenate([yb, yb[:P]]), np.concatenate([yt, yt[:P]])
+    else:
+        ux = open_uniform_knots(nx, P, C)
+        gx = greville_abscissae(ux, P)
+        x = pore.lx * gx
+        yb, yt = pore.walls(x)
     ctrl = np.zeros((len(gx), len(gy), 3))
     ctrl[:, :, 0] = x[:, None]
     ctrl[:, :, 1] = yb[:, None] + gy[None, :] * (yt - yb)[:, None]
@@ -226,9 +299,22 @@ def build_surface(pore, nx, ny):
 
 # ------------------------------------------------------------------ ice ----
 class Raster:
+    """Pixel grid of the pore. Open pores: x in [0, Lx]. Periodic pores: three
+    periods, x in [-Lx, 2Lx), with M = Lx/dx cells per period exactly (dx is
+    rounded so), so a field is periodic when its three thirds are equal;
+    middle() is the period [0, Lx) and periodize() re-tiles it."""
+
     def __init__(self, pore, dx):
+        self.periodic = pore.periodic
+        if self.periodic:
+            self.M = int(round(pore.lx / dx))
+            dx = pore.lx / self.M
+            self.x = -pore.lx + dx * np.arange(3 * self.M)
+        else:
+            self.x = np.arange(0.0, pore.lx + 0.5 * dx, dx)
+            self.M = len(self.x)
         self.dx = dx
-        self.x = np.arange(0.0, pore.lx + 0.5 * dx, dx)
+        self.x0 = float(self.x[0])
         yb, yt = pore.walls(self.x)
         self.yb, self.yt = yb, yt
         self.y = np.arange(0.0, pore.H + 0.5 * dx, dx)
@@ -240,6 +326,22 @@ class Raster:
         m = np.pad(self.inside, ((pad, pad), (0, 0)), mode="edge")
         m = np.pad(m, ((0, 0), (1, 1)), constant_values=False)
         self.D = ndi.distance_transform_edt(m, sampling=dx)[pad:-pad, 1:-1]
+
+    def idx(self, x):
+        return int(round((x - self.x0) / self.dx))
+
+    def middle(self, a):
+        return a[self.M:2 * self.M] if self.periodic else a
+
+    def periodize(self, a):
+        return np.tile(self.middle(a), (3, 1)) if self.periodic else a
+
+    def fold(self, a):
+        """periodic image of a feature drawn on the 3-period raster: OR of the thirds."""
+        if not self.periodic:
+            return a
+        M = self.M
+        return np.tile(a[:M] | a[M:2 * M] | a[2 * M:], (3, 1))
 
 
 def plug(r, rs: Raster, x0, x1, theta):
@@ -256,9 +358,9 @@ def plug(r, rs: Raster, x0, x1, theta):
         if xf >= rs.x[-1] - rs.dx:
             return True                          # the plug ends at the dead end
         xc = xf - side * rad
-        if xc < 0 or xc > rs.x[-1]:
+        if xc < rs.x0 or xc > rs.x[-1]:
             return True                          # face center beyond the pore end
-        i = int(round(xc / rs.dx))
+        i = rs.idx(xc)
         return rs.D[i].max() >= rad * ct
     if not r:
         while not (fits(x0, +1) and fits(x1, -1)):
@@ -313,7 +415,7 @@ def fill_for_fraction(rs: Raster, target, theta, x0, x1):
 
 def wall_normal_point(rs: Raster, xc, wall):
     """wall point at xc and the unit normal pointing into the pore."""
-    i = int(round(xc / rs.dx))
+    i = rs.idx(xc)
     yw = (rs.yb if wall == "bottom" else rs.yt)
     s = np.gradient(yw, rs.dx)[i]
     n = np.array([-s, 1.0]) / math.hypot(s, 1.0)
@@ -330,7 +432,7 @@ def cap(rs: Raster, xc, wall, R, theta):
 
 def grain(rs: Raster, xc, yc, ax, ay):
     if yc == "axis":
-        i = int(round(xc / rs.dx))
+        i = rs.idx(xc)
         yc = 0.5 * (rs.yb[i] + rs.yt[i])
     return rs.inside & (((rs.X - xc) / ax) ** 2 + ((rs.Y - yc) / ay) ** 2 <= 1.0), yc
 
@@ -443,22 +545,47 @@ def round_features(ice, inside, dx, rho):
     return a & inside
 
 
-def bodies_report(ice, inside, dx, eps):
-    lab, n = ndi.label(ice)
+def label_bodies(ice, rs=None):
+    """ndi.label, with bodies that cross the seam of a periodic raster merged.
+    Returns labels on the raster's layout (tiled for a periodic one) and n."""
+    if rs is None or not rs.periodic:
+        return ndi.label(ice)
+    mid = rs.middle(ice)
+    lab, n = ndi.label(mid)
+    parent = list(range(n + 1))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    for a, b in zip(lab[0], lab[-1]):               # x = 0 column against x = Lx - dx
+        if a and b:
+            parent[find(a)] = find(b)
+    roots = sorted({find(k) for k in range(1, n + 1)})
+    new = np.zeros(n + 1, int)
+    for k in range(1, n + 1):
+        new[k] = roots.index(find(k)) + 1
+    return np.tile(new[lab], (3, 1)), len(roots)
+
+
+def bodies_report(ice, inside, dx, eps, rs=None):
+    lab, n = label_bodies(ice, rs)
     half = ndi.distance_transform_edt(ice, sampling=dx)
-    thick = np.array(ndi.maximum(half, lab, index=np.arange(1, n + 1))) if n else np.array([])
+    mid = rs.middle if rs is not None else (lambda a: a)
+    thick = np.array(ndi.maximum(mid(half), mid(lab), index=np.arange(1, n + 1))) if n else np.array([])
     # narrowest air gap between two different bodies (through the pore)
     min_gap, where = np.inf, None
     if n > 1:
         for k in range(1, n + 1):
-            others = ice & (lab != k)
+            others = mid(ice & (lab != k))
             if not others.any():
                 continue
-            dk = ndi.distance_transform_edt(lab != k, sampling=dx)
+            dk = mid(ndi.distance_transform_edt(lab != k, sampling=dx))
             dmin = float(dk[others].min())
             if dmin < min_gap:
                 min_gap = dmin
-                where = np.argwhere(others & (dk == dk[others].min()))[0] * dx
+                where = np.argwhere(others & (dk == dmin))[0] * dx
     return n, thick, min_gap, where
 
 
@@ -475,7 +602,7 @@ def node_field(surf, rs: Raster, ice, eps):
     _, (ii, jj) = ndi.distance_transform_edt(~rs.inside, return_indices=True)
     sd = sd[ii, jj]
     cp = surf.control[:, :, :2]                       # (mx, my, 2)
-    fi = cp[..., 0] / rs.dx
+    fi = (cp[..., 0] - rs.x0) / rs.dx
     fj = cp[..., 1] / rs.dx
     d = ndi.map_coordinates(sd, [fi.ravel(), fj.ravel()], order=1, mode="nearest").reshape(fi.shape)
     phi = 0.5 - 0.5 * np.tanh(d / (2.0 * eps))
@@ -532,11 +659,18 @@ def main(argv=None) -> int:
     ny_rule = spec.get("ny_rule", "gap")
     assert ny_rule in ("gap", "bbox"), f"ny_rule {ny_rule!r}: use 'gap' or 'bbox'"
     ny = math.ceil((H if ny_rule == "bbox" else gap.max()) * math.sqrt(2) / eps)
+    per = pore.periodic
+    if per:                                       # value and slope across the seam
+        hd = 1e-3 * eps
+        y0, y1 = pore.walls(np.array([-hd, 0.0, hd]))[0], pore.walls(lx + np.array([-hd, 0.0, hd]))[0]
+        print(f"  periodic in x: seam wall jump {abs(y1[1] - y0[1]):.2e} m, slope jump "
+              f"{abs((y1[2] - y1[0]) - (y0[2] - y0[0])) / (2 * hd):.2e}")
     slope = max(np.abs(np.gradient(yb, xs)).max(), np.abs(np.gradient(yt, xs)).max())
     print(f"pore {name}: Lx {lx*1e6:.1f} um, H {H*1e6:.1f} um, gap {gap.min()*1e6:.1f}-{gap.max()*1e6:.1f} um "
           f"(mean {gap.mean()*1e6:.1f}), steepest wall slope {slope:.2f}, "
           f"{len(pore.bot)}+{len(pore.top)} wall bumps" + throat_txt(pore))
-    print(f"  eps {eps:.4e} m, Nx {nx}, Ny {ny}, DOF {(nx+P)*(ny+P)*3/1e6:.2f} M; element "
+    nxd = nx if per else nx + P                   # x nodes the solver has
+    print(f"  eps {eps:.4e} m, Nx {nx}, Ny {ny}, DOF {nxd*(ny+P)*3/1e6:.2f} M; element "
           f"{lx/nx*1e6:.3f} um long, {gap.max()/ny*1e6:.3f}-{gap.min()/ny*1e6:.3f} um across")
 
     rs = Raster(pore, eps / 4.0)
@@ -595,13 +729,14 @@ def main(argv=None) -> int:
                      f"({f['R']/eps:.1f} eps)")
     for p_ in parts:
         print("  " + p_)
+    ice = rs.fold(ice)                           # periodic: features wrap at the seam
 
     rho = spec.get("round_eps", 3.0) * eps
     before = ice.sum()
-    ice = round_features(ice, rs.inside, rs.dx, rho)
+    ice = rs.periodize(round_features(ice, rs.inside, rs.dx, rho))
     print(f"  rounded ice-air corners to radius >= {rho*1e6:.2f} um ({rho/eps:g} eps): area change "
           f"{(ice.sum() - before) / max(before, 1):+.2%}")
-    lab, nb = ndi.label(ice)
+    lab, nb = label_bodies(ice, rs)
     half = ndi.distance_transform_edt(ice, sampling=rs.dx)
     th_b = np.array(ndi.maximum(half, lab, index=np.arange(1, nb + 1)))
     drop = np.flatnonzero(th_b < 3 * eps) + 1
@@ -610,10 +745,10 @@ def main(argv=None) -> int:
         ice &= ~np.isin(lab, drop)
         print(f"  dropped {len(drop)} slivers thinner than 3 eps (wall crevices next to plug faces), "
               f"total area {sum(area):.3e} m^2")
-    frac = ice.sum() / rs.inside.sum()
-    n, thick, min_gap, gap_at = bodies_report(ice, rs.inside, rs.dx, eps)
+    frac = rs.middle(ice).sum() / rs.middle(rs.inside).sum()
+    n, thick, min_gap, gap_at = bodies_report(ice, rs.inside, rs.dx, eps, rs)
     nthin = int((thick < 3 * eps).sum())
-    print(f"  ice {frac:.1%} of the pore area ({ice.sum()*rs.dx**2:.4e} m^2), {n} bodies; thinnest "
+    print(f"  ice {frac:.1%} of the pore area ({rs.middle(ice).sum()*rs.dx**2:.4e} m^2), {n} bodies; thinnest "
           f"half-thickness {thick.min()*1e6:.2f} um ({thick.min()/eps:.1f} eps); {nthin} below 3 eps")
     if n > 1:
         print(f"  narrowest air gap between bodies {min_gap*1e6:.2f} um ({min_gap/eps:.1f} eps)"
@@ -638,10 +773,12 @@ def main(argv=None) -> int:
 
     surf = build_surface(pore, nx, ny)
     rec = node_field(surf, rs, ice, eps)
+    if per:
+        rec = rec[:, :nx]                         # the solver's N periodic x nodes
     from igakit.io import PetIGA
     PetIGA().write(str(dat), surf)
     write_phi(phi_path, rec)
-    sharp_area = float(ice.sum() * rs.dx ** 2)
+    sharp_area = float(rs.middle(ice).sum() * rs.dx ** 2)
 
     def rel(p):
         try:
@@ -651,14 +788,17 @@ def main(argv=None) -> int:
     opts.write_text(f"""# =============================================================================
 # geometry {opts.name}   (preprocess/build_ice_layout.py {rel(Path(a.layout))})
 #
-# Rough-walled pore: Lx {lx*1e6:.1f} um, gap {gap.min()*1e6:.1f}-{gap.max()*1e6:.1f} um (mean {gap.mean()*1e6:.1f}),
+# """ + (f"Converging-diverging cell, wall profile {pore.profile} (throat {pore.wt*1e6:.1f} um at x = "
+           f"{pore.xt*1e6:.1f} um, widest {pore.W*1e6:.1f} um)" if pore.profile else "Rough-walled pore") + f""": Lx {lx*1e6:.1f} um, gap {gap.min()*1e6:.1f}-{gap.max()*1e6:.1f} um (mean {gap.mean()*1e6:.1f}),
 # {len(pore.bot)}+{len(pore.top)} wall bumps{throat_txt(pore)}.
-# Walls are in the mesh; wall faces {spec.get("wall_faces", "y0,y1")}; x0 and x1 are the pore ends.
+# Walls are in the mesh; wall faces {spec.get("wall_faces", "y0,y1")}; """ + (
+        "periodic in x (-periodic_x 1): x = 0 and x = Lx are one seam."
+        if per else "x0 and x1 are the pore ends.") + f"""
 # Ice from {rel(phi_path)} (-ic_type phi_file), initial angle {th0:g} deg:
 """ + "".join(f"#   {p_}\n" for p_ in parts) + f"""# ice {frac:.1%} of the pore, sharp area {sharp_area:.4e} m^2, {n} bodies.
 # eps {eps:.4e} m, h = eps/sqrt(2): Nx {nx}, Ny {ny}.
 # =============================================================================
-# DOF_GRID: {nx+P} {ny+P}
+# DOF_GRID: {nxd} {ny+P}
 -geom_file {rel(dat)}
 -p {P}
 -C {C}
@@ -672,12 +812,12 @@ def main(argv=None) -> int:
 -eps {eps:.4e}
 -eps_valid_temp {T0_C:g}
 -periodic 0
--wall_faces {spec.get("wall_faces", "y0,y1")}
+""" + ("-periodic_x 1\n" if per else "") + f"""-wall_faces {spec.get("wall_faces", "y0,y1")}
 """ + (f"-dtmax {spec['dtmax']:.4e}                     # 2 tau_sub at this eps (layout 'dtmax')\n"
        if "dtmax" in spec else ""))
     print(f"wrote {dat}\nwrote {phi_path}  ({rec.shape[1]} x {rec.shape[0]} control points)\nwrote {opts}")
     if not a.no_pdf:
-        render(pore, rs, ice, rec, name, pdf_dir / f"{name}.pdf", nx, ny, eps, frac, n)
+        render(pore, rs, rs.middle(ice), rec, name, pdf_dir / f"{name}.pdf", nx, ny, eps, frac, n)
     return 0 if ok else 2
 
 
@@ -699,7 +839,8 @@ def render(pore, rs, ice, rec, name, out, nx, ny, eps, frac, n):
         ax.set_aspect("equal")
         ax.set_ylabel("y [µm]")
     st = max(1, int(round(1e-6 / rs.dx)))
-    a.contourf(rs.X[::st, ::st] * s, rs.Y[::st, ::st] * s, ice[::st, ::st].astype(float),
+    X, Y = rs.middle(rs.X), rs.middle(rs.Y)
+    a.contourf(X[::st, ::st] * s, Y[::st, ::st] * s, ice[::st, ::st].astype(float),
                levels=[0.5, 1.5], colors=["#66b3ff"])
     a.set_title(f"{name}: sharp ice, {frac:.0%} of the pore, {n} bodies", fontsize=8)
     b.contourf(rec[..., 0] * s, rec[..., 1] * s, rec[..., 2], levels=np.linspace(0, 1, 11), cmap="Blues")

@@ -75,6 +75,9 @@ Hypotheses: the user writes them; none recorded yet.
   runs; caps at 40 deg water placeholder, user; lenses at 60 deg). Per-run
   preview PDFs: preprocess/make_run_previews.py -> preprocess/previews/type<N>/.
 - Still to write: experiment files for 7B-7D; S2, S5.
+- 2026-11-13 (branch periodic-x, not merged): solver `-periodic_x 1` (44f8e40f) and periodic
+  converging-diverging cells in build_ice_layout.py (`"periodic": true`, wall profile sinhyp/cos)
+  for the redesigned type 5; verify_periodic_x.sh 56/56 PASS, G1 PASS (studies/periodic_x/README.md).
 
 ## HPC
 

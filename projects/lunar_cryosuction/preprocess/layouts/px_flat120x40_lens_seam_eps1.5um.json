@@ -1,0 +1,21 @@
+{
+  "name": "px_flat120x40_lens_seam_eps1.5um",
+  "eps": 1.5e-06,
+  "Lx": 0.00012,
+  "theta_ice_init": 60.0,
+  "dtmax": 4525.704343152059,
+  "caps": [],
+  "grains": [],
+  "periodic": true,
+  "mean_gap": 4e-05,
+  "walls": {
+    "flat": true
+  },
+  "plugs": [
+    {
+      "x0": -1e-05,
+      "x1": 1e-05
+    }
+  ],
+  "comment": "periodic_x verification c1: the mid lens shifted by Lx/2, across the seam"
+}
