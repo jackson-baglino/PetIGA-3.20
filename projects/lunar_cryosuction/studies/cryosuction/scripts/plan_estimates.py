@@ -438,8 +438,12 @@ def optimal_h(a, d0, s, beta0, K):
         def g(xi, c=c, wt=wt):
             return math.sqrt(wt * wt + (c * xi) ** 2)
 
-        def chi(xi, c=c, wt=wt, g=g):
-            return 2 * math.cos(th + math.atan(0.5 * c * c * abs(xi) / g(xi))) / g(xi)
+        def chi_face(xi, side, c=c, g=g):
+            """Face curvature 2 cos(theta + omega)/g. side = -1 for the warm face (its gas lies toward
+            x = 0), +1 for the cold face. omega > 0 when the gap widens into the face's gas,
+            omega < 0 when it narrows (the gas side runs back through the throat)."""
+            dg = c * c * xi / g(xi)
+            return 2 * math.cos(th + math.atan(0.5 * side * dg)) / g(xi)
 
         def col(x0, x1, g=g, n=200):                 # int_x0^x1 dx/g
             return sum(1 / g(x0 + (k + 0.5) * (x1 - x0) / n) for k in range(n)) * (x1 - x0) / n
@@ -454,22 +458,24 @@ def optimal_h(a, d0, s, beta0, K):
                 lo, hi = (mid, hi) if area(xm, mid) < A else (lo, mid)
             return 0.5 * (lo + hi)
 
-        def state(xm, A, h, G, g=g, chi=chi, col=col, length=length):
+        def state(xm, A, h, G, g=g, chi_face=chi_face, col=col, length=length):
             L = length(xm, A)
             xw, xc = xm - L / 2, xm + L / 2
             if xw <= -Lx / 2 + 5e-6 or xc >= Lx / 2 - 5e-6:
                 return None
-            lw, lc = xw + Lx / 2, Lx / 2 - xc
-            dTw, dTc = G * Lx * lw / (lw + lc), G * Lx * lc / (lw + lc)
-            Rw = beta0 / g(xw) + K * col(-Lx / 2, xw)
-            Rc = beta0 / g(xc) + K * col(xc, Lx / 2)
-            hw, hc = 1 - d0 * chi(xw), 1 - d0 * chi(xc)
+            # heat and vapor cross the same gas columns: the drop G Lx splits as int dx/g (ice:
+            # k_ice/k_air = 115, so its share is neglected)
+            iw, ic = col(-Lx / 2, xw), col(xc, Lx / 2)
+            dTw, dTc = G * Lx * iw / (iw + ic), G * Lx * ic / (iw + ic)
+            Rw = beta0 / g(xw) + K * iw
+            Rc = beta0 / g(xc) + K * ic
+            hw, hc = 1 - d0 * chi_face(xw, -1), 1 - d0 * chi_face(xc, +1)
             aa = 1 / Rw + 1 / Rc
             h0 = (hw / Rw + hc / Rc + s * (dTc / Rc - dTw / Rw)) / aa
             Qw = (h - hw + s * dTw) / Rw
             Qc = (h - hc - s * dTc) / Rc
             v = 0.5 * (Qw / g(xw) - Qc / g(xc))       # center speed toward x = 0
-            return v, Qw + Qc, aa, h0, 0.5 * (chi(xw) + chi(xc))
+            return v, Qw + Qc, aa, h0, 0.5 * (chi_face(xw, -1) + chi_face(xc, +1))
 
         def run(h, G, xs=a.start8c, days=300, state=state, area=area):
             xm, A = xs, area(xs, a.lens8c)
@@ -497,23 +503,35 @@ def optimal_h(a, d0, s, beta0, K):
             gc = max(gc, -s0[0] / (s1[0] - s0[0]))
         print(f"wt {wt * 1e6:4.0f} um: end wall slope {math.degrees(math.atan(0.5 * c * c * (Lx / 2) / W)):4.1f} deg,"
               f" G_crit ~ {gc:.3f} K/m")
-        for f in (0.0, 0.5, 2.0, 5.0):
-            G, h = f * gc, hstart
-            for _ in range(3):                         # iterate h <- h_LS(trajectory(h))
-                xm, dA, hist, t = run(h, G)
-                w2 = sum(x[0] ** 2 for x in hist)
-                h = sum(x[0] ** 2 * x[1] for x in hist) / w2
-            xm, dA_ls, hist, t = run(h, G)
-            h_ls = h
-            h_net = sum(x[0] * x[1] for x in hist) / sum(x[0] for x in hist)
+        def converge(rule, G, run=run, hstart=hstart):
+            """h -> rule(path(h)) until |dh| < 1e-12 (at most 20 passes); returns h and passes."""
+            h = hstart
+            for k in range(20):
+                hist = run(h, G)[2]
+                hn = rule(hist)
+                if abs(hn - h) < 1e-12:
+                    return hn, k + 1
+                h = hn
+            return h, 20
+
+        def rule_ls(hist):
+            return sum(x[0] ** 2 * x[1] for x in hist) / sum(x[0] ** 2 for x in hist)
+
+        def rule_net(hist):
+            return sum(x[0] * x[1] for x in hist) / sum(x[0] for x in hist)
+
+        for G in (0.0, 1.0, 2.0):
+            h_ls, k_ls = converge(rule_ls, G)
+            h_net, k_net = converge(rule_net, G)
+            hist = run(h_net, G)[2]
             h_chi = 1 - d0 * sum(x[2] for x in hist) / len(hist)
             res = []
             for lab, hh in (("h_LS", h_ls), ("h_net", h_net), ("h_chi", h_chi), ("h 1", 1.0)):
                 xm2, dA2, _, t2 = run(hh, G)
-                J = (sum((x[0] * (hh - x[1])) ** 2 for x in run(hh, G)[2]) * 6 * 3600) ** 0.5
-                res.append(f"{lab} {hh:.8f}: area {dA2 * 100:+6.2f} %, rms dA/dt {J:.2e}, center {-xm2 * 1e6:+6.1f} um"
+                res.append(f"{lab} {hh:.8f}: area {dA2 * 100:+6.2f} %, center {-xm2 * 1e6:+6.1f} um"
                            + (f" (left at {t2 / DAY:.0f} d)" if t2 < 300 * DAY - 1 else ""))
-            print(f"   G {G:6.3f} K/m ({f:g} G_crit): " + "; ".join(res))
+            print(f"   G {G:4.1f} K/m (passes LS {k_ls}, net {k_net}): " + "; ".join(res))
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
