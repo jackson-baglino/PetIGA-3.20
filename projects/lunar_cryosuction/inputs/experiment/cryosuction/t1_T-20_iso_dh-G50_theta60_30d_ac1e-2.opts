@@ -1,0 +1,26 @@
+# experiment/cryosuction/t1_T-20_iso_dh-G50_theta60_30d_ac1e-2.opts   (make_type125_inputs.py, 2026-11-13)
+#
+# Plan 1D: vapor-gradient twin (isothermal, ends at the local-saturation contrast of the gradient run).
+# Thermal: isothermal at -20 C (T fixed on the boundary). Vapor set "dh". Wall angle theta = 60 deg (D1) from
+# Young (gamma_is = 0.3 - 0.109 cos theta). 30 days, 401 snapshots (13.33 a day).
+# -dtmax is in the GEOMETRY file (2 tau_sub depends on its eps).
+#
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1
+-rhovfix_faces x0,x1
+-rhovfix_lo 1.0014408348                 # 1 + dh/2, dh = 2.881670e-03
+-rhovfix_hi 0.9985591652                 # 1 - dh/2
+-phi_open_bc 0                          # 90-degree phi face on every non-wall face
+-t_final 2.592000e+06
+-n_out 401
+-beta_sub0 7.9408e+05                     # K&P beta0 at -20 C, alpha_c = 1e-2
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # cos(theta) = +0.500000
+-dtCFL 1
+-outp 0
+-outp_dphi 0.5                          # extra snapshot when phi changed by 0.5 anywhere (solver e5a593e7)
+-outp_dphi_min_dt 3600                  # at most one such snapshot an hour

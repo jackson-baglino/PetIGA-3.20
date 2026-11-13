@@ -30,6 +30,10 @@ eps: type 1 8.5840e-7 m (production value, plan: R_min/eps = 29); types 2 and 5
 8.0e-7 m (plan: R_min/25 for the 20 um cap; half-throat 20 um / 25).
 dtmax = 2 tau_sub(eps) (mesh_params.derived_pf_params via make_type34_inputs).
 
+Gradients and days for types 1 and 2 follow the run plan of 2026-11-12
+(docs/run_plan/build_runplan2.py): G_PROD, G_HIGH, G_ONE and the TYPE1 table
+below; every type 1/2 experiment writes N_OUT = 401 time-uniform snapshots.
+
     venv_cryosuction/bin/python studies/cryosuction/scripts/make_type125_inputs.py [--dry-run] [--only 1,2,5]
 """
 from __future__ import annotations
@@ -136,8 +140,10 @@ def throat_geometry(name, wt, lens_c, eps, purpose, dry, caps=(), grains=()):
 
 
 # -------------------------------------------------------------- experiments
-def experiment(name, lx, G, vapor, days, purpose, dry, per_day=1, h=1.0, chi=0.0, dh=0.0):
-    """G > 0: warm top (x = 0), T fixed on x0, x1; G = 0: isothermal (T fixed on every face)."""
+def experiment(name, lx, G, vapor, days, purpose, dry, per_day=1, h=1.0, chi=0.0, dh=0.0, n_out=None):
+    """G > 0: warm top (x = 0), T fixed on x0, x1; G = 0: isothermal (T fixed on every face).
+
+    n_out: number of time-uniform snapshots; default days * per_day + 1."""
     if G:
         therm = f"-grad_temp0 {-G:.6g},0.0,0.0\n-flag_BC_Tfix 1\n-Tfix_faces x0,x1\n"
         tdesc = f"gradient {G:g} K/m, warm top (x = 0), T fixed on x0 and x1, other faces insulating"
@@ -163,12 +169,12 @@ def experiment(name, lx, G, vapor, days, purpose, dry, per_day=1, h=1.0, chi=0.0
     else:
         raise ValueError(vapor)
     gis = gamma_is(THETA_BC)
-    nout = int(days * per_day) + 1
+    nout = n_out or int(days * per_day) + 1
     text = f"""# experiment/cryosuction/{name}.opts   (make_type125_inputs.py, {TODAY})
 #
 # {purpose}
 # Thermal: {tdesc}. Vapor set "{vapor}". Wall angle theta = {THETA_BC:g} deg (D1) from
-# Young (gamma_is = 0.3 - 0.109 cos theta). {days:g} days, {per_day:g} snapshot(s) a day.
+# Young (gamma_is = 0.3 - 0.109 cos theta). {days:g} days, {nout} snapshots ({(nout - 1) / days:.4g} a day).
 # -dtmax is in the GEOMETRY file (2 tau_sub depends on its eps).
 #
 -temp -20.0
@@ -182,7 +188,9 @@ def experiment(name, lx, G, vapor, days, purpose, dry, per_day=1, h=1.0, chi=0.0
 -gamma_is {gis:.7f}                     # cos(theta) = {math.cos(math.radians(THETA_BC)):+.6f}
 -dtCFL 1
 -outp 0
-"""
+""" + ("""-outp_dphi 0.5                          # extra snapshot when phi changed by 0.5 anywhere (solver e5a593e7)
+-outp_dphi_min_dt 3600                  # at most one such snapshot an hour
+""" if n_out else "")
     write(EXP / f"{name}.opts", text, dry)
     return name
 
@@ -199,49 +207,83 @@ def gname(t, s):
     return f"t{t}_{s}"
 
 
+# ------------------------------------------------- gradients, types 1 and 2
+# Mirrors docs/run_plan/build_runplan2.py (run plan of 2026-11-12): production
+# gradients G_PROD (user, 2026-11-12), a few runs at G_HIGH, and the single-G
+# series (position, size, vapor set, chains, spacing) at G_ONE. Every type 1
+# and type 2 experiment writes N_OUT time-uniform snapshots (-outp 0) for movies.
+G_PROD = (10, 20)
+G_HIGH = 50
+G_ONE = G_PROD[1]
+N_OUT = 401
+R0_RES = 5.0e-5          # 1B reservoir set: both ends at 1 + d0/R0 (the 50 um cap)
+
+
+def thermal_tag(G):
+    return f"G{G:g}warmtop" if G else "iso"
+
+
+def exp12(t, lx, G, vapor, days, purpose, dry, l900=False, chi=0.0, dh_of=None):
+    """Type 1/2 experiment named from its settings; vapor 'res' takes chi, 'dh' the G it twins."""
+    if vapor == "dh":
+        lo, hi, *_ = fracs(T0, -dh_of, lx, "local-sat")
+        mid, kw = f"iso_dh-G{dh_of:g}", {"dh": lo - hi}
+    else:
+        tag = {"closed": "closed", "ls": "ls"}.get(vapor) or ("resR50" if t == 1 else "resavg")
+        mid, kw = f"{thermal_tag(G)}_{tag}", ({"chi": chi} if vapor == "res" else {})
+    name = f"t{t}_T-20_{mid}{'_L900' if l900 else ''}_theta60_{days:g}d_ac1e-2"
+    # 10-day runs: 321 snapshots keep the interval (2700 s) above 2 dtmax (cryosuction_main.c output check)
+    return experiment(name, lx, G, vapor, days, purpose, dry, n_out=N_OUT if days > 10 else 321, **kw)
+
+
 # ------------------------------------------------------------------ type 1
+# (ID, geometry tag, G [K/m], vapor set, days, dh twin of G): the plan's type 1 table.
+TYPE1 = [
+    ("1A-0", "R50_x300", 0, "closed", 10, None),
+    ("1A-1", "R50_x300", G_PROD[0], "closed", 60, None),
+    ("1A-2", "R50_x300", G_PROD[1], "closed", 60, None),
+    ("1A-3", "R50_x300", G_HIGH, "closed", 30, None),
+    ("1B-1", "R50_x500", G_ONE, "res", 60, None),
+    ("1B-2", "R50_x300", G_ONE, "res", 60, None),
+    ("1B-3", "R50_x100", G_ONE, "res", 60, None),
+    ("1B-4", "R50_x500", G_ONE, "ls", 60, None),
+    ("1B-5", "R50_x300", G_ONE, "ls", 60, None),
+    ("1B-6", "R50_x100", G_ONE, "ls", 60, None),
+    ("1B-7", "R50_x300", 0, "res", 10, None),
+    ("1B-8", "R50_x300", G_HIGH, "ls", 30, None),
+    ("1C-1", "R25_x300", G_ONE, "closed", 60, None),
+    ("1C-2", "R100_x300", G_ONE, "closed", 60, None),
+    ("1C-3", "R25_x300", G_ONE, "ls", 60, None),
+    ("1C-4", "R100_x300", G_ONE, "ls", 60, None),
+    ("1D-1", "R50_x300", 0, "dh", 60, G_ONE),     # twin of 1B-5
+    ("1D-2", "R50_x300", 0, "dh", 30, G_HIGH),    # twin of 1B-8
+]
+PURPOSE1 = {
+    "closed": "Plan 1A/1C: drift in a closed box; mass constant.",
+    "res": "Plan 1B-1..3, 1B-7: both ends at 1 + d0/R0 (R0 = 50 um), draft 1's form ii.",
+    "ls": "Plan 1B-4..6, 1B-8, 1C-3/4: local-saturation pair.",
+    "dh": "Plan 1D: vapor-gradient twin (isothermal, ends at the local-saturation contrast of the gradient run).",
+}
+
+
 def type1(dry):
     lx, ly = 6.0e-4, 3.0e-4
     print("\nType 1 geometry (eps %.4e, dtmax %.4e)" % (EPS1, 2 * tau_sub(EPS1)))
-    G = {}
+    geo = {}
     for tag, x, R in (("R50_x300", 3.0e-4, 5.0e-5), ("R50_x100", 1.0e-4, 5.0e-5), ("R50_x500", 5.0e-4, 5.0e-5),
                       ("R25_x300", 3.0e-4, 2.5e-5), ("R100_x300", 3.0e-4, 1.0e-4)):
-        G[tag] = cap_geometry(f"t1_box600x300um_cap{tag}um_th40_eps0.86um", lx, ly, [(x, R)], EPS1,
-                              f"Plan type 1: one cap, arc radius {R/um:.0f} um, centered at x = {x/um:.0f} um.", dry)
+        geo[tag] = cap_geometry(f"t1_box600x300um_cap{tag}um_th40_eps0.86um", lx, ly, [(x, R)], EPS1,
+                                f"Plan type 1: one cap, arc radius {R/um:.0f} um, centered at x = {x/um:.0f} um.", dry)
     print("\nType 1 experiments")
-    E = lambda *a, **k: experiment(*a, **k)  # noqa: E731
-    d0chi = lambda R: 1.0 / R                # noqa: E731
-    ls100 = fracs(T0, -100.0, lx, "local-sat")
-    ls30 = fracs(T0, -30.0, lx, "local-sat")
-    e = {
-        "iso_closed10": E("t1_T-20_iso_closed_theta60_10d_ac1e-2", lx, 0, "closed", 10, "Plan 1A-0: control, the cap relaxes to theta and stays.", dry, 4),
-        **{f"G{g}_closed30": E(f"t1_T-20_G{g}warmtop_closed_theta60_30d_ac1e-2", lx, g, "closed", 30,
-                               f"Plan 1A/1C: drift in a closed box at G = {g} K/m; mass constant.", dry)
-           for g in (10, 30, 100, 300)},
-        "G100_res10": E("t1_T-20_G100warmtop_resR50_theta60_10d_ac1e-2", lx, 100, "res", 10,
-                        "Plan 1B-1..3: both ends at 1 + d0/R0 (R0 = 50 um), draft 1's form ii.", dry, 4, chi=d0chi(5e-5)),
-        "iso_res10": E("t1_T-20_iso_resR50_theta60_10d_ac1e-2", lx, 0, "res", 10,
-                       "Plan 1B-7: isothermal, both ends at 1 + d0/R0: unstable balance.", dry, 4, chi=d0chi(5e-5)),
-        "G100_ls10": E("t1_T-20_G100warmtop_ls_theta60_10d_ac1e-2", lx, 100, "ls", 10,
-                       "Plan 1B-4..6, 1C-3/4: local-saturation pair at G = 100 K/m.", dry, 4),
-        "G30_ls10": E("t1_T-20_G30warmtop_ls_theta60_10d_ac1e-2", lx, 30, "ls", 10,
-                      "Plan 1B-8: local-saturation pair at G = 30 K/m.", dry, 4),
-        "dh100": E("t1_T-20_iso_dh-G100_theta60_10d_ac1e-2", lx, 0, "dh", 10,
-                   "Plan 1D-1: vapor-gradient twin of 1B-5 (same contrast as G = 100 K/m, isothermal).", dry, 4,
-                   dh=ls100[0] - ls100[1]),
-        "dh30": E("t1_T-20_iso_dh-G30_theta60_10d_ac1e-2", lx, 0, "dh", 10,
-                  "Plan 1D-2: vapor-gradient twin of 1B-8 (same contrast as G = 30 K/m, isothermal).", dry, 4,
-                  dh=ls30[0] - ls30[1]),
-    }
-    c, w, k = G["R50_x300"], G["R50_x100"], G["R50_x500"]
-    rows = [("1A-0", c, e["iso_closed10"])]
-    rows += [(f"1A-{i}", c, e[f"G{g}_closed30"]) for i, g in enumerate((10, 30, 100, 300), 1)]
-    rows += [("1B-1", k, e["G100_res10"]), ("1B-2", c, e["G100_res10"]), ("1B-3", w, e["G100_res10"])]
-    rows += [("1B-4", k, e["G100_ls10"]), ("1B-5", c, e["G100_ls10"]), ("1B-6", w, e["G100_ls10"])]
-    rows += [("1B-7", c, e["iso_res10"]), ("1B-8", c, e["G30_ls10"])]
-    rows += [("1C-1", G["R25_x300"], e["G100_closed30"]), ("1C-2", G["R100_x300"], e["G100_closed30"])]
-    rows += [("1C-3", G["R25_x300"], e["G100_ls10"]), ("1C-4", G["R100_x300"], e["G100_ls10"])]
-    rows += [("1D-1", c, e["dh100"]), ("1D-2", c, e["dh30"])]
+    made, rows = {}, []
+    for rid, gtag, G, vapor, days, twin in TYPE1:
+        key = (G, vapor, days, twin)
+        if key not in made:
+            purpose = PURPOSE1[vapor] if (G or vapor == "dh") else (
+                "Plan 1A-0: control, the cap relaxes to theta and stays." if vapor == "closed"
+                else "Plan 1B-7: isothermal, both ends at 1 + d0/R0: unstable balance.")
+            made[key] = exp12(1, lx, G, vapor, days, purpose, dry, chi=1.0 / R0_RES, dh_of=twin)
+        rows.append((rid, geo[gtag], made[key]))
     tests_file(STUDY / "type1_tests.txt", "Plan type 1", rows, dry)
 
 
@@ -268,24 +310,22 @@ def type2(dry):
                                   f"Plan type 2: {what}.", dry)
     print("\nType 2 experiments")
     chi_avg = 0.5 * (1 / 2e-5 + 1 / 5e-5)
+    ladder = (0.8, 1.6, 3.2, 8.0, 32.0)           # 2B: around G* = 1.6 K/m, kept from 2026-11-09
     e = {
-        "iso_closed": experiment("t2_T-20_iso_closed_theta60_60d_ac1e-2", 6e-4, 0, "closed", 60,
-                                 "Plan 2A-1: ripening alone.", dry),
-        "iso_res": experiment("t2_T-20_iso_resavg_theta60_60d_ac1e-2", 6e-4, 0, "res", 60,
-                              "Plan 2A-2: draft 1's open version, both ends at 1 + d0 chi_avg.", dry, chi=chi_avg),
-        **{f"G{g}": experiment(f"t2_T-20_G{g:g}warmtop_closed_theta60_60d_ac1e-2", 6e-4, g, "closed", 60,
-                               f"Plan 2B: closed box at G = {g:g} K/m (G* = 1.6 K/m).", dry)
-           for g in (0.8, 1.6, 3.2, 8.0, 32.0)},
-        "G100_900": experiment("t2_T-20_G100warmtop_closed_L900_theta60_10d_ac1e-2", 9e-4, 100, "closed", 10,
-                               "Plan 2C: chains at G = 100 K/m (900 um box).", dry, 4),
-        "G100_600": experiment("t2_T-20_G100warmtop_closed_theta60_10d_ac1e-2", 6e-4, 100, "closed", 10,
-                               "Plan 2D: spacing at G = 100 K/m.", dry, 4),
+        "iso_closed": exp12(2, 6e-4, 0, "closed", 60, "Plan 2A-1: ripening alone.", dry),
+        "iso_res": exp12(2, 6e-4, 0, "res", 60, "Plan 2A-2: draft 1's open version, both ends at 1 + d0 chi_avg.",
+                         dry, chi=chi_avg),
+        **{f"G{g:g}": exp12(2, 6e-4, g, "closed", 60, f"Plan 2B: closed box at G = {g:g} K/m (G* = 1.6 K/m).", dry)
+           for g in ladder},
+        "chain": exp12(2, 9e-4, G_ONE, "closed", 60, f"Plan 2C: chains at G = {G_ONE} K/m (900 um box).", dry,
+                       l900=True),
+        "gap": exp12(2, 6e-4, G_ONE, "closed", 60, f"Plan 2D: spacing at G = {G_ONE} K/m.", dry),
     }
     rows = [("2A-1", names["pairLW"], e["iso_closed"]), ("2A-2", names["pairLW"], e["iso_res"])]
-    rows += [(f"2B-{i}", names["pairLW"], e[f"G{g}"]) for i, g in enumerate((0.8, 1.6, 3.2, 8.0, 32.0), 1)]
+    rows += [(f"2B-{i}", names["pairLW"], e[f"G{g:g}"]) for i, g in enumerate(ladder, 1)]
     rows += [("2B-6", names["pairLC"], e["G3.2"])]
-    rows += [(f"2C-{i}", names[t], e["G100_900"]) for i, t in enumerate(("chain3eq", "chain3small", "chain5rand"), 1)]
-    rows += [(f"2D-{i}", names[f"gap{g}"], e["G100_600"]) for i, g in enumerate((20, 80, 200), 1)]
+    rows += [(f"2C-{i}", names[t], e["chain"]) for i, t in enumerate(("chain3eq", "chain3small", "chain5rand"), 1)]
+    rows += [(f"2D-{i}", names[f"gap{g}"], e["gap"]) for i, g in enumerate((20, 80, 200), 1)]
     tests_file(STUDY / "type2_tests.txt", "Plan type 2", rows, dry)
 
 
