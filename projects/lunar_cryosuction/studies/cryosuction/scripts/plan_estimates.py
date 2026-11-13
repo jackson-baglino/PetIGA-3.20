@@ -103,6 +103,8 @@ def main() -> int:
     p.add_argument("--bump-R", type=float, default=250e-6, help="section 8: bump half-width (fixed) [m]")
     p.add_argument("--lens-len", type=float, default=120e-6, help="section 8: lens length on the axis [m]")
     p.add_argument("--Lx8", type=float, default=800e-6, help="section 8: pore length, throat at Lx/2 [m]")
+    p.add_argument("--start8", type=float, default=100e-6,
+                   help="section 8b: lens center start, this far on the COLD side of the throat [m]")
     a = p.parse_args()
     if not (-150.0 < a.T0 < -0.001):
         p.error(f"--T0 must be in (-150, -0.001) C, where the ice formulas apply (got {a.T0})")
@@ -240,6 +242,7 @@ def main() -> int:
                   f" e-folds in t_move {sig * t:+6.1f}, dt {dt:6.0f} s, steps {n:8.0f},"
                   f" wall {n * a.s_per_step / 3600:6.1f} h")
     throat_arrest(a, d0, s, beta0, K)
+    sloped_pore(a, d0, s, beta0, K)
     return 0
 
 
@@ -322,6 +325,84 @@ def throat_arrest(a, d0, s, beta0, K):
         print(f"      G 0 restoring speed at 20, 40 um and the hold point: {v40[0]:+.4f}, {v40[1]:+.4f},"
               f" {v40[2]:+.4f} um/d; " + "; ".join(out))
 
+
+
+def sloped_pore(a, d0, s, beta0, K):
+    """8b. Type 5 redesign (user, 13 Nov): the walls slope toward the throat along the whole pore,
+    gap g(xi) = sqrt(wt^2 + c^2 xi^2), xi = x - Lx/2, g(+-Lx/2) = W (smooth at the throat, slope
+    never zero elsewhere; the throat width changes only the depth of the profile). The lens starts
+    on the COLD side (x > Lx/2) and keeps its area (reservoirs at the humidity of the lens at its
+    start, so it neither grows nor shrinks there); its length follows from the area. Center speed
+    from the two face speeds as in section 8 (series law, isothermal ice, static angle). G pulls
+    toward x = 0: at G = 0 the lens should come to rest at the throat; above G_crit it passes
+    through and leaves on the warm side."""
+    th = math.radians(a.theta)
+    W, Lx, L0 = a.W8, a.Lx8, a.lens_len
+    print(f"\n# 8b. Whole-pore slope: g = sqrt(wt^2 + c^2 xi^2), W {W * 1e6:g} um at the ends, Lx {Lx * 1e6:g} um,"
+          f" lens {L0 * 1e6:g} um started {a.start8 * 1e6:g} um on the cold side, area conserved")
+    for wt in a.wt:
+        c = math.sqrt(W * W - wt * wt) / (Lx / 2)
+
+        def g(xi, c=c, wt=wt):
+            return math.sqrt(wt * wt + (c * xi) ** 2)
+
+        def chi(xi, c=c, wt=wt):
+            om = math.atan(0.5 * c * c * abs(xi) / math.sqrt(wt * wt + (c * xi) ** 2))
+            return 2 * math.cos(th + om) / math.sqrt(wt * wt + (c * xi) ** 2)
+
+        def area(xm, L, g=g):
+            n = 200
+            return sum(g(xm - L / 2 + (k + 0.5) * L / n) for k in range(n)) * L / n
+
+        A = area(-a.start8, L0)                       # xm: lens center in xi (negative = warm side)
+
+        def length(xm, A=A, area=area):
+            lo, hi = 1e-6, Lx
+            for _ in range(60):
+                mid = 0.5 * (lo + hi)
+                lo, hi = (mid, hi) if area(xm, mid) < A else (lo, mid)
+            return 0.5 * (lo + hi)
+
+        xs0 = -a.start8
+        chi0 = 0.5 * (chi(xs0 - L0 / 2) + chi(xs0 + L0 / 2))
+
+        def vel(xm, G, chi=chi, chi0=chi0, length=length):   # center speed toward x = 0 (xi decreasing)
+            L = length(xm)
+            xw, xc = xm - L / 2, xm + L / 2
+            lw, lc = Lx / 2 + xw, Lx / 2 - xc
+            if lw <= 5e-6 or lc <= 5e-6:
+                return None
+            dTw, dTc = G * Lx * lw / (lw + lc), G * Lx * lc / (lw + lc)
+            vw = (s * dTw + d0 * (chi(xw) - chi0)) / (beta0 + K * lw)
+            vc = (s * dTc - d0 * (chi(xc) - chi0)) / (beta0 + K * lc)
+            return 0.5 * (vw + vc)
+
+        # G_crit: largest G the warm half of the throat can hold (lens center on the warm side)
+        gc = 0.0
+        for k in range(1, 400):
+            xm = -k * 0.5e-6
+            v0, v1 = vel(xm, 0.0), vel(xm, 1.0)
+            if v0 is None or v1 is None:
+                break
+            gc = max(gc, -v0 / (v1 - v0))
+        line = []
+        for f in (0.0, 0.5, 2.0, 5.0):
+            G, xm, t, dt = f * gc, xs0, 0.0, 12 * 3600.0
+            v = 0.0
+            while t < 6000 * DAY:
+                v = vel(xm, G)
+                if v is None:
+                    break
+                xm -= v * dt
+                t += dt
+            state = (f"left the throat (warm face at the reservoir) at {t / DAY:5.0f} d" if v is None else
+                     f"center at {-xm * 1e6:+6.1f} um after 6000 d, moving {v * DAY * 1e6:+.4f} um/d")
+            line.append(f"{f:g} G_crit: {state}")
+        Ls, Lt = length(xs0), length(0.0)
+        print(f"wt {wt * 1e6:5.1f} um: wall slope at the ends {math.degrees(math.atan(0.5 * c * c * (Lx / 2) / W)):4.1f} deg;"
+              f" lens {Ls * 1e6:5.1f} um at the start, {Lt * 1e6:5.1f} um centered on the throat;"
+              f" G_crit {gc:.3f} K/m; start speed at G 0 {vel(xs0, 0.0) * DAY * 1e6:+.4f} um/d")
+        print("      " + "; ".join(line))
 
 if __name__ == "__main__":
     raise SystemExit(main())
