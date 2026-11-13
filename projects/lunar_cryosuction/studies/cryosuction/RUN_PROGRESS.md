@@ -5,14 +5,16 @@ state. Detail for each run (folder, model version, full outcome) is in
 `RUNS.md`; the day-to-day project state is in `STATUS.md`; the plan itself is
 `SimulationPlan_v2.docx` (iCloud, `.../SimulationProposalsSetup/`).
 
-**Last updated:** 2026-11-11
+**Last updated:** 2026-11-12
 
-**Full run plan (setup, schematics, every matrix):** `RunPlan_2026-11-11.docx`
-in the iCloud plan folder, built by `docs/run_plan/build_runplan.py`. It
-proposes production gradients G = 1, 3, 10 K/m (30 as one above-threshold
-point) instead of 100/300, pending the user and the S7 face-stability scan;
-types 1, 2 (gradient runs), 6 and 7C/7D change accordingly. Type 5 is
-unaffected.
+**Full run plan (setup, schematics, every matrix):** `RunPlan_2026-11-12.docx`
+(7 pages) in the iCloud plan folder, built by `docs/run_plan/build_runplan2.py`.
+Gradients chosen by the user on 2026-11-12: production G = 10 and 20 K/m, with
+a few runs at 50 K/m for selected geometries and contact angles (set once in
+the builder as G_PROD, G_HIGH). New: 6D, theta-90 face stability in the
+straight pore (flat faces need a flat-face feature in build_ice_layout.py).
+New runs write 401 snapshots for movies. Inputs for types 1, 2, 5, 6C/6D and
+7C/7D are to be rebuilt at these gradients.
 
 States: **done** (ran and analyzed) · **ran** (ran, analysis open) ·
 **running/queued** (on the HPC) · **ready** (inputs built and preflight OK, not

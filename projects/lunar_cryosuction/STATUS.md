@@ -88,7 +88,9 @@ Hypotheses: the user writes them; none recorded yet.
   -restart_append eae44490); 6B-2 (wc 80, theta 90, G 300) inputs built. User:
   G 1-3 K/m too slow; plan_estimates.py section 7 gives the G window (wide-gas
   G below ~18.5 K/m for 150 um faces; below ~44 K/m runs are dtmax-bound, wall
-  time ~ 1/G). Run plan v2 (<= 7 pp.) in progress; G pending the user's check.
+  time ~ 1/G). User chose G 10-20 K/m with a few runs at 50 (2026-11-12);
+  RunPlan_2026-11-12 (7 pp.) uses them and adds 6D (theta-90 face stability,
+  straight pore, flat face + seed); inputs to rebuild at the new G.
   I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 lenses start
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at

@@ -140,9 +140,11 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
     yl = (-95, W * ex + 34)
     xl = (-20, lx + 20)
     h_pore = ax_w * (yl[1] - yl[0]) / (xl[1] - xl[0])
-    top_in, mid_in, prof_in, bot_in = 0.62, 0.95, 1.05, 0.42
+    top_in, mid_in, prof_in, bot_in = 0.62, 0.78, 1.05, 0.42
     sat_top, sat_gap = 0.22, 0.55
-    H = top_in + h_pore + mid_in + sat_top + h_pore + sat_gap + prof_in + bot_in
+    yl_s = (-14, W * ex + 14)                    # saturation panel: pore only, no dimensions
+    h_sat = ax_w * (yl_s[1] - yl_s[0]) / (xl[1] - xl[0])
+    H = top_in + h_pore + mid_in + sat_top + h_sat + sat_gap + prof_in + bot_in
     fig = plt.figure(figsize=(FIG_W, H))
     ax = fig.add_axes((0.2 / FIG_W, (H - top_in - h_pore) / H, ax_w / FIG_W, h_pore / H))
 
@@ -150,7 +152,7 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
     pc = ax.pcolormesh(X, Y * ex, phi, cmap="Blues", vmin=0, vmax=1, shading="gouraud", rasterized=True,
                        zorder=1)
     ax.contour(X, Y * ex, phi, levels=[0.5], colors=["#1f4e8c"], linewidths=0.8, zorder=3)
-    def walls(a):
+    def draw_walls(a):
         """Hatched regolith from the mesh boundary rows, dashed pore ends."""
         for j, sgn in ((0, -1), (-1, 1)):
             x, y = X[j], Y[j] * ex
@@ -160,7 +162,7 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
         for xe, k in ((0, 0), (lx, -1)):
             a.plot([xe, xe], [Y[0, k] * ex, Y[-1, k] * ex], color=INK, lw=1.0, ls=(0, (3, 2)), zorder=3)
 
-    walls(ax)
+    draw_walls(ax)
 
     def hdim(a, b, yy, txt, va="top"):
         ax.annotate("", (a, yy), (b, yy), arrowprops=dict(arrowstyle="<->", color=GRAY, lw=0.6,
@@ -235,8 +237,8 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
     fig.text(0.2 / FIG_W, (ywall - 0.04) / H, wall_txt, ha="left", va="top", linespacing=1.3)
 
     # vapor saturation in the gas at the first snapshot at or after sat_day
-    y_sat = H - top_in - h_pore - mid_in - sat_top - h_pore
-    axs = fig.add_axes((0.2 / FIG_W, y_sat / H, ax_w / FIG_W, h_pore / H))
+    y_sat = H - top_in - h_pore - mid_in - sat_top - h_sat
+    axs = fig.add_axes((0.2 / FIG_W, y_sat / H, ax_w / FIG_W, h_sat / H))
     gas = phi_s < 0.5
     lim = float(np.percentile(np.abs(S[gas]), 99.5))
     Sm = np.ma.masked_where(~gas, S)
@@ -244,15 +246,14 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
                          rasterized=True, zorder=1)
     axs.contourf(X, Y * ex, phi_s, levels=[0.5, 1.01], colors=["#c6dbef"], zorder=1)
     axs.contour(X, Y * ex, phi_s, levels=[0.5], colors=["#1f4e8c"], linewidths=0.8, zorder=3)
-    walls(axs)
+    draw_walls(axs)
     axs.set_xlim(*xl)
-    axs.set_ylim(*yl)
+    axs.set_ylim(*yl_s)
     axs.axis("off")
     axs.set_title(rf"Vapor saturation $S = \rho_v/\rho_{{vs}}(T) - 1$ in the gas at $t$ = {ss.t / 86400:.2f} d "
-                  rf"(at $t$ = 0, $S$ = 0 everywhere); ice ($\phi$ > 1/2) in pale blue; "
-                  rf"gas range {S[gas].min():.2e} to {S[gas].max():.2e}",
+                  rf"($S$ = 0 at $t$ = 0); ice ($\phi$ > 1/2) pale blue; gas {S[gas].min():.1e} to {S[gas].max():.1e}",
                   fontsize=7.5, loc="left", pad=3)
-    caxs = fig.add_axes(((0.2 + ax_w + 0.05) / FIG_W, (y_sat + 0.2) / H, 0.06 / FIG_W, (h_pore - 0.45) / H))
+    caxs = fig.add_axes(((0.2 + ax_w + 0.05) / FIG_W, (y_sat + 0.05) / H, 0.06 / FIG_W, (h_sat - 0.1) / H))
     cbs = fig.colorbar(pcs, cax=caxs, ticks=[-lim, 0, lim], format="%.1e")
     cbs.ax.tick_params(labelsize=7, length=2, pad=1)
     caxs.set_title(r"$S$", fontsize=7.5, pad=2)
