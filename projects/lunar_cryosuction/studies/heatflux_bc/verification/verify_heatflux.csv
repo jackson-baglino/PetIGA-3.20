@@ -1,5 +1,5 @@
 test,case,quantity,measured,expected,tolerance,result
-W1,wall_faces_theta60_base_83590222,ssa_bitwise_identical,32 rows,identical,exact,PASS
+W1,wall_faces_theta60_base_87144d05,ssa_bitwise_identical,32 rows,identical,exact,PASS
 J,wall+thermal,rel_err_boundary_block,2.811441e-08,0,1.0e-06,PASS
 J,thermal_only,rel_err_boundary_block,2.811441e-08,0,1.0e-06,PASS
 J,snes_test_jacobian,max_rel_FD_diff_full_system,0.000126275,0,,INFO

@@ -10,87 +10,43 @@ ld: warning: -commons use_dylibs is no longer supported, using error treatment i
   ModuleNotFoundError: No module named 'numpy'
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  Post-processing completed with errors (exit sum 7)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/channel_2D_H31um_eps0.86um/2026-11-13__12.27.32_droplet_T-20_theta60_w1_base
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 7)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/channel_2D_H31um_eps0.86um/2026-11-13__12.27.48_droplet_T-20_theta60_w1_new
-  run channel_2D_H31um_eps0.86um / droplet_T-20_theta60 -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/channel_2D_H31um_eps0.86um/2026-11-13__12.27.48_droplet_T-20_theta60_w1_new
-  SSA_evo.dat identical (32 rows, base 8359022242464de9b4e96ee5a7c4a108a725b1db)   PASS
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/channel_2D_H31um_eps0.86um/2026-11-13__13.02.40_droplet_T-20_theta60_w1_base
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/channel_2D_H31um_eps0.86um/2026-11-13__13.02.55_droplet_T-20_theta60_w1_new
+  run channel_2D_H31um_eps0.86um / droplet_T-20_theta60 -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/channel_2D_H31um_eps0.86um/2026-11-13__13.02.55_droplet_T-20_theta60_w1_new
+  SSA_evo.dat identical (32 rows, base 87144d051fb0d64819214b01840f91e1c3c3003d)   PASS
 
 === J: thermal boundary Jacobian block ===
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
+  FileNotFoundError: [Errno 2] No such file or directory: '/Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__13.03.13_hf_jacobian_jac_wall_thermal/igasol.dat'
   ⚠️  Post-processing completed with errors (exit sum 3)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__12.28.03_hf_jacobian_jac_wall_thermal
-  run hf_jac_box62x31um_disc / hf_jacobian -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__12.28.03_hf_jacobian_jac_wall_thermal
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__13.03.13_hf_jacobian_jac_wall_thermal
+  run hf_jac_box62x31um_disc / hf_jacobian -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__13.03.13_hf_jacobian_jac_wall_thermal
   wall+thermal  rel.err(boundary block) = 2.811441e-08  ||Jbnd v|| = 2.318822e+01  PASS
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
+  FileNotFoundError: [Errno 2] No such file or directory: '/Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__13.03.15_hf_jacobian_jac_thermal_only/igasol.dat'
   ⚠️  Post-processing completed with errors (exit sum 3)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__12.28.03_hf_jacobian_jac_thermal_only
-  run hf_jac_box62x31um_disc / hf_jacobian -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__12.28.03_hf_jacobian_jac_thermal_only
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__13.03.15_hf_jacobian_jac_thermal_only
+  run hf_jac_box62x31um_disc / hf_jacobian -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__13.03.15_hf_jacobian_jac_thermal_only
   thermal_only  rel.err(boundary block) = 2.811441e-08  ||Jbnd v|| = 2.318822e+01  PASS
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 5)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__12.28.03_hf_jacobian_sntj
-  run hf_jac_box62x31um_disc / hf_jacobian -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__12.28.03_hf_jacobian_sntj
+  FileNotFoundError: [Errno 2] No such file or directory: '/Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__13.03.16_hf_jacobian_sntj/igasol.dat'
+  ⚠️  Post-processing completed with errors (exit sum 1)
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__13.03.16_hf_jacobian_sntj
+  run hf_jac_box62x31um_disc / hf_jacobian -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_jac_box62x31um_disc/2026-11-13__13.03.16_hf_jacobian_sntj
   -snes_test_jacobian worst ||J-Jfd||/||J|| over the Newton iterations = 0.000126275 (information: dominated by the interior form's FD noise)
 
 === a: steady 1D flux ===
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 6)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x20um_N40/2026-11-13__12.28.11_hf_steady_q100_verify
-  run hf_air_box200x20um_N40 / hf_steady_q100 -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x20um_N40/2026-11-13__12.28.11_hf_steady_q100_verify
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 6)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x20um_N80/2026-11-13__12.28.12_hf_steady_q100_verify
-  run hf_air_box200x20um_N80 / hf_steady_q100 -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x20um_N80/2026-11-13__12.28.12_hf_steady_q100_verify
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x20um_N40/2026-11-13__13.03.25_hf_steady_q100_verify
+  run hf_air_box200x20um_N40 / hf_steady_q100 -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x20um_N40/2026-11-13__13.03.25_hf_steady_q100_verify
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x20um_N80/2026-11-13__13.03.28_hf_steady_q100_verify
+  run hf_air_box200x20um_N80 / hf_steady_q100 -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x20um_N80/2026-11-13__13.03.28_hf_steady_q100_verify
 a,Nx=40,max|T-T_lin|/(qL/k),1.065814e-14,0.000000e+00,1.0e-08,PASS
 a,Nx=40,|Q_out(x1)-q*Ly|/(q*Ly),0.000000e+00,0.000000e+00,1.0e-08,PASS
 a,Nx=80,max|T-T_lin|/(qL/k),1.065814e-14,0.000000e+00,1.0e-08,PASS
 a,Nx=80,|Q_out(x1)-q*Ly|/(q*Ly),0.000000e+00,0.000000e+00,1.0e-08,PASS
 
 === b: transient flux into a slab ===
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 6)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x20um_N300/2026-11-13__12.28.15_hf_slab_q100_air_verify
-  run hf_air_box600x20um_N300 / hf_slab_q100_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x20um_N300/2026-11-13__12.28.15_hf_slab_q100_air_verify
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 6)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_ice_box600x20um_N300/2026-11-13__12.29.11_hf_slab_q1000_ice_verify
-  run hf_ice_box600x20um_N300 / hf_slab_q1000_ice -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_ice_box600x20um_N300/2026-11-13__12.29.11_hf_slab_q1000_ice_verify
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x20um_N300/2026-11-13__13.03.34_hf_slab_q100_air_verify
+  run hf_air_box600x20um_N300 / hf_slab_q100_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x20um_N300/2026-11-13__13.03.34_hf_slab_q100_air_verify
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_ice_box600x20um_N300/2026-11-13__13.04.33_hf_slab_q1000_ice_verify
+  run hf_ice_box600x20um_N300 / hf_slab_q1000_ice -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_ice_box600x20um_N300/2026-11-13__13.04.33_hf_slab_q1000_ice_verify
 b,air_t=2.5103e-04,T(0,t)-T0 [K],3.378739e-01,3.378625e-01,1.0e-03,PASS
 b,air_t=2.5103e-04,max_x|T-T_ex|/(T_ex(0)-T0),3.379738e-05,0.000000e+00,1.0e-03,PASS
 b,air_t=5.0103e-04,T(0,t)-T0 [K],4.773262e-01,4.773184e-01,1.0e-03,PASS
@@ -109,33 +65,12 @@ b,ice_t=2.0003e-02,T(0,t)-T0 [K],7.857843e-02,7.857806e-02,1.0e-03,PASS
 b,ice_t=2.0003e-02,max_x|T-T_ex|/(T_ex(0)-T0),4.698305e-06,0.000000e+00,1.0e-03,PASS
 
 === c: erfc wall temperature (Nitsche) ===
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 6)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N75x12/2026-11-13__12.30.08_hf_twall_erfc_air_verify
-  run hf_air_box600x100um_N75x12 / hf_twall_erfc_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N75x12/2026-11-13__12.30.08_hf_twall_erfc_air_verify
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 6)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N150x25/2026-11-13__12.30.52_hf_twall_erfc_air_verify
-  run hf_air_box600x100um_N150x25 / hf_twall_erfc_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N150x25/2026-11-13__12.30.52_hf_twall_erfc_air_verify
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 6)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N75x12/2026-11-13__12.33.49_hf_twall_erfc_air_verify_dt4
-  run hf_air_box600x100um_N75x12 / hf_twall_erfc_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N75x12/2026-11-13__12.33.49_hf_twall_erfc_air_verify_dt4
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N75x12/2026-11-13__13.05.32_hf_twall_erfc_air_verify
+  run hf_air_box600x100um_N75x12 / hf_twall_erfc_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N75x12/2026-11-13__13.05.32_hf_twall_erfc_air_verify
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N150x25/2026-11-13__13.06.17_hf_twall_erfc_air_verify
+  run hf_air_box600x100um_N150x25 / hf_twall_erfc_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N150x25/2026-11-13__13.06.17_hf_twall_erfc_air_verify
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N75x12/2026-11-13__13.09.12_hf_twall_erfc_air_verify_dt4
+  run hf_air_box600x100um_N75x12 / hf_twall_erfc_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box600x100um_N75x12/2026-11-13__13.09.12_hf_twall_erfc_air_verify_dt4
 c,Nx=75_dtmax=2.0e-06_t=3.1032e-05,max_xy|T-T_erfc|/dT,4.025905e-04,0.000000e+00,1.0e-03,PASS
 c,Nx=75_dtmax=2.0e-06_t=1.2503e-04,max_xy|T-T_erfc|/dT,2.942250e-05,0.000000e+00,1.0e-03,PASS
 c,Nx=75_dtmax=2.0e-06_t=5.0103e-04,max_xy|T-T_erfc|/dT,3.066368e-06,0.000000e+00,1.0e-03,PASS
@@ -152,15 +87,8 @@ c,t/t_final=0.0156_dt_sensitivity=0.508,order Nx 75->150 (time error dominates),
 c,t/t_final=0.0625_dt_sensitivity=0.160,order Nx 75->150 (time error dominates),4.401500e-01,2,,INFO
 c,t/t_final=0.2500_dt_sensitivity=0.002,order Nx 75->150,1.981562e+00,2.000000e+00,1.5e+00,PASS
 c,t/t_final=1.0000_dt_sensitivity=0.134,order Nx 75->150 (time error dominates),2.304589e-01,2,,INFO
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ModuleNotFoundError: No module named 'numpy'
-  ⚠️  Post-processing completed with errors (exit sum 6)
-  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x100um_N20x10/2026-11-13__12.36.38_hf_twall_linear_air_verify
-  run hf_air_box200x100um_N20x10 / hf_twall_linear_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x100um_N20x10/2026-11-13__12.36.38_hf_twall_linear_air_verify
+  Results: /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x100um_N20x10/2026-11-13__13.12.02_hf_twall_linear_air_verify
+  run hf_air_box200x100um_N20x10 / hf_twall_linear_air -> /Users/jacksonbaglino/SimulationResults/lunar_cryosuction/scratch/hf_air_box200x100um_N20x10/2026-11-13__13.12.02_hf_twall_linear_air_verify
 c2,t=1.002e-01,max_xy|T-T_lin|/dT,7.105427e-15,0.000000e+00,1.0e-08,PASS
 d,flux_air_first_step,offset/(xi q Ly dt0),2.000000e-01,0,,INFO
 d,flux_air_all_snapshots,max_t|dE-Q_in(t)|/Q_in(t_final),9.998400e-06,0.000000e+00,1.0e-04,PASS
@@ -170,4 +98,4 @@ d,flux_ice_all_snapshots,max_t|dE-Q_in(t)|/Q_in(t_final),9.998396e-06,0.000000e+
 d,flux_ice_final_t=2.0003e-02,|dE-Q_in|/Q_in,9.317563e-06,0.000000e+00,1.0e-04,PASS
 d,twall_final_t=2.0003e-03,dE [J/m] vs trapezoid int of -k dT/dn,1.328719e-04,1.327508e-04,2.0e-03,PASS
 
-ALL CHECKS PASSED   (see /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/agent-a46f074d7bc3c4159/projects/lunar_cryosuction/studies/heatflux_bc/verification/verify_heatflux.csv)
+ALL CHECKS PASSED   (see /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_cryosuction/studies/heatflux_bc/verification/verify_heatflux.csv)
