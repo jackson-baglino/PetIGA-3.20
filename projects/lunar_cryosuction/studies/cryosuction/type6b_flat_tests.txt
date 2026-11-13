@@ -1,4 +1,6 @@
-# Plan type 6B reruns (make_type6_inputs.py --only-6b-flat, 2026-11-12): theta 90 lens with exactly flat faces, G 300 K/m, 401 snapshots.
-# Replace the voided 6B-1 (crossed-disc faces, 0.375 um sag) and the unsubmitted 6B-2. Submit --into the type-6 batch.
-dogbone_2D_L1100um_W150um_wc40um_lens90flat_eps0.86um:t6ls_T-20_G300warmtop_theta90_30d_n401_ac1e-2   # 6B-1
-dogbone_2D_L1100um_W150um_wc80um_lens90flat_eps0.86um:t6ls_T-20_G300warmtop_theta90_30d_n401_ac1e-2   # 6B-2
+# Plan type 6B (make_type6_inputs.py --only-6b-flat, 2026-11-13): theta 90 lens with exactly flat faces through the 40 and 80 um necks at G 20 and 50 K/m (pairs with 6C-4/5 and 6C-7/8).
+# Replaces the voided 6B-1 (G 300, crossed-disc faces). Submit --into the type-6 batch.
+dogbone_2D_L1100um_W150um_wc40um_lens90flat_eps0.86um:t6ls_T-20_G20warmtop_theta90_180d_n401_ac1e-2   # 6B-1
+dogbone_2D_L1100um_W150um_wc80um_lens90flat_eps0.86um:t6ls_T-20_G20warmtop_theta90_180d_n401_ac1e-2   # 6B-2
+dogbone_2D_L1100um_W150um_wc40um_lens90flat_eps0.86um:t6ls_T-20_G50warmtop_theta90_75d_n401_ac1e-2   # 6B-3
+dogbone_2D_L1100um_W150um_wc80um_lens90flat_eps0.86um:t6ls_T-20_G50warmtop_theta90_75d_n401_ac1e-2   # 6B-4

@@ -202,16 +202,16 @@ para("Simulations.", "A lens in the cold section moves toward the warm end under
 para("Varied.", "$w_c$; G; θ.")
 runs([
     ["6A-1…3", "$w_c$ = 40, 80, 150 µm; θ 60°", "100", "ls", "60", "ran"],
-    ["6A-4…6", "$w_c$ = 40, 80, 150 µm; θ 60°", "300", "ls", "30", "ran; 6A-4 stopped at 9.6 d"],
-    ["6B-1", "$w_c$ = 40 µm; θ 90°", "300", "ls", "30", "queued (resume from 11.5 d)"],
-    ["6B-2", "$w_c$ = 80 µm; θ 90°", "300", "ls", "30", "queued"],
-    ["6C-1…3", "$w_c$ = 40, 80, 150 µm; θ 60°", str(G_PROD[0]), "ls", "360", "to build"],
-    ["6C-4…6", "$w_c$ = 40, 80, 150 µm; θ 60°", str(G_PROD[1]), "ls", "180", "to build"],
-    ["6C-7…9", "$w_c$ = 40, 80, 150 µm; θ 60°", str(G_HIGH), "ls", "75", "to build"],
-    ["6D-1…3", "straight, W 150 µm; θ 90°; flat + 0.5 µm seed", GA, "ls", "120, 120, 60", "to build"],
-    ["6D-4", "straight, W 75 µm; θ 90°; flat + 0.5 µm seed", str(G_HIGH), "ls", "60", "to build"],
-    ["6D-5", "straight, W 150 µm; θ 90°; flat, no seed", str(G_HIGH), "ls", "60", "to build"],
-    ["6D-6", "straight, W 150 µm; θ 75°", str(G_HIGH), "ls", "60", "to build"],
+    ["6A-4…6", "$w_c$ = 40, 80, 150 µm; θ 60°", "300", "ls", "30", "ran; 6A-4 stopped at 9.6 d (not resumed)"],
+    ["6B-1, 2", "$w_c$ = 40, 80 µm; θ 90°, flat faces", str(G_PROD[1]), "ls", "180", "queued"],
+    ["6B-3, 4", "$w_c$ = 40, 80 µm; θ 90°, flat faces", str(G_HIGH), "ls", "75", "queued"],
+    ["6C-1…3", "$w_c$ = 40, 80, 150 µm; θ 60°", str(G_PROD[0]), "ls", "360", "queued"],
+    ["6C-4…6", "$w_c$ = 40, 80, 150 µm; θ 60°", str(G_PROD[1]), "ls", "180", "queued"],
+    ["6C-7…9", "$w_c$ = 40, 80, 150 µm; θ 60°", str(G_HIGH), "ls", "75", "queued"],
+    ["6D-1…3", "straight, W 150 µm; θ 90°; flat + 0.5 µm seed", GA, "ls", "120, 120, 60", "queued"],
+    ["6D-4", "straight, W 75 µm; θ 90°; flat + 0.5 µm seed", str(G_HIGH), "ls", "60", "queued"],
+    ["6D-5", "straight, W 150 µm; θ 90°; flat, no seed", str(G_HIGH), "ls", "60", "queued"],
+    ["6D-6", "straight, W 150 µm; θ 75°", str(G_HIGH), "ls", "60", "queued"],
 ], var="Varied")
 para("6D, face stability.", "A depositing face in a pore of width W with no-flux walls is predicted "
      "unstable to the symmetric mode (axis and walls moving apart, wavenumber $k = 2\\pi/W$) when the "

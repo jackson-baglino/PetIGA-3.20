@@ -203,21 +203,24 @@ def main() -> int:
                     help="write 6C (G 10/20/50, theta 60) and 6D (face stability) of RunPlan_2026-11-12, "
                          "type6c_tests.txt and type6d_tests.txt")
     ap.add_argument("--only-6b-flat", action="store_true",
-                    help="write only the flat-face 6B-1/6B-2 reruns (401 snapshots) and type6b_flat_tests.txt")
+                    help="write only the flat-face 6B runs (G 20, 50; 401 snapshots) and type6b_flat_tests.txt")
     a = ap.parse_args()
     dtmax = 2.0 * tau_sub(EPS)
     print(f"eps {EPS:.4e} m, dtmax = 2 tau_sub = {dtmax:.4e} s")
     if a.only_6b_flat:
-        print("\n6B reruns: flat faces")
+        # User 2026-11-13: no new G 300 runs; 6B at the plan's gradients, durations as 6C.
+        print("\n6B: theta 90, flat faces, G 20 and 50")
         g = {wc: build_geometry(wc, 90, dtmax, a.dry_run, keep_mesh=True) for wc in NECKS[:2]}
-        e = experiment("t6ls_T-20_G300warmtop_theta90_30d_n401_ac1e-2", 90, 300.0, 30, None,
-                       "Plan type 6B-1/6B-2 rerun (2026-11-12): theta 90, exactly flat starting faces, "
-                       "401 snapshots for movies.", a.dry_run, n_out=401, event=True)
+        e = {G: experiment(f"t6ls_T-20_G{G:g}warmtop_theta90_{days}d_n401_ac1e-2", 90, G, days, None,
+                           f"Plan type 6B (2026-11-13): theta 90 lens, exactly flat starting faces, through a "
+                           f"neck, G = {G:g} K/m.", a.dry_run, n_out=401, event=True)
+             for G, days in ((20.0, 180), (50.0, 75))}
         path = STUDY / "type6b_flat_tests.txt"
-        text = (f"# Plan type 6B reruns (make_type6_inputs.py --only-6b-flat, {TODAY}): theta 90 lens with "
-                f"exactly flat faces, G 300 K/m, 401 snapshots.\n# Replace the voided 6B-1 (crossed-disc "
-                f"faces, 0.375 um sag) and the unsubmitted 6B-2. Submit --into the type-6 batch.\n"
-                f"{g[NECKS[0]]}:{e}   # 6B-1\n{g[NECKS[1]]}:{e}   # 6B-2\n")
+        text = (f"# Plan type 6B (make_type6_inputs.py --only-6b-flat, {TODAY}): theta 90 lens with exactly flat "
+                f"faces through the 40 and 80 um necks at G 20 and 50 K/m (pairs with 6C-4/5 and 6C-7/8).\n"
+                f"# Replaces the voided 6B-1 (G 300, crossed-disc faces). Submit --into the type-6 batch.\n"
+                f"{g[NECKS[0]]}:{e[20.0]}   # 6B-1\n{g[NECKS[1]]}:{e[20.0]}   # 6B-2\n"
+                f"{g[NECKS[0]]}:{e[50.0]}   # 6B-3\n{g[NECKS[1]]}:{e[50.0]}   # 6B-4\n")
         print(f"\n  {'(dry) ' if a.dry_run else ''}wrote {path.relative_to(ROOT)}\n{text}")
         if not a.dry_run:
             path.write_text(text)
