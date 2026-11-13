@@ -13,8 +13,12 @@ Plan (SimulationPlan_v2, type 6):
           6A-4..6  wc 40, 80, 150 um, G 300 K/m, theta 60, 30 days
           6B-1     wc 40 um, G 300 K/m, theta 90, 30 days (no capillary force
                    on the flat neck walls)
-          6B-2     wc 80 um, otherwise as 6B-1 (user, 2026-11-12); --only-6b2
-                   writes just its geometry file and type6b2_tests.txt
+          6B-2     wc 80 um, otherwise as 6B-1 (user, 2026-11-12)
+          The first 6B-1 (2026-11-09) started from faces 0.375 um out of flat
+          (two crossed 7.5 mm discs); the user voided it (2026-11-12). Theta-90
+          geometries are now 'lens90flat' (exactly flat faces, -ice_flat_*);
+          --only-6b-flat writes the 6B-1/6B-2 reruns with 401 snapshots
+          (type6b_flat_tests.txt).
 
 Choices made here, not in the plan (printed, and in the file headers):
   shoulders  C-infinity, 100 um long each (steepest wall slope 1.10 at
@@ -25,7 +29,7 @@ Choices made here, not in the plan (printed, and in the file headers):
   lens       150 um long on the axis, centered in the cold flat section
              (apexes x = 875-1025 um); faces start at the run's wall-BC angle
              (user, 2026-11-09), so the theta 60 runs start with concave faces
-             (-bridge_concaveL/R, FREEZE 18270f6f) and 6B-1 with flat ones.
+             (-bridge_concaveL/R, FREEZE 18270f6f) and 6B with flat ones.
              One geometry file per (neck, lens angle); they share the mesh.
   eps        8.5840e-7 m, the production value (issue 1); comp_eps at the
              G = 300 speed (5e-10 m/s, Rave 20 um) allows up to 1.28e-6 m
@@ -57,7 +61,8 @@ TODAY = datetime.date.today().isoformat()
 
 
 def geom_name(wc, theta):
-    return f"dogbone_2D_L{LX*1e6:.0f}um_W150um_wc{wc*1e6:.0f}um_lens{theta:g}_eps0.86um"
+    lens = "90flat" if theta == 90 else f"{theta:g}"
+    return f"dogbone_2D_L{LX*1e6:.0f}um_W150um_wc{wc*1e6:.0f}um_lens{lens}_eps0.86um"
 
 
 def build_geometry(wc, theta, dtmax, dry, keep_mesh=False):
@@ -92,7 +97,7 @@ def build_geometry(wc, theta, dtmax, dry, keep_mesh=False):
     return name
 
 
-def experiment(name, theta, G, days, per_day, purpose, dry):
+def experiment(name, theta, G, days, per_day, purpose, dry, n_out=None):
     lo, hi, Tlo, Thi, _ = fracs(T0, -G, LX, "local-sat")
     gis = gamma_is(theta)
     text = f"""# experiment/cryosuction/{name}.opts   (make_type6_inputs.py, {TODAY})
@@ -118,7 +123,7 @@ def experiment(name, theta, G, days, per_day, purpose, dry):
 -rhovfix_hi {hi:.10f}                 # rho_vs({Thi:.4f} C) / rho_vs({T0:g} C), cold end
 -phi_open_bc 0                          # 90-degree phi face on both pore ends
 -t_final {days*DAY:.6e}
--n_out {int(days * per_day) + 1}                              # {per_day:g} snapshot(s) a day
+-n_out {n_out or int(days * per_day) + 1}                              # {f'{(n_out - 1) / days:.2f}' if n_out else f'{per_day:g}'} snapshot(s) a day
 -beta_sub0 {BETA0:.4e}                     # K&P beta0 at -20 C, alpha_c = 1e-2
 -gamma_ia {G_IA:g}
 -gamma_as {G_AS:g}
@@ -136,19 +141,22 @@ def experiment(name, theta, G, days, per_day, purpose, dry):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true", help="print what would be written")
-    ap.add_argument("--only-6b2", action="store_true",
-                    help="write only the 6B-2 geometry (wc 80, theta 90) and type6b2_tests.txt")
+    ap.add_argument("--only-6b-flat", action="store_true",
+                    help="write only the flat-face 6B-1/6B-2 reruns (401 snapshots) and type6b_flat_tests.txt")
     a = ap.parse_args()
     dtmax = 2.0 * tau_sub(EPS)
     print(f"eps {EPS:.4e} m, dtmax = 2 tau_sub = {dtmax:.4e} s")
-    if a.only_6b2:
-        g = build_geometry(NECKS[1], 90, dtmax, a.dry_run, keep_mesh=True)
-        e90 = "t6ls_T-20_G300warmtop_theta90_30d_ac1e-2"   # the 6B-1 experiment, unchanged
-        if not (EXP / f"{e90}.opts").exists():
-            raise SystemExit(f"missing experiment {e90}.opts")
-        path = STUDY / "type6b2_tests.txt"
-        text = (f"# Plan type 6B-2 (make_type6_inputs.py --only-6b2, {TODAY}): theta 90 lens, "
-                f"80 um neck, G 300 K/m; pairs with 6B-1 (40 um neck).\n{g}:{e90}   # 6B-2\n")
+    if a.only_6b_flat:
+        print("\n6B reruns: flat faces")
+        g = {wc: build_geometry(wc, 90, dtmax, a.dry_run, keep_mesh=True) for wc in NECKS[:2]}
+        e = experiment("t6ls_T-20_G300warmtop_theta90_30d_n401_ac1e-2", 90, 300.0, 30, None,
+                       "Plan type 6B-1/6B-2 rerun (2026-11-12): theta 90, exactly flat starting faces, "
+                       "401 snapshots for movies.", a.dry_run, n_out=401)
+        path = STUDY / "type6b_flat_tests.txt"
+        text = (f"# Plan type 6B reruns (make_type6_inputs.py --only-6b-flat, {TODAY}): theta 90 lens with "
+                f"exactly flat faces, G 300 K/m, 401 snapshots.\n# Replace the voided 6B-1 (crossed-disc "
+                f"faces, 0.375 um sag) and the unsubmitted 6B-2. Submit --into the type-6 batch.\n"
+                f"{g[NECKS[0]]}:{e}   # 6B-1\n{g[NECKS[1]]}:{e}   # 6B-2\n")
         print(f"\n  {'(dry) ' if a.dry_run else ''}wrote {path.relative_to(ROOT)}\n{text}")
         if not a.dry_run:
             path.write_text(text)

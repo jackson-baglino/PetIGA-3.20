@@ -35,6 +35,14 @@
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." \
 #       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
 #
+# --into <existing batch folder> adds the runs to a batch made earlier (e.g. the
+# type-6 batch) instead of creating a new one. A run whose <geom>__<exp> folder
+# already exists there is refused before anything is submitted. The new inputs
+# and source snapshots go to inputs_snapshot_<ts>/ and src_snapshot_<ts>/, so the
+# earlier runs' snapshots are kept; --tag and --out-root are ignored with --into.
+#   ./scripts/HPC/submit_batch.sh --into /resnick/.../lunar_cryosuction/batch_X_type6 \
+#       --tests-file studies/cryosuction/<file> -- --time=2-00:00:00
+#
 # Extra sbatch flags can be appended after --:
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." -- --time=0-04:00:00
 # =============================================================================
@@ -66,6 +74,7 @@ tests_file=""
 sbatch_extra=()
 extra_opts=()
 out_root=""
+into_dir=""
 
 usage() {
     sed -n '2,35p' "$0"
@@ -79,6 +88,7 @@ while [[ $# -gt 0 ]]; do
         --tests-file)  tests_file="$2"; shift 2 ;;
         --extra-opts)  read -ra extra_opts <<< "$2"; shift 2 ;;
         --out-root)    out_root="$2"; shift 2 ;;
+        --into)        into_dir="$2"; shift 2 ;;
         --)            shift; sbatch_extra=("$@"); break ;;
         -h|--help)     usage ;;
         *)             echo "Unknown argument: $1"; usage ;;
@@ -155,7 +165,21 @@ echo "✅ Build complete."
 TS=$(date +%Y-%m-%d__%H.%M.%S)
 batch_name="batch_${TS}${tag:+_$tag}"
 
-if [[ -n "$out_root" ]]; then
+SNAP_SFX=""
+if [[ -n "$into_dir" ]]; then
+    if [[ ! -d "$into_dir" || ! -w "$into_dir" ]]; then
+        echo "❌ --into is not a writable directory: $into_dir"
+        exit 1
+    fi
+    BATCH_PARENT="$(cd "$into_dir" && pwd)"
+    SNAP_SFX="_${TS}"
+    for spec in "${TESTS[@]}"; do
+        if [[ -e "$BATCH_PARENT/${spec%%:*}__${spec##*:}" ]]; then
+            echo "❌ $BATCH_PARENT/${spec%%:*}__${spec##*:} already exists; not submitting anything"
+            exit 1
+        fi
+    done
+elif [[ -n "$out_root" ]]; then
     if [[ ! -d "$out_root" || ! -w "$out_root" ]]; then
         echo "❌ --out-root is not a writable directory: $out_root"
         exit 1
@@ -179,10 +203,12 @@ echo "============================================================"
 # ---------------------------------------------------------------------------
 # Stage shared assets at the batch level for reproducibility + easy download
 # ---------------------------------------------------------------------------
-mkdir -p "$BATCH_PARENT/inputs_snapshot/geometry"
-mkdir -p "$BATCH_PARENT/inputs_snapshot/experiment"
-mkdir -p "$BATCH_PARENT/src_snapshot"
-cp "$INPUTS_DIR/solver.opts"           "$BATCH_PARENT/inputs_snapshot/"   2>/dev/null || true
+INSNAP="$BATCH_PARENT/inputs_snapshot${SNAP_SFX}"
+SRCSNAP="$BATCH_PARENT/src_snapshot${SNAP_SFX}"
+mkdir -p "$INSNAP/geometry"
+mkdir -p "$INSNAP/experiment"
+mkdir -p "$SRCSNAP"
+cp "$INPUTS_DIR/solver.opts"           "$INSNAP/"   2>/dev/null || true
 # Recurse: the opts live in family sub-directories, so a top-level *.opts glob
 # silently snapshots nothing. Mesh .dat files are deliberately NOT copied -- they
 # are large and regenerable from preprocess/build_geometry_*.py.
@@ -195,15 +221,15 @@ stage_opts() {                      # <src_dir> <dst_dir>
         cp "$f" "$dst/$rel"
     done < <(find "$src" -type f -name '*.opts' 2>/dev/null)
 }
-stage_opts "$GEOMETRY_DIR"   "$BATCH_PARENT/inputs_snapshot/geometry"
-stage_opts "$EXPERIMENT_DIR" "$BATCH_PARENT/inputs_snapshot/experiment"
+stage_opts "$GEOMETRY_DIR"   "$INSNAP/geometry"
+stage_opts "$EXPERIMENT_DIR" "$INSNAP/experiment"
 for ext in c h; do
-    cp "$PROJECT_ROOT/src/"*.$ext     "$BATCH_PARENT/src_snapshot/"      2>/dev/null || true
+    cp "$PROJECT_ROOT/src/"*.$ext     "$SRCSNAP/"      2>/dev/null || true
 done
-cp -r "$PROJECT_ROOT/include"          "$BATCH_PARENT/src_snapshot/"      2>/dev/null || true
-cp    "$PROJECT_ROOT/makefile"         "$BATCH_PARENT/src_snapshot/"      2>/dev/null || true
+cp -r "$PROJECT_ROOT/include"          "$SRCSNAP/"      2>/dev/null || true
+cp    "$PROJECT_ROOT/makefile"         "$SRCSNAP/"      2>/dev/null || true
 cp    "$PROJECT_ROOT/postprocess"      -r  "$BATCH_PARENT/"               2>/dev/null || true
-cp    "${BASH_SOURCE[0]}"              "$BATCH_PARENT/submit_batch.sh"
+cp    "${BASH_SOURCE[0]}"              "$BATCH_PARENT/submit_batch${SNAP_SFX}.sh"
 
 # Copy the local-postprocessing helper (for after the user downloads the batch)
 if [[ -f "$PROJECT_ROOT/postprocess/run_batch_postprocess.sh" ]]; then

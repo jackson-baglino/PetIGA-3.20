@@ -26,8 +26,12 @@ apex) that fills the pore (a plug). Its faces start at --lens-theta, the
 contact angle measured through the ice, which should be the run's wall-BC
 angle (user, 2026-11-09: a lens first relaxes to the BC angle, so start it
 there):
-  theta = 90   flat faces: the intersection of two far, crossed discs, as in
-               plan types 3 and 4 (-bridge_*).
+  theta = 90   exactly flat faces: -ice_flat_x/-ice_flat_R/-ice_flat_height
+               (IceFlatField, src/initial_conditions.c), ice on |x - x_l| < L/2
+               below a height well above the top wall. Until 2026-11-12 this
+               case used two far, crossed discs (R = 7.5 mm), whose faces sat
+               (W/2)^2/(2R) = 0.375 um out of flat with the axis ahead; the
+               user ruled that seed unacceptable (6B-1 is void).
   theta < 90   concave faces, arcs of radius R = (W/2)/cos(theta) centered on
                the axis outside the ice (-bridge_concaveL/R 1, FREEZE ledger
                18270f6f). The ice reaches sag = R - sqrt(R^2 - (W/2)^2) past
@@ -146,11 +150,12 @@ def main(argv=None) -> int:
     th = a.lens_theta
     assert 0.0 < th < 180.0, "--lens-theta must be in (0, 180) deg"
     ct = math.cos(math.radians(th))
-    if abs(ct) < 1e-12:                         # flat faces: far discs (face sag (W/2)^2/(2R))
-        R, concave = 50.0 * max(w, 1.25e-4), False
+    flat = abs(ct) < 1e-12
+    if flat:                                    # exactly flat faces (IceFlatField); no arc
+        R, concave = math.inf, False
     else:
         R, concave = 0.5 * w / abs(ct), ct > 0
-    sag = R - math.sqrt(R * R - (0.5 * w) ** 2)
+    sag = 0.0 if flat else R - math.sqrt(R * R - (0.5 * w) ** 2)
     # extent of the ice along x, at the walls for concave faces, on the axis otherwise
     x_a, x_b, ax_a, ax_b = (x_a - sag, x_b + sag, x_a, x_b) if concave else (x_a, x_b, x_a, x_b)
     if x_a > flat_hi:
@@ -173,7 +178,7 @@ def main(argv=None) -> int:
     print(f"  wide sections flat on x 0-{flat_lo*1e6:.1f} and {flat_hi*1e6:.1f}-{lx*1e6:.1f} um")
     print(f"  steepest wall slope {slope:.3f} ({math.degrees(math.atan(slope)):.1f} deg), mid-shoulder")
     hw = 0.5 * w        # sharp lens area: rectangle -/+ 2 circular segments beyond the axis chord
-    seg = 2 * hw * R - hw * math.sqrt(R * R - hw * hw) - R * R * math.asin(hw / R)
+    seg = 0.0 if flat else 2 * hw * R - hw * math.sqrt(R * R - hw * hw) - R * R * math.asin(hw / R)
     area = a.lens_len * w + (2 * seg if concave else -2 * seg)
     print(f"  lens apexes {ax_a*1e6:.1f}-{ax_b*1e6:.1f} um, ice x {x_a*1e6:.1f}-{x_b*1e6:.1f} um, "
           f"faces at {th:g} deg (R {R:.3e} m, {'concave' if concave else 'convex/flat'})")
@@ -205,12 +210,13 @@ def main(argv=None) -> int:
         bridge = (f"-bridge_cxL {ax_a - R:.6e}\n-bridge_rL  {R:.6e}\n-bridge_cxR {ax_b + R:.6e}\n"
                   f"-bridge_rR  {R:.6e}\n-bridge_cy  {0.5*w:.6e}\n-bridge_concaveL 1\n-bridge_concaveR 1\n")
         face = f"concave faces at {th:g} deg (R = {R:.3e} m, the ice reaches {sag*1e6:.3f} um past each apex at the walls)"
+    elif flat:       # ice on [ax_a, ax_b], full height (the top wall is at y = w)
+        bridge = (f"-ice_flat_x {x_l:.6e}\n-ice_flat_R {0.5*a.lens_len:.6e}\n-ice_flat_height {2*w:.6e}\n")
+        face = f"exactly flat faces (90 deg; -ice_flat_*, ice on x = {ax_a*1e6:.1f}-{ax_b*1e6:.1f} um at every y)"
     else:            # disc centers inside the ice; apex = cxL - R = ax_a, cxR + R = ax_b
         bridge = (f"-bridge_cxL {ax_a + R:.6e}\n-bridge_rL  {R:.6e}\n-bridge_cxR {ax_b - R:.6e}\n"
                   f"-bridge_rR  {R:.6e}\n-bridge_cy  {0.5*w:.6e}\n")
-        face = (f"flat faces (90 deg) from two far, crossed discs (R = {R:.3e} m, face sag {sag*1e6:.3f} um)"
-                if abs(ct) < 1e-12 else
-                f"convex faces at {th:g} deg (R = {R:.3e} m, wall contacts {sag*1e6:.3f} um inside each apex)")
+        face = (f"convex faces at {th:g} deg (R = {R:.3e} m, wall contacts {sag*1e6:.3f} um inside each apex)")
     try:
         rel = dat.relative_to(ROOT)
     except ValueError:

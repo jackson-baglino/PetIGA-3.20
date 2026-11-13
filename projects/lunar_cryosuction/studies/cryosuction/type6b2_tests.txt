@@ -1,2 +1,0 @@
-# Plan type 6B-2 (make_type6_inputs.py --only-6b2, 2026-11-12): theta 90 lens, 80 um neck, G 300 K/m; pairs with 6B-1 (40 um neck).
-dogbone_2D_L1100um_W150um_wc80um_lens90_eps0.86um:t6ls_T-20_G300warmtop_theta90_30d_ac1e-2   # 6B-2

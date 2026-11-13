@@ -1,0 +1,4 @@
+# Plan type 6B reruns (make_type6_inputs.py --only-6b-flat, 2026-11-12): theta 90 lens with exactly flat faces, G 300 K/m, 401 snapshots.
+# Replace the voided 6B-1 (crossed-disc faces, 0.375 um sag) and the unsubmitted 6B-2. Submit --into the type-6 batch.
+dogbone_2D_L1100um_W150um_wc40um_lens90flat_eps0.86um:t6ls_T-20_G300warmtop_theta90_30d_n401_ac1e-2   # 6B-1
+dogbone_2D_L1100um_W150um_wc80um_lens90flat_eps0.86um:t6ls_T-20_G300warmtop_theta90_30d_n401_ac1e-2   # 6B-2
