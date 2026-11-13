@@ -91,6 +91,9 @@ Hypotheses: the user writes them; none recorded yet.
   time ~ 1/G). User chose G 10-20 K/m with a few runs at 50 (2026-11-12);
   RunPlan_2026-11-12 (7 pp.) uses them and adds 6D (theta-90 face stability,
   straight pore, flat face + seed); inputs to rebuild at the new G.
+  6B-1 voided by the user (faces started 0.375 um out of flat); its resume is
+  withdrawn. Flat-face reruns 6B-1/6B-2 (G 300, 401 snapshots) prepared
+  (type6b_flat_tests.txt, solver 5815f290), to go --into the type-6 batch.
   I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 lenses start
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at
