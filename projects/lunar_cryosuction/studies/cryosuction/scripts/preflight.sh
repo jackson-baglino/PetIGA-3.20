@@ -32,7 +32,7 @@ while IFS= read -r line || [[ -n $line ]]; do
     dtr=$(grep -m1 -E "dtmax/tau_sub" "$d/out.txt" | sed 's/^ *//')
     echo "OK   $line"
     echo "     $tau   $dtr"
-    grep -E "h_[xyz] = L/N|eps / smallest|only valid for front|RESOLUTION WARNING" "$d/out.txt" | sed 's/^ */     /'
+    grep -E "h_[xyz] = L/N|h_[xyz] = mapped|eps / smallest|only valid for front|RESOLUTION WARNING" "$d/out.txt" | sed 's/^ */     /'
     grep -q "RESOLUTION WARNING" "$d/out.txt" && fail=1
     grep -E "^ +[xy] = " "$d/out.txt" | sed 's/^/    /'
   else
