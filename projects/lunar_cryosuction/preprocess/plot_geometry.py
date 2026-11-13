@@ -67,6 +67,12 @@ def ice_mask(o, X, Y):
     ax_, ay_ = floats(o, "-ice_grain_ax") or gr, floats(o, "-ice_grain_ay") or gr
     for k in range(len(gx)):
         ice |= ((X - gx[k]) / ax_[k]) ** 2 + ((Y - gy[k]) / ay_[k]) ** 2 <= 1.0
+    fx, fr, fh = floats(o, "-ice_flat_x"), floats(o, "-ice_flat_R"), floats(o, "-ice_flat_height")
+    seed = float(o.get("-ice_flat_seed", 0) or 0)
+    ly = float(o.get("-Ly", 0) or 0)
+    for k in range(len(fx)):         # src/initial_conditions.c IceFlatField (+ -ice_flat_seed)
+        xl = fx[k] - fr[k] + (seed * np.cos(2 * np.pi * Y / ly) if seed and ly else 0.0)
+        ice |= (X >= xl) & (X <= fx[k] + fr[k]) & (Y <= fh[k])
     return ice
 
 

@@ -28,3 +28,5 @@
 -gamma_is 0.3000000                     # cos(theta) = +0.000000
 -dtCFL 1
 -outp 0
+-outp_dphi 0.5                          # extra snapshot when phi changed by 0.5 anywhere (e5a593e7)
+-outp_dphi_min_dt 3600                  # at most one such snapshot an hour

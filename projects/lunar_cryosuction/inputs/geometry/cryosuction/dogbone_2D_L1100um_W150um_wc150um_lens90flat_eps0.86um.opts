@@ -1,0 +1,38 @@
+# =============================================================================
+# geometry dogbone_2D_L1100um_W150um_wc150um_lens90flat_eps0.86um.opts   (preprocess/build_geometry_dogbone.py)
+# Plan type 6 (make_type6_inputs.py, 2026-11-12): dog-bone pore, neck wc = 150 um (= W: no constriction), lens faces at 90 deg.
+#
+# Dog-bone pore: wide sections W = 150.0 um, straight neck wc = 150.0 um on
+# x = 400.0-700.0 um, C-infinity shoulders 100.0 um long (steepest wall
+# slope 0.000); walls flat on x = 0-300.0 and 800.0-1100.0 um.
+# The walls are in the mesh (dogbone_wc150um.dat); y0 and y1 are wall faces, x0 and x1 are
+# the pore ends.
+#
+# The -Ly / default flat walls below are ONLY for the initial-condition layout.
+# The lens sits where the walls are exactly flat (y = 0 and y = W), so the IC
+# is exact there; elsewhere the IC is ice-free. See the builder's docstring.
+# Postprocessing must take wall positions from the mesh or from this line:
+# DOGBONE: W 1.500000e-04 wc 1.500000e-04 x_n0 4.000000e-04 x_n1 7.000000e-04 shoulder 1.000000e-04
+#
+# Lens: apexes on the axis x = 875.0-1025.0 um, ice x = 875.0-1025.0 um,
+# exactly flat faces (90 deg; -ice_flat_*, ice on x = 875.0-1025.0 um at every y).
+# eps 8.5840e-07 m (production value, issue 1), h = eps/sqrt(2): Nx 1813, Ny 248.
+# =============================================================================
+# DOF_GRID: 1815 250
+-geom_file inputs/geometry/meshes/dogbone_wc150um.dat
+-p 2
+-C 1
+-ic_type multi_grains
+-dim 2
+-Lx 1.100000e-03
+-Ly 1.500000e-04
+-Lz 0
+-ice_flat_x 9.500000e-04
+-ice_flat_R 7.500000e-05
+-ice_flat_height 3.000000e-04
+-delt_t 1.0e-4
+-eps 8.5840e-07
+-eps_valid_temp -20
+-periodic 0
+-wall_faces y0,y1
+-dtmax 1.3412e+03

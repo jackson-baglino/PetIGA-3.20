@@ -1,0 +1,7 @@
+# Plan type 6D (make_type6_inputs.py --plan-1112, 2026-11-12): theta-90 face stability in the straight 1100 um pore; flat faces, warm face seeded 0.25 um (axis 0.5 um ahead). Submit --into the type-6 batch.
+dogbone_2D_L1100um_W150um_wc150um_lens90flat_seed0.25um_eps0.86um:t6ls_T-20_G10warmtop_theta90_120d_n401_ac1e-2   # 6D-1
+dogbone_2D_L1100um_W150um_wc150um_lens90flat_seed0.25um_eps0.86um:t6ls_T-20_G20warmtop_theta90_120d_n401_ac1e-2   # 6D-2
+dogbone_2D_L1100um_W150um_wc150um_lens90flat_seed0.25um_eps0.86um:t6ls_T-20_G50warmtop_theta90_60d_n401_ac1e-2   # 6D-3
+dogbone_2D_L1100um_W75um_wc75um_lens90flat_seed0.25um_eps0.86um:t6ls_T-20_G50warmtop_theta90_60d_n401_ac1e-2   # 6D-4 (W 75 um)
+dogbone_2D_L1100um_W150um_wc150um_lens90flat_eps0.86um:t6ls_T-20_G50warmtop_theta90_60d_n401_ac1e-2   # 6D-5 (no seed)
+dogbone_2D_L1100um_W150um_wc150um_lens75_eps0.86um:t6ls_T-20_G50warmtop_theta75_60d_n401_ac1e-2   # 6D-6 (theta 75)

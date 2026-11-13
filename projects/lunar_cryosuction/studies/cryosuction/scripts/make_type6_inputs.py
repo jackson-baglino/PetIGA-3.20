@@ -60,24 +60,26 @@ NECKS = (4.0e-5, 8.0e-5, 1.5e-4)
 TODAY = datetime.date.today().isoformat()
 
 
-def geom_name(wc, theta):
+def geom_name(wc, theta, w=W, seed=0.0):
     lens = "90flat" if theta == 90 else f"{theta:g}"
-    return f"dogbone_2D_L{LX*1e6:.0f}um_W150um_wc{wc*1e6:.0f}um_lens{lens}_eps0.86um"
+    sd = f"_seed{seed*1e6:g}um" if seed else ""
+    return f"dogbone_2D_L{LX*1e6:.0f}um_W{w*1e6:.0f}um_wc{wc*1e6:.0f}um_lens{lens}{sd}_eps0.86um"
 
 
-def build_geometry(wc, theta, dtmax, dry, keep_mesh=False):
+def build_geometry(wc, theta, dtmax, dry, keep_mesh=False, w=W, seed=0.0):
     """keep_mesh: the mesh file exists and is used by runs already made; build
     into a temporary file and require it to be byte-identical, so the shared
     mesh is never silently replaced."""
-    name = geom_name(wc, theta)
-    final = MESH / f"dogbone_wc{wc*1e6:.0f}um.dat"
+    name = geom_name(wc, theta, w, seed)
+    final = MESH / (f"dogbone_wc{wc*1e6:.0f}um.dat" if w == W else f"dogbone_W{w*1e6:.0f}um_wc{wc*1e6:.0f}um.dat")
+    keep_mesh = keep_mesh and final.exists()
     dat = final.with_suffix(".new.dat") if keep_mesh else final
     opts = GEO / f"{name}.opts"
     png = ROOT / f"preprocess/{name}.pdf"
     head = (f"Plan type 6 (make_type6_inputs.py, {TODAY}): dog-bone pore, neck wc = {wc*1e6:.0f} um"
-            + (" (= W: no constriction)" if wc >= W else "") + f", lens faces at {theta:g} deg.")
+            + (" (= W: no constriction)" if wc >= w else "") + (f", W = {w*1e6:.0f} um" if w != W else "") + f", lens faces at {theta:g} deg.")
     cmd = [sys.executable, str(ROOT / "preprocess/build_geometry_dogbone.py"), "--wc", f"{wc:.6e}",
-           "--Lx", f"{LX:.6e}", "--W", f"{W:.6e}", "--eps", f"{EPS:.4e}", "--lens-theta", f"{theta:g}",
+           "--Lx", f"{LX:.6e}", "--W", f"{w:.6e}", "--eps", f"{EPS:.4e}", "--lens-theta", f"{theta:g}",
            "--out", str(dat), "--opts", str(opts), "--png", str(png), "--header", head]
     print("  " + " ".join(c.replace(str(ROOT) + "/", "") for c in cmd[1:-2]) + " --header ...")
     if dry:
@@ -93,11 +95,15 @@ def build_geometry(wc, theta, dtmax, dry, keep_mesh=False):
             raise SystemExit(f"rebuilt mesh differs from {final.relative_to(ROOT)}; not replacing it")
         print(f"    mesh identical to {final.relative_to(ROOT)} (kept)")
         opts.write_text(opts.read_text().replace(dat.name, final.name))
-    opts.write_text(opts.read_text() + f"-dtmax {dtmax:.4e}\n")
+    extra = f"-dtmax {dtmax:.4e}\n"
+    if seed:
+        extra += (f"-ice_flat_seed {seed:.4e}                 # warm (low-x) face x_f - R_f + A cos(2 pi y/Ly): "
+                  f"axis {2*seed*1e6:g} um ahead of the walls (solver fe8a7334)\n")
+    opts.write_text(opts.read_text() + extra)
     return name
 
 
-def experiment(name, theta, G, days, per_day, purpose, dry, n_out=None):
+def experiment(name, theta, G, days, per_day, purpose, dry, n_out=None, event=False):
     lo, hi, Tlo, Thi, _ = fracs(T0, -G, LX, "local-sat")
     gis = gamma_is(theta)
     text = f"""# experiment/cryosuction/{name}.opts   (make_type6_inputs.py, {TODAY})
@@ -130,7 +136,9 @@ def experiment(name, theta, G, days, per_day, purpose, dry, n_out=None):
 -gamma_is {gis:.7f}                     # cos(theta) = {__import__('math').cos(__import__('math').radians(theta)):+.6f}
 -dtCFL 1
 -outp 0
-"""
+""" + ("""-outp_dphi 0.5                          # extra snapshot when phi changed by 0.5 anywhere (e5a593e7)
+-outp_dphi_min_dt 3600                  # at most one such snapshot an hour
+""" if event else "")
     print(f"  {'(dry) ' if dry else ''}wrote {(EXP / f'{name}.opts').relative_to(ROOT)}  "
           f"(rhovfix_lo {lo:.10f}, hi {hi:.10f})")
     if not dry:
@@ -138,9 +146,62 @@ def experiment(name, theta, G, days, per_day, purpose, dry, n_out=None):
     return name
 
 
+G_SET = ((10.0, 360), (20.0, 180), (50.0, 75))   # RunPlan_2026-11-12 6C: G [K/m], days
+
+
+def plan_1112(dtmax, dry):
+    """6C: wc 40/80/150, theta 60, G 10/20/50. 6D: theta-90 face stability in the straight pore."""
+    print("\n6C geometries (existing lens60, shared meshes)")
+    g60 = {wc: build_geometry(wc, 60, dtmax, dry, keep_mesh=True) for wc in NECKS}
+    print("\n6D geometries")
+    seed = 0.25e-6                                    # axis leads the walls by 0.5 um
+    d150s = build_geometry(W, 90, dtmax, dry, keep_mesh=True, seed=seed)
+    d150 = build_geometry(W, 90, dtmax, dry, keep_mesh=True)
+    d75s = build_geometry(75e-6, 90, dtmax, dry, w=75e-6, seed=seed)
+    d150_75 = build_geometry(W, 75, dtmax, dry, keep_mesh=True)
+    print("\nExperiments")
+    ex = {}
+    for G, days in G_SET:
+        ex[(60, G)] = experiment(f"t6ls_T-20_G{G:g}warmtop_theta60_{days}d_n401_ac1e-2", 60, G, days, None,
+                                 f"Plan type 6C (RunPlan_2026-11-12): lens through a neck, G = {G:g} K/m.",
+                                 dry, n_out=401, event=True)
+    for G, days in ((10.0, 120), (20.0, 120), (50.0, 60)):
+        ex[(90, G)] = experiment(f"t6ls_T-20_G{G:g}warmtop_theta90_{days}d_n401_ac1e-2", 90, G, days, None,
+                                 f"Plan type 6D (RunPlan_2026-11-12): theta-90 face stability, G = {G:g} K/m.",
+                                 dry, n_out=401, event=True)
+    ex[(75, 50.0)] = experiment("t6ls_T-20_G50warmtop_theta75_60d_n401_ac1e-2", 75, 50.0, 60, None,
+                                "Plan type 6D-6 (RunPlan_2026-11-12): theta 75, straight pore, G = 50 K/m.",
+                                dry, n_out=401, event=True)
+    c = [f"# Plan type 6C (make_type6_inputs.py --plan-1112, {TODAY}): theta-60 lens through necks of 40, 80 "
+         f"and 150 um at G 10, 20, 50 K/m. Submit --into the type-6 batch."]
+    k = 1
+    for G, _ in G_SET:
+        for wc in NECKS:
+            c.append(f"{g60[wc]}:{ex[(60, G)]}   # 6C-{k}")
+            k += 1
+    d = [f"# Plan type 6D (make_type6_inputs.py --plan-1112, {TODAY}): theta-90 face stability in the straight "
+         f"1100 um pore; flat faces, warm face seeded {seed*1e6:g} um (axis 0.5 um ahead). Submit --into the type-6 batch.",
+         f"{d150s}:{ex[(90, 10.0)]}   # 6D-1",
+         f"{d150s}:{ex[(90, 20.0)]}   # 6D-2",
+         f"{d150s}:{ex[(90, 50.0)]}   # 6D-3",
+         f"{d75s}:{ex[(90, 50.0)]}   # 6D-4 (W 75 um)",
+         f"{d150}:{ex[(90, 50.0)]}   # 6D-5 (no seed)",
+         f"{d150_75}:{ex[(75, 50.0)]}   # 6D-6 (theta 75)"]
+    for name, lines in (("type6c_tests.txt", c), ("type6d_tests.txt", d)):
+        path = STUDY / name
+        print(f"\n  {'(dry) ' if dry else ''}wrote {path.relative_to(ROOT)}")
+        print("\n".join("    " + ln for ln in lines))
+        if not dry:
+            path.write_text("\n".join(lines) + "\n")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true", help="print what would be written")
+    ap.add_argument("--plan-1112", action="store_true",
+                    help="write 6C (G 10/20/50, theta 60) and 6D (face stability) of RunPlan_2026-11-12, "
+                         "type6c_tests.txt and type6d_tests.txt")
     ap.add_argument("--only-6b-flat", action="store_true",
                     help="write only the flat-face 6B-1/6B-2 reruns (401 snapshots) and type6b_flat_tests.txt")
     a = ap.parse_args()
@@ -151,7 +212,7 @@ def main() -> int:
         g = {wc: build_geometry(wc, 90, dtmax, a.dry_run, keep_mesh=True) for wc in NECKS[:2]}
         e = experiment("t6ls_T-20_G300warmtop_theta90_30d_n401_ac1e-2", 90, 300.0, 30, None,
                        "Plan type 6B-1/6B-2 rerun (2026-11-12): theta 90, exactly flat starting faces, "
-                       "401 snapshots for movies.", a.dry_run, n_out=401)
+                       "401 snapshots for movies.", a.dry_run, n_out=401, event=True)
         path = STUDY / "type6b_flat_tests.txt"
         text = (f"# Plan type 6B reruns (make_type6_inputs.py --only-6b-flat, {TODAY}): theta 90 lens with "
                 f"exactly flat faces, G 300 K/m, 401 snapshots.\n# Replace the voided 6B-1 (crossed-disc "
@@ -161,6 +222,8 @@ def main() -> int:
         if not a.dry_run:
             path.write_text(text)
         return 0
+    if a.plan_1112:
+        return plan_1112(dtmax, a.dry_run)
     print("\nType 6 geometry")
     geo = {wc: build_geometry(wc, 60, dtmax, a.dry_run) for wc in NECKS}
     geo90 = build_geometry(NECKS[0], 90, dtmax, a.dry_run)

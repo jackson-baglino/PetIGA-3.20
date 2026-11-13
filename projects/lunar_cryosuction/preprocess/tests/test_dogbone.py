@@ -63,12 +63,15 @@ class Builder(unittest.TestCase):
         self.assertEqual(rc, 0, log)
         self.assertIn("-wall_faces y0,y1", text)
         self.assertRegex(text, r"# DOGBONE: W 5\.000000e-05 wc 4\.000000e-05 x_n0 1\.500000e-04 x_n1 2\.500000e-04")
-        r = float(re.search(r"-bridge_rL\s+(\S+)", text).group(1))
-        cxl = float(re.search(r"-bridge_cxL\s+(\S+)", text).group(1))
-        cxr = float(re.search(r"-bridge_cxR\s+(\S+)", text).group(1))
+        # theta 90 (default): exactly flat faces from -ice_flat_* (no crossed discs since 2026-11-12)
+        self.assertNotIn("-bridge_", text)
+        xf = float(re.search(r"-ice_flat_x\s+(\S+)", text).group(1))
+        rf = float(re.search(r"-ice_flat_R\s+(\S+)", text).group(1))
+        hf = float(re.search(r"-ice_flat_height\s+(\S+)", text).group(1))
         # lens in the middle of the right flat section: 290-400 um, centered 345 um, 40 um long
-        self.assertAlmostEqual((cxl - r) * 1e6, 325.0, places=3)
-        self.assertAlmostEqual((cxr + r) * 1e6, 365.0, places=3)
+        self.assertAlmostEqual((xf - rf) * 1e6, 325.0, places=3)
+        self.assertAlmostEqual((xf + rf) * 1e6, 365.0, places=3)
+        self.assertGreater(hf, 5e-5)                     # above the top wall: ice across the pore
         self.assertIn("mesh wall vs profile", log)
 
     def test_concave_lens_at_60_deg(self):

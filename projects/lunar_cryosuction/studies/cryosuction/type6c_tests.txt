@@ -1,0 +1,10 @@
+# Plan type 6C (make_type6_inputs.py --plan-1112, 2026-11-12): theta-60 lens through necks of 40, 80 and 150 um at G 10, 20, 50 K/m. Submit --into the type-6 batch.
+dogbone_2D_L1100um_W150um_wc40um_lens60_eps0.86um:t6ls_T-20_G10warmtop_theta60_360d_n401_ac1e-2   # 6C-1
+dogbone_2D_L1100um_W150um_wc80um_lens60_eps0.86um:t6ls_T-20_G10warmtop_theta60_360d_n401_ac1e-2   # 6C-2
+dogbone_2D_L1100um_W150um_wc150um_lens60_eps0.86um:t6ls_T-20_G10warmtop_theta60_360d_n401_ac1e-2   # 6C-3
+dogbone_2D_L1100um_W150um_wc40um_lens60_eps0.86um:t6ls_T-20_G20warmtop_theta60_180d_n401_ac1e-2   # 6C-4
+dogbone_2D_L1100um_W150um_wc80um_lens60_eps0.86um:t6ls_T-20_G20warmtop_theta60_180d_n401_ac1e-2   # 6C-5
+dogbone_2D_L1100um_W150um_wc150um_lens60_eps0.86um:t6ls_T-20_G20warmtop_theta60_180d_n401_ac1e-2   # 6C-6
+dogbone_2D_L1100um_W150um_wc40um_lens60_eps0.86um:t6ls_T-20_G50warmtop_theta60_75d_n401_ac1e-2   # 6C-7
+dogbone_2D_L1100um_W150um_wc80um_lens60_eps0.86um:t6ls_T-20_G50warmtop_theta60_75d_n401_ac1e-2   # 6C-8
+dogbone_2D_L1100um_W150um_wc150um_lens60_eps0.86um:t6ls_T-20_G50warmtop_theta60_75d_n401_ac1e-2   # 6C-9
