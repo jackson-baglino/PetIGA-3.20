@@ -467,7 +467,7 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
     ierr = VecStrideNorm(user->out_diff, 0, NORM_INFINITY, &dmax); CHKERRQ(ierr);
     if (dmax >= user->outp_dphi) {
       print = 1; event = PETSC_TRUE; user->n_event_out++;
-      PetscPrintf(PETSC_COMM_WORLD, "OUTPUT event: max|dphi| since last snapshot %.3f >= %.3f at t = %.6e s\n",
+      PetscPrintf(PETSC_COMM_WORLD, "OUTPUT event: max|dphi| since last snapshot %.3e >= %.3e at t = %.6e s\n",
                   (double)dmax, (double)user->outp_dphi, (double)t);
     }
   }
