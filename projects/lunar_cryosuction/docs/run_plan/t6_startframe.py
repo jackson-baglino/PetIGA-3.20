@@ -11,15 +11,20 @@ Everything drawn comes from the run folder, not from a sketch:
   - neck width and extent: the "# DOGBONE:" line of the geometry .opts;
   - lens extent: phi = 1/2 crossings of the t = 0 field, on the axis and on
     the first row of nodes off each wall.
-The lower panels give T and rho_v along the pore axis at t = 0.
+The second pore panel maps the vapor saturation S = rho_v/rho_vs(T) - 1 in
+the gas at the first snapshot at or after --sat-day (default 1 d): at t = 0
+S is zero everywhere (the initial vapor is saturated at the local T), so the
+map is taken once the start-up transient has passed. The lower panels give T
+and rho_v along the pore axis at t = 0.
 
 Checked with postprocess/figcheck.py at the placed width (7 in); exits 1 when
 a check fails.
 
-    venv_cryosuction/bin/python docs/run_plan/t6_startframe.py <run folder> <out.png>
+    venv_cryosuction/bin/python docs/run_plan/t6_startframe.py <run folder> <out.png> [--sat-day 1]
 """
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -97,16 +102,25 @@ def rng(h, nd=2):
     return f"{lo:.{nd}f}" if abs(hi - lo) < 10 ** -nd else f"{lo:.{nd}f}–{hi:.{nd}f}"
 
 
-def main(run: Path, out: Path) -> int:
+def orient(s):
+    """X, Y, phi, T, rho_v of a snapshot with the along-wall index second, in um."""
+    X, Y, F = s.X * UM, s.Y * UM, (s.phi, s.T, s.rhov)
+    if np.ptp(Y[0, :]) > np.ptp(Y[:, 0]):
+        X, Y, F = X.T, Y.T, tuple(f.T for f in F)
+    return (X, Y, *F)
+
+
+def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
     o = pplib.read_opts(str(run))
     db, lg = dogbone(run), log_values(run)
     hx, hy, deg = mesh_sizes(run)
-    s = next(iter(pplib.iter_snapshots(str(run))))
-    X, Y, phi = s.X * UM, s.Y * UM, s.phi
-    if np.ptp(Y[0, :]) > np.ptp(Y[:, 0]):        # put the along-wall index second
-        X, Y, phi, T, rv = X.T, Y.T, phi.T, s.T.T, s.rhov.T
-    else:
-        T, rv = s.T, s.rhov
+    it = pplib.iter_snapshots(str(run))
+    X, Y, phi, T, rv = orient(next(it))
+    ss = next((q for q in it if q.t >= sat_day * 86400), None)
+    if ss is None:
+        raise ValueError(f"no snapshot at or after {sat_day} d")
+    _, _, phi_s, T_s, rv_s = orient(ss)
+    S = rv_s / pplib.rho_vs(T_s) - 1.0
     lx, W = X.max(), db["W"] * UM
     wc, xn0, xn1, sh = db["wc"] * UM, db["x_n0"] * UM, db["x_n1"] * UM, db["shoulder"] * UM
     eps = float(o["-eps"]) * UM
@@ -127,7 +141,8 @@ def main(run: Path, out: Path) -> int:
     xl = (-20, lx + 20)
     h_pore = ax_w * (yl[1] - yl[0]) / (xl[1] - xl[0])
     top_in, mid_in, prof_in, bot_in = 0.62, 0.95, 1.05, 0.42
-    H = top_in + h_pore + mid_in + prof_in + bot_in
+    sat_top, sat_gap = 0.22, 0.55
+    H = top_in + h_pore + mid_in + sat_top + h_pore + sat_gap + prof_in + bot_in
     fig = plt.figure(figsize=(FIG_W, H))
     ax = fig.add_axes((0.2 / FIG_W, (H - top_in - h_pore) / H, ax_w / FIG_W, h_pore / H))
 
@@ -135,14 +150,17 @@ def main(run: Path, out: Path) -> int:
     pc = ax.pcolormesh(X, Y * ex, phi, cmap="Blues", vmin=0, vmax=1, shading="gouraud", rasterized=True,
                        zorder=1)
     ax.contour(X, Y * ex, phi, levels=[0.5], colors=["#1f4e8c"], linewidths=0.8, zorder=3)
-    # walls (hatched regolith) from the mesh boundary rows
-    for j, sgn in ((0, -1), (-1, 1)):
-        x, y = X[j], Y[j] * ex
-        yb = (y.min() - 9) if sgn < 0 else (y.max() + 9)
-        ax.fill(np.r_[x, x[::-1]], np.r_[y, np.full_like(y, yb)], fc=ROCK_F, ec=ROCK_E, lw=0.8,
-                hatch="////", zorder=2)
-    for xe, k in ((0, 0), (lx, -1)):
-        ax.plot([xe, xe], [Y[0, k] * ex, Y[-1, k] * ex], color=INK, lw=1.0, ls=(0, (3, 2)), zorder=3)
+    def walls(a):
+        """Hatched regolith from the mesh boundary rows, dashed pore ends."""
+        for j, sgn in ((0, -1), (-1, 1)):
+            x, y = X[j], Y[j] * ex
+            yb = (y.min() - 9) if sgn < 0 else (y.max() + 9)
+            a.fill(np.r_[x, x[::-1]], np.r_[y, np.full_like(y, yb)], fc=ROCK_F, ec=ROCK_E, lw=0.8,
+                   hatch="////", zorder=2)
+        for xe, k in ((0, 0), (lx, -1)):
+            a.plot([xe, xe], [Y[0, k] * ex, Y[-1, k] * ex], color=INK, lw=1.0, ls=(0, (3, 2)), zorder=3)
+
+    walls(ax)
 
     def hdim(a, b, yy, txt, va="top"):
         ax.annotate("", (a, yy), (b, yy), arrowprops=dict(arrowstyle="<->", color=GRAY, lw=0.6,
@@ -216,6 +234,29 @@ def main(run: Path, out: Path) -> int:
                 + f"{3 * (lg['nx'] + deg[0]) * (lg['ny'] + deg[1]) / 1e6:.2f} M DOF.")
     fig.text(0.2 / FIG_W, (ywall - 0.04) / H, wall_txt, ha="left", va="top", linespacing=1.3)
 
+    # vapor saturation in the gas at the first snapshot at or after sat_day
+    y_sat = H - top_in - h_pore - mid_in - sat_top - h_pore
+    axs = fig.add_axes((0.2 / FIG_W, y_sat / H, ax_w / FIG_W, h_pore / H))
+    gas = phi_s < 0.5
+    lim = float(np.percentile(np.abs(S[gas]), 99.5))
+    Sm = np.ma.masked_where(~gas, S)
+    pcs = axs.pcolormesh(X, Y * ex, Sm, cmap="RdBu_r", vmin=-lim, vmax=lim, shading="gouraud",
+                         rasterized=True, zorder=1)
+    axs.contourf(X, Y * ex, phi_s, levels=[0.5, 1.01], colors=["#c6dbef"], zorder=1)
+    axs.contour(X, Y * ex, phi_s, levels=[0.5], colors=["#1f4e8c"], linewidths=0.8, zorder=3)
+    walls(axs)
+    axs.set_xlim(*xl)
+    axs.set_ylim(*yl)
+    axs.axis("off")
+    axs.set_title(rf"Vapor saturation $S = \rho_v/\rho_{{vs}}(T) - 1$ in the gas at $t$ = {ss.t / 86400:.2f} d "
+                  rf"(at $t$ = 0, $S$ = 0 everywhere); ice ($\phi$ > 1/2) in pale blue; "
+                  rf"gas range {S[gas].min():.2e} to {S[gas].max():.2e}",
+                  fontsize=7.5, loc="left", pad=3)
+    caxs = fig.add_axes(((0.2 + ax_w + 0.05) / FIG_W, (y_sat + 0.2) / H, 0.06 / FIG_W, (h_pore - 0.45) / H))
+    cbs = fig.colorbar(pcs, cax=caxs, ticks=[-lim, 0, lim], format="%.1e")
+    cbs.ax.tick_params(labelsize=7, length=2, pad=1)
+    caxs.set_title(r"$S$", fontsize=7.5, pad=2)
+
     # axis profiles at t = 0
     pw = (FIG_W - 0.2 - 0.55 - 0.6) / 2
     yb = bot_in / H
@@ -236,10 +277,16 @@ def main(run: Path, out: Path) -> int:
         print("  FAIL:", b)
     fig.savefig(out, dpi=300)
     print(f"{out}: {len(bad)} problems, {FIG_W} x {H:.2f} in")
+    print(f"  saturation map at t = {ss.t / 86400:.3f} d: gas S {S[gas].min():.3e} to {S[gas].max():.3e}")
     print(f"  lens phi=1/2 on axis: {np.round(x_ax, 1)} um; near walls: {np.round(x_w0, 1)}, "
           f"{np.round(x_w1, 1)} um; theta from gammas {theta:.2f} deg (log {lg['theta_log']})")
     return 1 if bad else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main(Path(sys.argv[1]), Path(sys.argv[2])))
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("run", type=Path)
+    ap.add_argument("out", type=Path)
+    ap.add_argument("--sat-day", type=float, default=1.0, help="day of the saturation map")
+    a = ap.parse_args()
+    sys.exit(main(a.run, a.out, a.sat_day))

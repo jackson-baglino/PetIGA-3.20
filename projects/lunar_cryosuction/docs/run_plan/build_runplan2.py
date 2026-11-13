@@ -23,8 +23,8 @@ from docx_helpers import *  # noqa: E402,F401,F403
 from docx_helpers import GRAYT, H, Inches, P, Pt, T, WD_ALIGN_PARAGRAPH, doc, rich  # noqa: E402
 
 # ------------------------------------------------------------------ gradients (one place)
-G_PROD = (10, 20)          # production gradients [K/m]; pending the user's check
-G_HIGH = 50                # one point above the face-stability estimate of a 150 um pore
+G_PROD = (10, 20)          # production gradients [K/m]; chosen by the user 2026-11-12
+G_HIGH = 50                # a few runs above the face-stability estimate of a 150 um pore (user)
 G_ONE = G_PROD[1]          # gradient of the single-G series (position, size, vapor set)
 S_LN = 9.60556e-2          # d ln(rho_vs)/dT at -20 C [1/K] (plan_estimates.py, inputs)
 
@@ -78,9 +78,9 @@ P("All runs solve the two-phase phase-field model of ice sublimation and deposit
   "drift and growth of single bodies, the exchange of mass between bodies, the effect of pore shape "
   "(taper, throat, neck) on the motion of a lens, and the rate at which ice leaves a pore through a "
   "collector.")
-P(f"**Gradients.** Production gradients are G = {GP} K/m, with G = {G_HIGH} K/m as one point per type "
-  "above the face-stability estimate for a 150 µm pore (18.5 K/m in the gas, plan_estimates.py section 6b); "
-  "these values await the user's check. The estimated migration speed is 1.5, 2.9 and 7.3 µm/d at G = 10, "
+P(f"**Gradients.** Production gradients are G = {GP} K/m (chosen 12 November), with a few runs at "
+  f"G = {G_HIGH} K/m, above the face-stability estimate for a 150 µm pore (18.5 K/m in the gas, "
+  "plan_estimates.py section 6b), for selected geometries and contact angles. The estimated migration speed is 1.5, 2.9 and 7.3 µm/d at G = 10, "
   "20 and 50 K/m (plan_estimates.py section 3).", size=9.5)
 T(["Term", "Definition"], [
     ["closed", "zero vapor flux on both ends"],
@@ -92,6 +92,8 @@ T(["Term", "Definition"], [
      "stated; $x = L_x$ a sealed dead end"],
     ["numerics", "ε = 0.858 µm (0.800 µm for types 2 and 5, whose smallest feature is 20 µm); elements "
      "0.6 µm; $\\mathrm{dt}_{\\max} = 2\\tau_{\\mathrm{sub}}$; 50 000 DOF per core"],
+    ["snapshots", "401 per run (-outp 0 -n_out 401) for movies; about 11 MB each on a 1.36 M DOF mesh "
+     "(4.4 GB per type 6 run)"],
     ["states", "done: ran and analyzed; ran: analysis open; queued: inputs pushed, submission pending; "
      "ready: inputs built and preflight passed; to build: inputs not written"],
 ], [1.35, 5.25], size=8)
@@ -193,7 +195,8 @@ para("Analysis.", "ice_bodies.py: lens center $x_c(t)$, its rest position agains
 # ================================================================== type 6
 H("7. Type 6: lens through a constriction", 1)
 fig("type6", "Figure 6. Type 6: 1100 µm pore, 150 µm wide, neck of width $w_c$ on x = 400–700 µm; the "
-    "lens starts in the cold section (θ = 60°: concave faces; 6B: flat faces).")
+    "lens starts in the cold section (θ = 60°: concave faces; 6B: faces drawn as arcs of radius 7.5 mm, "
+    "0.38 µm from flat; 6D: flat faces from a φ file).")
 para("Simulations.", "A lens in the cold section moves toward the warm end under G and passes through a "
      "neck. $w_c$ = 150 µm is the straight-pore reference.")
 para("Varied.", "$w_c$; G; θ.")
@@ -205,9 +208,23 @@ runs([
     ["6C-1…3", "$w_c$ = 40, 80, 150 µm; θ 60°", str(G_PROD[0]), "ls", "360", "to build"],
     ["6C-4…6", "$w_c$ = 40, 80, 150 µm; θ 60°", str(G_PROD[1]), "ls", "180", "to build"],
     ["6C-7…9", "$w_c$ = 40, 80, 150 µm; θ 60°", str(G_HIGH), "ls", "75", "to build"],
-    ["6D-1", "$w_c$ = 150 µm; θ 90°", str(G_ONE), "ls", "180", "to build"],
+    ["6D-1…3", "straight, W 150 µm; θ 90°; flat + 0.5 µm seed", GA, "ls", "120, 120, 60", "to build"],
+    ["6D-4", "straight, W 75 µm; θ 90°; flat + 0.5 µm seed", str(G_HIGH), "ls", "60", "to build"],
+    ["6D-5", "straight, W 150 µm; θ 90°; flat, no seed", str(G_HIGH), "ls", "60", "to build"],
+    ["6D-6", "straight, W 150 µm; θ 75°", str(G_HIGH), "ls", "60", "to build"],
 ], var="Varied")
-para("Analysis.", "ice_bodies.py: x of the warm and cold faces on the axis and at each wall against t; "
+para("6D, face stability.", "A depositing face in a pore of width W with no-flux walls is predicted "
+     "unstable to the symmetric mode (axis and walls moving apart, wavenumber $k = 2\\pi/W$) when the "
+     "gas gradient exceeds $G_s = (2\\pi/W)^2 d_0/s$, with growth rate "
+     "$\\sigma = (D_v \\rho_{vs}/\\rho_i)\\,k\\,(s G_{\\mathrm{gas}} - d_0 k^2)$ (linear, flat base "
+     "face; plan_estimates.py section 6b). $G_s$ is 18.5 K/m in the gas for W = 150 µm (16 K/m nominal in "
+     "the straight pore) and 74 K/m for W = 75 µm, so 6D-1 is below, 6D-2 and 6D-3 above, and 6D-4 below "
+     "it. The flat face with a cosine seed of 0.5 µm needs a flat-face feature in build_ice_layout.py "
+     "(-ic_type phi_file; no solver change). 6D-5 shows whether the face deforms without a seed; 6D-6 "
+     "and 6C-9 (θ 60°) give the effect of a curved starting face at the same G.")
+para("Analysis.", "6D: amplitude A(t) = x(axis) − x(wall) of each face; σ from the slope of ln|A| "
+     "against t, compared with the formula above; the G and W at which σ changes sign. 6A–6C: "
+     "ice_bodies.py: x of the warm and cold faces on the axis and at each wall against t; "
      "times at which the lead face enters and leaves the neck; transit time against $w_c$. section_flux.py: "
      "vapor flux through a line across the neck against the face speed. water_budget.py: ice gained from "
      "the reservoirs. resolution.dat: Π. Estimated cost (plan_estimates.py section 7d): 22–108 h per 6C "
