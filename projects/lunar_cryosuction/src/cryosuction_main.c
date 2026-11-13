@@ -269,6 +269,12 @@ int main(int argc, char *argv[]) {
     PetscBool rhovfix_faces_any = PETSC_FALSE, Tfix_faces_any = PETSC_FALSE;
     PetscBool test_wall_measure = PETSC_FALSE;
     PetscBool test_wall_jacobian = PETSC_FALSE;
+    /* Thermal face conditions (opt-in; empty = every face insulated or as
+     * -flag_BC_Tfix leaves it). See NASA_types.h and assembly.c. */
+    char      qflux_faces[64] = "";
+    char      Twall_faces[64] = "";
+    PetscReal twall_Tinit_opt = 0.0;
+    PetscBool twall_Tinit_set = PETSC_FALSE;
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 2;          /* Polynomial order */
@@ -900,6 +906,39 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-test_wall_measure", "DEBUG: assemble the wall term on a uniform phi=1/2 field, check its surface measure, and exit", "", test_wall_measure, &test_wall_measure, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-test_wall_jacobian", "DEBUG: check the analytic Jacobian against finite differences on the initial condition, and exit", "", test_wall_jacobian, &test_wall_jacobian, NULL); CHKERRQ(ierr);
 
+    /* --- Thermal face conditions (opt-in; default: none) -----------------
+     * -qflux_faces: prescribed heat flux k dT/dn = q (q > 0 into the domain).
+     * -Twall_faces: prescribed wall temperature T_w(s,t), imposed weakly
+     *               (Nitsche), s = |x[-Twall_axis] - Twall_s0|. */
+    user.qflux         = 0.0;
+    user.qflux_t0      = 0.0;
+    user.twall_profile = 0;
+    user.twall_axis    = -1;
+    user.twall_s0      = 0.0;
+    user.twall_kappa   = 0.0;
+    user.twall_dT      = 0.0;
+    user.twall_t0      = 0.0;
+    user.twall_tref    = 0.0;
+    user.twall_len     = 0.0;
+    user.twall_nitsche = 10.0;
+    ierr = PetscOptionsString("-qflux_faces", "Faces with a prescribed heat flux, e.g. \"x0\" (default: none)", "", qflux_faces, qflux_faces, sizeof(qflux_faces), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-qflux", "Prescribed heat flux on -qflux_faces [W/m^2], > 0 heats the domain", "", user.qflux, &user.qflux, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-qflux_t0", "Heat flux is on for t >= this [s]", "", user.qflux_t0, &user.qflux_t0, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsString("-Twall_faces", "Faces with a prescribed wall temperature T_w(s,t), e.g. \"y0,y1\" (default: none)", "", Twall_faces, Twall_faces, sizeof(Twall_faces), NULL); CHKERRQ(ierr);
+    {
+        const char *const profiles[] = {"erfc", "erfc_steady", "linear"};
+        ierr = PetscOptionsEList("-Twall_profile", "T_w(s,t): erfc (heat diffusing from the heated end), erfc_steady (erfc frozen at -Twall_tref), linear (over -Twall_length)", "", profiles, 3, profiles[user.twall_profile], &user.twall_profile, NULL); CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsInt("-Twall_axis", "Axis along the wall on which s is measured (0=x, 1=y, 2=z)", "", user.twall_axis, &user.twall_axis, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Twall_s0", "Coordinate of the heated end on -Twall_axis [m]; s = |x - s0|", "", user.twall_s0, &user.twall_s0, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Twall_kappa", "Thermal diffusivity of the regolith for the erfc profiles [m^2/s]", "", user.twall_kappa, &user.twall_kappa, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Twall_dT", "Temperature rise at the heated end [K]", "", user.twall_dT, &user.twall_dT, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Twall_Tinit", "Wall temperature far from the heated end [C] (default: -temp)", "", twall_Tinit_opt, &twall_Tinit_opt, &twall_Tinit_set); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Twall_t0", "erfc: heating starts at this time [s]", "", user.twall_t0, &user.twall_t0, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Twall_tref", "erfc_steady: the heating time the profile is frozen at [s]", "", user.twall_tref, &user.twall_tref, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Twall_length", "linear: length over which T_w falls from T_init + dT to T_init [m]", "", user.twall_len, &user.twall_len, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Twall_nitsche", "Nitsche penalty constant C (beta = C k / h_n)", "", user.twall_nitsche, &user.twall_nitsche, NULL); CHKERRQ(ierr);
+
     /* --- Output control -------------------------------------------------- */
     ierr = PetscOptionsInt("-outp", "Output control flag", "", user.outp, &user.outp, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_interv", "Output interval", "", user.t_interv, &user.t_interv, NULL); CHKERRQ(ierr);
@@ -1142,6 +1181,51 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
                 "-wall_faces is set but -periodic 1: a periodic domain has no "
                 "walls to apply a contact angle to. Use -periodic 0.");
+
+    /* ---- Thermal face conditions: parse and check ------------------------
+     * Faces left out of both lists keep the insulating natural condition, so
+     * omitting the flags is a no-op (the boundary form is not even enabled). */
+    ierr = ParseFaceList("-qflux_faces", qflux_faces, dim, user.qflux_face, &user.qflux_any); CHKERRQ(ierr);
+    ierr = ParseFaceList("-Twall_faces", Twall_faces, dim, user.twall_face, &user.twall_any); CHKERRQ(ierr);
+    user.twall_Tinit = twall_Tinit_set ? twall_Tinit_opt : user.temp0;
+    if ((user.qflux_any || user.twall_any) && user.periodic == 1)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                "-qflux_faces/-Twall_faces are set but -periodic 1: a periodic "
+                "domain has no faces. Use -periodic 0.");
+    for (PetscInt l = 0; l < dim; l++)
+        for (PetscInt m = 0; m < 2; m++) {
+            if (user.qflux_face[l][m] && user.twall_face[l][m])
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                        "Face %c%d is in both -qflux_faces and -Twall_faces: a face "
+                        "carries either a prescribed flux or a prescribed temperature.",
+                        "xyz"[l], (int)m);
+            if (user.axisym && l == 1 && m == 0 && (user.qflux_face[l][m] || user.twall_face[l][m]))
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                        "-axisym: y0 is the symmetry axis, not a wall; it cannot "
+                        "carry a thermal condition.");
+        }
+    if (!user.qflux_any && (user.qflux != 0.0 || user.qflux_t0 != 0.0))
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                "-qflux/-qflux_t0 are set but -qflux_faces is empty.");
+    if (user.twall_any) {
+        if (user.twall_axis < 0 || user.twall_axis >= dim)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "-Twall_faces needs -Twall_axis in [0, %d] (the axis along the "
+                    "wall on which the distance s from the heated end is measured).",
+                    (int)dim - 1);
+        if (user.twall_profile <= 1 && !(user.twall_kappa > 0.0))
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "-Twall_profile erfc/erfc_steady needs -Twall_kappa > 0 [m^2/s].");
+        if (user.twall_profile == 1 && !(user.twall_tref > 0.0))
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "-Twall_profile erfc_steady needs -Twall_tref > 0 [s].");
+        if (user.twall_profile == 2 && !(user.twall_len > 0.0))
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "-Twall_profile linear needs -Twall_length > 0 [m].");
+        if (!(user.twall_nitsche > 0.0))
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "-Twall_nitsche must be > 0.");
+    }
 
     /* Allow CLI override of the physical attachment-kinetics coefficient
      * beta_sub0 via -beta_sub0 <value> (default 1.4e5, set above). Unlike
@@ -1398,6 +1482,12 @@ int main(int argc, char *argv[]) {
             ierr = IGASetBoundaryForm(iga, l, m, PETSC_TRUE); CHKERRQ(ierr);
         }
     }
+    /* Thermal faces (-qflux_faces, -Twall_faces) need the boundary form too. */
+    for (PetscInt l = 0; l < dim; l++)
+        for (PetscInt m = 0; m < 2; m++)
+            if (user.qflux_face[l][m] || user.twall_face[l][m]) {
+                ierr = IGASetBoundaryForm(iga, l, m, PETSC_TRUE); CHKERRQ(ierr);
+            }
     // ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
 
     /* Boundary conditions (could 'functionalize' this at some point) */
@@ -1505,6 +1595,17 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+    /* A face pinned by -flag_BC_Tfix (strong Dirichlet) cannot also carry a
+     * prescribed flux or wall temperature: the strong value would overwrite
+     * the T row and silently discard the face condition. */
+    for (PetscInt l = 0; l < dim; l++)
+        for (PetscInt m = 0; m < 2; m++)
+            if (bc_dirichlet[l][m][1] && (user.qflux_face[l][m] || user.twall_face[l][m]))
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                        "Face %c%d is pinned by -flag_BC_Tfix and also named in %s. "
+                        "Use -Tfix_faces to pin only the other faces.",
+                        "xyz"[l], (int)m,
+                        user.qflux_face[l][m] ? "-qflux_faces" : "-Twall_faces");
 
     /* Set up TS */
     TS ts;
@@ -1544,7 +1645,8 @@ int main(int argc, char *argv[]) {
         for (PetscInt l = 0; l < 3; l++)
             for (PetscInt m = 0; m < 2; m++) {
                 user.flux_face[l][m] = (PetscBool)(l < dim &&
-                    (bc_dirichlet[l][m][1] || bc_dirichlet[l][m][2]));
+                    (bc_dirichlet[l][m][1] || bc_dirichlet[l][m][2] ||
+                     user.qflux_face[l][m] || user.twall_face[l][m]));
                 if (user.flux_face[l][m]) any_flux = PETSC_TRUE;
             }
         if (monitor && bflux_output && any_flux) {
@@ -1917,7 +2019,12 @@ int main(int argc, char *argv[]) {
                     else
                         PetscSNPrintf(cell[0], sizeof(cell[0]), "Neumann  dphi/dn=0");
                     for (PetscInt d = 1; d < 3; d++) {
-                        if (bc_dirichlet[l][m][d])
+                        if (d == 1 && user.qflux_face[l][m])
+                            PetscSNPrintf(cell[d], sizeof(cell[d]), "flux q=%.4g W/m2",
+                                          (double)user.qflux);
+                        else if (d == 1 && user.twall_face[l][m])
+                            PetscSNPrintf(cell[d], sizeof(cell[d]), "T_w(s,t) Nitsche");
+                        else if (bc_dirichlet[l][m][d])
                             PetscSNPrintf(cell[d], sizeof(cell[d]), vfmt[d],
                                           (double)bc_value[l][m][d], unit[d]);
                         else
@@ -1964,6 +2071,50 @@ int main(int argc, char *argv[]) {
                     "\n   phi_i is natural Neumann on every wall — dphi/dn = 0, i.e. a 90°\n"
                     "   contact angle. Set -wall_faces (with -gamma_is/-gamma_as) to\n"
                     "   prescribe a different angle where ice meets regolith.\n");
+            }
+            if (user.qflux_any)
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "\n   Heat-flux faces: k dT/dn = q = %.6e W/m2 (q > 0 heats the domain),\n"
+                    "   on for t >= %.6e s. Weak form term -xi_T q N on the T row.\n",
+                    (double)user.qflux, (double)user.qflux_t0);
+            if (user.twall_any) {
+                static const char *const pname[3] = {"erfc", "erfc_steady", "linear"};
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "\n   Wall-temperature faces: T = T_w(s,t), imposed weakly (symmetric\n"
+                    "   Nitsche, beta = %.4g k(phi)/h_n), s = |%c - %.6e m|.\n"
+                    "   profile %s: T_init = %.4f C, dT = %.4f K",
+                    (double)user.twall_nitsche, "xyz"[user.twall_axis],
+                    (double)user.twall_s0, pname[user.twall_profile],
+                    (double)user.twall_Tinit, (double)user.twall_dT);
+                if (user.twall_profile == 0)
+                    PetscPrintf(PETSC_COMM_WORLD,
+                        ", kappa = %.6e m2/s, t0 = %.6e s\n"
+                        "   T_w = T_init + dT erfc(s / (2 sqrt(kappa (t - t0)))), T_init for t <= t0\n",
+                        (double)user.twall_kappa, (double)user.twall_t0);
+                else if (user.twall_profile == 1)
+                    PetscPrintf(PETSC_COMM_WORLD,
+                        ", kappa = %.6e m2/s, tref = %.6e s\n"
+                        "   T_w = T_init + dT erfc(s / (2 sqrt(kappa tref))), constant in time\n",
+                        (double)user.twall_kappa, (double)user.twall_tref);
+                else
+                    PetscPrintf(PETSC_COMM_WORLD,
+                        ", L = %.6e m\n"
+                        "   T_w = T_init + dT (1 - s/L) for s < L, T_init beyond; constant in time\n",
+                        (double)user.twall_len);
+                if (PetscAbsReal(user.twall_Tinit - user.temp0) > 0.0)
+                    PetscPrintf(PETSC_COMM_WORLD,
+                        "   NOTE: T_init differs from -temp (the initial T field); the wall\n"
+                        "   starts out of equilibrium with the interior.\n");
+            }
+            if (user.qflux_any && !user.twall_any) {
+                PetscBool held = PETSC_FALSE;
+                for (PetscInt l = 0; l < dim; l++)
+                    for (PetscInt m = 0; m < 2; m++)
+                        if (bc_dirichlet[l][m][1]) held = PETSC_TRUE;
+                if (!held)
+                    PetscPrintf(PETSC_COMM_WORLD,
+                        "   NOTE: no face holds T (no -flag_BC_Tfix face, no -Twall_faces):\n"
+                        "   the net boundary heat input accumulates and T has no steady state.\n");
             }
             if (flag_BC_Tfix && !bc_dirichlet[0][0][1] && !bc_dirichlet[1][0][1])
                 PetscPrintf(PETSC_COMM_WORLD,
@@ -2093,11 +2244,12 @@ int main(int argc, char *argv[]) {
         /* J with the wall term, and J with it switched off. Setting costhet = 0
          * makes WallPointActive() return false, so Jint is the interior form
          * alone -- every other coefficient is untouched. Their difference is
-         * exactly the wall block. */
+         * exactly the wall block. therm_bc_off does the same for the thermal
+         * face terms (-qflux_faces, -Twall_faces), so they join the block. */
         ierr = IGAComputeIJacobian(iga, 0.0, Vz, 0.0, U, Jfull); CHKERRQ(ierr);
-        user.costhet = 0.0;
+        user.costhet = 0.0; user.therm_bc_off = PETSC_TRUE;
         ierr = IGAComputeIJacobian(iga, 0.0, Vz, 0.0, U, Jint); CHKERRQ(ierr);
-        user.costhet = cos_save;
+        user.costhet = cos_save; user.therm_bc_off = PETSC_FALSE;
 
         ierr = PetscRandomCreate(PETSC_COMM_WORLD, &rnd); CHKERRQ(ierr);
         ierr = PetscRandomSetType(rnd, PETSCRAND48); CHKERRQ(ierr);
@@ -2122,15 +2274,15 @@ int main(int argc, char *argv[]) {
             /* F(U +- h v) with the wall on (F) and off (G). */
             ierr = VecWAXPY(Up,  h, v, U); CHKERRQ(ierr);
             ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Fp); CHKERRQ(ierr);
-            user.costhet = 0.0;
+            user.costhet = 0.0; user.therm_bc_off = PETSC_TRUE;
             ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Gp); CHKERRQ(ierr);
-            user.costhet = cos_save;
+            user.costhet = cos_save; user.therm_bc_off = PETSC_FALSE;
 
             ierr = VecWAXPY(Up, -h, v, U); CHKERRQ(ierr);
             ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Fm); CHKERRQ(ierr);
-            user.costhet = 0.0;
+            user.costhet = 0.0; user.therm_bc_off = PETSC_TRUE;
             ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Gm); CHKERRQ(ierr);
-            user.costhet = cos_save;
+            user.costhet = cos_save; user.therm_bc_off = PETSC_FALSE;
 
             /* --- full system --- */
             ierr = VecCopy(Fp, Up); CHKERRQ(ierr);

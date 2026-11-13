@@ -45,6 +45,82 @@ static PetscReal AxisymWeight(IGAPoint pnt, const AppCtx *user)
     return xphys[1];
 }
 
+/* ---- Thermal boundary conditions (opt-in: -qflux_faces, -Twall_faces) ----
+ *
+ * The T row is R_T = rho cp T_t + xi_T k grad N.grad T - xi_T rho_i L phi_t N,
+ * the weak form of rho cp T_t = xi_T [div(k grad T) + rho_i L phi_t]. The
+ * integration by parts that produced xi_T k grad N.grad T dropped the surface
+ * term -xi_T N k dT/dn, which is zero on an insulated face. A face with a
+ * condition puts it back:
+ *
+ *   THERM_FLUX   k dT/dn = q (n outward, so q > 0 heats the domain):
+ *                R_T += -xi_T q N. q is prescribed (no dependence on U), so
+ *                the Jacobian gets nothing.
+ *   THERM_TWALL  T = T_w(s,t), symmetric Nitsche (Nitsche 1971):
+ *                R_T += xi_T [ -N k dT/dn - k dN/dn (T - T_w) + beta N (T - T_w) ]
+ *                with beta = C k(phi) / h_n. Consistent: the exact solution
+ *                makes the two (T - T_w) terms vanish and the first is the
+ *                dropped surface term itself, so the error is the
+ *                discretization error, not an O(1/beta) penalty error.
+ *
+ * xi_T multiplies both, as it multiplies the conduction term they belong to;
+ * with xi_T = 1 (the default) the face condition is exactly k dT/dn = q. */
+typedef enum { THERM_NONE, THERM_FLUX, THERM_TWALL } ThermKind;
+
+static ThermKind ThermKindAt(IGAPoint pnt, const AppCtx *user)
+{
+    PetscInt axis = -1, side = -1;
+    if (user->therm_bc_off) return THERM_NONE;
+    if (!user->qflux_any && !user->twall_any) return THERM_NONE;
+    IGAPointAtBoundary(pnt, &axis, &side);
+    if (axis < 0 || axis > 2 || side < 0 || side > 1) return THERM_NONE;
+    if (user->qflux_face[axis][side]) return THERM_FLUX;
+    if (user->twall_face[axis][side]) return THERM_TWALL;
+    return THERM_NONE;
+}
+
+/* Prescribed wall temperature T_w(s,t) [C]; profiles in NASA_types.h. */
+static PetscReal WallTemperature(IGAPoint pnt, PetscReal t, const AppCtx *user)
+{
+    PetscReal xphys[3] = {0.0, 0.0, 0.0};
+    IGAPointFormPoint(pnt, xphys);
+    const PetscReal s = PetscAbsReal(xphys[user->twall_axis] - user->twall_s0);
+    switch (user->twall_profile) {
+    case 0: {   /* erfc, time-varying */
+        const PetscReal tau = t - user->twall_t0;
+        if (tau <= 0.0) return user->twall_Tinit;
+        /* C99 erfc: PETSc 3.20 has no PetscErfcReal, and 1 - erf loses all
+         * digits in the tail. */
+        return user->twall_Tinit + user->twall_dT
+             * erfc(s / (2.0 * PetscSqrtReal(user->twall_kappa * tau)));
+    }
+    case 1:     /* erfc frozen at tau = tref */
+        return user->twall_Tinit + user->twall_dT
+             * erfc(s / (2.0 * PetscSqrtReal(user->twall_kappa * user->twall_tref)));
+    default:    /* linear over L */
+        if (s >= user->twall_len) return user->twall_Tinit;
+        return user->twall_Tinit + user->twall_dT * (1.0 - s / user->twall_len);
+    }
+}
+
+/* Element size normal to the face at this boundary point: the knot span of
+ * the element along the face's axis times |dx/du_axis . n|. Without a
+ * geometry map the knots are physical and PetIGA sets dx/du = identity. */
+static PetscReal FaceNormalSize(IGAPoint pnt)
+{
+    PetscInt axis = -1, side = -1;
+    IGAPointAtBoundary(pnt, &axis, &side);
+    IGAElement elem = pnt->parent;
+    IGAAxis    ax   = elem->parent->axis[axis];
+    PetscInt   k    = ax->span[elem->ID[axis]];
+    PetscReal  du   = ax->U[k + 1] - ax->U[k];
+    PetscInt   dim  = pnt->dim, nsd = pnt->nsd;
+    const PetscReal *X1 = pnt->mapX[1];   /* [nsd][dim]: dx_i/du_j */
+    PetscReal  dxn  = 0.0;
+    for (PetscInt i = 0; i < nsd; i++) dxn += X1[i * dim + axis] * pnt->normal[i];
+    return du * PetscAbsReal(dxn);
+}
+
 
 PetscErrorCode Residual_A1(IGAPoint pnt,
                            PetscReal shift, const PetscScalar *V,
@@ -61,21 +137,29 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
     /* Boundary faces: these terms add to the volume form. */
     if (pnt->atboundary) {
-        FaceKind kind = FaceKindAt(pnt, user);
-        if (kind == FACE_NATURAL) return 0;
+        FaceKind  kind  = FaceKindAt(pnt, user);
+        ThermKind tkind = ThermKindAt(pnt, user);
+        if (kind == FACE_NATURAL && tkind == THERM_NONE) return 0;
 
         PetscScalar sol_b[3];
         IGAPointFormValue(pnt, U, &sol_b[0]);
         PetscReal phi_b = PetscRealPart(sol_b[0]);
-
-        PetscReal mob_b;
-        Mobility(user, phi_b, &mob_b);
 
         const PetscReal *N0b;
         IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0b);
 
         PetscScalar (*Rb)[3] = (PetscScalar (*)[3])Re;
         PetscReal rwb = AxisymWeight(pnt, user);
+
+        if (kind == FACE_NATURAL) {
+            for (PetscInt a = 0; a < pnt->nen; a++) {
+                Rb[a][0] = 0.0;
+                Rb[a][1] = 0.0;
+                Rb[a][2] = 0.0;
+            }
+        } else {
+        PetscReal mob_b;
+        Mobility(user, phi_b, &mob_b);
         PetscReal flux;   /* 3*M*eps * dphi/dn */
 
         if (kind == FACE_WALL) {
@@ -99,6 +183,33 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             Rb[a][0] = -rwb * flux * N0b[a];
             Rb[a][1] = 0.0;
             Rb[a][2] = 0.0;
+        }
+        }
+
+        if (tkind == THERM_FLUX) {
+            const PetscReal q = (t >= user->qflux_t0) ? user->qflux : 0.0;
+            for (PetscInt a = 0; a < pnt->nen; a++)
+                Rb[a][1] += -rwb * user->xi_T * q * N0b[a];
+        } else if (tkind == THERM_TWALL) {
+            const PetscReal (*N1b)[dim];
+            IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1b);
+            PetscScalar gT[3][dim];
+            IGAPointFormGrad(pnt, U, &gT[0][0]);
+            PetscReal dT_dn = 0.0;
+            for (l = 0; l < dim; l++) dT_dn += PetscRealPart(gT[1][l]) * pnt->normal[l];
+            const PetscReal phi_k = PetscMin(PetscMax(phi_b, 0.0), 1.0);
+            PetscScalar k_b;
+            ThermalCond(user, phi_k, &k_b, NULL);
+            const PetscReal kb   = PetscRealPart(k_b);
+            const PetscReal beta = user->twall_nitsche * kb / FaceNormalSize(pnt);
+            const PetscReal jump = PetscRealPart(sol_b[1]) - WallTemperature(pnt, t, user);
+            for (PetscInt a = 0; a < pnt->nen; a++) {
+                PetscReal dNa_dn = 0.0;
+                for (l = 0; l < dim; l++) dNa_dn += N1b[a][l] * pnt->normal[l];
+                Rb[a][1] += rwb * user->xi_T * ( -N0b[a] * kb * dT_dn
+                                                 - kb * dNa_dn * jump
+                                                 + beta * N0b[a] * jump );
+            }
         }
         return 0;
     }
@@ -221,8 +332,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscReal air_lim = user->air_lim;
 
     if (pnt->atboundary) {
-        FaceKind kind = FaceKindAt(pnt, user);
-        if (kind == FACE_NATURAL) return 0;
+        FaceKind  kind  = FaceKindAt(pnt, user);
+        ThermKind tkind = ThermKindAt(pnt, user);
+        if (kind == FACE_NATURAL && tkind == THERM_NONE) return 0;
 
         PetscScalar sol_b[3];
         IGAPointFormValue(pnt, U, &sol_b[0]);
@@ -238,6 +350,40 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
         PetscInt nen_b = pnt->nen;
         PetscScalar (*Jb)[3][nen_b][3] = (PetscScalar (*)[3][nen_b][3])Je;
         PetscReal rwb = AxisymWeight(pnt, user);
+
+        /* Prescribed flux: no dependence on U, nothing to add. Nitsche wall:
+         * linear in T; k(phi) (also inside beta) brings a phi column. */
+        if (tkind == THERM_TWALL) {
+            PetscScalar gT[3][dim];
+            IGAPointFormGrad(pnt, U, &gT[0][0]);
+            PetscReal dT_dn = 0.0;
+            for (l = 0; l < dim; l++) dT_dn += PetscRealPart(gT[1][l]) * pnt->normal[l];
+            const PetscReal phi_k  = PetscMin(PetscMax(phi_b, 0.0), 1.0);
+            const PetscReal dclamp = (phi_b > 0.0 && phi_b < 1.0) ? 1.0 : 0.0;
+            PetscScalar k_b, dk_b;
+            ThermalCond(user, phi_k, &k_b, &dk_b);
+            const PetscReal kb   = PetscRealPart(k_b);
+            const PetscReal dkb  = PetscRealPart(dk_b) * dclamp;
+            const PetscReal Cn_h = user->twall_nitsche / FaceNormalSize(pnt);
+            const PetscReal beta = Cn_h * kb, dbeta = Cn_h * dkb;
+            const PetscReal jump = PetscRealPart(sol_b[1]) - WallTemperature(pnt, t, user);
+            const PetscReal xr   = rwb * user->xi_T;
+            for (PetscInt a = 0; a < nen_b; a++) {
+                PetscReal dNa_dn = 0.0;
+                for (l = 0; l < dim; l++) dNa_dn += N1b[a][l] * pnt->normal[l];
+                for (PetscInt b = 0; b < nen_b; b++) {
+                    PetscReal dNb_dn = 0.0;
+                    for (l = 0; l < dim; l++) dNb_dn += N1b[b][l] * pnt->normal[l];
+                    Jb[a][1][b][1] += xr * ( -N0b[a] * kb * dNb_dn
+                                             - kb * dNa_dn * N0b[b]
+                                             + beta * N0b[a] * N0b[b] );
+                    Jb[a][1][b][0] += xr * ( -N0b[a] * dkb * dT_dn
+                                             - dkb * dNa_dn * jump
+                                             + dbeta * N0b[a] * jump ) * N0b[b];
+                }
+            }
+        }
+        if (kind == FACE_NATURAL) return 0;
 
         if (kind == FACE_WALL) {
             /* Same clamp as the residual; zero derivative outside [0,1]. */
