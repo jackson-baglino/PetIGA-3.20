@@ -1,0 +1,23 @@
+{
+  "name": "px_cd120_W40_wt16_shift_lens_eps1.5um",
+  "eps": 1.5e-06,
+  "Lx": 0.00012,
+  "theta_ice_init": 60.0,
+  "dtmax": 4525.704343152059,
+  "caps": [],
+  "grains": [],
+  "periodic": true,
+  "walls": {
+    "profile": "sinhyp",
+    "W": 4e-05,
+    "wt": 1.6e-05,
+    "x_throat": 0.0
+  },
+  "plugs": [
+    {
+      "x0": -2.5e-05,
+      "x1": -1e-05
+    }
+  ],
+  "comment": "periodic_x verification c2: the cd cell and lens shifted by -Lx/2 (throat on the seam)"
+}

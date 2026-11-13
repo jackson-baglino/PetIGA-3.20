@@ -1,0 +1,21 @@
+# experiment/periodic_x/px_T-20_iso_theta60_2d_ac1e-2.opts   (studies/periodic_x/scripts/make_px_inputs.py)
+#
+# -periodic_x verification: isothermal at -20 C (T pinned on the two walls; the
+# x faces are a periodic seam), no vapor reservoir (water conserved), wall angle
+# 60 deg from Young (gamma_is = 0.3 - 0.109 cos theta), 2 days, a snapshot every 6 h.
+# -dtmax is in the GEOMETRY file (2 tau_sub at its eps).
+#
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 0                      # no vapor in or out: water conserved
+-phi_open_bc 0
+-t_final 1.728000e+05
+-n_out 9
+-outp 0
+-beta_sub0 7.9408e+05                     # K&P beta0 at -20 C, alpha_c = 1e-2
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # cos(theta) = +0.500000
+-dtCFL 1
