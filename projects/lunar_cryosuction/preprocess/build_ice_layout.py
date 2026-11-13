@@ -71,7 +71,12 @@ as a sharp region and then combined:
             "axis" (the local mid-gap).
   rinds     uniform wall films: {"t", "wall": bottom|top|both, "x0", "x1"}; the
             wall stretch in [x0, x1] dilated by a disc of radius t (thickness t
-            everywhere, round ends meeting the wall at 90 deg). See rind().
+            everywhere, round ends meeting the wall at 90 deg). Optional
+            "end_theta": each end is instead a cap of radius t/(1 - cos end_theta)
+            centered at x0 (x1) whose top is the film surface, so the end face meets
+            the wall at end_theta through the ice and the film reaches
+            t sin(end_theta)/(1 - cos end_theta) beyond x0 and x1 (43 um for t = 25 um
+            at 60 deg). Without the key the film is as before, bit for bit. See rind().
   necks     ice at the grain-grain contacts: {"R", "x0", "x1", "wall", "depth",
             "theta", "skip": [[a, b], ...]}; at every wall valley (local extremum
             of the wall with prominence >= depth, default 2 um) in [x0, x1] a disc
@@ -437,7 +442,7 @@ def grain(rs: Raster, xc, yc, ax, ay):
     return rs.inside & (((rs.X - xc) / ax) ** 2 + ((rs.Y - yc) / ay) ** 2 <= 1.0), yc
 
 
-def rind(rs: Raster, t, wall="both", x0=0.0, x1=None):
+def rind(rs: Raster, t, wall="both", x0=0.0, x1=None, end_theta=None):
     """uniform wall film (sharp mask): every pore point within distance t of the
     stretch of wall with x in [x0, x1] (bottom, top or both walls). That is the
     wall stretch dilated by a disc of radius t, so the film has thickness t
@@ -457,7 +462,24 @@ def rind(rs: Raster, t, wall="both", x0=0.0, x1=None):
     xin = ((rs.x >= x0) & (rs.x <= x1))[:, None]
     seed &= sel & xin
     d = ndi.distance_transform_edt(~seed, sampling=rs.dx)[:, 1:-1]
-    return rs.inside & (d <= t)
+    ice = rs.inside & (d <= t)
+    if end_theta is not None:
+        # End caps (opt-in): a cap of radius rho = t/(1 - cos theta) whose center sits
+        # rho cos(theta) behind the wall point at the film end (cap()) has its top at
+        # t above the wall, level with the film surface, and meets the wall at theta
+        # through the ice. On a flat wall the round end (radius t about the same wall
+        # point, at distance t from the cap center) lies inside the cap disc (radius
+        # 2 t at 60 deg), so the union has the cap's face only. No cap at an end that
+        # is a pore end (the film runs into x = 0 or x = Lx there).
+        assert 0.0 < end_theta < 180.0, "rind end_theta must lie in (0, 180) deg"
+        rho = t / (1.0 - math.cos(math.radians(end_theta)))
+        walls_ = ["bottom", "top"] if wall == "both" else [wall]
+        for xe in (x0, x1):
+            if xe <= rs.x[0] + rs.dx or xe >= rs.x[-1] - rs.dx:
+                continue
+            for w_ in walls_:
+                ice |= cap(rs, xe, w_, rho, end_theta)
+    return ice
 
 
 def wall_valleys(rs: Raster, wall, x0, x1, depth):
@@ -700,9 +722,10 @@ def main(argv=None) -> int:
         parts.append(f"grain ({f['x']*1e6:.0f}, {yc*1e6:.0f}) um, {ax_*1e6:.0f} x {ay_*1e6:.0f} um")
     for f in spec.get("rinds", []):
         w_, fx0, fx1 = f.get("wall", "both"), f.get("x0", 0.0), f.get("x1", lx)
-        ice |= rind(rs, f["t"], w_, fx0, fx1)
+        ice |= rind(rs, f["t"], w_, fx0, fx1, f.get("end_theta"))
         parts.append(f"rind {f['t']*1e6:.2f} um ({f['t']/eps:.1f} eps) thick on the {w_} wall(s), "
-                     f"x {fx0*1e6:.0f}-{fx1*1e6:.0f} um")
+                     f"x {fx0*1e6:.0f}-{fx1*1e6:.0f} um"
+                     + (f", ends at {f['end_theta']:g} deg" if "end_theta" in f else ""))
     for f in spec.get("necks", []):
         th = f.get("theta", th0)
         fx0, fx1 = f.get("x0", 0.0), f.get("x1", lx)

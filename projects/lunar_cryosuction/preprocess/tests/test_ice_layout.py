@@ -105,6 +105,36 @@ class NewFeatures(unittest.TestCase):
         self.assertAlmostEqual(col.max() / t, 1.0, delta=0.05)
         self.assertFalse(ice[:, self.rs.y > 0.5 * self.pore.H].any())
 
+    def test_rind_end_theta_meets_a_flat_wall_at_theta(self):
+        """opt-in end caps: the end face is a circle of radius t/(1 - cos theta) that
+        meets the wall at theta through the ice; the film stays t thick in between."""
+        t, x0, x1 = 6e-6, 1.2e-4, 1.8e-4
+        rs = bl.Raster(self.pore, 5e-8)
+        for th in (60.0, 45.0):
+            ice = bl.rind(rs, t, "bottom", x0, x1, end_theta=th)
+            rho = t / (1 - math.cos(math.radians(th)))
+            # height of the film above the wall in each raster column
+            h = np.array([(np.flatnonzero(c).max() + 1) * rs.dx - yb if c.any() else 0.0
+                          for c, yb in zip(ice, rs.yb)])
+            mid = (rs.x > x0) & (rs.x < x1)
+            self.assertAlmostEqual(h[mid].max() / t, 1.0, delta=0.03)
+            self.assertAlmostEqual(h[mid].min() / t, 1.0, delta=0.03)
+            # beyond x1: the cap profile; fit a circle to its face (0.1 t < h < 0.9 t) and get
+            # the contact angle through the ice, cos(theta) = -yc/r (center yc below the wall)
+            m = (rs.x > x1) & (h > 0.1 * t) & (h < 0.9 * t)
+            X, Y = rs.x[m], h[m]
+            A = np.column_stack([X, Y, np.ones_like(X)])
+            c = np.linalg.lstsq(A, -(X ** 2 + Y ** 2), rcond=None)[0]
+            xc, yc = -c[0] / 2, -c[1] / 2
+            r = math.sqrt(xc ** 2 + yc ** 2 - c[2])
+            self.assertAlmostEqual(r / rho, 1.0, delta=0.03)
+            self.assertAlmostEqual(math.degrees(math.acos(-yc / r)), th, delta=1.5)
+            # reach beyond x1 = rho sin(theta)
+            self.assertAlmostEqual((rs.x[h > 0].max() - x1) / (rho * math.sin(math.radians(th))), 1.0, delta=0.03)
+        # without end_theta the film is unchanged (round ends)
+        np.testing.assert_array_equal(bl.rind(self.rs, t, "bottom", x0, x1),
+                                      bl.rind(self.rs, t, "bottom", x0, x1, end_theta=None))
+
     def test_rind_on_both_walls(self):
         ice = bl.rind(self.rs, 4e-6, "both", 1.0e-4, 2.0e-4)
         top = ice[:, self.rs.y > 0.5 * self.pore.H].sum()
