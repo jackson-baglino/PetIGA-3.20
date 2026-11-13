@@ -103,6 +103,9 @@ def main() -> int:
     p.add_argument("--bump-R", type=float, default=250e-6, help="section 8: bump half-width (fixed) [m]")
     p.add_argument("--lens-len", type=float, default=120e-6, help="section 8: lens length on the axis [m]")
     p.add_argument("--Lx8", type=float, default=800e-6, help="section 8: pore length, throat at Lx/2 [m]")
+    p.add_argument("--Lx8c", type=float, default=400e-6, help="section 8c: pore length (no flat ends) [m]")
+    p.add_argument("--lens8c", type=float, default=100e-6, help="section 8c: initial lens length [m]")
+    p.add_argument("--start8c", type=float, default=70e-6, help="section 8c: lens center start, cold side [m]")
     p.add_argument("--start8", type=float, default=100e-6,
                    help="section 8b: lens center start, this far on the COLD side of the throat [m]")
     a = p.parse_args()
@@ -243,6 +246,7 @@ def main() -> int:
                   f" wall {n * a.s_per_step / 3600:6.1f} h")
     throat_arrest(a, d0, s, beta0, K)
     sloped_pore(a, d0, s, beta0, K)
+    optimal_h(a, d0, s, beta0, K)
     return 0
 
 
@@ -403,6 +407,113 @@ def sloped_pore(a, d0, s, beta0, K):
               f" lens {Ls * 1e6:5.1f} um at the start, {Lt * 1e6:5.1f} um centered on the throat;"
               f" G_crit {gc:.3f} K/m; start speed at G 0 {vel(xs0, 0.0) * DAY * 1e6:+.4f} um/d")
         print("      " + "; ".join(line))
+
+
+def optimal_h(a, d0, s, beta0, K):
+    """8c. End humidity that makes the lens grow or sublimate least (user, 13 Nov).
+
+    Pore with no flat ends: gap g(xi) = sqrt(wt^2 + c^2 xi^2), g(+-Lx/2) = W. A lens with faces at
+    xi_w < xi_c exchanges vapor with the two end reservoirs only. In area per unit depth, face i
+    gains ice at Q_i = Delta_i / Rr_i, with Delta_i the supersaturation the face sees and
+    Rr_i = beta0/g_i + K * int_column dx/g(x) (kinetic + diffusive resistance; for a uniform gap
+    this is the type-3 law v = Delta/(beta0 + K l)). With ends at h * rho_vs(T_end):
+        Delta_w = h - 1 + d0 chi_w + s dT_w,   Delta_c = h - 1 + d0 chi_c - s dT_c,
+    so the lens area changes at dA/dt = sum_i (h - h_i)/Rr_i - s (dT_c/Rr_c - dT_w/Rr_w), with the
+    face equilibrium h_i = 1 - d0 chi_i. dA/dt = a (h - h0(t)), where a = sum_i 1/Rr_i and
+        h0(t) = [sum_i h_i/Rr_i + s (dT_c/Rr_c - dT_w/Rr_w)] / a        (instantaneous zero).
+    A fixed h can cancel growth only on average. Candidates:
+        h_LS  = int a^2 h0 dt / int a^2 dt   minimizes J(h) = int (dA/dt)^2 dt: J'(h) = 2 int a^2 (h - h0)
+                dt = 0 there and J'' = 2 int a^2 dt > 0, so it is the unique minimum;
+        h_net = int a h0 dt / int a dt      makes the net area change over the run zero;
+        h_chi = 1 - d0 <chi>                the user's estimate: mean face curvature over the run.
+    The trajectory depends weakly on h, so h is iterated (trajectory -> h_LS -> trajectory).
+    Face speeds: v_w = Q_w/g_w toward x = 0, v_c = -Q_c/g_c toward x = 0; center = mean."""
+    th = math.radians(a.theta)
+    W, Lx = a.W8, a.Lx8c
+    print(f"\n# 8c. Optimal end humidity: no flat ends, Lx {Lx * 1e6:g} um, W {W * 1e6:g} um at the ends,"
+          f" lens {a.lens8c * 1e6:g} um started {a.start8c * 1e6:g} um on the cold side; 300 d per case")
+    for wt in a.wt:
+        c = math.sqrt(W * W - wt * wt) / (Lx / 2)
+
+        def g(xi, c=c, wt=wt):
+            return math.sqrt(wt * wt + (c * xi) ** 2)
+
+        def chi(xi, c=c, wt=wt, g=g):
+            return 2 * math.cos(th + math.atan(0.5 * c * c * abs(xi) / g(xi))) / g(xi)
+
+        def col(x0, x1, g=g, n=200):                 # int_x0^x1 dx/g
+            return sum(1 / g(x0 + (k + 0.5) * (x1 - x0) / n) for k in range(n)) * (x1 - x0) / n
+
+        def area(xm, L, g=g, n=200):
+            return sum(g(xm - L / 2 + (k + 0.5) * L / n) for k in range(n)) * L / n
+
+        def length(xm, A, area=area):
+            lo, hi = 1e-6, Lx
+            for _ in range(50):
+                mid = 0.5 * (lo + hi)
+                lo, hi = (mid, hi) if area(xm, mid) < A else (lo, mid)
+            return 0.5 * (lo + hi)
+
+        def state(xm, A, h, G, g=g, chi=chi, col=col, length=length):
+            L = length(xm, A)
+            xw, xc = xm - L / 2, xm + L / 2
+            if xw <= -Lx / 2 + 5e-6 or xc >= Lx / 2 - 5e-6:
+                return None
+            lw, lc = xw + Lx / 2, Lx / 2 - xc
+            dTw, dTc = G * Lx * lw / (lw + lc), G * Lx * lc / (lw + lc)
+            Rw = beta0 / g(xw) + K * col(-Lx / 2, xw)
+            Rc = beta0 / g(xc) + K * col(xc, Lx / 2)
+            hw, hc = 1 - d0 * chi(xw), 1 - d0 * chi(xc)
+            aa = 1 / Rw + 1 / Rc
+            h0 = (hw / Rw + hc / Rc + s * (dTc / Rc - dTw / Rw)) / aa
+            Qw = (h - hw + s * dTw) / Rw
+            Qc = (h - hc - s * dTc) / Rc
+            v = 0.5 * (Qw / g(xw) - Qc / g(xc))       # center speed toward x = 0
+            return v, Qw + Qc, aa, h0, 0.5 * (chi(xw) + chi(xc))
+
+        def run(h, G, xs=a.start8c, days=300, state=state, area=area):
+            xm, A = xs, area(xs, a.lens8c)
+            A0, t, dt, hist = A, 0.0, 6 * 3600.0, []
+            while t < days * DAY:
+                st = state(xm, A, h, G)
+                if st is None:
+                    break
+                v, dA, aa, h0, cm = st
+                hist.append((aa, h0, cm))
+                xm -= v * dt
+                A += dA * dt
+                t += dt
+            return xm, A / A0 - 1, hist, t
+
+        # G_crit for this pore (lens held on the warm side of the throat), with h at the lens' start value
+        hstart = state(a.start8c, area(a.start8c, a.lens8c), 1.0, 0.0)[3]
+        gc = 0.0
+        for k in range(1, 300):
+            xm = -k * 0.5e-6
+            A = area(a.start8c, a.lens8c)
+            s0, s1 = state(xm, A, hstart, 0.0), state(xm, A, hstart, 1.0)
+            if s0 is None or s1 is None:
+                break
+            gc = max(gc, -s0[0] / (s1[0] - s0[0]))
+        print(f"wt {wt * 1e6:4.0f} um: end wall slope {math.degrees(math.atan(0.5 * c * c * (Lx / 2) / W)):4.1f} deg,"
+              f" G_crit ~ {gc:.3f} K/m")
+        for f in (0.0, 0.5, 2.0, 5.0):
+            G, h = f * gc, hstart
+            for _ in range(3):                         # iterate h <- h_LS(trajectory(h))
+                xm, dA, hist, t = run(h, G)
+                w2 = sum(x[0] ** 2 for x in hist)
+                h = sum(x[0] ** 2 * x[1] for x in hist) / w2
+            xm, dA_ls, hist, t = run(h, G)
+            h_ls = h
+            h_net = sum(x[0] * x[1] for x in hist) / sum(x[0] for x in hist)
+            h_chi = 1 - d0 * sum(x[2] for x in hist) / len(hist)
+            res = []
+            for lab, hh in (("h_LS", h_ls), ("h_net", h_net), ("h_chi", h_chi), ("h 1", 1.0)):
+                xm2, dA2, _, t2 = run(hh, G)
+                J = (sum((x[0] * (hh - x[1])) ** 2 for x in run(hh, G)[2]) * 6 * 3600) ** 0.5
+                res.append(f"{lab} {hh:.8f}: area {dA2 * 100:+6.2f} %, rms dA/dt {J:.2e}, center {-xm2 * 1e6:+6.1f} um"
+                           + (f" (left at {t2 / DAY:.0f} d)" if t2 < 300 * DAY - 1 else ""))
+            print(f"   G {G:6.3f} K/m ({f:g} G_crit): " + "; ".join(res))
 
 if __name__ == "__main__":
     raise SystemExit(main())
