@@ -82,7 +82,7 @@ for name in ("List Bullet", "List Number"):
 # footer page numbers
 fp = sec.footer.paragraphs[0]
 fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-r = fp.add_run(f"Run plan, paper 2 / AGU 2026 · {FOOTER_DATE} · page ")
+r = fp.add_run(f"{os.environ.get('DOC_FOOTER', 'Run plan, paper 2 / AGU 2026')} · {FOOTER_DATE} · page ")
 r.font.size, r.font.color.rgb = Pt(8), GRAYT
 for t, txt in (("begin", None), (None, "PAGE"), ("end", None)):
     run = fp.add_run()
@@ -188,14 +188,14 @@ def set_widths(table, widths):
             row.cells[i].width = Inches(w)
 
 
-def T(header, rows, widths, size=8.5, head_fill="1F3A5F", zebra=True, bold_first=False):
+def T(header, rows, widths, size=8.5, head_fill="1F3A5F", zebra=True, bold_first=False, head_color=(255, 255, 255)):
     t = doc.add_table(rows=1, cols=len(header))
     t.style = "Table Grid"
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
     for i, h in enumerate(header):
         c = t.rows[0].cells[i]
         c.text = ""
-        rich(c.paragraphs[0], h, size=size, color=RGBColor(255, 255, 255), bold=True)
+        rich(c.paragraphs[0], h, size=size, color=RGBColor(*head_color), bold=True)
         shade(c, head_fill)
     # repeat header row
     trPr = t.rows[0]._tr.get_or_add_trPr()
