@@ -1,0 +1,55 @@
+{
+  "name": "type7_filmtest_2D_L340um_eps0.86um",
+  "comment": "Type 7 film-persistence test (user, 2026-11-13: 'if we are going to apply these films, we should have some tests for it'). A 340 um segment of rough wall with pore A' wall statistics (bump half-width 40-60 um, height 0.5-0.7 of the half-width, overlap 0.25-0.4, smoothed with sigma 8 um; ASSUMED grain size, no source), mean gap 120 um, no throat. Ice: a 6.0 um (7 eps) rind along the whole bottom wall (it meets both pore ends, where the 90-degree phi face makes it a film with no ends), an 8.6 um (10 eps) rind on the top wall over x 80-230 um (round ends), and one contact neck (R 21.5 um, 25 eps) in the top-wall valley at x = 292 um. theta = 60 deg (D1, an assumption). Expected under closed isothermal vapor: the films are not stable in this model (curvature only, no disjoining pressure or crystallographic term); they should thin on grain tips and thicken into valleys, the ends of the top rind retract, and ice collect in the valleys and the neck. Mesh: \"ny_rule\": \"bbox\" sizes Ny from the bounding height so the solver's start-up resolution check (Ly/Ny) passes (finer across the pore than the type-7 default).",
+  "Lx": 0.00034,
+  "mean_gap": 0.00012,
+  "walls": {
+    "seed_bottom": 11,
+    "seed_top": 23,
+    "n_bumps": 6,
+    "R_range": [
+      4e-05,
+      6e-05
+    ],
+    "height_ratio_range": [
+      0.5,
+      0.7
+    ],
+    "overlap_range": [
+      0.25,
+      0.4
+    ],
+    "smooth": 8e-06
+  },
+  "theta_ice_init": 60,
+  "eps": 8.584e-07,
+  "dtmax": 1341.2,
+  "plugs": [],
+  "caps": [],
+  "grains": [],
+  "bubbles": [],
+  "rinds": [
+    {
+      "t": 6.0088e-06,
+      "wall": "bottom",
+      "x0": 0.0,
+      "x1": 0.00034
+    },
+    {
+      "t": 8.584e-06,
+      "wall": "top",
+      "x0": 8e-05,
+      "x1": 0.00023
+    }
+  ],
+  "necks": [
+    {
+      "R": 2.146e-05,
+      "wall": "top",
+      "x0": 0.000289,
+      "x1": 0.000295,
+      "depth": 2e-06
+    }
+  ],
+  "ny_rule": "bbox"
+}

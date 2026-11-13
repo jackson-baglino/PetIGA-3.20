@@ -189,6 +189,31 @@ class NewFeatures(unittest.TestCase):
             self.assertEqual(rc, 2)
             self.assertIn("NOT CLOSED", buf.getvalue())
 
+    def test_ny_rule_bbox_sizes_ny_from_the_bounding_height(self):
+        # "ny_rule": "bbox" makes -Ly/Ny <= eps/sqrt(2) (the solver's start-up check); the default
+        # sizes Ny from the widest gap, which is smaller than -Ly on rough walls
+        w = {"seed_bottom": 1, "seed_top": 2, "n_bumps": 7, "R_range": [3e-5, 4e-5],
+             "height_ratio_range": [0.5, 0.7], "overlap_range": [0.25, 0.4], "smooth": 5e-6}
+        eps = 2e-6
+        got = {}
+        for rule in (None, "bbox"):
+            spec = {"Lx": 3e-4, "mean_gap": 8e-5, "walls": w, "name": f"n{rule}", "theta_ice_init": 60,
+                    "plugs": [{"x0": 1.2e-4, "x1": 1.8e-4}]}
+            if rule:
+                spec["ny_rule"] = rule
+            with tempfile.TemporaryDirectory() as d:
+                j = Path(d) / "l.json"
+                j.write_text(json.dumps(spec))
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(bl.main([str(j), "--eps", str(eps), "--outdir", d, "--no-pdf"]), 0)
+                txt = (Path(d) / f"n{rule}.opts").read_text()
+            ny = int(txt.split("# DOF_GRID:")[1].split()[1]) - bl.P
+            ly = float(txt.split("\n-Ly ")[1].split()[0])
+            got[rule] = (ny, ly)
+        self.assertLessEqual(got["bbox"][1] / got["bbox"][0], eps / np.sqrt(2) * (1 + 1e-9))
+        self.assertGreater(got[None][1] / got[None][0], 1.05 * eps / np.sqrt(2))
+        self.assertGreater(got["bbox"][0], got[None][0])
+
 
 if __name__ == "__main__":
     unittest.main()

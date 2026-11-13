@@ -1,0 +1,26 @@
+# experiment/cryosuction/t7film_T-20_iso_closed_theta60_10d_ac1e-2.opts   (2026-11-13, type 7 v3 film test)
+#
+# Type 7 film-persistence test: does a 6-9 um wall film (rind) survive in this model?
+# Geometry: type7_filmtest_2D_L340um_eps0.86um (preprocess/layouts/type7_filmtest.json).
+# Thermal: isothermal at -20 C (T fixed on the boundary). Vapor "closed": no vapor in or out,
+# water conserved, so only curvature moves ice. Wall angle theta = 60 deg (D1) from Young
+# (gamma_is = 0.3 - 0.109 cos theta). 10 days, 241 snapshots (one an hour), plus
+# a snapshot whenever phi changes by 0.5 anywhere (at most one every 10 minutes).
+# -dtmax is in the GEOMETRY file (2 tau_sub depends on its eps).
+#
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 0                      # no vapor in or out: water conserved
+-phi_open_bc 0                          # 90-degree phi face on every non-wall face
+-t_final 8.640000e+05
+-n_out 241
+-beta_sub0 7.9408e+05                     # K&P beta0 at -20 C, alpha_c = 1e-2
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # cos(theta) = +0.500000
+-dtCFL 1
+-outp 0
+-outp_dphi 0.5                          # extra snapshot when phi changed by 0.5 anywhere (solver e5a593e7)
+-outp_dphi_min_dt 600                   # at most one such snapshot every 10 minutes

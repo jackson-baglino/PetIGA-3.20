@@ -1,0 +1,29 @@
+# =============================================================================
+# geometry type7_filmtest_2D_L340um_eps0.86um.opts   (preprocess/build_ice_layout.py preprocess/layouts/type7_filmtest.json)
+#
+# Rough-walled pore: Lx 340.0 um, gap 102.1-134.2 um (mean 120.0),
+# 6+6 wall bumps.
+# Walls are in the mesh; wall faces y0,y1; x0 and x1 are the pore ends.
+# Ice from inputs/geometry/meshes/type7_filmtest_2D_L340um_eps0.86um_phi.bin (-ic_type phi_file), initial angle 60 deg:
+#   rind 6.01 um (7.0 eps) thick on the bottom wall(s), x 0-340 um
+#   rind 8.58 um (10.0 eps) thick on the top wall(s), x 80-230 um
+#   1 necks (valley caps) R 21.5 um at the wall valleys in x 289-295 um, mean angle 60 deg (flank angles 59-61)
+# ice 9.2% of the pore, sharp area 3.7724e-09 m^2, 3 bodies.
+# eps 8.5840e-07 m, h = eps/sqrt(2): Nx 561, Ny 282.
+# =============================================================================
+# DOF_GRID: 563 284
+-geom_file inputs/geometry/meshes/type7_filmtest_2D_L340um_eps0.86um.dat
+-p 2
+-C 1
+-ic_type phi_file
+-phi_file inputs/geometry/meshes/type7_filmtest_2D_L340um_eps0.86um_phi.bin
+-dim 2
+-Lx 3.400000e-04
+-Ly 1.711015e-04
+-Lz 0
+-delt_t 1.0e-4
+-eps 8.5840e-07
+-eps_valid_temp -20
+-periodic 0
+-wall_faces y0,y1
+-dtmax 1.3412e+03                     # 2 tau_sub at this eps (layout 'dtmax')

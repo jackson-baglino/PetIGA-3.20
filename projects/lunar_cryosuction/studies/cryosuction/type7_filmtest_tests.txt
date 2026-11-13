@@ -1,0 +1,2 @@
+# Type 7 v3 film-persistence test (2026-11-13): one run; a rind and a neck on a rough wall, closed isothermal vapor.
+type7_filmtest_2D_L340um_eps0.86um:t7film_T-20_iso_closed_theta60_10d_ac1e-2   # 7F-0

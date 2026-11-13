@@ -72,6 +72,10 @@ of spacing eps/4. Walls are not interfaces: distances are measured to ice and
 to air only. This is the profile every shape IC in src/initial_conditions.c
 uses (PhaseSlope = 1/(2 eps)).
 
+MESH. Nx = ceil(Lx sqrt(2)/eps); Ny = ceil(gap_max sqrt(2)/eps), or, with the layout key
+"ny_rule": "bbox", Ny = ceil(H sqrt(2)/eps) (H the bounding height, -Ly), which is what the
+solver's start-up resolution check (Ly/Ny) and so studies/cryosuction/scripts/preflight.sh test.
+
 Checks printed: ice fraction, number of ice bodies, the thinnest body (max
 half-thickness) against 3 eps, and the narrowest air gap between two bodies
 against 6 eps (closer bodies merge as soon as the run starts).
@@ -521,7 +525,13 @@ def main(argv=None) -> int:
     gap = yt - yb
     assert gap.min() > 10 * eps, f"pore pinches to {gap.min():.3e} m"
     nx = math.ceil(lx * math.sqrt(2) / eps)
-    ny = math.ceil(gap.max() * math.sqrt(2) / eps)
+    # Ny: element height across the widest gap is eps/sqrt(2) (default). The solver's start-up
+    # check (src/monitoring.c ResolutionStaticCheck) uses Ly/Ny with Ly = H, the bounding height,
+    # and fails a rough pore sized this way; layout key "ny_rule": "bbox" sizes Ny from H instead
+    # (finer across the pore by H/gap_max; more DOF) so that check passes. Default unchanged.
+    ny_rule = spec.get("ny_rule", "gap")
+    assert ny_rule in ("gap", "bbox"), f"ny_rule {ny_rule!r}: use 'gap' or 'bbox'"
+    ny = math.ceil((H if ny_rule == "bbox" else gap.max()) * math.sqrt(2) / eps)
     slope = max(np.abs(np.gradient(yb, xs)).max(), np.abs(np.gradient(yt, xs)).max())
     print(f"pore {name}: Lx {lx*1e6:.1f} um, H {H*1e6:.1f} um, gap {gap.min()*1e6:.1f}-{gap.max()*1e6:.1f} um "
           f"(mean {gap.mean()*1e6:.1f}), steepest wall slope {slope:.2f}, "
