@@ -1,0 +1,23 @@
+# =============================================================================
+# experiment/heatflux/hf_jacobian.opts
+# =============================================================================
+# Jacobian check of the thermal face terms: a Nitsche wall (linear profile)
+# and the contact-angle term on both y walls, a prescribed flux on x0, a T
+# gradient across the walls so dT/dn != 0 there. -test_wall_jacobian
+# isolates the boundary block (costhet and the thermal terms switched off).
+-temp -20.0
+-humidity 1.0
+-grad_temp0 2.0e3,5.0e3
+-resolution_check 0
+-wall_faces y0,y1
+-contact_angle_deg 60
+-Twall_faces y0,y1
+-Twall_profile linear
+-Twall_axis 0
+-Twall_s0 0.0
+-Twall_length 6.25e-5
+-Twall_dT 0.3
+-qflux_faces x0
+-qflux 50.0
+-t_final 0
+-pf_output 0

@@ -167,6 +167,39 @@ typedef struct {
   PetscBool flux_face[3][2];
   PetscViewer bflux_view;
 
+  // Thermal boundary conditions on named faces (opt-in; none by default, and
+  // a face not named here keeps the insulating natural condition). Assembled
+  // in the pnt->atboundary branch of assembly.c. [axis][side] as above.
+  //
+  // Prescribed heat flux (-qflux_faces, -qflux, -qflux_t0): k dT/dn = q on the
+  // face for t >= qflux_t0, q > 0 INTO the domain [W/m^2].
+  PetscBool qflux_face[3][2];
+  PetscBool qflux_any;
+  PetscReal qflux;
+  PetscReal qflux_t0;
+  // Prescribed wall temperature T = T_w(s,t) (-Twall_faces), imposed weakly
+  // (symmetric Nitsche) because PetIGA's strong Dirichlet value is one
+  // constant per face. s = |x[twall_axis] - twall_s0| is the distance along
+  // the wall from the heated end. Profiles (twall_profile):
+  //   0 erfc        T_init + dT erfc(s / (2 sqrt(kappa (t - t0)))), T_init for t <= t0
+  //   1 erfc_steady same shape with t - t0 fixed at twall_tref (time-constant)
+  //   2 linear      T_init + dT (1 - s/L) for s < L, T_init beyond (time-constant)
+  PetscBool twall_face[3][2];
+  PetscBool twall_any;
+  PetscInt  twall_profile;
+  PetscInt  twall_axis;
+  PetscReal twall_s0;
+  PetscReal twall_kappa;     // [m^2/s], erfc profiles
+  PetscReal twall_dT;        // [K]
+  PetscReal twall_Tinit;     // [C]
+  PetscReal twall_t0;        // [s], erfc
+  PetscReal twall_tref;      // [s], erfc_steady
+  PetscReal twall_len;       // [m], linear
+  PetscReal twall_nitsche;   // dimensionless penalty C: beta = C k(phi) / h_n
+  // Debug only (-test_wall_jacobian): switch the thermal boundary terms off
+  // so the boundary block of J can be isolated by differencing.
+  PetscBool therm_bc_off;
+
   // Resolution checker (ResolutionMonitor): the K&P (2009) Eq. 45 number
   // Pi = beta_sub0 * v_n * eps / d0_sub0 from the measured interface speed,
   // and the largest phi on a vapor-reservoir face (res_watch_face: every

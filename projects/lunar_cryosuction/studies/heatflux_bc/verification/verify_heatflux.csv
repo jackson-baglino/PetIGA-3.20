@@ -1,0 +1,49 @@
+test,case,quantity,measured,expected,tolerance,result
+W1,wall_faces_theta60_base_83590222,ssa_bitwise_identical,32 rows,identical,exact,PASS
+J,wall+thermal,rel_err_boundary_block,2.811441e-08,0,1.0e-06,PASS
+J,thermal_only,rel_err_boundary_block,2.811441e-08,0,1.0e-06,PASS
+J,snes_test_jacobian,max_rel_FD_diff_full_system,0.000126275,0,,INFO
+a,Nx=40,max|T-T_lin|/(qL/k),1.065814e-14,0.000000e+00,1.0e-08,PASS
+a,Nx=40,|Q_out(x1)-q*Ly|/(q*Ly),0.000000e+00,0.000000e+00,1.0e-08,PASS
+a,Nx=80,max|T-T_lin|/(qL/k),1.065814e-14,0.000000e+00,1.0e-08,PASS
+a,Nx=80,|Q_out(x1)-q*Ly|/(q*Ly),0.000000e+00,0.000000e+00,1.0e-08,PASS
+b,air_t=2.5103e-04,T(0,t)-T0 [K],3.378739e-01,3.378625e-01,1.0e-03,PASS
+b,air_t=2.5103e-04,max_x|T-T_ex|/(T_ex(0)-T0),3.379738e-05,0.000000e+00,1.0e-03,PASS
+b,air_t=5.0103e-04,T(0,t)-T0 [K],4.773262e-01,4.773184e-01,1.0e-03,PASS
+b,air_t=5.0103e-04,max_x|T-T_ex|/(T_ex(0)-T0),1.635062e-05,0.000000e+00,1.0e-03,PASS
+b,air_t=1.0010e-03,T(0,t)-T0 [K],6.746879e-01,6.746818e-01,1.0e-03,PASS
+b,air_t=1.0010e-03,max_x|T-T_ex|/(T_ex(0)-T0),9.034492e-06,0.000000e+00,1.0e-03,PASS
+b,air_t=2.0003e-03,T(0,t)-T0 [K],9.537341e-01,9.537296e-01,1.0e-03,PASS
+b,air_t=2.0003e-03,max_x|T-T_ex|/(T_ex(0)-T0),4.698364e-06,0.000000e+00,1.0e-03,PASS
+b,ice_t=2.5103e-03,T(0,t)-T0 [K],2.783753e-02,2.783659e-02,1.0e-03,PASS
+b,ice_t=2.5103e-03,max_x|T-T_ex|/(T_ex(0)-T0),3.379742e-05,0.000000e+00,1.0e-03,PASS
+b,ice_t=5.0103e-03,T(0,t)-T0 [K],3.932705e-02,3.932641e-02,1.0e-03,PASS
+b,ice_t=5.0103e-03,max_x|T-T_ex|/(T_ex(0)-T0),1.635062e-05,0.000000e+00,1.0e-03,PASS
+b,ice_t=1.0010e-02,T(0,t)-T0 [K],5.558774e-02,5.558724e-02,1.0e-03,PASS
+b,ice_t=1.0010e-02,max_x|T-T_ex|/(T_ex(0)-T0),9.034490e-06,0.000000e+00,1.0e-03,PASS
+b,ice_t=2.0003e-02,T(0,t)-T0 [K],7.857843e-02,7.857806e-02,1.0e-03,PASS
+b,ice_t=2.0003e-02,max_x|T-T_ex|/(T_ex(0)-T0),4.698305e-06,0.000000e+00,1.0e-03,PASS
+c,Nx=75_dtmax=2.0e-06_t=3.1032e-05,max_xy|T-T_erfc|/dT,4.025905e-04,0.000000e+00,1.0e-03,PASS
+c,Nx=75_dtmax=2.0e-06_t=1.2503e-04,max_xy|T-T_erfc|/dT,2.942250e-05,0.000000e+00,1.0e-03,PASS
+c,Nx=75_dtmax=2.0e-06_t=5.0103e-04,max_xy|T-T_erfc|/dT,3.066368e-06,0.000000e+00,1.0e-03,PASS
+c,Nx=75_dtmax=2.0e-06_t=2.0003e-03,max_xy|T-T_erfc|/dT,4.436448e-07,0.000000e+00,1.0e-03,PASS
+c,Nx=150_dtmax=2.0e-06_t=3.1032e-05,max_xy|T-T_erfc|/dT,3.198329e-04,0.000000e+00,1.0e-03,PASS
+c,Nx=150_dtmax=2.0e-06_t=1.2503e-04,max_xy|T-T_erfc|/dT,2.168609e-05,0.000000e+00,1.0e-03,PASS
+c,Nx=150_dtmax=2.0e-06_t=5.0103e-04,max_xy|T-T_erfc|/dT,7.764523e-07,0.000000e+00,1.0e-03,PASS
+c,Nx=150_dtmax=2.0e-06_t=2.0003e-03,max_xy|T-T_erfc|/dT,3.781467e-07,0.000000e+00,1.0e-03,PASS
+c,Nx=75_dtmax=5.0e-07_t=3.1258e-05,max_xy|T-T_erfc|/dT,1.981082e-04,0.000000e+00,1.0e-03,PASS
+c,Nx=75_dtmax=5.0e-07_t=1.2476e-04,max_xy|T-T_erfc|/dT,2.471480e-05,0.000000e+00,1.0e-03,PASS
+c,Nx=75_dtmax=5.0e-07_t=5.0026e-04,max_xy|T-T_erfc|/dT,3.073512e-06,0.000000e+00,1.0e-03,PASS
+c,Nx=75_dtmax=5.0e-07_t=2.0001e-03,max_xy|T-T_erfc|/dT,3.843205e-07,0.000000e+00,1.0e-03,PASS
+c,t/t_final=0.0156_dt_sensitivity=0.508,order Nx 75->150 (time error dominates),3.319949e-01,2,,INFO
+c,t/t_final=0.0625_dt_sensitivity=0.160,order Nx 75->150 (time error dominates),4.401500e-01,2,,INFO
+c,t/t_final=0.2500_dt_sensitivity=0.002,order Nx 75->150,1.981562e+00,2.000000e+00,1.5e+00,PASS
+c,t/t_final=1.0000_dt_sensitivity=0.134,order Nx 75->150 (time error dominates),2.304589e-01,2,,INFO
+c2,t=1.002e-01,max_xy|T-T_lin|/dT,7.105427e-15,0.000000e+00,1.0e-08,PASS
+d,flux_air_first_step,offset/(xi q Ly dt0),2.000000e-01,0,,INFO
+d,flux_air_all_snapshots,max_t|dE-Q_in(t)|/Q_in(t_final),9.998400e-06,0.000000e+00,1.0e-04,PASS
+d,flux_air_final_t=2.0003e-03,|dE-Q_in|/Q_in,9.317601e-06,0.000000e+00,1.0e-04,PASS
+d,flux_ice_first_step,offset/(xi q Ly dt0),1.999999e-01,0,,INFO
+d,flux_ice_all_snapshots,max_t|dE-Q_in(t)|/Q_in(t_final),9.998396e-06,0.000000e+00,1.0e-04,PASS
+d,flux_ice_final_t=2.0003e-02,|dE-Q_in|/Q_in,9.317563e-06,0.000000e+00,1.0e-04,PASS
+d,twall_final_t=2.0003e-03,dE [J/m] vs trapezoid int of -k dT/dn,1.328719e-04,1.327508e-04,2.0e-03,PASS

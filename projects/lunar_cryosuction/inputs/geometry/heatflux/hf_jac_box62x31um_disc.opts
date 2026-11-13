@@ -1,0 +1,21 @@
+# =============================================================================
+# geometry/heatflux/hf_jac_box62x31um_disc.opts
+#
+# Jacobian check for the thermal face terms (studies/heatflux_bc/verification/):
+# the disc of verify_wall_bc.sh G2, clipped by both y walls, so phi is inside
+# (0, 1) on the wall faces and the k(phi) column of the Nitsche block is used.
+# =============================================================================
+-ic_type multi_grains
+-ice_grain_cx 3.125e-5
+-ice_grain_cy 1.5625e-5
+-ice_grain_R  2.3438e-5
+-dim 2
+-Nz 1
+-Lz 0
+-eps 1.2e-6
+-eps_valid_temp -20.0
+-periodic 0
+-Nx 24
+-Ny 12
+-Lx 6.25e-5
+-Ly 3.125e-5
