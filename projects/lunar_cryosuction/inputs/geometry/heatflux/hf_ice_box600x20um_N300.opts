@@ -1,0 +1,25 @@
+# =============================================================================
+# geometry/heatflux/hf_ice_box600x20um_N300.opts
+#
+# Heat-flux / wall-temperature BC verification
+# (studies/heatflux_bc/verification/): tests b, d (flux into an ice slab), h = 2 um.
+# Uniform phase (ice), so no interface exists and phase change cannot
+# confound the thermal check. eps is not used by a uniform field; it is set
+# near h only so the start-up checks have a value.
+# =============================================================================
+-ic_type multi_grains
+# All ice: one grain of radius 1 m centred in the box. 0.5 - 0.5 tanh(-huge)
+# is exactly 1 in double precision, so phi = 1 at every control point.
+-ice_grain_cx 0.0003
+-ice_grain_cy 1e-05
+-ice_grain_R  1.0
+-dim 2
+-Nz 1
+-Lz 0
+-eps 2.0e-6
+-eps_valid_temp -20.0
+-periodic 0
+-Nx 300
+-Ny 4
+-Lx 6.0000e-04
+-Ly 2.0000e-05

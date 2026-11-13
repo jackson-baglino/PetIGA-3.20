@@ -1,0 +1,17 @@
+# =============================================================================
+# experiment/heatflux/hf_slab_q1000_ice.opts
+# =============================================================================
+# Tests b, d (ice): q = 1000 W/m2 into x0 of a 600 um ice slab, every other
+# face insulated. At t = 20 ms sqrt(alpha t) = 159 um (alpha_ice = 1.27e-6).
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0
+-resolution_check 0
+-outp 0
+-pf_output 1
+-qflux_faces x0
+-qflux 1000.0
+-t_final 2.0e-2
+-t_interv 2.5e-3
+-delt_t 1.0e-6
+-dtmax 2.0e-5

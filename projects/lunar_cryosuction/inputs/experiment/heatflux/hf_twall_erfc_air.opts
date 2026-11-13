@@ -1,0 +1,25 @@
+# =============================================================================
+# experiment/heatflux/hf_twall_erfc_air.opts
+# =============================================================================
+# Test c (and d3): T_w = T_init + dT erfc(x / (2 sqrt(kappa t))) on BOTH y walls,
+# on x0 (s = 0: T_init + dT for t > 0) and on x1 (s = Lx, the erfc value there;
+# an insulated x1 would depart from the half-space solution by erfc(Lx/(2
+# sqrt(kappa t))) = 1.2 % at 2 ms). kappa equals the diffusivity of air with the
+# solver defaults, 0.02/(1.341*1044), so the exact interior field is the same
+# 1D erfc, uniform in y.
+-temp -20.0
+-humidity 1.0
+-grad_temp0 0.0,0.0
+-resolution_check 0
+-outp 0
+-pf_output 1
+-Twall_faces x0,x1,y0,y1
+-Twall_profile erfc
+-Twall_axis 0
+-Twall_s0 0.0
+-Twall_kappa 1.42856735e-05
+-Twall_dT 5.0
+-t_final 2.0e-3
+-t_interv 2.5e-4
+-delt_t 1.0e-7
+-dtmax 2.0e-6
