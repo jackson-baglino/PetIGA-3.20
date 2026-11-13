@@ -13,7 +13,7 @@ from si_common import EQ, TBL, H, P, save, title  # noqa: I001  (sets the path f
 from docx_helpers import figure
 
 title("Supplementary Methods: vapor boundary conditions for the throat simulations",
-      "Draft 3.1, 13 November 2026.")
+      "Draft 3.2, 13 November 2026.")
 
 H("Purpose", 1)
 P("The simulations solve a phase-field model of ice sublimation and deposition in 2D pores at −20 °C "
@@ -64,6 +64,11 @@ TBL(["Symbol", "Meaning", "Value at −20 °C"], [
     ["$K$", "$\\rho_{\\mathrm{ice}}/(D_v\\,\\rho_{vs})$, with $\\rho_{\\mathrm{ice}}$ = 919 $\\mathrm{kg/m^3}$",
      "$5.70\\times10^{10}\\ \\mathrm{s/m^2}$"],
     ["$A$", "lens area per unit depth", ""],
+    ["$Q_i$, $R_i$", "rate at which face $i$ gains ice area (Step 2); resistance to vapor supply of that face", ""],
+    ["$h_0(t)$", "end humidity at which the lens neither grows nor shrinks at time $t$ (Step 4)", ""],
+    ["$h_{\\mathrm{net}}$", "the single constant end humidity, held for the whole run, for which the lens has "
+     "the same area at the end of the run as at the start: zero net change of ice (Step 5)", ""],
+    ["$h_{LS}$", "the constant end humidity that minimizes the squared growth rate over the run (Step 5)", ""],
 ], [0.85, 4.15, 1.5], size=8.5)
 
 H("Step 1: equilibrium of each face", 1)
@@ -104,8 +109,11 @@ P("$h_0$ is the end humidity at which the lens neither grows nor shrinks at that
   "averaged with weights $1/R_i$, plus the gradient's effect. It changes as the lens moves.")
 
 H("Step 5: choice of a constant end humidity", 1)
-P("We take the constant $h$ for which the lens ends the run (time $t_f$) with its initial area. Integrating "
-  "Step 4 and setting the result to zero:")
+P("The end humidity $h$ is one number held fixed for the whole run, but $h_0$ changes as the lens moves, so "
+  "no constant $h$ keeps the lens area constant at every moment. We choose the constant that gives zero net "
+  "change over the run: $h_{\\mathrm{net}}$ is defined as the end humidity for which the lens has the same area "
+  "at the end of the run (time $t_f$) as at the start. Integrating Step 4 over the run and setting the result "
+  "to zero gives")
 EQ(r"h_{\mathrm{net}} = \frac{\int_0^{t_f} a\,h_0\,dt}{\int_0^{t_f} a\,dt}")
 P("The integrals are taken along the path of the lens, computed with the same model: the lens center moves at "
   "the mean of the two face speeds $Q_w/g_w$ (toward $x = 0$) and $-Q_c/g_c$, the area changes at $dA/dt$, and "

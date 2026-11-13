@@ -1,2 +1,4 @@
 # Plan type 7 (draft, 2026-11-09): layout A, 7A only so far; 7B-7D files to come. RUNS.md IDs in the comments.
-type7_mixed_A_2D_L2000um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_ac1e-2   # 7A
+# RETIRED 2026-11-13: layout A walls have near-cusp valleys (radius 1.2-1.6 um, 1.4-1.9 eps; preprocess/check_walls.py).
+# The user requires smooth walls; type 7 is being redesigned (review_scratch/2026-11-13_type7_layouts/v5).
+# type7_mixed_A_2D_L2000um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_ac1e-2   # 7A

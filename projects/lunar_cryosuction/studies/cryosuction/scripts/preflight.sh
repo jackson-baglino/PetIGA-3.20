@@ -8,7 +8,9 @@
 # set-up check like the verification drivers, not a simulation; it writes only
 # to a temporary folder. It first runs check_open_bc.sh (plan tool T5), which
 # fails any pair whose open vapor-reservoir face still lets ice through
-# (-phi_open_bc not 0).
+# (-phi_open_bc not 0). For a geometry read from a mesh file (-geom_file) it
+# also runs preprocess/check_walls.py: walls must be smooth, with no valley or
+# tip of radius below 20 eps and no corner (user, 2026-11-13).
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 source "$ROOT/scripts/lib/opts.sh"
@@ -35,6 +37,16 @@ while IFS= read -r line || [[ -n $line ]]; do
     grep -E "h_[xyz] = L/N|h_[xyz] = mapped|eps / smallest|only valid for front|RESOLUTION WARNING" "$d/out.txt" | sed 's/^ */     /'
     grep -q "RESOLUTION WARNING" "$d/out.txt" && fail=1
     grep -E "^ +[xy] = " "$d/out.txt" | sed 's/^/    /'
+    mesh=$(awk '$1=="-geom_file"{print $2}' "$gf" | head -n1)
+    if [[ -n $mesh ]]; then
+      PY="$ROOT/venv_cryosuction/bin/python"
+      if [[ -x $PY ]]; then
+        epsv=$(awk '$1=="-eps"{print $2}' "$gf" | head -n1)
+        "$PY" "$ROOT/preprocess/check_walls.py" "$ROOT/$mesh" ${epsv:+--eps $epsv} | sed 's/^/   /' || fail=1
+      else
+        echo "     (wall check skipped: no venv_cryosuction python)"
+      fi
+    fi
   else
     echo "FAIL $line"; tail -5 "$d/out.txt" | sed 's/^/     /'; fail=1
   fi
