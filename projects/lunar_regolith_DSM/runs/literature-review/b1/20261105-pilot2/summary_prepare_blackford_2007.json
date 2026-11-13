@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "blackford_2007",
+ "copy_sha256": "f0708784608eb9224c95d31f44544531f95f524c0c6df59693a9450cd9d621cd",
+ "pages": 32,
+ "tiles": 254,
+ "tiles_per_page_max": 12,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 35,
+ "min_tile_dpi": 248.7,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 0,
+ "numbered_equations": 0,
+ "headings": 35,
+ "page_map_offset": 353,
+ "manifest_sha256": "757cd3536df6146a1c0688b8a3ab1ff8671ab7b503f6130dedef39e345eedd20",
+ "seconds": 483.1
+}

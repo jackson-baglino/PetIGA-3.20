@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "molaro_2019",
+ "copy_sha256": "0ef28cb88701e3ecf066b092c3979ca484aa01bcde4bf893ce24e14d2761c4d5",
+ "pages": 34,
+ "tiles": 230,
+ "tiles_per_page_max": 30,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 121,
+ "min_tile_dpi": 188.4,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 41,
+ "numbered_equations": 41,
+ "headings": 41,
+ "page_map_offset": 242,
+ "manifest_sha256": "0b015a7136aa6dfc16ccd021cf98d9cf6b721cad8c70cba34f9c3a94ececd17f",
+ "seconds": 504.7
+}

@@ -1,0 +1,113 @@
+{
+  "gates": [
+    {
+      "rule": "kinds caught by rule (E3): all caught",
+      "pass": false,
+      "detail": "1 of 14"
+    },
+    {
+      "rule": "equation_sign_or_exponent: all caught",
+      "pass": false,
+      "detail": "5 of 6"
+    },
+    {
+      "rule": "plants reaching E4: lower bound >= 85%",
+      "pass": false,
+      "detail": "21 of 31 caught, lower bound 51.5%"
+    },
+    {
+      "rule": "controls flagged <= 10%",
+      "pass": false,
+      "detail": "14 of 40 flagged"
+    }
+  ],
+  "passed": false,
+  "per_kind": {
+    "changed_digit": {
+      "caught": 6,
+      "n": 6,
+      "lower_bound": 0.607
+    },
+    "contradicted": {
+      "caught": 0,
+      "n": 2,
+      "lower_bound": 0.0
+    },
+    "dropped_condition": {
+      "caught": 1,
+      "n": 3,
+      "lower_bound": 0.017
+    },
+    "equation_sign_or_exponent": {
+      "caught": 5,
+      "n": 6,
+      "lower_bound": 0.4182
+    },
+    "equation_symbol_swap": {
+      "caught": 0,
+      "n": 1,
+      "lower_bound": 0.0
+    },
+    "scope_widened": {
+      "caught": 0,
+      "n": 2,
+      "lower_bound": 0.0
+    },
+    "wrong_attribution": {
+      "caught": 2,
+      "n": 2,
+      "lower_bound": 0.2236
+    },
+    "wrong_unit": {
+      "caught": 7,
+      "n": 9,
+      "lower_bound": 0.4504
+    }
+  },
+  "by_source": {
+    "model": {
+      "caught": 1,
+      "n": 3,
+      "lower_bound": 0.017
+    },
+    "script": {
+      "caught": 16,
+      "n": 17,
+      "lower_bound": 0.7499
+    },
+    "user": {
+      "caught": 4,
+      "n": 11,
+      "lower_bound": 0.1351
+    }
+  },
+  "by_copy_kind": {
+    "pdf": {
+      "caught": 21,
+      "n": 31,
+      "lower_bound": 0.5146
+    }
+  },
+  "e4": {
+    "caught": 21,
+    "n": 31,
+    "lower_bound": 0.5146,
+    "certified": true
+  },
+  "misses_per_kind": {
+    "dropped_condition": 2,
+    "wrong_page": 13,
+    "equation_sign_or_exponent": 1,
+    "wrong_unit": 2,
+    "scope_widened": 2,
+    "contradicted": 2,
+    "equation_symbol_swap": 1
+  },
+  "no_verdict": {
+    "plants": 0,
+    "controls": 0
+  },
+  "heldout_set": "75facc8509e1",
+  "baseline": "scripts only (baseline.py)",
+  "date": "2026-11-04"
+}

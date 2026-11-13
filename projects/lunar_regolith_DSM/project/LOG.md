@@ -2,6 +2,34 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-11-04 (logged 2026-11-13): Execute run 20261105-pilot2 started; C0 passed
+
+- Session: f83f89f4-9803-416c-ac96-bc7d58c2305c (a background job from the foreman session; it ran as plain
+  Claude Code, not as beth-foreman)
+- Done:
+  - Initialized execute run `runs/literature-review/b1/20261105-pilot2` under b1-v2 (3296e375). It has nine
+    papers, commit e0b3c296 and a clean tree.
+  - The user approved U0 and ran the line. C0 (held-out calibration, 2353.7 s) passed on its first attempt:
+    rule kinds 14/14, sign or exponent 6/6, E4 plants 30/31 (lower bound 85.6 %), controls flagged 3/40. The
+    one miss was a dropped condition.
+  - Then A2 ran for three papers and P1 for one.
+- Remaining (decide in the beth-foreman session, not a background job):
+  - The C0 gate, "accept the frozen calibration result".
+  - The A2 gate for li_2009: the copy kind is "unknown" and no DOI was found on pages 1–2.
+  - The A2 gate for lervag_lowengrub_2015: the copy is an arXiv version and no DOI was found on pages 1–2.
+    Check both copy kinds against the contract's Copy kinds paragraph.
+  - P1 yu_chen_thornton_2012 FAILED (exit 1, 0.1 s). The log is
+    `untrusted/logs/P1_yu_chen_thornton_2012_20261104-195827.log`; read it in review mode. Its A2 was clean:
+    publisher copy, DOI found.
+  - Ask the foreman why A2 and P1 ran while the C0 gate was still waiting.
+  - Then rerun the line: `run_b1.py run --run runs/literature-review/b1/20261105-pilot2`.
+- Bottlenecks:
+  - `run_b1.py --run` takes a path. A bare name made a stray `./20261105-pilot2/`, which was deleted before
+    any stage ran.
+  - Background jobs started from the foreman session do not inherit `--agent beth-foreman`, so this
+    session's setup steps (init, deleting the stray folder, a commit) ran without the foreman's limits.
+    Candidate backlog item: block line commands outside beth-foreman.
+
 ## 2026-11-02/03: Pilot line closed out; literature review v2 designed; isolation fix
 
 - Session: bd0b31b7-3240-4887-9a00-1fe467db9be6 (continued after compaction; still open)

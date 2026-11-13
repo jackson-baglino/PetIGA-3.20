@@ -1,0 +1,108 @@
+{
+  "gates": [
+    {
+      "rule": "kinds caught by rule (E3): all caught",
+      "pass": true,
+      "detail": "14 of 14"
+    },
+    {
+      "rule": "equation_sign_or_exponent: all caught",
+      "pass": true,
+      "detail": "6 of 6"
+    },
+    {
+      "rule": "plants reaching E4: lower bound >= 85%",
+      "pass": true,
+      "detail": "30 of 31 caught, lower bound 85.6%"
+    },
+    {
+      "rule": "controls flagged <= 10%",
+      "pass": true,
+      "detail": "3 of 40 flagged"
+    }
+  ],
+  "passed": true,
+  "per_kind": {
+    "changed_digit": {
+      "caught": 6,
+      "n": 6,
+      "lower_bound": 0.607
+    },
+    "contradicted": {
+      "caught": 2,
+      "n": 2,
+      "lower_bound": 0.2236
+    },
+    "dropped_condition": {
+      "caught": 2,
+      "n": 3,
+      "lower_bound": 0.1354
+    },
+    "equation_sign_or_exponent": {
+      "caught": 6,
+      "n": 6,
+      "lower_bound": 0.607
+    },
+    "equation_symbol_swap": {
+      "caught": 1,
+      "n": 1,
+      "lower_bound": 0.05
+    },
+    "scope_widened": {
+      "caught": 2,
+      "n": 2,
+      "lower_bound": 0.2236
+    },
+    "wrong_attribution": {
+      "caught": 2,
+      "n": 2,
+      "lower_bound": 0.2236
+    },
+    "wrong_unit": {
+      "caught": 9,
+      "n": 9,
+      "lower_bound": 0.7169
+    }
+  },
+  "by_source": {
+    "model": {
+      "caught": 2,
+      "n": 3,
+      "lower_bound": 0.1354
+    },
+    "script": {
+      "caught": 17,
+      "n": 17,
+      "lower_bound": 0.8384
+    },
+    "user": {
+      "caught": 11,
+      "n": 11,
+      "lower_bound": 0.7616
+    }
+  },
+  "by_copy_kind": {
+    "pdf": {
+      "caught": 30,
+      "n": 31,
+      "lower_bound": 0.8559
+    }
+  },
+  "e4": {
+    "caught": 30,
+    "n": 31,
+    "lower_bound": 0.8559,
+    "certified": true
+  },
+  "misses_per_kind": {
+    "dropped_condition": 1
+  },
+  "no_verdict": {
+    "plants": 0,
+    "controls": 0
+  },
+  "heldout_set": "75facc8509e1",
+  "prompt_version": "b1-v2",
+  "attempts_so_far": 1,
+  "date": "2026-11-04"
+}
