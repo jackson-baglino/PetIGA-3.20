@@ -11,13 +11,14 @@ Everything drawn comes from the run folder, not from a sketch:
   - neck width and extent: the "# DOGBONE:" line of the geometry .opts;
   - lens extent: phi = 1/2 crossings of the t = 0 field, on the axis and on
     the first row of nodes off each wall.
-The lower panels give T
-and rho_v along the pore axis at t = 0.
+The lower panels give, along the pore axis at t = 0, T and the humidity
+h = rho_v/rho_vs(T) with T the local temperature (the initial vapor is
+saturated at the local T, so h = 1 everywhere).
 
 Checked with postprocess/figcheck.py at the placed width (7 in); exits 1 when
 a check fails.
 
-    venv_cryosuction/bin/python docs/run_plan/t6_startframe.py <run folder> <out.png> [--sat-day 1]
+    venv_cryosuction/bin/python docs/run_plan/t6_startframe.py <run folder> <out.png>
 """
 from __future__ import annotations
 
@@ -107,19 +108,13 @@ def orient(s):
     return (X, Y, *F)
 
 
-def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
+def main(run: Path, out: Path) -> int:
     o = pplib.read_opts(str(run))
     db, lg = dogbone(run), log_values(run)
     hx, hy, deg = mesh_sizes(run)
     it = pplib.iter_snapshots(str(run))
     X, Y, phi, T, rv = orient(next(it))
-    ss = next((q for q in it if q.t >= sat_day * 86400), None)
-    if ss is None:
-        raise ValueError(f"no snapshot at or after {sat_day} d")
-    _, _, phi_s, T_s, rv_s = orient(ss)
-    jcs = phi_s.shape[0] // 2
     h0 = rv[phi.shape[0] // 2] / pplib.rho_vs(T[phi.shape[0] // 2])
-    hs = rv_s[jcs] / pplib.rho_vs(T_s[jcs])
     lx, W = X.max(), db["W"] * UM
     wc, xn0, xn1, sh = db["wc"] * UM, db["x_n0"] * UM, db["x_n1"] * UM, db["shoulder"] * UM
     eps = float(o["-eps"]) * UM
@@ -231,7 +226,7 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
                 + f"{3 * (lg['nx'] + deg[0]) * (lg['ny'] + deg[1]) / 1e6:.2f} M DOF.")
     fig.text(0.2 / FIG_W, (ywall - 0.04) / H, wall_txt, ha="left", va="top", linespacing=1.3)
 
-    # axis profiles: T at t = 0; humidity rho_v/rho_vs(T) at t = 0 and at sat_day
+    # axis profiles at t = 0: T and humidity rho_v/rho_vs(T)
     pw = (FIG_W - 0.2 - 0.55 - 0.6) / 2
     yb = bot_in / H
     a1 = fig.add_axes((0.55 / FIG_W, yb, pw / FIG_W, prof_in / H))
@@ -239,13 +234,13 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
     a1.plot([0, lx], (lg["T_x0"], lg["T_x1"]), "o", ms=3, color="#b2182b", clip_on=False)
     a1.set_title(r"$T$ on the axis at $t$ = 0 [°C]; dots: end values in the log", fontsize=7.5, loc="left", pad=3)
     a2 = fig.add_axes(((0.55 + pw + 0.6) / FIG_W, yb, pw / FIG_W, prof_in / H))
-    a2.plot(X[jc], h0, color=GRAY, lw=0.9, ls=(0, (3, 2)), label=r"$t$ = 0")
-    a2.plot(X[jcs], hs, color=INK, lw=0.9, label=rf"$t$ = {ss.t / 86400:.2f} d")
-    lens = phi_s[jcs] > 0.5
+    a2.plot(X[jc], h0, color=INK, lw=0.9)
+    lens = phi[jc] > 0.5
     if lens.any():
-        a2.axvspan(X[jcs][lens].min(), X[jcs][lens].max(), color="#c6dbef", zorder=0)
-    a2.legend(fontsize=7, frameon=False, loc="lower left", handlelength=2)
-    a2.set_title(r"$\rho_v/\rho_{vs}(T)$ on the axis, $T$ local; blue: ice", fontsize=7.5, loc="left", pad=3)
+        a2.axvspan(X[jc][lens].min(), X[jc][lens].max(), color="#c6dbef", zorder=0)
+    a2.set_ylim(0.999, 1.001)
+    a2.set_title(r"$\rho_v/\rho_{vs}(T)$ on the axis at $t$ = 0, $T$ local; blue: ice", fontsize=7.5,
+                 loc="left", pad=3)
     for a in (a1, a2):
         a.axvspan(xn0, xn1, color="#eeeeee", zorder=0)
         a.set_xlim(0, lx)
@@ -257,8 +252,7 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
         print("  FAIL:", b)
     fig.savefig(out, dpi=300)
     print(f"{out}: {len(bad)} problems, {FIG_W} x {H:.2f} in")
-    print(f"  axis humidity: t = 0 {h0.min():.6f} to {h0.max():.6f}; t = {ss.t / 86400:.3f} d "
-          f"{hs.min():.6f} to {hs.max():.6f}")
+    print(f"  axis humidity at t = 0: {h0.min():.9f} to {h0.max():.9f}")
     print(f"  lens phi=1/2 on axis: {np.round(x_ax, 1)} um; near walls: {np.round(x_w0, 1)}, "
           f"{np.round(x_w1, 1)} um; theta from gammas {theta:.2f} deg (log {lg['theta_log']})")
     return 1 if bad else 0
@@ -268,6 +262,5 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("run", type=Path)
     ap.add_argument("out", type=Path)
-    ap.add_argument("--sat-day", type=float, default=1.0, help="day of the second humidity profile")
     a = ap.parse_args()
-    sys.exit(main(a.run, a.out, a.sat_day))
+    sys.exit(main(a.run, a.out))
