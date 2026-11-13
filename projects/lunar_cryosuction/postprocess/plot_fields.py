@@ -44,9 +44,13 @@ import glob
 import os
 import re
 import struct
+import sys
 
 import numpy as np
 from igakit.io import PetIGA
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from pplib import read_sol_vec  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -294,7 +298,7 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
             print(f"  Skipping (exists): {outfile}")
             continue
 
-        sol = PetIGA().read_vec(infile, nrb)
+        sol = read_sol_vec(infile, nrb)
         _write_vts(outfile, nrb, sol)
         print(f"  Written: {outfile}")
 

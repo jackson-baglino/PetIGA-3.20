@@ -736,6 +736,34 @@ def snapshot_times(run_dir: str) -> dict:
     return tmap
 
 
+def read_sol_vec(path, nrb):
+    """Fields of a sol_*.dat on the control net of nrb (igasol.dat): array of
+    shape nrb.shape + (dof,), as igakit's PetIGA().read_vec(path, nrb).
+
+    A run with -periodic_x 1 has N x nodes but its mesh has N + p control
+    columns: PetIGA wraps the last p basis functions onto the first p
+    (petigaaxis.c, nnp = n - C on a periodic axis). The vector is read flat
+    and those p columns are appended as copies of the first p, which is what
+    the wrapped basis means; an open mesh is read unchanged."""
+    from igakit.io import PetIGA
+    io = PetIGA()
+    shape = tuple(nrb.shape)
+    A = np.asarray(io.read_vec(path))
+    nx, ny = shape[0], int(np.prod(shape[1:]))
+    fits = [(dof, nxd) for dof in (3, 1, 2, 4) for nxd in range(nx, nx - max(nrb.degree) - 1, -1)
+            if A.size == dof * nxd * ny]
+    if not fits:
+        raise ValueError(f"{path}: {A.size} values fit neither the {shape} control net "
+                         "nor a periodic-x layout")
+    dof, nxd = fits[0]
+    if nxd == nx:
+        return io.read_vec(path, nrb)
+    B = A.reshape((dof, nxd) + shape[1:], order="F")       # natural order: dof fastest, then x
+    B = np.concatenate([B, B[:, :nx - nxd]], axis=1)        # wrapped columns
+    B = np.ascontiguousarray(np.rollaxis(B, 0, B.ndim))
+    return B.squeeze() if dof == 1 else B
+
+
 def _sol_files(run_dir):
     return sorted(f for f in os.listdir(run_dir) if re.fullmatch(r"sol_\d+\.dat", f))
 
@@ -799,7 +827,7 @@ def iter_snapshots(run_dirs, source: str = "auto", n_per_elem: int = 2, every: i
                 v = np.linspace(*lim[1], n_per_elem * nel[1] + 1)
                 cache[rd] = (io, nrb, u, v)
             io, nrb, u, v = cache[rd]
-            C, F = nrb(u, v, fields=io.read_vec(path, nrb))
+            C, F = nrb(u, v, fields=read_sol_vec(path, nrb))
             X, Y = C[:, :, 0].T.copy(), C[:, :, 1].T.copy()
             phi, T, rv = (F[:, :, k].T.copy() for k in range(3))
         else:
