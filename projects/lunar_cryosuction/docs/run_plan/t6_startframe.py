@@ -11,10 +11,7 @@ Everything drawn comes from the run folder, not from a sketch:
   - neck width and extent: the "# DOGBONE:" line of the geometry .opts;
   - lens extent: phi = 1/2 crossings of the t = 0 field, on the axis and on
     the first row of nodes off each wall.
-The second pore panel maps the vapor saturation S = rho_v/rho_vs(T) - 1 in
-the gas at the first snapshot at or after --sat-day (default 1 d): at t = 0
-S is zero everywhere (the initial vapor is saturated at the local T), so the
-map is taken once the start-up transient has passed. The lower panels give T
+The lower panels give T
 and rho_v along the pore axis at t = 0.
 
 Checked with postprocess/figcheck.py at the placed width (7 in); exits 1 when
@@ -120,7 +117,9 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
     if ss is None:
         raise ValueError(f"no snapshot at or after {sat_day} d")
     _, _, phi_s, T_s, rv_s = orient(ss)
-    S = rv_s / pplib.rho_vs(T_s) - 1.0
+    jcs = phi_s.shape[0] // 2
+    h0 = rv[phi.shape[0] // 2] / pplib.rho_vs(T[phi.shape[0] // 2])
+    hs = rv_s[jcs] / pplib.rho_vs(T_s[jcs])
     lx, W = X.max(), db["W"] * UM
     wc, xn0, xn1, sh = db["wc"] * UM, db["x_n0"] * UM, db["x_n1"] * UM, db["shoulder"] * UM
     eps = float(o["-eps"]) * UM
@@ -140,11 +139,8 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
     yl = (-95, W * ex + 34)
     xl = (-20, lx + 20)
     h_pore = ax_w * (yl[1] - yl[0]) / (xl[1] - xl[0])
-    top_in, mid_in, prof_in, bot_in = 0.62, 0.78, 1.05, 0.42
-    sat_top, sat_gap = 0.22, 0.55
-    yl_s = (-14, W * ex + 14)                    # saturation panel: pore only, no dimensions
-    h_sat = ax_w * (yl_s[1] - yl_s[0]) / (xl[1] - xl[0])
-    H = top_in + h_pore + mid_in + sat_top + h_sat + sat_gap + prof_in + bot_in
+    top_in, mid_in, prof_in, bot_in = 0.62, 0.95, 1.05, 0.42
+    H = top_in + h_pore + mid_in + prof_in + bot_in
     fig = plt.figure(figsize=(FIG_W, H))
     ax = fig.add_axes((0.2 / FIG_W, (H - top_in - h_pore) / H, ax_w / FIG_W, h_pore / H))
 
@@ -205,7 +201,6 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
     cax.set_title(r"$\phi$", fontsize=7.5, pad=2)
 
     # boundary conditions: pore ends (top block), walls (under the pore)
-    rv0 = lg["rv_x0"]
     rvs0 = float(pplib.rho_vs(T0))
     left = (r"$x = 0$ (warm end; dashed)" + "\n"
             + rf"$T$ = {lg['T_x0']:.3f} °C, fixed   [-Tfix_faces x0]" + "\n"
@@ -236,49 +231,34 @@ def main(run: Path, out: Path, sat_day: float = 1.0) -> int:
                 + f"{3 * (lg['nx'] + deg[0]) * (lg['ny'] + deg[1]) / 1e6:.2f} M DOF.")
     fig.text(0.2 / FIG_W, (ywall - 0.04) / H, wall_txt, ha="left", va="top", linespacing=1.3)
 
-    # vapor saturation in the gas at the first snapshot at or after sat_day
-    y_sat = H - top_in - h_pore - mid_in - sat_top - h_sat
-    axs = fig.add_axes((0.2 / FIG_W, y_sat / H, ax_w / FIG_W, h_sat / H))
-    gas = phi_s < 0.5
-    lim = float(np.percentile(np.abs(S[gas]), 99.5))
-    Sm = np.ma.masked_where(~gas, S)
-    pcs = axs.pcolormesh(X, Y * ex, Sm, cmap="RdBu_r", vmin=-lim, vmax=lim, shading="gouraud",
-                         rasterized=True, zorder=1)
-    axs.contourf(X, Y * ex, phi_s, levels=[0.5, 1.01], colors=["#c6dbef"], zorder=1)
-    axs.contour(X, Y * ex, phi_s, levels=[0.5], colors=["#1f4e8c"], linewidths=0.8, zorder=3)
-    draw_walls(axs)
-    axs.set_xlim(*xl)
-    axs.set_ylim(*yl_s)
-    axs.axis("off")
-    axs.set_title(rf"Vapor saturation $S = \rho_v/\rho_{{vs}}(T) - 1$ in the gas at $t$ = {ss.t / 86400:.2f} d "
-                  rf"($S$ = 0 at $t$ = 0); ice ($\phi$ > 1/2) pale blue; gas {S[gas].min():.1e} to {S[gas].max():.1e}",
-                  fontsize=7.5, loc="left", pad=3)
-    caxs = fig.add_axes(((0.2 + ax_w + 0.05) / FIG_W, (y_sat + 0.05) / H, 0.06 / FIG_W, (h_sat - 0.1) / H))
-    cbs = fig.colorbar(pcs, cax=caxs, ticks=[-lim, 0, lim], format="%.1e")
-    cbs.ax.tick_params(labelsize=7, length=2, pad=1)
-    caxs.set_title(r"$S$", fontsize=7.5, pad=2)
-
-    # axis profiles at t = 0
+    # axis profiles: T at t = 0; humidity rho_v/rho_vs(T) at t = 0 and at sat_day
     pw = (FIG_W - 0.2 - 0.55 - 0.6) / 2
     yb = bot_in / H
-    for k, (F, lab, ends) in enumerate((
-            (T[jc], r"$T$ on the axis at $t$ = 0 [°C]; dots: end values in the log", (lg["T_x0"], lg["T_x1"])),
-            (rv[jc] / rvs0, r"$\rho_v/\rho_{vs}(T_0)$ on the axis at $t$ = 0; gray: neck", (rv0 / rvs0, lg["rv_x1"] / rvs0)))):
-        a2 = fig.add_axes(((0.55 + k * (pw + 0.6)) / FIG_W, yb, pw / FIG_W, prof_in / H))
-        a2.plot(X[jc], F, color=INK, lw=0.9)
-        a2.plot([0, lx], ends, "o", ms=3, color="#b2182b", clip_on=False)
-        a2.axvspan(xn0, xn1, color="#eeeeee", zorder=0)
-        a2.set_xlim(0, lx)
-        a2.set_xlabel("x [µm]")
-        a2.set_title(lab, fontsize=7.5, loc="left", pad=3)
-        a2.tick_params(labelsize=7, length=2)
-        a2.ticklabel_format(axis="y", useOffset=False)
+    a1 = fig.add_axes((0.55 / FIG_W, yb, pw / FIG_W, prof_in / H))
+    a1.plot(X[jc], T[jc], color=INK, lw=0.9)
+    a1.plot([0, lx], (lg["T_x0"], lg["T_x1"]), "o", ms=3, color="#b2182b", clip_on=False)
+    a1.set_title(r"$T$ on the axis at $t$ = 0 [°C]; dots: end values in the log", fontsize=7.5, loc="left", pad=3)
+    a2 = fig.add_axes(((0.55 + pw + 0.6) / FIG_W, yb, pw / FIG_W, prof_in / H))
+    a2.plot(X[jc], h0, color=GRAY, lw=0.9, ls=(0, (3, 2)), label=r"$t$ = 0")
+    a2.plot(X[jcs], hs, color=INK, lw=0.9, label=rf"$t$ = {ss.t / 86400:.2f} d")
+    lens = phi_s[jcs] > 0.5
+    if lens.any():
+        a2.axvspan(X[jcs][lens].min(), X[jcs][lens].max(), color="#c6dbef", zorder=0)
+    a2.legend(fontsize=7, frameon=False, loc="lower left", handlelength=2)
+    a2.set_title(r"$\rho_v/\rho_{vs}(T)$ on the axis, $T$ local; blue: ice", fontsize=7.5, loc="left", pad=3)
+    for a in (a1, a2):
+        a.axvspan(xn0, xn1, color="#eeeeee", zorder=0)
+        a.set_xlim(0, lx)
+        a.set_xlabel("x [µm]")
+        a.tick_params(labelsize=7, length=2)
+        a.ticklabel_format(axis="y", useOffset=False)
     bad = check_figure(fig, min_pt=7.0, placed_width_in=FIG_W)
     for b in bad:
         print("  FAIL:", b)
     fig.savefig(out, dpi=300)
     print(f"{out}: {len(bad)} problems, {FIG_W} x {H:.2f} in")
-    print(f"  saturation map at t = {ss.t / 86400:.3f} d: gas S {S[gas].min():.3e} to {S[gas].max():.3e}")
+    print(f"  axis humidity: t = 0 {h0.min():.6f} to {h0.max():.6f}; t = {ss.t / 86400:.3f} d "
+          f"{hs.min():.6f} to {hs.max():.6f}")
     print(f"  lens phi=1/2 on axis: {np.round(x_ax, 1)} um; near walls: {np.round(x_w0, 1)}, "
           f"{np.round(x_w1, 1)} um; theta from gammas {theta:.2f} deg (log {lg['theta_log']})")
     return 1 if bad else 0
@@ -288,6 +268,6 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("run", type=Path)
     ap.add_argument("out", type=Path)
-    ap.add_argument("--sat-day", type=float, default=1.0, help="day of the saturation map")
+    ap.add_argument("--sat-day", type=float, default=1.0, help="day of the second humidity profile")
     a = ap.parse_args()
     sys.exit(main(a.run, a.out, a.sat_day))
