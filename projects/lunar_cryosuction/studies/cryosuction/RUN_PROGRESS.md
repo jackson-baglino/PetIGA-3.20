@@ -5,7 +5,7 @@ state. Detail for each run (folder, model version, full outcome) is in
 `RUNS.md`; the day-to-day project state is in `STATUS.md`; the plan itself is
 `SimulationPlan_v2.docx` (iCloud, `.../SimulationProposalsSetup/`).
 
-**Last updated:** 2026-11-12
+**Last updated:** 2026-11-13
 
 **Full run plan (setup, schematics, every matrix):** `RunPlan_2026-11-12.docx`
 (7 pages) in the iCloud plan folder, built by `docs/run_plan/build_runplan2.py`.
@@ -13,7 +13,7 @@ Gradients chosen by the user on 2026-11-12: production G = 10 and 20 K/m, with
 a few runs at 50 K/m for selected geometries and contact angles (set once in
 the builder as G_PROD, G_HIGH). New: 6D, theta-90 face stability in the
 straight pore (flat faces need a flat-face feature in build_ice_layout.py).
-New runs write 401 snapshots for movies. Inputs for types 1, 2, 5, 6C/6D and
+New runs write 401 snapshots for movies, plus event snapshots (-outp_dphi). Ready to queue 2026-11-13: types 1, 2, 6B (flat), 6C, 6D (RUNS.md). Inputs for types 1, 2, 5, 6C/6D and
 7C/7D are to be rebuilt at these gradients.
 
 States: **done** (ran and analyzed) · **ran** (ran, analysis open) ·

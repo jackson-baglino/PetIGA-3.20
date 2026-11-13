@@ -94,6 +94,11 @@ Hypotheses: the user writes them; none recorded yet.
   6B-1 voided by the user (faces started 0.375 um out of flat); its resume is
   withdrawn. Flat-face reruns 6B-1/6B-2 (G 300, 401 snapshots) prepared
   (type6b_flat_tests.txt, solver 5815f290), to go --into the type-6 batch.
+- 2026-11-13: ready to queue (preflight OK, pushed): type 1 (18), type 2
+  (14), 6B flat (2), 6C (9), 6D (6). New opt-in solver options: event
+  snapshots -outp_dphi (e5a593e7), flat-face seed -ice_flat_seed (fe8a7334).
+  Type 7: six candidate layouts (A-F) for the user to choose on 13 Nov
+  (review_scratch/2026-11-13_type7_layouts). No eps halving (user).
   I1-fine, T3, T4 finished 2026-11-07 (RUNS.md). T6 lenses start
   at the wall-BC angle (60 deg concave via the new opt-in IC option
   -bridge_concaveL/R, FREEZE 18270f6f; 6B-1 flat). Droplets/caps start at
