@@ -419,6 +419,26 @@ compute_optimal_nprocs() {
 }
 
 ###############################################################################
+# Run a private copy of the executable.
+#
+# The project (and its executable) sits on shared network storage. If the
+# executable is rebuilt on the login node while jobs run it (a later
+# submit_batch.sh runs `make all`), the running jobs can die with a bus error
+# the next time they page in code they had not used yet -- typically at exit
+# or on a rare path. This hit most runs of 13-15 Nov 2026 (exit code 135 after
+# "Solution completed"). Each job therefore copies the executable into its
+# run folder and runs the copy; the copy also records the exact binary used.
+# On a resume the copy already in the folder is replaced by the current build.
+###############################################################################
+private_executable() {
+    local dst="$folder/lunar_cryosuction.bin"
+    cp -f "$EXEC" "$dst" || { echo "❌ Could not copy $EXEC to $dst"; exit 1; }
+    chmod u+x "$dst"
+    echo "Executable copied to the run folder: $dst ($(md5sum "$dst" 2>/dev/null | cut -c1-12 || echo no-md5))"
+    EXEC="$dst"
+}
+
+###############################################################################
 # Run the simulation using MPI (srun on SLURM, mpiexec locally)
 ###############################################################################
 run_simulation() {
@@ -561,6 +581,7 @@ else
     stage_output_folder
 fi
 compute_optimal_nprocs
+private_executable
 run_simulation
 copy_source_code
 
