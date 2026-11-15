@@ -1,0 +1,42 @@
+# =============================================================================
+# geometry type7v5_C3_2D_L1800um_eps0.86um.opts   (preprocess/build_ice_layout.py preprocess/layouts/type7v5_C3.json)
+#
+# Rough-walled pore: Lx 1800.0 um, gap 45.0-161.3 um (mean 117.5),
+# 29+29 wall bumps, throat at x = 450.0 um, throat at x = 820.0 um, throat at x = 1180.0 um, throat at x = 1520.0 um.
+# Walls are in the mesh; wall faces y0,y1; x0 and x1 are the pore ends.
+# Ice from inputs/geometry/meshes/type7v5_C3_2D_L1800um_eps0.86um_phi.bin (-ic_type phi_file), initial angle 60 deg:
+#   plug 1126-1210 um, theta 60, faces r 49.9 um
+#   plug 392-464 um, theta 60, faces r 55.8 um
+#   cap x 290 um on the top wall, R 40 um, theta 40
+#   cap x 600 um on the bottom wall, R 55 um, theta 40
+#   cap x 690 um on the top wall, R 35 um, theta 40
+#   cap x 1030 um on the bottom wall, R 45 um, theta 40
+#   cap x 1000 um on the top wall, R 50 um, theta 40
+#   cap x 1560 um on the top wall, R 60 um, theta 40
+#   cap x 1745 um on the top wall, R 40 um, theta 40
+#   cap x 1650 um on the bottom wall, R 35 um, theta 40
+#   grain (275, 102) um, 50 x 40 um
+#   grain (630, 111) um, 65 x 48 um
+#   grain (990, 110) um, 65 x 48 um
+#   grain (1370, 82) um, 45 x 34 um
+#   grain (1705, 105) um, 60 x 46 um
+#   rind 25.00 um (29.1 eps) thick on the top wall(s), x 1340-1400 um, ends at 60 deg
+# ice 25.7% of the pore, sharp area 5.4359e-08 m^2, 16 bodies.
+# eps 8.5840e-07 m, h = eps/sqrt(2): Nx 2966, Ny 266.
+# =============================================================================
+# DOF_GRID: 2968 268
+-geom_file inputs/geometry/meshes/type7v5_C3_2D_L1800um_eps0.86um.dat
+-p 2
+-C 1
+-ic_type phi_file
+-phi_file inputs/geometry/meshes/type7v5_C3_2D_L1800um_eps0.86um_phi.bin
+-dim 2
+-Lx 1.800000e-03
+-Ly 2.117320e-04
+-Lz 0
+-delt_t 1.0e-4
+-eps 8.5840e-07
+-eps_valid_temp -20
+-periodic 0
+-wall_faces y0,y1
+-dtmax 1.3412e+03                     # 2 tau_sub at this eps (layout 'dtmax')

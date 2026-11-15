@@ -1,0 +1,14 @@
+# Plan type 7 v5 (make_type7_inputs.py, 2026-11-13): one smooth rough pore (L 1.8 mm, throats 50/65/45/60 um), seven ice configurations C1 (40 %) .. C7 (4 %). 13 runs, 2.39 M DoF each.
+type7v5_C1_2D_L1800um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_n401_ac1e-2   # 7A-1
+type7v5_C2_2D_L1800um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_n401_ac1e-2   # 7A-2
+type7v5_C3_2D_L1800um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_n401_ac1e-2   # 7A-3
+type7v5_C4_2D_L1800um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_n401_ac1e-2   # 7A-4
+type7v5_C5_2D_L1800um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_n401_ac1e-2   # 7A-5
+type7v5_C6_2D_L1800um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_n401_ac1e-2   # 7A-6
+type7v5_C7_2D_L1800um_eps0.86um:t7_T-20_h0.990_iso_theta60_60d_n401_ac1e-2   # 7A-7
+type7v5_C1_2D_L1800um_eps0.86um:t7_T-20_h0.990_G20warmcollector_theta60_60d_n401_ac1e-2   # 7C-1
+type7v5_C4_2D_L1800um_eps0.86um:t7_T-20_h0.990_G20warmcollector_theta60_60d_n401_ac1e-2   # 7C-4
+type7v5_C7_2D_L1800um_eps0.86um:t7_T-20_h0.990_G20warmcollector_theta60_60d_n401_ac1e-2   # 7C-7
+type7v5_C1_2D_L1800um_eps0.86um:t7_T-20_h0.990_G20warmdeadend_theta60_60d_n401_ac1e-2   # 7D-1
+type7v5_C4_2D_L1800um_eps0.86um:t7_T-20_h0.990_G20warmdeadend_theta60_60d_n401_ac1e-2   # 7D-4
+type7v5_C7_2D_L1800um_eps0.86um:t7_T-20_h0.990_G20warmdeadend_theta60_60d_n401_ac1e-2   # 7D-7

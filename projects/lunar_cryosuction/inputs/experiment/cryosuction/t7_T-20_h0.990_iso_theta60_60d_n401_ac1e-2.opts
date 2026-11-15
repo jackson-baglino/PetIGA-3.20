@@ -1,0 +1,23 @@
+# experiment/cryosuction/t7_T-20_h0.990_iso_theta60_60d_n401_ac1e-2.opts   (make_type7_inputs.py, 2026-11-13)
+#
+# Plan type 7A (v5): isothermal harvest; collector at x = 0, sealed dead end at x = L.
+# -dtmax is in the GEOMETRY file (2 tau_sub at its eps).
+#
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1                          # T fixed on every face
+-temp -20.0
+-humidity 1.0
+-flag_BC_rhovfix 1
+-rhovfix_faces x0
+-rhovfix_lo 0.990                       # collector: 0.990 rho_vs(T0) (decision D2)
+-phi_open_bc 0                          # 90-degree phi face on the pore ends
+-t_final 5.184000e+06                       # 60 days
+-n_out 401                              # time-uniform snapshots
+-beta_sub0 7.9408e5                     # K&P beta0 at -20 C, alpha_c = 1e-2
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # Young: cos(theta) = 0.5, theta = 60 deg
+-dtCFL 1
+-outp 0
+-outp_dphi 0.5                          # extra snapshot when phi changed by 0.5 anywhere (e5a593e7)
+-outp_dphi_min_dt 3600                  # at most one such snapshot an hour
