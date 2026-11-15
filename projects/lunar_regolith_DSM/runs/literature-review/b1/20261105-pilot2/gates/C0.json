@@ -1,8 +1,11 @@
 {
  "stage": "C0",
  "item": null,
- "status": "waiting",
+ "status": "approved",
  "what": "Accept the frozen calibration result",
  "count": null,
- "opened": "2026-11-04T19:58:27-08:00"
+ "opened": "2026-11-04T19:58:27-08:00",
+ "decision": "approved",
+ "decided": "2026-11-13T15:14:33-08:00",
+ "decided_by": "user"
 }

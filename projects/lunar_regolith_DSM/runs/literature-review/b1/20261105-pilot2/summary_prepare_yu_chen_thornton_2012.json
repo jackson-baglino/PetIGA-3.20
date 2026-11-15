@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "yu_chen_thornton_2012",
+ "copy_sha256": "b3e677615fcce25b471be2f9dd1ec419fc542ec520dd29ff34544431854bb616",
+ "pages": 42,
+ "tiles": 169,
+ "tiles_per_page_max": 10,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 3,
+ "min_tile_dpi": 235.2,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 71,
+ "numbered_equations": 63,
+ "headings": 33,
+ "page_map_offset": -1,
+ "manifest_sha256": "626dd846f6b55b3b09de1fa4c571c43316f10d0c60ea6ec5d4bc7d1d5024d5e9",
+ "seconds": 521.1
+}

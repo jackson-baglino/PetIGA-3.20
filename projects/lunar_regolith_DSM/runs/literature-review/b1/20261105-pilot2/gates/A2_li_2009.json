@@ -1,8 +1,11 @@
 {
  "stage": "A2",
  "item": "li_2009",
- "status": "waiting",
+ "status": "approved",
  "what": "Copy of li_2009 is 'unknown', DOI not found on pages 1-2: approve reading this copy (pages cited as PDF pages, copy named on every claim), or supply the version of record",
  "count": null,
- "opened": "2026-11-04T19:58:27-08:00"
+ "opened": "2026-11-04T19:58:27-08:00",
+ "decision": "read this copy",
+ "decided": "2026-11-13T15:14:43-08:00",
+ "decided_by": "user"
 }

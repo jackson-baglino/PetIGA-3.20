@@ -89,6 +89,18 @@ random 60; tiers and waves.
 Order: build and test (WORKFLOW.md §12), calibration diagnostic, frozen final
 evaluation, then the nine papers, then the memo.
 
+Exception in run `20261105-pilot2` (user decision 2026-11-15): the copy
+check (A2) for kaempfer_plapp_2009 was run by the user, by hand, after the
+line had published nothing for that paper. Why: the frozen calibration (C0)
+prepares its papers and writes `summary_prepare_<paper>.json` into the run
+folder, the file that marks P1 done, so P1, and with it E1 to E5, ran for
+this paper without A2; L1 then failed for want of the copy record. The
+prepared copy and the copy A2 checked have the same SHA-256 (2141892c2e9c…);
+A2 found the publisher's copy with its DOI (as on 2026-11-01), so no claim
+changes. Only this paper was affected: li_2009 was also prepared by C0 but
+its A2 had run; the other papers are not prepared by C0. The fix is in
+BACKLOG.md (2026-11-15).
+
 ## Stopping rule and budget
 
 B1 stops when all nine papers have been read and checked and the memo names
@@ -130,19 +142,19 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ### Line status (generated)
 
 <!-- BEGIN GENERATED: lr_status.py -->
-Run `20261105-pilot2`. B1 · EXECUTE b1-v2 · run 20261105-pilot2 · next: U0 · 1 gate(s) waiting · 0 review item(s) undecided
+Run `20261105-pilot2`. B1 · EXECUTE b1-v2 · run 20261105-pilot2 · next: L1 kaempfer_plapp_2009 · 0 gate(s) waiting · 6 review item(s) undecided
 
 | Stage | Station | Done | Gate | Waiting |
 |---|---|---|---|---|
-| U0 | built | 0/1 | blocking | 1 |
-| C0 | built | 0/1 | blocking |  |
-| A2 | built | 0/9 | blocking |  |
-| P1 | built | 0/9 | none |  |
-| E1 | built | 0/9 | none |  |
-| E3 | built | 0/9 | review |  |
-| E4 | built | 0/9 | none |  |
-| E5 | built | 0/9 | review |  |
-| L1 | built | 0/9 | review |  |
+| U0 | built | 1/1 | blocking |  |
+| C0 | built | 1/1 | blocking |  |
+| A2 | built | 4/9 | blocking |  |
+| P1 | built | 4/9 | none |  |
+| E1 | built | 4/9 | none |  |
+| E3 | built | 4/9 | review |  |
+| E4 | built | 4/9 | none |  |
+| E5 | built | 4/9 | review |  |
+| L1 | built | 3/9 | review |  |
 | Y1 | built | 0/1 | none |  |
 | X1 | built | 0/1 | blocking |  |
 | U3a | built | 0/1 | blocking |  |

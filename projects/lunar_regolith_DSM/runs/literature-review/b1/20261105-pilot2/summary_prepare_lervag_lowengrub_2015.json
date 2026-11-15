@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "lervag_lowengrub_2015",
+ "copy_sha256": "accd72942c5ee081c8546fd2b5cea24301696406531efb9a870e854fc9323523",
+ "pages": 32,
+ "tiles": 117,
+ "tiles_per_page_max": 8,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 0,
+ "min_tile_dpi": 300.0,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 130,
+ "numbered_equations": 32,
+ "headings": 31,
+ "page_map_offset": 0,
+ "manifest_sha256": "cb6a81eb444b7a7a6ec073d4c2875e7a09c2b72554242bf7197d9e6de649914a",
+ "seconds": 329.1
+}
