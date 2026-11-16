@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary_path", "failures", "claims_to_confirm", "decisions"],
+  "properties": {
+    "summary_path": {"type": "string"},
+    "failures": {"type": "array", "items": {"type": "string"}},
+    "claims_to_confirm": {"type": "array", "items": {"type": "string"}},
+    "decisions": {"type": "array", "items": {"type": "string"}, "description": "each a direct question with options and the recommendation"}
+  }
+}

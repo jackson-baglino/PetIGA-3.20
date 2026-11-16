@@ -106,7 +106,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/opts.sh"
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_regolith_DSM"
+# LUNAR_PROJECT_ROOT (optional): build and run another checkout of this project, e.g. a
+# feature worktree; used by scripts/model_development/run_test.sh. Unset: unchanged.
+PROJECT_ROOT="${LUNAR_PROJECT_ROOT:-${PETIGA_DIR}/projects/lunar_regolith_DSM}"
 
 # Validate that we resolved the project root correctly
 if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
@@ -121,7 +123,8 @@ EXEC="$PROJECT_ROOT/lunar_regolith_dsm"
 SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
-RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch"
+# LUNAR_RESULTS_BASE (optional): where run folders go (run_test.sh points it at its own folder).
+RESULTS_BASE="${LUNAR_RESULTS_BASE:-/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch}"
 SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 GEOMETRY_DIR="$INPUTS_DIR/geometry"
 EXPERIMENT_DIR="$INPUTS_DIR/experiment"
@@ -258,6 +261,9 @@ compute_optimal_nprocs() {
     hw_cores=$(sysctl -n hw.logicalcpu 2>/dev/null || nproc 2>/dev/null || echo $MAX_LOCAL_CORES)
     local cap=$(( hw_cores < MAX_LOCAL_CORES ? hw_cores : MAX_LOCAL_CORES ))
     (( NPROCS > cap )) && NPROCS=$cap
+    # LUNAR_NPROCS (optional): a fixed rank count chosen by the caller (run_test.sh, which
+    # enforces its own caps). Unset: the DOF-based choice above.
+    if [[ -n "${LUNAR_NPROCS:-}" ]]; then NPROCS=$LUNAR_NPROCS; grid_src="${grid_src}; ranks set by LUNAR_NPROCS"; fi
 
     echo "------------------------------------------------------------"
     echo "Grid from ${grid_src}: Nx=${Nx}, Ny=${Ny}, Nz=${Nz}"
@@ -479,7 +485,11 @@ create_folder
 stage_output_folder
 run_simulation
 copy_source_code
-run_plotting   # timestep, mass, porosity, ssa and VTK all happen in here
+# LUNAR_SKIP_POSTPROCESS=1 (optional): skip the plotting sweep (run_test.sh checks its own
+# quantities). Unset: unchanged.
+if [[ "${LUNAR_SKIP_POSTPROCESS:-0}" != "1" ]]; then
+    run_plotting   # timestep, mass, porosity, ssa and VTK all happen in here
+fi
 
 echo ""
 echo "========================================================================="

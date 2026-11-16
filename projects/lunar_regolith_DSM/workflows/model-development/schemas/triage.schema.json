@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["route", "reason", "evidence", "next_work_order", "alternatives"],
+  "properties": {
+    "route": {"type": "string", "enum": ["code", "spec", "test", "tolerance", "environment"]},
+    "reason": {"type": "string", "description": "two to five sentences, quoting numbers from the logs"},
+    "evidence": {"type": "array", "items": {"type": "string"}, "description": "file:line or log excerpts (numbers only, no paper text)"},
+    "next_work_order": {"type": "string", "description": "what the agent the route sends to should do, in one paragraph"},
+    "alternatives": {"type": "array", "items": {"type": "string"},
+                     "description": "a second route the evidence cannot exclude, and the single experiment that would separate them; empty if none"}
+  }
+}
