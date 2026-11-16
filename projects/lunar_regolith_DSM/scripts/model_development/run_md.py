@@ -468,7 +468,7 @@ def st_test_lock(rdir, st):
             "Solver tests use runner \"solver\" with geometry and experiment opts; put any new opts files for "
             f"test cases in {wtp}/inputs/geometry/md_tests/ and {wtp}/inputs/experiment/md_tests/.")
     task = work_order("M5_verifier", run=rdir, worktree=st["worktree"], tests_dir=tests_dir, test_hint=hint,
-                      main_project=ROOT, feedback=feedback_text(st, "M5"))
+                      main_project=wtp, feedback=feedback_text(st, "M5"))
     reads = [str(rdir / "derivation"), str(rdir / "decisions.json"), str(rdir / "tests"), str(tests_dir),
              str(wtp / "inputs"), str(ROOT / "src"), str(ROOT / "include"), str(ROOT / "inputs"),
              str(ROOT / "scripts" / "model_development" / "run_test.py"), str(ROOT / "postprocess")]
@@ -477,7 +477,7 @@ def st_test_lock(rdir, st):
     for w in writes:
         Path(w).mkdir(parents=True, exist_ok=True)
     bash = [rf"{re.escape(str(RUN_TEST))} --tests {re.escape(str(tests_dir))}/tests\.json --id [\w.-]+ --project "
-            rf"{re.escape(str(ROOT))} --out {re.escape(str(rdir))}/tests --draft",
+            rf"{re.escape(str(wtp))} --out {re.escape(str(rdir))}/tests --draft",
             rf"{re.escape(str(ROOT / 'venv_lunar' / 'bin' / 'python'))} {re.escape(str(tests_dir))}/[\w./-]+\.py( .*)?"]
     denies = deny_common() + [str(wtp / "src"), str(wtp / "include"), str(wtp / "toy")]
     out = agent_step(rdir, st, "M5", "beth-verifier", "M5_verifier", task, cwd=wtp, reads=reads, writes=writes,
