@@ -5,6 +5,31 @@ fixes what the first branch reads, what it must produce, which stages run and
 who approves what. The design it follows is WORKFLOW.md revision 10. Changes
 after approval are made as a new version of this file, noted at the bottom.
 
+## Closed (2026-11-16)
+
+B1 is closed. No further stages run; the X1 gate and the remaining review items
+stay open and are reported as they stand. Decision: docs/planning/23 §7 D1
+(user, 2026-11-15), confirmed in the model-line plan of 2026-11-16.
+
+State at close (`run_b1.py status`, run `20261105-pilot2`, phase execute,
+freeze b1-v2):
+- 9 papers prepared, read, checked and published: 207 new claims and 16 new
+  versions of Kaempfer & Plapp claims.
+- X1 (blind reread) waits at its gate; all 19 disagreeing reads have a user
+  decision (13 right, 2 wrong, 4 unsure), but the gate was not approved.
+- 12 disputed claims from E5 are undecided. The three the model leans on
+  (Kaempfer & Plapp c001, c012; Moure & Fu c011) are decided separately,
+  before the model line cites them.
+- The Q1 memo draft fails its own citation check (39 of 179 sentences
+  uncited); it is an unreviewed draft, not a result.
+- The frozen held-out checker-versus-baseline evaluation is complete; its
+  control rate is optimistic because the controls were not held out
+  (docs/planning/23 §2).
+
+From here the library is used on demand by the model line
+(`scripts/model_development/library_search.py`, `add_paper.py`): new papers
+are added content-only, and only the claims the model cites are checked.
+
 ## Question
 
 **Q1, model-critical** (WORKFLOW.md §9, item 41). How can the stationary
@@ -249,3 +274,4 @@ frozen final evaluation comes before the nine papers and the memo.
 - v1 draft, 2026-10-29.
 - v1 approved by the user, 2026-10-30, including the arXiv v1 copy of Moure & Fu.
 - v2, 2026-11-01: the user chose the published copy of Moure & Fu (ID `moure_fu_2024`) and published copies of Yu, Chen & Thornton, Folch & Plapp, Joshi & Jaiman and Plapp, which the user added to Zotero after A2 found preprint copies; Lervåg & Lowengrub stays the arXiv copy (the only one available). Rows recomputed from the Zotero originals; `run_b1.py` checks each path and hash.
+- v3, 2026-11-16: B1 closed (section "Closed" above); no further stages run.
