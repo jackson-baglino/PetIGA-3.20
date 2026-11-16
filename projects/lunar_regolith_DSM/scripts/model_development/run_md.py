@@ -395,7 +395,7 @@ def plant_ledger_errors(rdir):
 def gate_summary(rdir, st, stage, outputs):
     gate = GATES[stage]
     task = work_order("gate", run=rdir, gate=gate, stage=stage, outputs=", ".join(outputs))
-    reads = [str(rdir)]
+    reads = [str(rdir), str(WF / "problems")] + ([st["tests_dir"]] if st.get("tests_dir") else [])
     md_agent.call(rdir, stage, "beth-model-foreman", f"{stage}_gate", task, "gate", cwd=rdir, read_roots=reads,
                   write_roots=[str(rdir / "gates")], deny_roots=deny_common(), timeout=1200)
     st["stages"][stage] = {"status": "gate_waiting", "note": f"read gates/{gate}.md"}
