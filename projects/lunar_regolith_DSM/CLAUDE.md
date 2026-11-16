@@ -50,6 +50,11 @@ files: `workflows.md` (workflows, their scripts and runs), `solver-c.md`
 - Never launch more than one simulation without specific instructions to do
   so. An HPC submission counts as all the runs it contains. For anything
   more, prepare the exact command and hand it to the user.
+- Exception (user, 2026-11-16): the model-development line may run tests from
+  its locked test list through `scripts/model_development/run_test.sh`, one at
+  a time, at most 8 ranks, 20k–100k DOFs per rank (a 1D test on one rank may be
+  smaller), at most 30 minutes each. `run_test.sh` enforces these limits; any
+  other run follows the rule above.
 - Never change solver physics or defaults unless asked. New physics goes behind
   a runtime option on a `feat/*` branch.
 - Never force-push `main`; never use `--no-verify`; never commit secrets,

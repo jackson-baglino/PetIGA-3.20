@@ -11,6 +11,8 @@
 - `memory/semantic/units.md` verified 2026-10-22 by the units-verification workflow (run 20261022-155335): 54 literature rows checked against page images; the value column is the printed value.  (2026-10-22 · workflow; user-approved)
 - Workflow agents run at Claude Code's default effort; effort is turned only as a diagnostic when a workflow shows inconsistencies or disagreements, one agent at a time, with the level recorded in the manifest. The default can change with a Claude Code update, so rerun the calibration after one.  (2026-11-01 · user)
 - Thesis split: this project is paper 3 (literature review and the new model); paper 2 runs the frozen two-phase model in `projects/lunar_cryosuction` (tag `lunar_cryosuction/model-freeze-v1`); paper 1 is `enceladus_DSM`.  (2026-11-04 · user)
+- B1 (the literature-review line) is closed; the library is used on demand by the model line (`scripts/model_development/library_search.py`, `add_paper.py`), and claims are checked only when the model cites them.  (2026-11-16 · user)
+- Fable is not available on our account: a request for `claude-fable-5-1` was served by `claude-opus-5-5` without an error; a daily SessionStart hook (`~/.claude/hooks/fable_check.sh`) rechecks.  (2026-11-16 · user; probe)
 
 ## Solver
 
@@ -19,3 +21,5 @@
 - The wall free-energy term recovers the static (Young) contact angle. It is not fully validated: the implementation does not apply something like a free-flow boundary condition at the contact line; to be discussed. Status in `docs/contact_angle/README.md`.  (2026-10-22 · user)
 - `src/assembly.c` and `src/material_properties.c` differ from `enceladus_DSM`; only `src/snes_convergence.c` is still identical.  (2026-10-22 · cmp)
 - `SSA_evo.dat` gets a row every time step by design; `-outp` / `-t_interv` control only the `sol_*.dat` snapshots.  (2026-11-01 · user)
+- Notation for the new model: ψ is the fixed grain indicator, φ ∈ [0, 1] the ice phase field in the pore; φ_i = ψφ, φ_a = ψ(1 − φ), φ_s = 1 − ψ, ψ̃ = ψ + υ; this replaces doc 18's (w, ψ).  (2026-11-16 · user)
+- Mixed conductivity in the new model uses the arithmetic–harmonic (tensorial) blend of Nicoli, Plapp & Henry 2011, PRE 84, 046707 (doi:10.1103/PhysRevE.84.046707, Crossref-checked).  (2026-11-16 · user)

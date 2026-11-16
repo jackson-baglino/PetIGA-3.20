@@ -5,7 +5,7 @@
   "Each stage's output is checked by something other than its producer: the verifier writes the checks for M1, M3 and M4 and the tests in M5, library_search.py checks every quoted citation, and mutate.py plants bugs to measure the tests. A Stop hook runs each stage's structural pre-check and every call must return schema output, or it is retried once.",
   "Solver runs go only through run_test.sh with caps: at most 8 ranks, 20k to 100k DOFs per rank, a 30 minute timeout, and the locked test list only; in M6 a failing test gets at most 3 fix rounds before the foreman triages it. The user decides at six blocking gates (scope, selection, derivation, discretization, test lock, write-up); the doc 18 comparison and the M8 settings are non-blocking review items; a mutation miss reopens the test lock."
  ],
- "status": "design, waiting for approval (2026-11-16)",
+ "status": "design approved with changes (2026-11-16); S3:Build next",
  "lanes": [
   {
    "id": "user",
@@ -26,21 +26,9 @@
  ],
  "nodes": [
   {
-   "id": "S0",
-   "lane": "script",
-   "row": 0,
-   "kind": "script",
-   "title": "S0: Fable check (runs once)",
-   "job": "Checks whether the Fable model is available to this account; it is not (2026-11-16), so all four agents use claude-opus-5-5.",
-   "details": [
-    "Recorded by a hook (see doc 25, section 1.3)",
-    "Rerun if the account changes"
-   ]
-  },
-  {
    "id": "S1",
    "lane": "script",
-   "row": 1,
+   "row": 0,
    "kind": "script",
    "title": "S1: Library (built)",
    "job": "Provides keyword search with verbatim quote checks (library_search.py) and content-only paper ingest (add_paper.py).",
@@ -53,7 +41,7 @@
   {
    "id": "S1u",
    "lane": "user",
-   "row": 1,
+   "row": 0,
    "kind": "user",
    "title": "User: add papers, decide B1 claims",
    "job": "Runs add_paper.py and the index build, and decides the three B1 claims the model rests on.",
@@ -65,7 +53,7 @@
   {
    "id": "S1r",
    "lane": "record",
-   "row": 1,
+   "row": 0,
    "kind": "record",
    "title": "library index",
    "job": "The search index of the library, hashed into every run manifest.",
@@ -76,18 +64,18 @@
   {
    "id": "S2",
    "lane": "user",
-   "row": 2,
+   "row": 1,
    "kind": "user",
    "title": "S2: Design (user approves, runs once)",
    "job": "Reads WORKFLOW.md and approves the design: stages, agents, checks, gates and caps.",
    "details": [
-    "Status: waiting for approval (2026-11-16)"
+    "Approved 2026-11-16, with S0 removed"
    ]
   },
   {
    "id": "S2r",
    "lane": "record",
-   "row": 2,
+   "row": 1,
    "kind": "record",
    "title": "WORKFLOW.md",
    "job": "The design; the only source of content for this chart.",
@@ -98,7 +86,7 @@
   {
    "id": "S3",
    "lane": "script",
-   "row": 3,
+   "row": 2,
    "kind": "script",
    "title": "S3: Build (not built; runs once)",
    "job": "Builds the agents, hooks, schemas, run_test.sh and run_md.py, then runs a toy dry run in the develop phase.",
@@ -112,7 +100,7 @@
   {
    "id": "S3r",
    "lane": "record",
-   "row": 3,
+   "row": 2,
    "kind": "record",
    "title": "agents, hooks, schemas, run_test.sh",
    "job": "The line's definitions, kept in git and hashed at freeze.",
@@ -124,7 +112,7 @@
   {
    "id": "FZ",
    "lane": "user",
-   "row": 4,
+   "row": 3,
    "kind": "user",
    "title": "Freeze md-v1 (user approves)",
    "job": "Approves freeze/md-v1.json (the hash of every definition) and a git tag before the first real run.",
@@ -136,7 +124,7 @@
   {
    "id": "RM",
    "lane": "script",
-   "row": 4,
+   "row": 3,
    "kind": "script",
    "title": "run_md.py (line script)",
    "job": "Walks the stage graph, refuses a stage whose inputs are not done, keeps runs.db, and stops at gates and on usage-limit errors.",
@@ -149,7 +137,7 @@
   {
    "id": "RR",
    "lane": "record",
-   "row": 4,
+   "row": 3,
    "kind": "record",
    "title": "runs/model-development/<run>/",
    "job": "The run folder that ties one run together.",
@@ -163,7 +151,7 @@
   {
    "id": "M1",
    "lane": "script",
-   "row": 5,
+   "row": 4,
    "kind": "script",
    "title": "M1: Scope",
    "job": "Station script: writes the work order, calls the modeler, audits the transcript and runs the checks.",
@@ -174,7 +162,7 @@
   {
    "id": "M1a",
    "lane": "agent",
-   "row": 5,
+   "row": 4,
    "kind": "agent",
    "title": "M1 beth-modeler",
    "job": "Writes spec_problem.md: mechanisms with scaling estimates, constitutive laws, notation lock, and what is out of scope.",
@@ -196,7 +184,7 @@
   {
    "id": "M1r",
    "lane": "record",
-   "row": 5,
+   "row": 4,
    "kind": "record",
    "title": "derivation/spec_problem.md",
    "job": "The contract every later stage reads."
@@ -204,7 +192,7 @@
   {
    "id": "M1c",
    "lane": "script",
-   "row": 6,
+   "row": 5,
    "kind": "script",
    "title": "M1 checks",
    "job": "Runs the verifier's Pint checks (scaling numbers recomputed) and the quote check on each citation.",
@@ -217,7 +205,7 @@
   {
    "id": "M1v",
    "lane": "agent",
-   "row": 6,
+   "row": 5,
    "kind": "agent",
    "title": "M1 beth-verifier",
    "job": "Writes the unit and scaling checks from the scope's claims, not from the modeler's reasoning.",
@@ -239,7 +227,7 @@
   {
    "id": "M1k",
    "lane": "record",
-   "row": 6,
+   "row": 5,
    "kind": "record",
    "title": "checks/m1_*.py and results",
    "job": "The verifier's check scripts and their verdicts."
@@ -247,7 +235,7 @@
   {
    "id": "GS",
    "lane": "user",
-   "row": 6,
+   "row": 5,
    "kind": "user",
    "title": "G:Scope (blocking)",
    "job": "Chooses the scope, conducting or insulating grains, the source of regolith properties, and air or lunar laws for the first version.",
@@ -259,7 +247,7 @@
   {
    "id": "M2",
    "lane": "script",
-   "row": 7,
+   "row": 6,
    "kind": "script",
    "title": "M2: Selection",
    "job": "Station script: calls the modeler to score at least four model types and runs the quote check.",
@@ -270,7 +258,7 @@
   {
    "id": "M2a",
    "lane": "agent",
-   "row": 7,
+   "row": 6,
    "kind": "agent",
    "title": "M2 beth-modeler",
    "job": "Scores at least four candidate model types against the M1 requirements, with sourced scores.",
@@ -290,7 +278,7 @@
   {
    "id": "M2r",
    "lane": "record",
-   "row": 7,
+   "row": 6,
    "kind": "record",
    "title": "derivation/selection.md",
    "job": "The sourced scores, and the citation list.",
@@ -301,7 +289,7 @@
   {
    "id": "M2c",
    "lane": "script",
-   "row": 8,
+   "row": 7,
    "kind": "script",
    "title": "M2 quote check",
    "job": "Checks every citation with library_search.py quote.",
@@ -312,7 +300,7 @@
   {
    "id": "GL",
    "lane": "user",
-   "row": 8,
+   "row": 7,
    "kind": "user",
    "title": "G:Selection (blocking)",
    "job": "Picks the model type and names the model (the <model> in feat/<model>).",
@@ -323,7 +311,7 @@
   {
    "id": "M3",
    "lane": "script",
-   "row": 9,
+   "row": 8,
    "kind": "script",
    "title": "M3: Derivation",
    "job": "Station script: calls the modeler for the derivation; timeout 3600 s."
@@ -331,7 +319,7 @@
   {
    "id": "M3a",
    "lane": "agent",
-   "row": 9,
+   "row": 8,
    "kind": "agent",
    "title": "M3 beth-modeler",
    "job": "Derives the strong form, scales, floors, wall condition and sharp-interface limit; every ledger step is cited, derived, an assumption or a choice.",
@@ -352,7 +340,7 @@
   {
    "id": "M3r",
    "lane": "record",
-   "row": 9,
+   "row": 8,
    "kind": "record",
    "title": "derivation/ledger.json, derivation.md",
    "job": "The step ledger and the derivation text."
@@ -360,7 +348,7 @@
   {
    "id": "M3c",
    "lane": "script",
-   "row": 10,
+   "row": 9,
    "kind": "script",
    "title": "M3 checks",
    "job": "Runs the verifier's SymPy checks and compare_doc18.py (term by term diff against doc 18, evaluation only).",
@@ -373,7 +361,7 @@
   {
    "id": "M3v",
    "lane": "agent",
-   "row": 10,
+   "row": 9,
    "kind": "agent",
    "title": "M3 beth-verifier",
    "job": "Writes SymPy checks from the ledger's claims, not from the modeler's reasoning.",
@@ -393,7 +381,7 @@
   {
    "id": "M3k",
    "lane": "record",
-   "row": 10,
+   "row": 9,
    "kind": "record",
    "title": "checks/m3_*.py and results",
    "job": "Check scripts, verdicts and the doc 18 diff."
@@ -401,7 +389,7 @@
   {
    "id": "R18",
    "lane": "user",
-   "row": 10,
+   "row": 9,
    "kind": "user",
    "title": "Review: doc 18 comparison (not blocking)",
    "job": "Reads the diff of the agent's strong form against doc 18, the F2 pore-space derivation; the line goes on.",
@@ -412,7 +400,7 @@
   {
    "id": "GD",
    "lane": "user",
-   "row": 11,
+   "row": 10,
    "kind": "user",
    "title": "G:Derivation (blocking)",
    "job": "Answers each choice (C#) and confirms the cited claims.",
@@ -424,7 +412,7 @@
   {
    "id": "M4",
    "lane": "script",
-   "row": 12,
+   "row": 11,
    "kind": "script",
    "title": "M4: Discretization",
    "job": "Station script: calls the modeler to write the frozen spec; timeout 3600 s."
@@ -432,7 +420,7 @@
   {
    "id": "M4a",
    "lane": "agent",
-   "row": 12,
+   "row": 11,
    "kind": "agent",
    "title": "M4 beth-modeler",
    "job": "Writes spec.md (weak form, IGA and generalized-alpha, residual and Jacobian, dt rule) and code_map.json.",
@@ -453,7 +441,7 @@
   {
    "id": "M4r",
    "lane": "record",
-   "row": 12,
+   "row": 11,
    "kind": "record",
    "title": "derivation/spec.md, code_map.json, mms/",
    "job": "The specification and the map from each term to assembly.c and its runtime option."
@@ -461,7 +449,7 @@
   {
    "id": "M4c",
    "lane": "script",
-   "row": 13,
+   "row": 12,
    "kind": "script",
    "title": "M4 checks",
    "job": "Runs the verifier's checks: weak and strong form agree, symbolic Jacobian equals the differentiated residual, groups are consistent.",
@@ -472,7 +460,7 @@
   {
    "id": "M4v",
    "lane": "agent",
-   "row": 13,
+   "row": 12,
    "kind": "agent",
    "title": "M4 beth-verifier",
    "job": "Writes the weak versus strong, Jacobian and dimensionless group checks from the spec.",
@@ -489,7 +477,7 @@
   {
    "id": "M4k",
    "lane": "record",
-   "row": 13,
+   "row": 12,
    "kind": "record",
    "title": "checks/m4_*.py and results",
    "job": "Check scripts and verdicts."
@@ -497,7 +485,7 @@
   {
    "id": "GM",
    "lane": "user",
-   "row": 13,
+   "row": 12,
    "kind": "user",
    "title": "G:Discretization (blocking)",
    "job": "Freezes the spec; its hash goes into the manifest.",
@@ -508,7 +496,7 @@
   {
    "id": "M5",
    "lane": "script",
-   "row": 14,
+   "row": 13,
    "kind": "script",
    "title": "M5: Test lock",
    "job": "Station script: calls the verifier to write the tests from the spec, before any code exists."
@@ -516,7 +504,7 @@
   {
    "id": "M5a",
    "lane": "agent",
-   "row": 14,
+   "row": 13,
    "kind": "agent",
    "title": "M5 beth-verifier",
    "job": "Writes the test list and scripts from spec.md and code_map.json, never seeing the feature code.",
@@ -537,7 +525,7 @@
   {
    "id": "M5r",
    "lane": "record",
-   "row": 14,
+   "row": 13,
    "kind": "record",
    "title": "studies/<model>/tests/, tests.json",
    "job": "Locked test list and scripts on feat/<model>, with a cost budget per test."
@@ -545,7 +533,7 @@
   {
    "id": "M5c",
    "lane": "script",
-   "row": 15,
+   "row": 14,
    "kind": "script",
    "title": "M5 run_test.sh",
    "job": "Runs every test; regressions must pass on main and each test must fit the run caps.",
@@ -556,7 +544,7 @@
   {
    "id": "GT",
    "lane": "user",
-   "row": 15,
+   "row": 14,
    "kind": "user",
    "title": "G:Test lock (blocking)",
    "job": "Sets the tolerances; the tests are hashed and locked by a hook.",
@@ -568,7 +556,7 @@
   {
    "id": "M6",
    "lane": "script",
-   "row": 16,
+   "row": 15,
    "kind": "script",
    "title": "M6: Implementation (loop)",
    "job": "Station script: gives the modeler one layer at a time (heat, vapor, phase field, coupling, wall term).",
@@ -580,7 +568,7 @@
   {
    "id": "M6a",
    "lane": "agent",
-   "row": 16,
+   "row": 15,
    "kind": "agent",
    "title": "M6 beth-modeler",
    "job": "Writes the C code behind a runtime option, default off, and fixes one failing test at a time (at most 3 rounds).",
@@ -602,7 +590,7 @@
   {
    "id": "M6r",
    "lane": "record",
-   "row": 16,
+   "row": 15,
    "kind": "record",
    "title": "feat/<model> branch: C code",
    "job": "Code behind a runtime option, default off.",
@@ -613,7 +601,7 @@
   {
    "id": "M6t",
    "lane": "script",
-   "row": 17,
+   "row": 16,
    "kind": "script",
    "title": "M6 run_test.sh",
    "job": "After each layer: build, full Jacobian test, the layer's tests, then all earlier tests; logs wall time, Newton and Krylov iterations and dt.",
@@ -625,7 +613,7 @@
   {
    "id": "M6l",
    "lane": "record",
-   "row": 17,
+   "row": 16,
    "kind": "record",
    "title": "test logs, runs.db",
    "job": "Logs and one row per call and check."
@@ -633,7 +621,7 @@
   {
    "id": "M6f",
    "lane": "agent",
-   "row": 18,
+   "row": 17,
    "kind": "agent",
    "title": "M6 beth-model-foreman (triage)",
    "job": "After 3 failed fix rounds, reads the evidence and returns one route with its reason, in one call.",
@@ -655,7 +643,7 @@
   {
    "id": "M6tr",
    "lane": "record",
-   "row": 18,
+   "row": 17,
    "kind": "record",
    "title": "triage/<n>.json",
    "job": "One routing decision with its reason."
@@ -663,7 +651,7 @@
   {
    "id": "M6u",
    "lane": "user",
-   "row": 18,
+   "row": 17,
    "kind": "user",
    "title": "User: tolerance or environment",
    "job": "Decides a tolerance or environment problem, or an unresolved test dispute."
@@ -671,7 +659,7 @@
   {
    "id": "M6v",
    "lane": "agent",
-   "row": 19,
+   "row": 18,
    "kind": "agent",
    "title": "M6 beth-verifier (test bug)",
    "job": "Fixes a test the foreman ruled wrong, or answers a dispute in one call.",
@@ -692,7 +680,7 @@
   {
    "id": "M7",
    "lane": "script",
-   "row": 20,
+   "row": 19,
    "kind": "script",
    "title": "M7: Mutation",
    "job": "Applies about 10 planted bugs, each in a scratch worktree, and records which test caught each.",
@@ -703,7 +691,7 @@
   {
    "id": "M7a",
    "lane": "agent",
-   "row": 20,
+   "row": 19,
    "kind": "agent",
    "title": "M7 beth-verifier (on a miss)",
    "job": "Adds a new test for each planted bug that no test caught.",
@@ -723,7 +711,7 @@
   {
    "id": "M7r",
    "lane": "record",
-   "row": 20,
+   "row": 19,
    "kind": "record",
    "title": "mutation.json",
    "job": "Which test caught each planted bug."
@@ -731,7 +719,7 @@
   {
    "id": "R7",
    "lane": "user",
-   "row": 20,
+   "row": 19,
    "kind": "user",
    "title": "Re-lock after a mutation miss (blocking)",
    "job": "Approves the new test for each missed bug and re-locks the list (G:Test lock reopened); M8 waits."
@@ -739,7 +727,7 @@
   {
    "id": "M8",
    "lane": "script",
-   "row": 21,
+   "row": 20,
    "kind": "script",
    "title": "M8: Performance",
    "job": "Station script: measures solver settings on two fixed cases with perf.py; all tests stay green after every change.",
@@ -752,7 +740,7 @@
   {
    "id": "M8a",
    "lane": "agent",
-   "row": 21,
+   "row": 20,
    "kind": "agent",
    "title": "M8 beth-modeler",
    "job": "Changes solver settings and commits the chosen ones as the model's defaults on the branch.",
@@ -772,7 +760,7 @@
   {
    "id": "M8r",
    "lane": "record",
-   "row": 21,
+   "row": 20,
    "kind": "record",
    "title": "perf.csv, settings",
    "job": "Measured settings, committed as the branch's defaults."
@@ -780,7 +768,7 @@
   {
    "id": "R8",
    "lane": "user",
-   "row": 21,
+   "row": 20,
    "kind": "user",
    "title": "Review: M8 settings (not blocking)",
    "job": "Reads the measured settings and the local target for alloc.sh; the line goes on."
@@ -788,7 +776,7 @@
   {
    "id": "M9",
    "lane": "script",
-   "row": 22,
+   "row": 21,
    "kind": "script",
    "title": "M9: Write-up",
    "job": "Station script: calls the writer with the ledger, spec, results and perf.csv."
@@ -796,7 +784,7 @@
   {
    "id": "M9a",
    "lane": "agent",
-   "row": 22,
+   "row": 21,
    "kind": "agent",
    "title": "M9 beth-writer",
    "job": "Writes the linear teaching document in a fixed 13-part order, from the files and not from memory.",
@@ -815,7 +803,7 @@
   {
    "id": "M9r",
    "lane": "record",
-   "row": 22,
+   "row": 21,
    "kind": "record",
    "title": "docs/model/<model>.md",
    "job": "The teaching document: problem to limitations."
@@ -823,7 +811,7 @@
   {
    "id": "M9c",
    "lane": "script",
-   "row": 23,
+   "row": 22,
    "kind": "script",
    "title": "M9 checks",
    "job": "Runs check_doc.py and the citation check, then a fresh-context student review of the document alone.",
@@ -835,7 +823,7 @@
   {
    "id": "GW",
    "lane": "user",
-   "row": 23,
+   "row": 22,
    "kind": "user",
    "title": "G:Write-up (blocking)",
    "job": "Reads the document and the student's list, then accepts or sends it back.",
@@ -845,11 +833,6 @@
   }
  ],
  "edges": [
-  {
-   "from": "S0",
-   "to": "S1",
-   "kind": "flow"
-  },
   {
    "from": "S1u",
    "to": "S1",

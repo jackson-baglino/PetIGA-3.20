@@ -1,6 +1,7 @@
 # WORKFLOW: model-development (the model line)
 
-Status: **design, waiting for the user's approval** (S2:Design). Nothing below
+Status: **design approved by the user 2026-11-16, with one change** (the Fable
+check is not part of this line). S3:Build is next. Nothing below
 is built except `library_search.py` and `add_paper.py` (S1:Library). The
 flowchart is `flowchart.html` in this folder.
 
@@ -44,7 +45,8 @@ implemented, and does the implementation do what the math says?
 
 ## 2. Stages
 
-Setup steps S0–S3 are done once. Line stages M1–M9 run through the line script
+Setup steps S1–S3 are done once. (The daily Fable access check is a general
+session hook, `~/.claude/hooks/fable_check.sh`, not part of this line; user, 2026-11-16.) Line stages M1–M9 run through the line script
 `scripts/model_development/run_md.py`. Each stage ends in a file that something
 other than its producer checks.
 

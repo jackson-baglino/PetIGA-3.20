@@ -11,3 +11,4 @@
 - Claude may launch at most one simulation without specific instructions; anything more, the user launches or explicitly asks for. Expect this to loosen further.  (2026-10-22 · active · user)
 - When the user says they are closing or clearing the session, run the `wrap-up` skill first.  (2026-10-22 · active · user)
 - Weigh a strong, capable workflow above a strict reading of the syllabus. Keep making work reproducible; but where reproducibility and a better or updated model or tool part ways, proceed with the updated one and record its version.  (2026-11-01 · active · user)
+- The model-development line may run its locked tests locally without asking, one at a time, capped (8 ranks, 20k–100k DOFs per rank, 30 min); other runs keep the one-run rule.  (2026-11-16 · active · user)
