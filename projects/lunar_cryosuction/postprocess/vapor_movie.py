@@ -239,8 +239,8 @@ def main():
 
     def seed(n, air_i, wsig=None):
         if wsig is not None:   # pick grid cells with probability ~ |sigma| (air in view only), jitter inside the cell
-            w = np.where(gin, wsig, 0.0).ravel()
-            if w.sum() > 0:
+            w = np.clip(np.nan_to_num(np.where(gin, wsig, 0.0).ravel().astype(float), nan=0.0, posinf=0.0), 0.0, None)
+            if np.isfinite(w.sum()) and w.sum() > 0:
                 k = rng.choice(w.size, n, p=w / w.sum())
                 return np.c_[grid.XG.ravel()[k] + rng.uniform(-0.5, 0.5, n) * a.grid,
                              grid.YG.ravel()[k] + rng.uniform(-0.5, 0.5, n) * a.grid]
