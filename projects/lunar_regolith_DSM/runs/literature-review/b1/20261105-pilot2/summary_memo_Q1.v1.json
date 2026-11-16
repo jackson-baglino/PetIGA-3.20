@@ -1,0 +1,134 @@
+{
+ "question": "Q1",
+ "version": 1,
+ "revision_of": null,
+ "claims_given": 230,
+ "per_paper": {
+  "li_2009": {
+   "published": 31,
+   "given": 31
+  },
+  "lervag_lowengrub_2015": {
+   "published": 29,
+   "given": 29
+  },
+  "yu_chen_thornton_2012": {
+   "published": 65,
+   "given": 65
+  },
+  "folch_plapp_2005": {
+   "published": 33,
+   "given": 33
+  },
+  "joshi_jaiman_2018": {
+   "published": 13,
+   "given": 13
+  },
+  "steinbach_2009": {
+   "published": 21,
+   "given": 21
+  },
+  "plapp_2011": {
+   "published": 2,
+   "given": 2
+  },
+  "kaempfer_plapp_2009": {
+   "published": 23,
+   "given": 23
+  },
+  "moure_fu_2024": {
+   "published": 13,
+   "given": 13
+  }
+ },
+ "claims_cited": 94,
+ "papers_cited": 8,
+ "y2": {
+  "sentences": 179,
+  "exempt": 69,
+  "uncited": 39,
+  "unknown_ids": 0,
+  "numbers": 20,
+  "untagged_numbers": 0,
+  "tag_mismatch": 0,
+  "pass": false
+ },
+ "y2_failing_sentences": {
+  "uncited": [
+   1,
+   2,
+   3,
+   6,
+   7,
+   8,
+   10,
+   11,
+   12,
+   15,
+   16,
+   17,
+   18,
+   23,
+   26,
+   34,
+   37,
+   38,
+   39,
+   40,
+   43,
+   44,
+   45,
+   48,
+   59,
+   60,
+   61,
+   64,
+   72,
+   79,
+   85,
+   86,
+   88,
+   146,
+   148,
+   150,
+   155,
+   156,
+   162
+  ]
+ },
+ "seconds": 177.3,
+ "usage": {
+  "input_tokens": 2,
+  "cache_creation_input_tokens": 177933,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 19513,
+  "output_tokens_details": {
+   "thinking_tokens": 9878
+  },
+  "server_tool_use": {
+   "web_search_requests": 0,
+   "web_fetch_requests": 0
+  },
+  "service_tier": "standard",
+  "cache_creation": {
+   "ephemeral_1h_input_tokens": 177933,
+   "ephemeral_5m_input_tokens": 0
+  },
+  "inference_geo": "global",
+  "iterations": [
+   {
+    "input_tokens": 2,
+    "output_tokens": 19513,
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 177933,
+    "cache_creation": {
+     "ephemeral_5m_input_tokens": 0,
+     "ephemeral_1h_input_tokens": 177933
+    },
+    "type": "message"
+   }
+  ],
+  "speed": "standard",
+  "fallback_credit": null
+ }
+}

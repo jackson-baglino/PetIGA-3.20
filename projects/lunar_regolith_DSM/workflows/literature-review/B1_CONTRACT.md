@@ -142,21 +142,21 @@ rest. After B1 the user returns to model work (Campaign B, then Pillar 2).
 ### Line status (generated)
 
 <!-- BEGIN GENERATED: lr_status.py -->
-Run `20261105-pilot2`. B1 · EXECUTE b1-v2 · run 20261105-pilot2 · next: L1 kaempfer_plapp_2009 · 0 gate(s) waiting · 6 review item(s) undecided
+Run `20261105-pilot2`. B1 · EXECUTE b1-v2 · run 20261105-pilot2 · next: X1 · 1 gate(s) waiting · 12 review item(s) undecided
 
 | Stage | Station | Done | Gate | Waiting |
 |---|---|---|---|---|
 | U0 | built | 1/1 | blocking |  |
 | C0 | built | 1/1 | blocking |  |
-| A2 | built | 4/9 | blocking |  |
-| P1 | built | 4/9 | none |  |
-| E1 | built | 4/9 | none |  |
-| E3 | built | 4/9 | review |  |
-| E4 | built | 4/9 | none |  |
-| E5 | built | 4/9 | review |  |
-| L1 | built | 3/9 | review |  |
-| Y1 | built | 0/1 | none |  |
-| X1 | built | 0/1 | blocking |  |
+| A2 | built | 9/9 | blocking |  |
+| P1 | built | 9/9 | none |  |
+| E1 | built | 9/9 | none |  |
+| E3 | built | 9/9 | review |  |
+| E4 | built | 9/9 | none |  |
+| E5 | built | 9/9 | review |  |
+| L1 | built | 9/9 | review |  |
+| Y1 | built | 1/1 | none |  |
+| X1 | built | 0/1 | blocking | 1 |
 | U3a | built | 0/1 | blocking |  |
 | L1b | built | 0/9 | none |  |
 | Y1b | built | 0/1 | blocking |  |

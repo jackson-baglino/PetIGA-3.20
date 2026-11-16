@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "folch_plapp_2005",
+ "copy_sha256": "06d68698a9d2eea8d82f4a41c74ddfc691fdc2cca8405aac9ac5d957eebedf06",
+ "pages": 27,
+ "tiles": 235,
+ "tiles_per_page_max": 15,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 28,
+ "min_tile_dpi": 266.3,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 96,
+ "numbered_equations": 94,
+ "headings": 28,
+ "page_map_offset": 0,
+ "manifest_sha256": "d799e2e1ad5e2ab4f6ea5b22a22dd6eb73f8bf3dab8f020553c9e6b577070593",
+ "seconds": 456.1
+}

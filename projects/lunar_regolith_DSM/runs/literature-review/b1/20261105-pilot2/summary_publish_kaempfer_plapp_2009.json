@@ -1,4 +1,13 @@
 {
  "paper_id": "kaempfer_plapp_2009",
- "failed": "[Errno 2] No such file or directory: 'runs/literature-review/b1/20261105-pilot2/summary_copy_kaempfer_plapp_2009.json'"
+ "published": 0,
+ "same": 0,
+ "next_version": 16,
+ "refused_disputed": 2,
+ "refused_withdrawn": 0,
+ "refused_unchecked": 0,
+ "refused_user_wrong": 0,
+ "refused_user_unsure": 0,
+ "by_user_decision": 0,
+ "marked_rejected": 0
 }

@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "plapp_2011",
+ "copy_sha256": "0713491c5dd2dc375b680ff62d2bcbcdfc0b3ce6f3ee8888f79ed7811ef3e9b4",
+ "pages": 15,
+ "tiles": 128,
+ "tiles_per_page_max": 12,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 16,
+ "min_tile_dpi": 279.7,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 122,
+ "numbered_equations": 122,
+ "headings": 17,
+ "page_map_offset": 0,
+ "manifest_sha256": "3a48e9de835a46c7712392d47d8d9c498e4175ecaab68a6a59f7fb600dfeb723",
+ "seconds": 262.2
+}

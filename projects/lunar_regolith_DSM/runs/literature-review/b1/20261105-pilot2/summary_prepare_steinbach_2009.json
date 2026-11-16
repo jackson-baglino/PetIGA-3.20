@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "steinbach_2009",
+ "copy_sha256": "87e43331819affa4652041869f5d7c5c0b0fed001c727ee5d52beac2dbe5d845",
+ "pages": 32,
+ "tiles": 139,
+ "tiles_per_page_max": 17,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 1,
+ "min_tile_dpi": 274.7,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 77,
+ "numbered_equations": 72,
+ "headings": 33,
+ "page_map_offset": -1,
+ "manifest_sha256": "5372b55c879d8a6c2267cb1983094846a8882e89615d1af43402b663a88fe374",
+ "seconds": 373.3
+}

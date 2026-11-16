@@ -34,5 +34,155 @@
   "item": "kaempfer_plapp_2009",
   "claim_id": "kaempfer_plapp_2009-c012",
   "kind": "disputed"
+ },
+ {
+  "stage": "E5",
+  "item": "folch_plapp_2005",
+  "claim_id": "folch_plapp_2005-c008",
+  "kind": "disputed"
+ },
+ {
+  "stage": "E5",
+  "item": "folch_plapp_2005",
+  "claim_id": "folch_plapp_2005-c015",
+  "kind": "disputed"
+ },
+ {
+  "stage": "E5",
+  "item": "folch_plapp_2005",
+  "claim_id": "folch_plapp_2005-c018",
+  "kind": "disputed"
+ },
+ {
+  "stage": "E5",
+  "item": "joshi_jaiman_2018",
+  "claim_id": "joshi_jaiman_2018-c009",
+  "kind": "disputed"
+ },
+ {
+  "stage": "E5",
+  "item": "steinbach_2009",
+  "claim_id": "steinbach_2009-c019",
+  "kind": "disputed"
+ },
+ {
+  "stage": "E5",
+  "item": "moure_fu_2024",
+  "claim_id": "moure_fu_2024-c011",
+  "kind": "disputed"
+ },
+ {
+  "stage": "X1",
+  "item": "li_2009",
+  "claim_id": "li_2009-c019",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "li_2009",
+  "claim_id": "li_2009-c021",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "li_2009",
+  "claim_id": "li_2009-c022",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "li_2009",
+  "claim_id": "li_2009-c028",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "lervag_lowengrub_2015",
+  "claim_id": "lervag_lowengrub_2015-c002",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "lervag_lowengrub_2015",
+  "claim_id": "lervag_lowengrub_2015-c004",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "lervag_lowengrub_2015",
+  "claim_id": "lervag_lowengrub_2015-c015",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "yu_chen_thornton_2012",
+  "claim_id": "yu_chen_thornton_2012-c023",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "yu_chen_thornton_2012",
+  "claim_id": "yu_chen_thornton_2012-c041",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "yu_chen_thornton_2012",
+  "claim_id": "yu_chen_thornton_2012-c051",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "yu_chen_thornton_2012",
+  "claim_id": "yu_chen_thornton_2012-c063",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "folch_plapp_2005",
+  "claim_id": "folch_plapp_2005-c001",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "folch_plapp_2005",
+  "claim_id": "folch_plapp_2005-c005",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "folch_plapp_2005",
+  "claim_id": "folch_plapp_2005-c017",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "joshi_jaiman_2018",
+  "claim_id": "joshi_jaiman_2018-c010",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "joshi_jaiman_2018",
+  "claim_id": "joshi_jaiman_2018-c012",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "steinbach_2009",
+  "claim_id": "steinbach_2009-c004",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "steinbach_2009",
+  "claim_id": "steinbach_2009-c007",
+  "kind": "reads_disagree"
+ },
+ {
+  "stage": "X1",
+  "item": "moure_fu_2024",
+  "claim_id": "moure_fu_2024-c007",
+  "kind": "reads_disagree"
  }
 ]

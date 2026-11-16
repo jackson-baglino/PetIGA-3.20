@@ -1,0 +1,20 @@
+{
+ "stage": "P1",
+ "paper_id": "joshi_jaiman_2018",
+ "copy_sha256": "f80cfd4059072443297e02dc9b2f22e392e793b16ea960843f52aec8df677c00",
+ "pages": 25,
+ "tiles": 164,
+ "tiles_per_page_max": 13,
+ "parser": "mineru",
+ "tiles_from_layout": true,
+ "tiles_scaled_down": 125,
+ "min_tile_dpi": 191.0,
+ "pages_ink_not_fully_covered": [],
+ "failed_pages": [],
+ "equations": 97,
+ "numbered_equations": 95,
+ "headings": 37,
+ "page_map_offset": 404,
+ "manifest_sha256": "8b417ae1ee4a965220ff7475cbc79678d18c89f83783f91293127e0fcf8fb1e8",
+ "seconds": 361.9
+}

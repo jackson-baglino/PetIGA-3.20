@@ -2,6 +2,42 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-11-15: TA feedback; plan to stop B1 and build the diffuse-domain model
+
+- Session: bd0b31b7-3240-4887-9a00-1fe467db9be6
+- Done:
+  - Explained the foreman launch: the earlier "foreman" was a background job without `--agent beth-foreman`;
+    the user then started a real foreman.
+  - L1 failed for kaempfer_plapp_2009 (no copy record). Cause: C0 writes `summary_prepare_<paper>.json`,
+    which marks P1 done before A2 runs. The user ran the copy check by hand (option A); the exception is in
+    B1_CONTRACT.md and the runner defects are in BACKLOG.md (2c6f6b7f). The foreman's advice to
+    `approve E5` was wrong (E5 is a review gate; decide its items in U3).
+  - Committed the calibration call and plant records for calib-dev6..8 (a25abd25).
+  - TA feedback on Lab Report 2 (prune agents; one frozen agent-vs-baseline evaluation; held-out controls).
+    Wrote `docs/planning/23_course_finish_plan.md` with a fresh-context reviewer (2ccb04bb): stop B1, report
+    the C0 checker-vs-script table, build the F2 diffuse-domain model behind `-ddm` on `feat/ddm`, tests
+    T0-T5 and a two-grain ice-bridge demo.
+  - Found that the 40 controls (G001-G040) were shared between tuning and held-out, so "3/40 controls
+    flagged" is not a held-out number (one-sided 95 % upper bound 18.3 %). Lab Report 3 must say so.
+  - Committed the pilot2 line records through Y1 and the X1 gate, with the user's U3 decisions so far
+    (19 entries).
+- Remaining:
+  - User answers D1-D6 in `docs/planning/23_course_finish_plan.md` §7. D5 (permission to run T0-T5 one
+    after another) is needed before any run.
+  - Next session: design a math agent (with a librarian) that derives the diffuse-domain model. Draft
+    prompt: `docs/planning/24_math_agent_prompt.md`. Design with the user before building (USER.md).
+  - Then implement on `feat/ddm` per plan 23 §3 steps 1-7.
+  - Lab Report 3, due Mon 16 Nov evening (one day late), with a demo.
+  - Undecided housekeeping: commit `runs/literature-review/calib-dev..dev5`? `docs/planning/19-22` came from
+    other sessions: commit here, move to lunar_cryosuction, or leave?
+  - Two idle foreman processes (pids 34671 from 4 Nov and 94246 from 13 Nov); left running, the user's to
+    close.
+  - Ask the TA whether the final paper is due 4 Dec or 9 Dec.
+- Bottlenecks:
+  - The B1 line took about 17 working days against a 3-5 day budget; the user had questioned the number
+    of agents earlier.
+  - Hook H4 blocks any Bash command that names a station script, commit messages included.
+
 ## 2026-11-04 (logged 2026-11-13): Execute run 20261105-pilot2 started; C0 passed
 
 - Session: f83f89f4-9803-416c-ac96-bc7d58c2305c (a background job from the foreman session; it ran as plain

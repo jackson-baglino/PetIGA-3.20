@@ -1,0 +1,445 @@
+{
+ "paper_id": "folch_plapp_2005",
+ "pages": 27,
+ "claims": 36,
+ "claims_by_kind": {
+  "method": 9,
+  "limitation": 7,
+  "attribution": 1,
+  "equation": 6,
+  "result": 13
+ },
+ "conditions": 57,
+ "symbols": 14,
+ "flags": 4,
+ "seconds": 296.7,
+ "calls": [
+  {
+   "time": "2026-11-15T13:33:31",
+   "step": "E1",
+   "part": 1,
+   "agent": "morty-reader",
+   "seconds": 145.6,
+   "exit": 0,
+   "num_turns": 29,
+   "usage": {
+    "input_tokens": 8,
+    "cache_creation_input_tokens": 116131,
+    "cache_read_input_tokens": 126378,
+    "output_tokens": 20711,
+    "output_tokens_details": {
+     "thinking_tokens": 7856
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 116131,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 2,
+      "output_tokens": 19385,
+      "cache_read_input_tokens": 79132,
+      "cache_creation_input_tokens": 36999,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 36999
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+   }
+  },
+  {
+   "time": "2026-11-15T13:34:41",
+   "step": "E4.0",
+   "part": 1,
+   "agent": "beth-checker",
+   "seconds": 69.6,
+   "exit": 0,
+   "num_turns": 29,
+   "usage": {
+    "input_tokens": 12,
+    "cache_creation_input_tokens": 115785,
+    "cache_read_input_tokens": 270362,
+    "output_tokens": 7689,
+    "output_tokens_details": {
+     "thinking_tokens": 46
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 115785,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 2,
+      "output_tokens": 6355,
+      "cache_read_input_tokens": 103415,
+      "cache_creation_input_tokens": 12370,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 12370
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+   }
+  },
+  {
+   "time": "2026-11-15T13:35:01",
+   "step": "E4.1",
+   "agent": "beth-checker",
+   "seconds": 19.8,
+   "exit": 0,
+   "num_turns": 9,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 33949,
+    "cache_read_input_tokens": 4820,
+    "output_tokens": 2105,
+    "output_tokens_details": {
+     "thinking_tokens": 248
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 33949,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 2,
+      "output_tokens": 1416,
+      "cache_read_input_tokens": 4820,
+      "cache_creation_input_tokens": 29129,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 29129
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+   }
+  },
+  {
+   "time": "2026-11-15T13:35:40",
+   "step": "E4.2",
+   "pages": [
+    2,
+    5,
+    6,
+    7
+   ],
+   "agent": "beth-checker",
+   "seconds": 39.3,
+   "exit": 0,
+   "num_turns": 7,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 35064,
+    "cache_read_input_tokens": 14255,
+    "output_tokens": 4470,
+    "output_tokens_details": {
+     "thinking_tokens": 1420
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 35064,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 2,
+      "output_tokens": 3977,
+      "cache_read_input_tokens": 14255,
+      "cache_creation_input_tokens": 20809,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 20809
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+   }
+  },
+  {
+   "time": "2026-11-15T13:36:21",
+   "step": "E4.2",
+   "pages": [
+    8,
+    10,
+    11,
+    12
+   ],
+   "agent": "beth-checker",
+   "seconds": 40.4,
+   "exit": 0,
+   "num_turns": 7,
+   "usage": {
+    "input_tokens": 6,
+    "cache_creation_input_tokens": 31118,
+    "cache_read_input_tokens": 47112,
+    "output_tokens": 4412,
+    "output_tokens_details": {
+     "thinking_tokens": 1256
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 31118,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 2,
+      "output_tokens": 2790,
+      "cache_read_input_tokens": 29867,
+      "cache_creation_input_tokens": 5278,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 5278
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+   }
+  },
+  {
+   "time": "2026-11-15T13:37:31",
+   "step": "E4.2",
+   "pages": [
+    13,
+    14,
+    15,
+    16
+   ],
+   "agent": "beth-checker",
+   "seconds": 70.0,
+   "exit": 0,
+   "num_turns": 6,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 27141,
+    "cache_read_input_tokens": 18514,
+    "output_tokens": 7829,
+    "output_tokens_details": {
+     "thinking_tokens": 3612
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 27141,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 2,
+      "output_tokens": 7402,
+      "cache_read_input_tokens": 14487,
+      "cache_creation_input_tokens": 16681,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 16681
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+   }
+  },
+  {
+   "time": "2026-11-15T13:37:58",
+   "step": "E4.2",
+   "pages": [
+    19,
+    20,
+    21,
+    22
+   ],
+   "agent": "beth-checker",
+   "seconds": 27.2,
+   "exit": 0,
+   "num_turns": 6,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 24883,
+    "cache_read_input_tokens": 16289,
+    "output_tokens": 3094,
+    "output_tokens_details": {
+     "thinking_tokens": 664
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 24883,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 2,
+      "output_tokens": 2700,
+      "cache_read_input_tokens": 12262,
+      "cache_creation_input_tokens": 16648,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 16648
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+   }
+  },
+  {
+   "time": "2026-11-15T13:38:28",
+   "step": "E4.2",
+   "pages": [
+    23,
+    24,
+    25,
+    26
+   ],
+   "agent": "beth-checker",
+   "seconds": 30.0,
+   "exit": 0,
+   "num_turns": 6,
+   "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 25311,
+    "cache_read_input_tokens": 16724,
+    "output_tokens": 3215,
+    "output_tokens_details": {
+     "thinking_tokens": 567
+    },
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 25311,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+     {
+      "input_tokens": 2,
+      "output_tokens": 2828,
+      "cache_read_input_tokens": 12697,
+      "cache_creation_input_tokens": 16641,
+      "cache_creation": {
+       "ephemeral_5m_input_tokens": 0,
+       "ephemeral_1h_input_tokens": 16641
+      },
+      "type": "message"
+     }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+   }
+  }
+ ],
+ "usage_total": {
+  "input_tokens": 46,
+  "cache_creation_input_tokens": 409382,
+  "cache_read_input_tokens": 514454,
+  "output_tokens": 53525,
+  "calls": 8,
+  "calls_without_usage": 0
+ },
+ "usage_by_step": {
+  "E1": {
+   "input_tokens": 8,
+   "cache_creation_input_tokens": 116131,
+   "cache_read_input_tokens": 126378,
+   "output_tokens": 20711,
+   "calls": 1,
+   "calls_without_usage": 0
+  },
+  "E4.0": {
+   "input_tokens": 12,
+   "cache_creation_input_tokens": 115785,
+   "cache_read_input_tokens": 270362,
+   "output_tokens": 7689,
+   "calls": 1,
+   "calls_without_usage": 0
+  },
+  "E4.1": {
+   "input_tokens": 4,
+   "cache_creation_input_tokens": 33949,
+   "cache_read_input_tokens": 4820,
+   "output_tokens": 2105,
+   "calls": 1,
+   "calls_without_usage": 0
+  },
+  "E4.2": {
+   "input_tokens": 22,
+   "cache_creation_input_tokens": 143517,
+   "cache_read_input_tokens": 112894,
+   "output_tokens": 23020,
+   "calls": 5,
+   "calls_without_usage": 0
+  }
+ },
+ "e3_quotes_ok": 34,
+ "e3_on_cited_page": 34,
+ "checklist_items": 45,
+ "verdicts": {
+  "supported": 31,
+  "overstated": 4,
+  "unsupported": 1,
+  "not_on_cited_page": 0
+ },
+ "verdicts_missing": 0,
+ "dropped_conditions": 27,
+ "equation_corrected": 0,
+ "parameter_corrected": 0,
+ "blind_items": 9,
+ "blind_agree": 6,
+ "blind_unnumbered_not_compared": 0,
+ "blind_not_found": 1
+}

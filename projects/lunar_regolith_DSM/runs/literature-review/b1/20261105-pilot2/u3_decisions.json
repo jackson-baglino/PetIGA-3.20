@@ -1,0 +1,135 @@
+{
+ "li_2009-c019": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "all three agents found the same value. The reader just specified the units as dimnesionless. In general, this should not throw an error or be of concern ever.",
+  "by": "user",
+  "decided": "2026-11-15T15:56:58-08:00"
+ },
+ "li_2009-c021": {
+  "verdict": "unsure",
+  "kind": "x1",
+  "note": "Both equations appear on the page. the readers all found the same equation, which is 2.35. the parser has equation 2.37.",
+  "by": "user",
+  "decided": "2026-11-15T15:59:09-08:00"
+ },
+ "li_2009-c022": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "Same issue as the first one. The reader reports dimensionless units and the checker and blinder reader don",
+  "by": "user",
+  "decided": "2026-11-15T16:00:20-08:00"
+ },
+ "li_2009-c028": {
+  "verdict": "unsure",
+  "kind": "x1",
+  "note": "These are all different equations. I am unsure which the reader was actaully trying to report. the equation that the reader reports is on the page. The also found the two equations written directly below the one the reader found. The blinde reader found eequations that were written above the one that the reader found. None of these equations were numbered.",
+  "by": "user",
+  "decided": "2026-11-15T16:05:04-08:00"
+ },
+ "lervag_lowengrub_2015-c002": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "The parser found a different, unlabeled eqaution directly below the one the readers and cheker found.",
+  "by": "user",
+  "decided": "2026-11-15T16:06:16-08:00"
+ },
+ "lervag_lowengrub_2015-c004": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "The blind reader found a different equation that was unlabeled on this page.",
+  "by": "user",
+  "decided": "2026-11-15T16:06:58-08:00"
+ },
+ "lervag_lowengrub_2015-c015": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "This is the same nondimensional thing again. The reader should pick a consistent way to report parameters as being unitless.",
+  "by": "user",
+  "decided": "2026-11-15T16:08:11-08:00"
+ },
+ "yu_chen_thornton_2012-c023": {
+  "verdict": "wrong",
+  "kind": "x1",
+  "note": "The only place where the value 1.49 appears in this paper is on page 13 of the PDF in table 1.",
+  "by": "user",
+  "decided": "2026-11-15T16:09:59-08:00"
+ },
+ "yu_chen_thornton_2012-c041": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "The parser seems to also be correct, just with more structure. The reader writes the equation in a bette way.",
+  "by": "user",
+  "decided": "2026-11-15T16:11:52-08:00"
+ },
+ "yu_chen_thornton_2012-c051": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "Same dimensionaless issue as before.",
+  "by": "user",
+  "decided": "2026-11-15T16:12:19-08:00"
+ },
+ "yu_chen_thornton_2012-c063": {
+  "verdict": "wrong",
+  "kind": "x1",
+  "note": "There is no \".\" after the D in the start of the equation. Only the reader was wrong.",
+  "by": "user",
+  "decided": "2026-11-15T16:13:34-08:00"
+ },
+ "folch_plapp_2005-c001": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "This appears right befroe citation [22].",
+  "by": "user",
+  "decided": "2026-11-15T16:14:56-08:00"
+ },
+ "folch_plapp_2005-c005": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "The parser found the wrong equation. The equation the reader found was 3.5 and the parser found 3.8.",
+  "by": "user",
+  "decided": "2026-11-15T16:16:16-08:00"
+ },
+ "folch_plapp_2005-c017": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "Once again, the parser was way off. It found the wrong equation. It reported equation 3.51",
+  "by": "user",
+  "decided": "2026-11-15T16:28:59-08:00"
+ },
+ "joshi_jaiman_2018-c010": {
+  "verdict": "unsure",
+  "kind": "x1",
+  "note": "Both the reader and chekcer reports the equation itself correctly, however, the checker and blind reader find the condition for it. Since this is a boundary condition, that probably matters.",
+  "by": "user",
+  "decided": "2026-11-15T16:30:56-08:00"
+ },
+ "joshi_jaiman_2018-c012": {
+  "verdict": "unsure",
+  "kind": "x1",
+  "note": "The quote says \"at least four elements\", but \"4 elements\" is also inside that statement.",
+  "by": "user",
+  "decided": "2026-11-15T16:32:52-08:00"
+ },
+ "steinbach_2009-c004": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "The four instances just write the \"..\" differently.",
+  "by": "user",
+  "decided": "2026-11-15T16:34:03-08:00"
+ },
+ "steinbach_2009-c007": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "They just write \"..\" differently.",
+  "by": "user",
+  "decided": "2026-11-15T16:35:03-08:00"
+ },
+ "moure_fu_2024-c007": {
+  "verdict": "right",
+  "kind": "x1",
+  "note": "",
+  "by": "user",
+  "decided": "2026-11-15T16:35:17-08:00"
+ }
+}

@@ -1,0 +1,10 @@
+{
+ "question": "Q1",
+ "memo_version": 1,
+ "items": 31,
+ "agree": 12,
+ "disagree": 19,
+ "with_parser_read": 21,
+ "with_checker_read": 31,
+ "author_source_compared": 0
+}
