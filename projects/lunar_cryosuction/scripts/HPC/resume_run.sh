@@ -46,8 +46,15 @@ fi
 for f in solver.opts "$geom.opts" "$exp.opts" SSA_evo.dat; do
     [[ -f "$run_dir/$f" ]] || { echo "❌ Missing $run_dir/$f"; exit 1; }
 done
-last="$(find "$run_dir" -maxdepth 1 -name 'sol_*.dat' | sort | tail -n1)"
-[[ -n "$last" ]] || { echo "❌ No sol_*.dat in $run_dir"; exit 1; }
+# Last COMPLETE snapshot (same size as sol_00000.dat); the job itself sets
+# shorter ones aside (run_cryosuction.sh, prepare_resume).
+full="$(stat -c %s "$run_dir/sol_00000.dat" 2>/dev/null || stat -f %z "$run_dir/sol_00000.dat")"
+last=""
+while IFS= read -r f; do
+    sz="$(stat -c %s "$f" 2>/dev/null || stat -f %z "$f")"
+    if [[ "$sz" == "$full" ]]; then last="$f"; else echo "⚠️  $(basename "$f") is incomplete ($sz of $full bytes); it will be set aside"; fi
+done < <(find "$run_dir" -maxdepth 1 -name 'sol_*.dat' | sort)
+[[ -n "$last" ]] || { echo "❌ No complete sol_*.dat in $run_dir"; exit 1; }
 
 # Already finished? Compare the last logged time with -t_final.
 t_final="$(awk '$1=="-t_final"{print $2}' "$run_dir/$exp.opts" | tail -n1)"

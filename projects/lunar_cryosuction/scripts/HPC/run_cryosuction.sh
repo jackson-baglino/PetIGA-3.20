@@ -276,9 +276,20 @@ prepare_resume() {
     folder="$RESUME_DIR"
     name="$(basename "$folder")"
 
-    local last n ts bk f
-    last="$(find "$folder" -maxdepth 1 -name 'sol_*.dat' | sort | tail -n1)"
-    [[ -n "$last" ]] || { echo "❌ No sol_*.dat in $folder"; exit 1; }
+    local last n ts bk f full sz
+    # A snapshot cut short by a crash (2C-2 resume, 15 Nov: sol_04513.dat was
+    # 8 bytes after a bus error) cannot be read back. Every snapshot of a run
+    # has the size of sol_00000.dat, so resume from the last one that does and
+    # set shorter ones aside as *.dat.partial (kept, not deleted).
+    full="$(stat -c %s "$folder/sol_00000.dat" 2>/dev/null || stat -f %z "$folder/sol_00000.dat")"
+    last=""
+    while IFS= read -r f; do
+        sz="$(stat -c %s "$f" 2>/dev/null || stat -f %z "$f")"
+        if [[ "$sz" == "$full" ]]; then last="$f"
+        else echo "  $(basename "$f") is $sz bytes, not $full: incomplete, renamed to $(basename "$f").partial"
+             mv "$f" "$f.partial"; fi
+    done < <(find "$folder" -maxdepth 1 -name 'sol_*.dat' | sort)
+    [[ -n "$last" ]] || { echo "❌ No complete sol_*.dat in $folder"; exit 1; }
     n="$(basename "$last" .dat)"; n="$((10#${n#sol_}))"
     [[ -f "$folder/SSA_evo.dat" ]] || { echo "❌ No SSA_evo.dat in $folder"; exit 1; }
     awk -v n="$n" '$4 == n {found=1} END {exit !found}' "$folder/SSA_evo.dat" \
