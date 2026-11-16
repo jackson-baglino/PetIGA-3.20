@@ -1,5 +1,11 @@
 # 24. A math agent that derives the diffuse-domain model: design and build prompt
 
+> **Superseded 2026-11-16** by the model-line plan: `docs/planning/25_model_line_plan.md` and
+> `workflows/model-development/WORKFLOW.md`. Kept as the record of the first design. Two points here
+> turned out wrong or changed: a Claude Code subagent *can* start subagents (up to three levels), and
+> Fable is not available on our account, so the agents run on Opus 5.5.
+
+
 Draft, 2026-11-15. Part 1 is the design: what the agent is and which features it needs. Part 2 is a
 prompt to paste into a new session that builds it. Part 3 lists the choices that are yours. Nothing
 here is built yet.
@@ -21,7 +27,7 @@ must produce:
 Every step must be either cited from a paper in the nine-paper set or derived from earlier steps,
 and it must be possible to check it.
 
-A librarian helps it find things in those papers. The math agent can also open any paper itself.
+A librarian helps it find things in those papers. The math agent can also open any paper itself, but must report back to the user before using the findings.
 
 ### 1.2 Two agents, no more
 
