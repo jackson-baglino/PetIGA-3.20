@@ -13,7 +13,10 @@ solutions: a script that prints the source terms).
 `## Auxiliary functions` (indicator and gradient, initial conditions, extension into grains, output masks),
 `## Time scales and time step` (a priori scales with values; the dt rule), `## Solver settings` (proposed,
 with reasons), `## Manufactured solutions`, `## Layers` (the implementation order, each layer with the tests
-that must pass before the next).
+that must pass before the next). For the solver, the first layer is "infra": a runtime option that adds the
+manufactured-solution forcing to each residual row, and a runtime option that tests the full Jacobian
+(J·v against a central finite difference of the residual at a given state, including the shift·dR/dU_t terms,
+reported per block of fields); the existing `-test_wall_jacobian` checks dR/dU only.
 `code_map.json`: a list of {{"term", "row", "where" (file and function), "option", "layer"}}.
 
 Done criterion: all sections exist; every residual term has its Jacobian entries; every term is in

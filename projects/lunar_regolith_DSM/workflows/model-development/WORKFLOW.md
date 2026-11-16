@@ -205,8 +205,10 @@ approved plan; the essentials are below.
 
 ### M6: Implementation (in layers)
 
-- **What:** the C code, layer by layer: heat, vapor, phase field, coupling,
-  wall term. Each layer must pass before the next.
+- **What:** the C code, layer by layer: first "infra" (a manufactured-solution
+  forcing option and a full Jacobian test that includes the shift terms; the
+  existing `-test_wall_jacobian` checks dR/dU only), then heat, vapor, phase
+  field, coupling, wall term. Each layer must pass before the next.
 - **The loop** (§3.3):
   1. **Each layer:** build, run the full Jacobian test, run the layer's tests,
      then run all earlier tests.
