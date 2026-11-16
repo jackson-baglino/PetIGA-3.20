@@ -73,5 +73,20 @@
       "**Org-specific CLIs**: None configured",
       "routine under inputs/scratch/, preprocess/scratch/, postprocess/scratch/, studies/scratch/ prefixes: per CLAUDE.md these are a pending-deletion quarantine area for this repo, not an archive — treat contents as gone unless pulled back into the live tree"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/fable_check.sh",
+            "timeout": 10,
+            "statusMessage": "Fable access check"
+          }
+        ]
+      }
+    ]
   }
 }
