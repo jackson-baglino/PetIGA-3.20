@@ -231,8 +231,8 @@ approved plan; the essentials are below.
   The record says which test caught each bug.
 - **Why:** this measures the verifier. A green suite that catches nothing
   proves nothing.
-- **Done when:** every mutation is caught, or each miss has a new test the user
-  approves.
+- **Done when:** every mutation is caught, or each miss has a new test and the
+  user has re-locked the list (G:Test lock reopened; blocking).
 - **Then:** M8.
 
 ### M8: Performance
@@ -337,6 +337,11 @@ may not:      run anything; edit code, tests, specs or definitions
 context:      fresh per call; one decision per call
 ```
 
+`beth-writer` (existing general helper, `.claude/agents/beth-writer.md`, tools Read,
+Grep, Glob, Write) is called twice in M9, each time fresh: once to write the
+document, and once in review mode as the "student", given only the finished
+document.
+
 The library is a search script plus a skill (`library-search`), not an agent.
 The modeler opens the page itself before relying on a passage.
 
@@ -353,12 +358,15 @@ user (owner)            approves the design, every gate, the test tolerances, th
 ```
 
 **Gates** (all blocking): G:Scope, G:Selection, G:Derivation, G:Discretization,
-G:Test lock, G:Write-up.
+G:Test lock, G:Write-up. At each gate the station calls `beth-model-foreman`
+once, with fresh context, to write `gates/<gate>.md`: what was produced, what the
+checks found, and the decisions the user must make, each as a direct question.
+A test added after an M7 mutation miss reopens G:Test lock, which blocks M8
+until the user re-locks the list.
 
 **Review items** (queued; the line goes on):
 - the doc 18 comparison;
-- the M8 settings;
-- a mutation miss that has a new test waiting for re-lock.
+- the M8 settings.
 
 ### 3.2 Keeping agents on task
 

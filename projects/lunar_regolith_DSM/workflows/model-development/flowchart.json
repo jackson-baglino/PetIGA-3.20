@@ -1,0 +1,1218 @@
+{
+ "title": "model-development",
+ "summary": [
+  "The model line derives, discretizes and implements a model of ice, water vapor and heat in a regolith pore space, then writes a teaching document. The script run_md.py owns the loop and the state (runs.db and files); every agent call gets a fresh context and one work order, and all four agents run claude-opus-5-5.",
+  "Each stage's output is checked by something other than its producer: the verifier writes the checks for M1, M3 and M4 and the tests in M5, library_search.py checks every quoted citation, and mutate.py plants bugs to measure the tests. A Stop hook runs each stage's structural pre-check and every call must return schema output, or it is retried once.",
+  "Solver runs go only through run_test.sh with caps: at most 8 ranks, 20k to 100k DOFs per rank, a 30 minute timeout, and the locked test list only; in M6 a failing test gets at most 3 fix rounds before the foreman triages it. The user decides at six blocking gates (scope, selection, derivation, discretization, test lock, write-up); the doc 18 comparison and the M8 settings are non-blocking review items; a mutation miss reopens the test lock."
+ ],
+ "status": "design, waiting for approval (2026-11-16)",
+ "lanes": [
+  {
+   "id": "user",
+   "label": "User"
+  },
+  {
+   "id": "script",
+   "label": "Scripts"
+  },
+  {
+   "id": "agent",
+   "label": "Agents"
+  },
+  {
+   "id": "record",
+   "label": "Records"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "S0",
+   "lane": "script",
+   "row": 0,
+   "kind": "script",
+   "title": "S0: Fable check (runs once)",
+   "job": "Checks whether the Fable model is available to this account; it is not (2026-11-16), so all four agents use claude-opus-5-5.",
+   "details": [
+    "Recorded by a hook (see doc 25, section 1.3)",
+    "Rerun if the account changes"
+   ]
+  },
+  {
+   "id": "S1",
+   "lane": "script",
+   "row": 1,
+   "kind": "script",
+   "title": "S1: Library (built)",
+   "job": "Provides keyword search with verbatim quote checks (library_search.py) and content-only paper ingest (add_paper.py).",
+   "details": [
+    "library_search.py search | quote, used by the library-search skill",
+    "add_paper.py is run by the user",
+    "The library is closed to normal sessions"
+   ]
+  },
+  {
+   "id": "S1u",
+   "lane": "user",
+   "row": 1,
+   "kind": "user",
+   "title": "User: add papers, decide B1 claims",
+   "job": "Runs add_paper.py and the index build, and decides the three B1 claims the model rests on.",
+   "details": [
+    "Claims: KP c001, KP c012, MF c011",
+    "Outside the gates"
+   ]
+  },
+  {
+   "id": "S1r",
+   "lane": "record",
+   "row": 1,
+   "kind": "record",
+   "title": "library index",
+   "job": "The search index of the library, hashed into every run manifest.",
+   "details": [
+    "library_fts.sqlite, files_sha256"
+   ]
+  },
+  {
+   "id": "S2",
+   "lane": "user",
+   "row": 2,
+   "kind": "user",
+   "title": "S2: Design (user approves, runs once)",
+   "job": "Reads WORKFLOW.md and approves the design: stages, agents, checks, gates and caps.",
+   "details": [
+    "Status: waiting for approval (2026-11-16)"
+   ]
+  },
+  {
+   "id": "S2r",
+   "lane": "record",
+   "row": 2,
+   "kind": "record",
+   "title": "WORKFLOW.md",
+   "job": "The design; the only source of content for this chart.",
+   "details": [
+    "Background and answers: docs/planning/25_model_line_plan.md"
+   ]
+  },
+  {
+   "id": "S3",
+   "lane": "script",
+   "row": 3,
+   "kind": "script",
+   "title": "S3: Build (not built; runs once)",
+   "job": "Builds the agents, hooks, schemas, run_test.sh and run_md.py, then runs a toy dry run in the develop phase.",
+   "details": [
+    "Three new agents in workflows/model-development/agents/; beth-writer is reused",
+    "Stop hooks and path guards (PreToolUse)",
+    "run_test.sh: lock file, caps, locked list only",
+    "Dry run is tagged dev and is not a result"
+   ]
+  },
+  {
+   "id": "S3r",
+   "lane": "record",
+   "row": 3,
+   "kind": "record",
+   "title": "agents, hooks, schemas, run_test.sh",
+   "job": "The line's definitions, kept in git and hashed at freeze.",
+   "details": [
+    "schemas/result.schema.json",
+    "Per-agent settings in .claude/permissions/model-development/"
+   ]
+  },
+  {
+   "id": "FZ",
+   "lane": "user",
+   "row": 4,
+   "kind": "user",
+   "title": "Freeze md-v1 (user approves)",
+   "job": "Approves freeze/md-v1.json (the hash of every definition) and a git tag before the first real run.",
+   "details": [
+    "Phase becomes execute",
+    "A real error found by a check returns the phase to develop; md-v2 is approved before the run resumes"
+   ]
+  },
+  {
+   "id": "RM",
+   "lane": "script",
+   "row": 4,
+   "kind": "script",
+   "title": "run_md.py (line script)",
+   "job": "Walks the stage graph, refuses a stage whose inputs are not done, keeps runs.db, and stops at gates and on usage-limit errors.",
+   "details": [
+    "init writes manifest.json",
+    "Station scripts: work order from a fixed template, call agent, audit transcript, run checks, retry once on a malformed result",
+    "Refuses to start if a frozen hash differs"
+   ]
+  },
+  {
+   "id": "RR",
+   "lane": "record",
+   "row": 4,
+   "kind": "record",
+   "title": "runs/model-development/<run>/",
+   "job": "The run folder that ties one run together.",
+   "details": [
+    "manifest.json: commit, versions, model IDs, hashes, verdicts",
+    "runs.db: one row per agent call and check",
+    "derivation/, checks/, triage/, gates/, transcripts/",
+    "perf.csv, mutation.json"
+   ]
+  },
+  {
+   "id": "M1",
+   "lane": "script",
+   "row": 5,
+   "kind": "script",
+   "title": "M1: Scope",
+   "job": "Station script: writes the work order, calls the modeler, audits the transcript and runs the checks.",
+   "details": [
+    "Timeout: agentlib default 1200 s"
+   ]
+  },
+  {
+   "id": "M1a",
+   "lane": "agent",
+   "row": 5,
+   "kind": "agent",
+   "title": "M1 beth-modeler",
+   "job": "Writes spec_problem.md: mechanisms with scaling estimates, constitutive laws, notation lock, and what is out of scope.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Reads src/, include/, inputs/, memory/semantic/ and the library through library_search.py",
+    "Does not read docs/planning/ (independence from doc 18)",
+    "Writes only <run>/derivation/**"
+   ]
+  },
+  {
+   "id": "M1r",
+   "lane": "record",
+   "row": 5,
+   "kind": "record",
+   "title": "derivation/spec_problem.md",
+   "job": "The contract every later stage reads."
+  },
+  {
+   "id": "M1c",
+   "lane": "script",
+   "row": 6,
+   "kind": "script",
+   "title": "M1 checks",
+   "job": "Runs the verifier's Pint checks (scaling numbers recomputed) and the quote check on each citation.",
+   "details": [
+    "checks/m1_*.py: recomputed value within 1 % and same units",
+    "library_search.py quote: text on the cited page",
+    "Stop hook: structural pre-check"
+   ]
+  },
+  {
+   "id": "M1v",
+   "lane": "agent",
+   "row": 6,
+   "kind": "agent",
+   "title": "M1 beth-verifier",
+   "job": "Writes the unit and scaling checks from the scope's claims, not from the modeler's reasoning.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Reads derivation/ outputs, memory/semantic/units.md",
+    "Writes only <run>/checks/**",
+    "Does not read the feature branch or docs/planning/"
+   ]
+  },
+  {
+   "id": "M1k",
+   "lane": "record",
+   "row": 6,
+   "kind": "record",
+   "title": "checks/m1_*.py and results",
+   "job": "The verifier's check scripts and their verdicts."
+  },
+  {
+   "id": "GS",
+   "lane": "user",
+   "row": 6,
+   "kind": "user",
+   "title": "G:Scope (blocking)",
+   "job": "Chooses the scope, conducting or insulating grains, the source of regolith properties, and air or lunar laws for the first version.",
+   "details": [
+    "Shown: spec_problem.md, check results, every citation",
+    "Skipped: derivation drifts or uses laws that fail in vacuum"
+   ]
+  },
+  {
+   "id": "M2",
+   "lane": "script",
+   "row": 7,
+   "kind": "script",
+   "title": "M2: Selection",
+   "job": "Station script: calls the modeler to score at least four model types and runs the quote check.",
+   "details": [
+    "Candidates: body-fitted two-phase, diffuse domain or smoothed boundary, three-phase phase field, sharp interface or level set"
+   ]
+  },
+  {
+   "id": "M2a",
+   "lane": "agent",
+   "row": 7,
+   "kind": "agent",
+   "title": "M2 beth-modeler",
+   "job": "Scores at least four candidate model types against the M1 requirements, with sourced scores.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Criteria: fidelity, geometry flexibility, DOF cost, fit to PetIGA, buildable by December"
+   ]
+  },
+  {
+   "id": "M2r",
+   "lane": "record",
+   "row": 7,
+   "kind": "record",
+   "title": "derivation/selection.md",
+   "job": "The sourced scores, and the citation list.",
+   "details": [
+    "Also derivation/citations.json"
+   ]
+  },
+  {
+   "id": "M2c",
+   "lane": "script",
+   "row": 8,
+   "kind": "script",
+   "title": "M2 quote check",
+   "job": "Checks every citation with library_search.py quote.",
+   "details": [
+    "Passes when the quote is on the cited page (whitespace and case normalized only)"
+   ]
+  },
+  {
+   "id": "GL",
+   "lane": "user",
+   "row": 8,
+   "kind": "user",
+   "title": "G:Selection (blocking)",
+   "job": "Picks the model type and names the model (the <model> in feat/<model>).",
+   "details": [
+    "Skipped: the line derives a model the user did not choose"
+   ]
+  },
+  {
+   "id": "M3",
+   "lane": "script",
+   "row": 9,
+   "kind": "script",
+   "title": "M3: Derivation",
+   "job": "Station script: calls the modeler for the derivation; timeout 3600 s."
+  },
+  {
+   "id": "M3a",
+   "lane": "agent",
+   "row": 9,
+   "kind": "agent",
+   "title": "M3 beth-modeler",
+   "job": "Derives the strong form, scales, floors, wall condition and sharp-interface limit; every ledger step is cited, derived, an assumption or a choice.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Reduction to Residual_A1 is checked, not assumed",
+    "Thin-interface correction: applies or not"
+   ]
+  },
+  {
+   "id": "M3r",
+   "lane": "record",
+   "row": 9,
+   "kind": "record",
+   "title": "derivation/ledger.json, derivation.md",
+   "job": "The step ledger and the derivation text."
+  },
+  {
+   "id": "M3c",
+   "lane": "script",
+   "row": 10,
+   "kind": "script",
+   "title": "M3 checks",
+   "job": "Runs the verifier's SymPy checks and compare_doc18.py (term by term diff against doc 18, evaluation only).",
+   "details": [
+    "checks/m3_*.py: reduction to Residual_A1, conservation, energy, units, each named operation, unlisted assumptions",
+    "Schema check: no step without a source",
+    "Planted ledger errors (sign, factor, exponent) must each fail a check first"
+   ]
+  },
+  {
+   "id": "M3v",
+   "lane": "agent",
+   "row": 10,
+   "kind": "agent",
+   "title": "M3 beth-verifier",
+   "job": "Writes SymPy checks from the ledger's claims, not from the modeler's reasoning.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Does not read docs/planning/ (doc 18 hidden)"
+   ]
+  },
+  {
+   "id": "M3k",
+   "lane": "record",
+   "row": 10,
+   "kind": "record",
+   "title": "checks/m3_*.py and results",
+   "job": "Check scripts, verdicts and the doc 18 diff."
+  },
+  {
+   "id": "R18",
+   "lane": "user",
+   "row": 10,
+   "kind": "user",
+   "title": "Review: doc 18 comparison (not blocking)",
+   "job": "Reads the diff of the agent's strong form against doc 18, the F2 pore-space derivation; the line goes on.",
+   "details": [
+    "Evaluation, not a gate"
+   ]
+  },
+  {
+   "id": "GD",
+   "lane": "user",
+   "row": 11,
+   "kind": "user",
+   "title": "G:Derivation (blocking)",
+   "job": "Answers each choice (C#) and confirms the cited claims.",
+   "details": [
+    "Shown: derivation.md, check results, C# list, doc 18 diff",
+    "Skipped: an unchecked equation becomes the spec"
+   ]
+  },
+  {
+   "id": "M4",
+   "lane": "script",
+   "row": 12,
+   "kind": "script",
+   "title": "M4: Discretization",
+   "job": "Station script: calls the modeler to write the frozen spec; timeout 3600 s."
+  },
+  {
+   "id": "M4a",
+   "lane": "agent",
+   "row": 12,
+   "kind": "agent",
+   "title": "M4 beth-modeler",
+   "job": "Writes spec.md (weak form, IGA and generalized-alpha, residual and Jacobian, dt rule) and code_map.json.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "First checks in PETSc 3.20 whether TSAdapt's error estimate works with TSALPHA or the //AM patch stays",
+    "Manufactured-solution sources"
+   ]
+  },
+  {
+   "id": "M4r",
+   "lane": "record",
+   "row": 12,
+   "kind": "record",
+   "title": "derivation/spec.md, code_map.json, mms/",
+   "job": "The specification and the map from each term to assembly.c and its runtime option."
+  },
+  {
+   "id": "M4c",
+   "lane": "script",
+   "row": 13,
+   "kind": "script",
+   "title": "M4 checks",
+   "job": "Runs the verifier's checks: weak and strong form agree, symbolic Jacobian equals the differentiated residual, groups are consistent.",
+   "details": [
+    "checks/m4_*.py"
+   ]
+  },
+  {
+   "id": "M4v",
+   "lane": "agent",
+   "row": 13,
+   "kind": "agent",
+   "title": "M4 beth-verifier",
+   "job": "Writes the weak versus strong, Jacobian and dimensionless group checks from the spec.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ]
+  },
+  {
+   "id": "M4k",
+   "lane": "record",
+   "row": 13,
+   "kind": "record",
+   "title": "checks/m4_*.py and results",
+   "job": "Check scripts and verdicts."
+  },
+  {
+   "id": "GM",
+   "lane": "user",
+   "row": 13,
+   "kind": "user",
+   "title": "G:Discretization (blocking)",
+   "job": "Freezes the spec; its hash goes into the manifest.",
+   "details": [
+    "Skipped: code and tests could target different equations"
+   ]
+  },
+  {
+   "id": "M5",
+   "lane": "script",
+   "row": 14,
+   "kind": "script",
+   "title": "M5: Test lock",
+   "job": "Station script: calls the verifier to write the tests from the spec, before any code exists."
+  },
+  {
+   "id": "M5a",
+   "lane": "agent",
+   "row": 14,
+   "kind": "agent",
+   "title": "M5 beth-verifier",
+   "job": "Writes the test list and scripts from spec.md and code_map.json, never seeing the feature code.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Reads src/ on main only, for regressions",
+    "Tests: regression, full Jacobian, manufactured solutions, closed-box water, energy, front speed, 90 degree contact, separate refinement, xi sensitivity, neck width, cost budget"
+   ]
+  },
+  {
+   "id": "M5r",
+   "lane": "record",
+   "row": 14,
+   "kind": "record",
+   "title": "studies/<model>/tests/, tests.json",
+   "job": "Locked test list and scripts on feat/<model>, with a cost budget per test."
+  },
+  {
+   "id": "M5c",
+   "lane": "script",
+   "row": 15,
+   "kind": "script",
+   "title": "M5 run_test.sh",
+   "job": "Runs every test; regressions must pass on main and each test must fit the run caps.",
+   "details": [
+    "Caps: lock file, at most 8 ranks, 20k to 100k DOFs per rank, 30 min timeout, locked list only"
+   ]
+  },
+  {
+   "id": "GT",
+   "lane": "user",
+   "row": 15,
+   "kind": "user",
+   "title": "G:Test lock (blocking)",
+   "job": "Sets the tolerances; the tests are hashed and locked by a hook.",
+   "details": [
+    "Shown: test list with proposed tolerances and reasons",
+    "Skipped: the coder could pass tests the user would not accept"
+   ]
+  },
+  {
+   "id": "M6",
+   "lane": "script",
+   "row": 16,
+   "kind": "script",
+   "title": "M6: Implementation (loop)",
+   "job": "Station script: gives the modeler one layer at a time (heat, vapor, phase field, coupling, wall term).",
+   "details": [
+    "Timeout 3600 s",
+    "Each layer must pass before the next"
+   ]
+  },
+  {
+   "id": "M6a",
+   "lane": "agent",
+   "row": 16,
+   "kind": "agent",
+   "title": "M6 beth-modeler",
+   "job": "Writes the C code behind a runtime option, default off, and fixes one failing test at a time (at most 3 rounds).",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Writes src/ and include/ in the feature worktree only",
+    "Cannot edit tests, checks or tolerances",
+    "May dispute a test, with evidence only"
+   ]
+  },
+  {
+   "id": "M6r",
+   "lane": "record",
+   "row": 16,
+   "kind": "record",
+   "title": "feat/<model> branch: C code",
+   "job": "Code behind a runtime option, default off.",
+   "details": [
+    "Commits recorded in the manifest at each gate"
+   ]
+  },
+  {
+   "id": "M6t",
+   "lane": "script",
+   "row": 17,
+   "kind": "script",
+   "title": "M6 run_test.sh",
+   "job": "After each layer: build, full Jacobian test, the layer's tests, then all earlier tests; logs wall time, Newton and Krylov iterations and dt.",
+   "details": [
+    "Same caps as M5",
+    "Locked list green and last layer committed: go to M7"
+   ]
+  },
+  {
+   "id": "M6l",
+   "lane": "record",
+   "row": 17,
+   "kind": "record",
+   "title": "test logs, runs.db",
+   "job": "Logs and one row per call and check."
+  },
+  {
+   "id": "M6f",
+   "lane": "agent",
+   "row": 18,
+   "kind": "agent",
+   "title": "M6 beth-model-foreman (triage)",
+   "job": "After 3 failed fix rounds, reads the evidence and returns one route with its reason, in one call.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write"
+   ],
+   "details": [
+    "Routes: code, spec, test, tolerance or environment",
+    "Rules on a modeler's dispute; an unresolved dispute goes to the user",
+    "Also writes the gate summaries (gates/<gate>.md)",
+    "Cannot run anything or edit code, tests or specs",
+    "Routes are compared at the end with a fixed rule table"
+   ]
+  },
+  {
+   "id": "M6tr",
+   "lane": "record",
+   "row": 18,
+   "kind": "record",
+   "title": "triage/<n>.json",
+   "job": "One routing decision with its reason."
+  },
+  {
+   "id": "M6u",
+   "lane": "user",
+   "row": 18,
+   "kind": "user",
+   "title": "User: tolerance or environment",
+   "job": "Decides a tolerance or environment problem, or an unresolved test dispute."
+  },
+  {
+   "id": "M6v",
+   "lane": "agent",
+   "row": 19,
+   "kind": "agent",
+   "title": "M6 beth-verifier (test bug)",
+   "job": "Fixes a test the foreman ruled wrong, or answers a dispute in one call.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Writes studies/<model>/tests/ and tests.json; the user re-locks",
+    "Does not read the feature branch's src/"
+   ]
+  },
+  {
+   "id": "M7",
+   "lane": "script",
+   "row": 20,
+   "kind": "script",
+   "title": "M7: Mutation",
+   "job": "Applies about 10 planted bugs, each in a scratch worktree, and records which test caught each.",
+   "details": [
+    "Examples: wall term sign, missing weight, dropped Jacobian term, wrong floor, eps_s below mesh resolution"
+   ]
+  },
+  {
+   "id": "M7a",
+   "lane": "agent",
+   "row": 20,
+   "kind": "agent",
+   "title": "M7 beth-verifier (on a miss)",
+   "job": "Adds a new test for each planted bug that no test caught.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Missed bug: new test waits for the user to re-lock"
+   ]
+  },
+  {
+   "id": "M7r",
+   "lane": "record",
+   "row": 20,
+   "kind": "record",
+   "title": "mutation.json",
+   "job": "Which test caught each planted bug."
+  },
+  {
+   "id": "R7",
+   "lane": "user",
+   "row": 20,
+   "kind": "user",
+   "title": "Re-lock after a mutation miss (blocking)",
+   "job": "Approves the new test for each missed bug and re-locks the list (G:Test lock reopened); M8 waits."
+  },
+  {
+   "id": "M8",
+   "lane": "script",
+   "row": 21,
+   "kind": "script",
+   "title": "M8: Performance",
+   "job": "Station script: measures solver settings on two fixed cases with perf.py; all tests stay green after every change.",
+   "details": [
+    "BiCGStab or GMRES; ASM with ILU(k), block Jacobi, field split; MUMPS in 2D if available",
+    "dt rule against a small-dt reference",
+    "Strong scaling at 20k, 50k, 100k DOFs per rank"
+   ]
+  },
+  {
+   "id": "M8a",
+   "lane": "agent",
+   "row": 21,
+   "kind": "agent",
+   "title": "M8 beth-modeler",
+   "job": "Changes solver settings and commits the chosen ones as the model's defaults on the branch.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write",
+    "Edit",
+    "Bash"
+   ],
+   "details": [
+    "Writes src/ and include/ in the feature worktree only"
+   ]
+  },
+  {
+   "id": "M8r",
+   "lane": "record",
+   "row": 21,
+   "kind": "record",
+   "title": "perf.csv, settings",
+   "job": "Measured settings, committed as the branch's defaults."
+  },
+  {
+   "id": "R8",
+   "lane": "user",
+   "row": 21,
+   "kind": "user",
+   "title": "Review: M8 settings (not blocking)",
+   "job": "Reads the measured settings and the local target for alloc.sh; the line goes on."
+  },
+  {
+   "id": "M9",
+   "lane": "script",
+   "row": 22,
+   "kind": "script",
+   "title": "M9: Write-up",
+   "job": "Station script: calls the writer with the ledger, spec, results and perf.csv."
+  },
+  {
+   "id": "M9a",
+   "lane": "agent",
+   "row": 22,
+   "kind": "agent",
+   "title": "M9 beth-writer",
+   "job": "Writes the linear teaching document in a fixed 13-part order, from the files and not from memory.",
+   "model": "claude-opus-5-5",
+   "tools": [
+    "Read",
+    "Grep",
+    "Glob",
+    "Write"
+   ],
+   "details": [
+    "Reused from .claude/agents/",
+    "Each part uses only what came before"
+   ]
+  },
+  {
+   "id": "M9r",
+   "lane": "record",
+   "row": 22,
+   "kind": "record",
+   "title": "docs/model/<model>.md",
+   "job": "The teaching document: problem to limitations."
+  },
+  {
+   "id": "M9c",
+   "lane": "script",
+   "row": 23,
+   "kind": "script",
+   "title": "M9 checks",
+   "job": "Runs check_doc.py and the citation check, then a fresh-context student review of the document alone.",
+   "details": [
+    "check_doc.py: every symbol defined before first use, every number traced to a file",
+    "Student redoes the reduction at psi = 1 and one Jacobian entry, and lists steps it could not follow"
+   ]
+  },
+  {
+   "id": "GW",
+   "lane": "user",
+   "row": 23,
+   "kind": "user",
+   "title": "G:Write-up (blocking)",
+   "job": "Reads the document and the student's list, then accepts or sends it back.",
+   "details": [
+    "Skipped: the user does not learn the model"
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "from": "S0",
+   "to": "S1",
+   "kind": "flow"
+  },
+  {
+   "from": "S1u",
+   "to": "S1",
+   "kind": "flow"
+  },
+  {
+   "from": "S1",
+   "to": "S1r",
+   "kind": "data"
+  },
+  {
+   "from": "S1",
+   "to": "S2",
+   "kind": "flow"
+  },
+  {
+   "from": "S2",
+   "to": "S2r",
+   "kind": "data"
+  },
+  {
+   "from": "S2",
+   "to": "S3",
+   "kind": "flow"
+  },
+  {
+   "from": "S3",
+   "to": "S3r",
+   "kind": "data"
+  },
+  {
+   "from": "S3",
+   "to": "FZ",
+   "kind": "flow"
+  },
+  {
+   "from": "FZ",
+   "to": "RM",
+   "kind": "flow"
+  },
+  {
+   "from": "RM",
+   "to": "RR",
+   "kind": "data"
+  },
+  {
+   "from": "RM",
+   "to": "M1",
+   "kind": "flow"
+  },
+  {
+   "from": "M1",
+   "to": "M1a",
+   "kind": "flow"
+  },
+  {
+   "from": "M1a",
+   "to": "M1r",
+   "kind": "data"
+  },
+  {
+   "from": "M1r",
+   "to": "M1v",
+   "kind": "flow"
+  },
+  {
+   "from": "M1v",
+   "to": "M1k",
+   "kind": "data"
+  },
+  {
+   "from": "M1v",
+   "to": "M1c",
+   "kind": "flow"
+  },
+  {
+   "from": "M1c",
+   "to": "GS",
+   "kind": "flow"
+  },
+  {
+   "from": "M1c",
+   "to": "M1k",
+   "kind": "data"
+  },
+  {
+   "from": "GS",
+   "to": "M2",
+   "kind": "flow"
+  },
+  {
+   "from": "M2",
+   "to": "M2a",
+   "kind": "flow"
+  },
+  {
+   "from": "M2a",
+   "to": "M2r",
+   "kind": "data"
+  },
+  {
+   "from": "M2r",
+   "to": "M2c",
+   "kind": "flow"
+  },
+  {
+   "from": "M2c",
+   "to": "GL",
+   "kind": "flow"
+  },
+  {
+   "from": "GL",
+   "to": "M3",
+   "kind": "flow"
+  },
+  {
+   "from": "M3",
+   "to": "M3a",
+   "kind": "flow"
+  },
+  {
+   "from": "M3a",
+   "to": "M3r",
+   "kind": "data"
+  },
+  {
+   "from": "M3r",
+   "to": "M3v",
+   "kind": "flow"
+  },
+  {
+   "from": "M3v",
+   "to": "M3k",
+   "kind": "data"
+  },
+  {
+   "from": "M3v",
+   "to": "M3c",
+   "kind": "flow"
+  },
+  {
+   "from": "M3c",
+   "to": "M3k",
+   "kind": "data"
+  },
+  {
+   "from": "M3c",
+   "to": "R18",
+   "kind": "data"
+  },
+  {
+   "from": "M3c",
+   "to": "GD",
+   "kind": "flow"
+  },
+  {
+   "from": "GD",
+   "to": "M4",
+   "kind": "flow"
+  },
+  {
+   "from": "M4",
+   "to": "M4a",
+   "kind": "flow"
+  },
+  {
+   "from": "M4a",
+   "to": "M4r",
+   "kind": "data"
+  },
+  {
+   "from": "M4r",
+   "to": "M4v",
+   "kind": "flow"
+  },
+  {
+   "from": "M4v",
+   "to": "M4k",
+   "kind": "data"
+  },
+  {
+   "from": "M4v",
+   "to": "M4c",
+   "kind": "flow"
+  },
+  {
+   "from": "M4c",
+   "to": "M4k",
+   "kind": "data"
+  },
+  {
+   "from": "M4c",
+   "to": "GM",
+   "kind": "flow"
+  },
+  {
+   "from": "GM",
+   "to": "M5",
+   "kind": "flow"
+  },
+  {
+   "from": "M5",
+   "to": "M5a",
+   "kind": "flow"
+  },
+  {
+   "from": "M5a",
+   "to": "M5r",
+   "kind": "data"
+  },
+  {
+   "from": "M5r",
+   "to": "M5c",
+   "kind": "flow"
+  },
+  {
+   "from": "M5c",
+   "to": "GT",
+   "kind": "flow"
+  },
+  {
+   "from": "GT",
+   "to": "M6",
+   "kind": "flow"
+  },
+  {
+   "from": "M6",
+   "to": "M6a",
+   "kind": "flow"
+  },
+  {
+   "from": "M6a",
+   "to": "M6r",
+   "kind": "data"
+  },
+  {
+   "from": "M6r",
+   "to": "M6t",
+   "kind": "flow"
+  },
+  {
+   "from": "M6t",
+   "to": "M6l",
+   "kind": "data"
+  },
+  {
+   "from": "M6t",
+   "to": "M6a",
+   "kind": "loop",
+   "label": "failing test, max 3 rounds"
+  },
+  {
+   "from": "M6t",
+   "to": "M6f",
+   "kind": "loop",
+   "label": "still failing"
+  },
+  {
+   "from": "M6f",
+   "to": "M6tr",
+   "kind": "data"
+  },
+  {
+   "from": "M6f",
+   "to": "M6u",
+   "kind": "stop",
+   "label": "tolerance, environment"
+  },
+  {
+   "from": "M6f",
+   "to": "M6a",
+   "kind": "loop",
+   "label": "route code"
+  },
+  {
+   "from": "M6f",
+   "to": "M6v",
+   "kind": "loop",
+   "label": "route test"
+  },
+  {
+   "from": "M6v",
+   "to": "M6t",
+   "kind": "loop",
+   "label": "rerun"
+  },
+  {
+   "from": "M6f",
+   "to": "M4",
+   "kind": "loop",
+   "label": "spec: reopen M4, gate"
+  },
+  {
+   "from": "M6f",
+   "to": "M3",
+   "kind": "loop",
+   "label": "spec: reopen M3, gate"
+  },
+  {
+   "from": "M6t",
+   "to": "M7",
+   "kind": "flow",
+   "label": "locked list green"
+  },
+  {
+   "from": "M7",
+   "to": "M7r",
+   "kind": "data"
+  },
+  {
+   "from": "M7",
+   "to": "M7a",
+   "kind": "flow"
+  },
+  {
+   "from": "M7a",
+   "to": "R7",
+   "kind": "flow"
+  },
+  {
+   "from": "M7",
+   "to": "M8",
+   "kind": "flow"
+  },
+  {
+   "from": "M8",
+   "to": "M8a",
+   "kind": "flow"
+  },
+  {
+   "from": "M8a",
+   "to": "M8r",
+   "kind": "data"
+  },
+  {
+   "from": "M8r",
+   "to": "R8",
+   "kind": "flow"
+  },
+  {
+   "from": "M8",
+   "to": "M9",
+   "kind": "flow"
+  },
+  {
+   "from": "M9",
+   "to": "M9a",
+   "kind": "flow"
+  },
+  {
+   "from": "M9a",
+   "to": "M9r",
+   "kind": "data"
+  },
+  {
+   "from": "M9r",
+   "to": "M9c",
+   "kind": "flow"
+  },
+  {
+   "from": "M9c",
+   "to": "GW",
+   "kind": "flow"
+  }
+ ]
+}
