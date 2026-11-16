@@ -23,6 +23,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -153,6 +154,7 @@ def cmd_init(a):
         st["stages"][s] = {"status": "skipped"}
     save_state(rdir, st)
     (rdir / "decisions.json").write_text("[]\n")
+    shutil.copyfile(PROBLEMS[a.problem]["brief"], rdir / "problem.md")      # the brief this run used
     log(rdir, f"init run {a.run} (problem {a.problem}{', dev' if a.dev else ''}) at {manifest['git_commit'][:8]}")
     print(f"next: venv_workflows/bin/python scripts/model_development/run_md.py run --run {a.run}")
 
@@ -413,7 +415,7 @@ def st_derivation_stage(rdir, st, stage):
     kw = dict(run=rdir, feedback=feedback_text(st, stage))
     struct_kw = {}
     if stage == "M1":
-        kw["problem"] = prob["brief"]
+        kw["problem"] = rdir / "problem.md" if (rdir / "problem.md").exists() else prob["brief"]
     if stage == "M2":
         kw.update(min_candidates=prob["min_candidates"], candidates_hint=prob["candidates_hint"])
         struct_kw = {"min_candidates": prob["min_candidates"]}
