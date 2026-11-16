@@ -34,7 +34,7 @@ LIMITS
 Usage:
     python3 postprocess/vapor_movie.py --dir <run>                 # -> <run>/plots/vapor_movie.mp4
     python3 postprocess/vapor_movie.py --dir <run> --tracers       # -> <run>/plots/vapor_movie_tracers.mp4
-Options: --save, --fps, --subframes, --n-particles, --dmax, --grid, --sigma-lim, --every, --seed.
+Options: --save, --fps, --subframes, --n-particles, --dmax, --grid, --sigma-lim, --every, --seed, --dpi.
 Also writes <movie>_first.png (use as the PowerPoint poster frame) and <movie>_mid.png.
 """
 
@@ -137,6 +137,8 @@ def main():
                     help="color limit for |sigma| (default: 99.5th percentile of |sigma| in the air over the run)")
     ap.add_argument("--every", type=int, default=1, help="use every Nth snapshot")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--dpi", type=int, default=160,
+                    help="frame resolution (default 160: a 10 in wide frame is 1600 px; use ~320 for full-resolution vtkOut)")
     a = ap.parse_args()
 
     run = os.path.abspath(a.dir)
@@ -220,7 +222,7 @@ def main():
                             h[bad] = P[bad]
                     hist = (hist + [P.copy()])[-TAIL:]
 
-                fig, ax = plt.subplots(figsize=(figw, figh), dpi=160)
+                fig, ax = plt.subplots(figsize=(figw, figh), dpi=a.dpi)
                 ax.set_facecolor(REGOLITH)
                 pm = ax.pcolormesh(X, Y, np.ma.masked_where(p >= 0.5, sig), cmap=cmocean.cm.balance,
                                    vmin=-lim, vmax=lim, shading="nearest", rasterized=True)
