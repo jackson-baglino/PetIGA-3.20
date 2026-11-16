@@ -56,7 +56,7 @@
           },
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lr_session_status.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/md_session_status.py",
             "timeout": 10
           }
         ]
@@ -79,7 +79,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lr_prompt_status.py",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/md_session_status.py",
             "timeout": 10
           }
         ]

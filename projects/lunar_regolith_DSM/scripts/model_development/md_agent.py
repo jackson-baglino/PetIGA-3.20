@@ -35,7 +35,12 @@ class UsageLimit(RuntimeError):
 
 
 def load(name):
-    return agentlib.load_agent(AGENTS / f"{name}.md", name)
+    """A workflow agent (workflows/model-development/agents/) or a general helper reused by the line
+    (.claude/agents/, e.g. beth-writer)."""
+    path = AGENTS / f"{name}.md"
+    if not path.is_file():
+        path = ROOT / ".claude" / "agents" / f"{name}.md"
+    return agentlib.load_agent(path, name)
 
 
 def schema(name):

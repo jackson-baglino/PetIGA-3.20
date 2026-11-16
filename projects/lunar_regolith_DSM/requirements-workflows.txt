@@ -37,3 +37,7 @@ PyYAML==6.0.3               # agent frontmatter (agentlib.py) and calibration fi
 markdown2==2.5.5            # scripts/transcripts/short_transcript.py (Markdown replies -> HTML)
 
 ruff==0.17.3                # linter for scripts/ (ruff.toml); static, imports nothing
+
+# Model line (workflows/model-development): the verifier's check scripts, 2026-11-16.
+sympy==1.14.0
+pint==0.25.3

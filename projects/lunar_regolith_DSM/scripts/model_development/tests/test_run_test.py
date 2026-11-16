@@ -20,7 +20,7 @@ class RunTestCase(unittest.TestCase):
         (self.p / "inputs" / "geometry" / "fam" / "g128.opts").write_text("-Nx 128\n-Ny 128\n")
         (self.p / "inputs" / "geometry" / "g1d.opts").write_text("-Nx 2000\n")
         (self.p / "inputs" / "geometry" / "gfile.opts").write_text("-geom_file x.dat\n# DOF_GRID: 300 300\n")
-        (self.p / "ok.py").write_text("print('ran')\n")
+        (self.p / "ok.py").write_text("import sys\nassert '--project' in sys.argv\nprint('ran')\n")
         (self.p / "sleep.py").write_text("import time\ntime.sleep(30)\n")
         (self.p / "check.py").write_text("import json\nprint(json.dumps({'pass': True, 'value': 1.0}))\n")
         self.lock = mock.patch.object(rt, "LOCK", self.p / ".run_lock")
@@ -34,7 +34,7 @@ class RunTestCase(unittest.TestCase):
         path = self.p / "tests.json"
         path.write_text(json.dumps({"tests": tests}))
         if lock:
-            (self.p / "tests.json.lock").write_text(json.dumps({"files": rt.lock_hashes(path, tests, self.p)}))
+            (self.p / "tests.json.lock").write_text(json.dumps({"files": rt.lock_hashes(path, tests)}))
         return path
 
     def caps(self, **t):

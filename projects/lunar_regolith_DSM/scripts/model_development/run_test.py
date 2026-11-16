@@ -15,9 +15,10 @@ The caps, enforced here and nowhere else:
 Test entry (tests.json: {"tests": [ ... ]}):
   {"id": "T01", "claim": "...", "runner": "solver" | "python",
    solver: "geometry": <name>, "experiment": <name>, "flags": [...], "ranks": n,
-   python: "script": <path in the checkout>, "args": [...],
+   python: "script": <path relative to the tests.json folder>, "args": [...] (run with --project <checkout>),
    "wall_minutes": m, "check": <path of the check script>, "check_args": [...]}
-A solver test runs scripts/Studio/run_lunar.sh in --project with LUNAR_PROJECT_ROOT, LUNAR_NPROCS,
+Check and python scripts are found relative to the folder of tests.json, so tests kept on a feature branch can
+run against main (regressions) or the branch. A solver test runs scripts/Studio/run_lunar.sh in --project with LUNAR_PROJECT_ROOT, LUNAR_NPROCS,
 LUNAR_RESULTS_BASE and LUNAR_SKIP_POSTPROCESS=1; its check script then gets --run-folder <folder>.
 A check script prints one JSON object with "pass" and exits 0 on pass. The result goes to
 <out>/<id>/<timestamp>.json with the caps used, wall time, exit codes and the check's verdict.
@@ -47,12 +48,13 @@ def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def lock_hashes(tests_path, tests, project):
+def lock_hashes(tests_path, tests):
+    base = Path(tests_path).parent
     files = {"tests.json": sha256(tests_path)}
     for t in tests:
         for key in ("check", "script"):
             if t.get(key):
-                files[t[key]] = sha256(Path(project) / t[key])
+                files[t[key]] = sha256(base / t[key])
     return files
 
 
@@ -174,7 +176,7 @@ def main(argv=None):
     lockfile = tests_path.with_suffix(".json.lock")
     if lockfile.exists():
         locked = json.loads(lockfile.read_text())["files"]
-        now = lock_hashes(tests_path, tests, project)
+        now = lock_hashes(tests_path, tests)
         changed = sorted(k for k in set(locked) | set(now) if locked.get(k) != now.get(k))
         if changed:
             raise SystemExit(f"the locked test list changed: {changed}; only the user re-locks it")
@@ -211,13 +213,14 @@ def main(argv=None):
             record.update(exit=code, timed_out=timed_out, run_folder=folder)
             check_extra = ["--run-folder", folder] if folder else []
         else:
-            cmd = [str(VENV_LUNAR_PY), str(project / test["script"]), *test.get("args", [])]
+            cmd = [str(VENV_LUNAR_PY), str(tests_path.parent / test["script"]), "--project", str(project),
+                   *test.get("args", [])]
             code, timed_out = run_group(cmd, env, project, timeout_s, out / f"{ts}.log")
             record.update(exit=code, timed_out=timed_out)
             check_extra = []
         verdict = None
         if test.get("check") and not timed_out:
-            p = subprocess.run([str(VENV_LUNAR_PY), str(project / test["check"]), *check_extra,
+            p = subprocess.run([str(VENV_LUNAR_PY), str(tests_path.parent / test["check"]), *check_extra,
                                 *test.get("check_args", [])], cwd=project, capture_output=True, text=True,
                                timeout=600)
             try:
