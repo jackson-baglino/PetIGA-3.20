@@ -98,14 +98,15 @@ def _load_time_map(outp_path: str) -> dict:
 # VTK XML writer helpers
 # ---------------------------------------------------------------------------
 
-def _b64_block(arr: np.ndarray) -> str:
+def _b64_block(arr: np.ndarray, dtype: str = '<f8') -> str:
     """
     Encode a numpy array as a base64 binary block for VTK XML format="binary".
 
-    Layout: [UInt64 byte-count header][raw float64 data], base64 encoded.
-    Matches header_type="UInt64" byte_order="LittleEndian" in the VTKFile tag.
+    Layout: [UInt64 byte-count header][raw float64 (or float32) data], base64
+    encoded. Matches header_type="UInt64" byte_order="LittleEndian" in the
+    VTKFile tag; the DataArray's type attribute must name the same dtype.
     """
-    data = np.ascontiguousarray(arr.ravel(), dtype='<f8').tobytes()
+    data = np.ascontiguousarray(arr.ravel(), dtype=dtype).tobytes()
     header = struct.pack('<Q', len(data))   # 8-byte little-endian uint64
     return base64.b64encode(header + data).decode('ascii')
 
@@ -147,7 +148,7 @@ def _vtk_coords(nrb) -> np.ndarray:
     return np.ascontiguousarray(coords.transpose(axes)).reshape(-1, 3)
 
 
-def _write_vts(outfile: str, nrb, sol: np.ndarray) -> None:
+def _write_vts(outfile: str, nrb, sol: np.ndarray, float32: bool = False) -> None:
     """
     Write a VTK XML Structured Grid (.vts) file.
 
@@ -185,6 +186,7 @@ def _write_vts(outfile: str, nrb, sol: np.ndarray) -> None:
     fields_vtk = {name: _vtk_scalar(arr) for name, arr in fields.items()}
 
     # --- XML assembly -------------------------------------------------------
+    vtype, npt = ("Float32", "<f4") if float32 else ("Float64", "<f8")
     extent = f"0 {Nx-1} 0 {Ny-1} 0 {Nz-1}"
 
     lines = [
@@ -194,16 +196,16 @@ def _write_vts(outfile: str, nrb, sol: np.ndarray) -> None:
         f'  <StructuredGrid WholeExtent="{extent}">',
         f'    <Piece Extent="{extent}">',
         '      <Points>',
-        '        <DataArray type="Float64" NumberOfComponents="3" format="binary">',
-        f'          {_b64_block(coords_vtk)}',
+        f'        <DataArray type="{vtype}" NumberOfComponents="3" format="binary">',
+        f'          {_b64_block(coords_vtk, npt)}',
         '        </DataArray>',
         '      </Points>',
         '      <PointData>',
     ]
     for name, arr in fields_vtk.items():
         lines.append(
-            f'        <DataArray type="Float64" Name="{name}" format="binary">'
-            f'{_b64_block(arr)}</DataArray>'
+            f'        <DataArray type="{vtype}" Name="{name}" format="binary">'
+            f'{_b64_block(arr, npt)}</DataArray>'
         )
     lines += [
         '      </PointData>',
@@ -245,8 +247,19 @@ def _write_pvd(pvd_path: str, entries: list) -> None:
 # Main conversion
 # ---------------------------------------------------------------------------
 
+class _Sub:
+    """Stand-in for the igakit geometry with every stride-th control point
+    (the last one always kept, so the grid still spans the whole domain)."""
+    def __init__(self, points, idx):
+        self.points = points[np.ix_(*idx)]
+
+
+def _stride_index(shape, stride: int):
+    return [np.unique(np.r_[np.arange(0, n, stride), n - 1]) for n in shape]
+
+
 def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
-            force: bool = False):
+            force: bool = False, stride: int = 1, float32: bool = False):
     iga_path = os.path.join(run_dir, iga_file)
     if not os.path.isfile(iga_path):
         raise FileNotFoundError(f"IGA geometry file not found: {iga_path}")
@@ -255,6 +268,14 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
     os.makedirs(out_dir, exist_ok=True)
 
     nrb = PetIGA().read(iga_path)
+    idx = None
+    geo = nrb
+    if stride > 1:
+        idx = _stride_index(nrb.points.shape[:-1], stride)
+        geo = _Sub(nrb.points, idx)
+        print(f"  Viewing copy: stride {stride} (every {stride} control points), grid "
+              f"{'x'.join(str(n) for n in nrb.points.shape[:-1])} -> "
+              f"{'x'.join(str(len(i)) for i in idx)}{', float32' if float32 else ''}")
 
     sol_files = sorted(glob.glob(os.path.join(run_dir, "sol_[0-9]*.dat")))  # not solver_evo.dat
     if not sol_files:
@@ -299,7 +320,9 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
             continue
 
         sol = read_sol_vec(infile, nrb)
-        _write_vts(outfile, nrb, sol)
+        if idx is not None:
+            sol = sol[np.ix_(*idx)]
+        _write_vts(outfile, geo, sol, float32=float32)
         print(f"  Written: {outfile}")
 
     if pvd_entries:
@@ -319,9 +342,15 @@ def parse_args():
     p.add_argument("--dir",   default=".",          help="Run directory (default: .)")
     p.add_argument("--iga",   default="igasol.dat", help="IGA geometry file")
     p.add_argument("--force", action="store_true",  help="Overwrite existing VTK files")
+    p.add_argument("--stride", type=int, default=1,
+                   help="keep every Nth control point in each direction (viewing copy; "
+                        "the last point is always kept). Default 1 = full resolution")
+    p.add_argument("--float32", action="store_true",
+                   help="write Float32 arrays (half the size; ~7 significant digits)")
     return p.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    convert(run_dir=args.dir, iga_file=args.iga, force=args.force)
+    convert(run_dir=args.dir, iga_file=args.iga, force=args.force,
+            stride=args.stride, float32=args.float32)

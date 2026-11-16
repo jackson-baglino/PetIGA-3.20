@@ -343,7 +343,8 @@ def _decode(da) -> np.ndarray:
     """Decode a base64 appended-format DataArray element."""
     raw = base64.b64decode("".join(da.text.split()))
     n = struct.unpack("<Q", raw[:8])[0]
-    return np.frombuffer(raw[8:8 + n], dtype=np.float64)
+    dt = np.float32 if da.get("type") == "Float32" else np.float64
+    return np.frombuffer(raw[8:8 + n], dtype=dt)
 
 
 def read_vts(fn, want=None):
