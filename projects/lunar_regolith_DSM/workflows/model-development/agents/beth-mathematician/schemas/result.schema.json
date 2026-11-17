@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "beth-mathematician answer",
+  "description": "The typed answer. Passed to Claude Code with --json-schema and validated again by the launcher; the grader reads result_expr.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "result_expr", "steps", "assumptions_used", "questions"],
+  "properties": {
+    "status": {"enum": ["done", "blocked"]},
+    "result_expr": {"type": "string", "description": "The result as one SymPy expression, using only the work order's allowed names. Empty when blocked."},
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "statement", "from", "operation"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^S[0-9]+$"},
+          "statement": {"type": "string"},
+          "from": {"type": "array", "items": {"type": "string"}, "description": "IDs of earlier steps, or 'given'."},
+          "operation": {"type": "string", "description": "The named operation: multiply by w, integrate over (0, L), integration by parts, substitution of S3, ..."}
+        }
+      }
+    },
+    "assumptions_used": {"type": "array", "items": {"type": "string"}},
+    "questions": {"type": "array", "items": {"type": "string"}, "description": "What stopped the work, or what the user should decide. Empty when done."}
+  }
+}
