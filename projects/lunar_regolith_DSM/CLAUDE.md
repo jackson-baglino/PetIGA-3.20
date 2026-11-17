@@ -165,9 +165,15 @@ agent's model means a new name, so old run logs still say which model ran.
 - One name, one file. A workflow that uses another workflow's agent refers
   to it by name; never copy a definition. Launchers find an agent by name
   across `workflows/*/agents/`, and a test fails on a duplicate name.
-- The one exception: helpers the main session starts as subagents
-  (`beth-writer`, `beth-critic`, `morty-flowchart`) stay in `.claude/agents/`,
-  because Claude Code loads session subagents only from there.
+- General agents, used by the main session or by more than one workflow
+  (`beth-writer`, `beth-critic`, `morty-flowchart`), live in
+  `.claude/agents/<name>.md`, the only place Claude Code loads session
+  subagents from. Their other files follow the same folder layout.
+- Building an agent always goes through the `new-agent` skill: it asks, item
+  by item, for the tools, permissions, sandbox level, environment, hooks,
+  schemas, a known-answer task and the tests. Every rule needs an enforcer
+  outside the prompt, or is marked "prompt only". Start with one agent on a
+  task with a known answer, and add the next only when it passes.
 - Ask before editing an agent's definition or its `settings.json`, as for
   `.claude/`.
 - Shared harness code lives in `scripts/` (`agentlib.py`, `agentkit/`), not

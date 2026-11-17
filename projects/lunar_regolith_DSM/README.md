@@ -72,11 +72,12 @@ lunar_regolith_DSM/
 ├─ docs/             # design/analysis notes (see per-file banners; contact_angle/ is current)
 ├─ memory/           # committed project memory: MEMORY.md, USER.md, semantic/ (see memory/README.md)
 ├─ workflows/        # agentic workflow designs (TEMPLATE.md; one folder per workflow:
-│                    #   WORKFLOW.md, flowchart.json/.html, agents/, prompts/, schemas/)
+│                    #   WORKFLOW.md, flowchart.json/.html, agents/, prompts/, schemas/;
+│                    #   agents/<name>.md + agents/<name>/ settings, schemas, tasks, tests)
 ├─ runs/             # workflow run records (manifest.json, runs.db, reports); paper text stays local
 ├─ project/          # course project: PILLARS.md, LOG.md (running log), RETROSPECTIVE.md, guides/
 ├─ .claude/          # settings.json (pinned model, permissions, hooks), hooks/, rules/,
-│                    #   skills/, agents/ (general helpers), permissions/
+│                    #   skills/, agents/ (session subagents only), permissions/ (older lines)
 └─ PERMISSIONS.md    # what agents may and may not do, and what enforces it
 ```
 

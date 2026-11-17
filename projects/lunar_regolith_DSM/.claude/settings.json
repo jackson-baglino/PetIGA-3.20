@@ -10,7 +10,8 @@
       "Bash(git push *)",
       "Bash(*run_b1.py approve*)",
       "Bash(*run_b1.py freeze*)",
-      "Bash(*run_b1.py thaw*)"
+      "Bash(*run_b1.py thaw*)",
+      "Edit(/workflows/*/agents/**)"
     ],
     "deny": [
       "Bash(git push --force *)",

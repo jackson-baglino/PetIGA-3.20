@@ -24,10 +24,14 @@ paths:
   planned work, write it in `BACKLOG.md` with the date and the reason, finish
   the task, and raise the idea with the user at the end. Do not redesign in
   the middle of a task.
-- **Where agents live.** Every agent of a workflow, workers and foreman, in
-  `workflows/<name>/agents/<agent>.md`; `.claude/agents/` only for general
-  helpers that belong to no workflow. All use the subagent format (frontmatter + a system-prompt body with a "Your place
-  in the line" section). `prompts/` holds only per-call work orders.
+- **Where agents live** (CLAUDE.md, "Where agents live"; `new-agent` skill).
+  A script-run agent: `workflows/<name>/agents/<agent>.md` plus the folder
+  `workflows/<name>/agents/<agent>/` (settings.json, env.allow, schemas/,
+  tasks/, tests/). `.claude/agents/` only for helpers the main session starts
+  as subagents. All use the subagent format (frontmatter + a system-prompt
+  body with a "Your place in the line" section). Agents built before
+  2026-11-17 are being moved to this layout (doc 29); until then their
+  settings stay where the line below says.
 - **Literature review.** Models are pinned in `MODELS` in
   `scripts/literature_review/agent_call.py`; permissions are in
   `.claude/permissions/literature-review/`. After any permission change run
