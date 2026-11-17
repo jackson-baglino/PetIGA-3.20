@@ -2,8 +2,8 @@
 """analyze_type5.py: lens position and area in the type 5 runs, against the reduced model.
 
 For each run folder (a batch folder is expanded to its run folders whose geometry starts with
-t5_cell or t5_pore), reads ice_bodies.csv (postprocess/ice_bodies.py, run by
-run_postprocess.sh): the largest body per step, its phi = 0.5 crossings on the pore axis
+t5_cell or t5_pore), reads ice_bodies.csv (postprocess/ice_bodies.py --dir <run>;
+water_budget.py --dir <run> for the closure): the largest body per step, its phi = 0.5 crossings on the pore axis
 (face_lo, face_hi) and its area. The lens center is the mean of the two crossings, given as the
 distance from the throat (xi = x - Lx/2; positive = cold side, x > Lx/2, since x = 0 is the warm
 end in every gradient run). The model prediction comes from type5_model.py with the run's own
@@ -56,7 +56,7 @@ def settings(run: Path):
     m = re.search(r"_wt(\d+(?:\.\d+)?)um", geo)
     wt = float(m.group(1)) * 1e-6 if m else W
     g0 = o.get("-grad_temp0", "0,0,0")
-    G = -float(str(g0).split(",")[0])
+    G = -float(str(g0).split(",")[0]) + 0.0          # + 0.0: no "-0.00" for G = 0
     h = None
     if not periodic and int(float(opt_float(o, "-flag_BC_rhovfix", 0) or 0)) == 1:
         lo = float(opt_float(o, "-rhovfix_lo"))
@@ -69,7 +69,7 @@ def lens_track(run: Path, lx: float):
     """arrays t [s], xi [m] (center from the throat), A/A0, from the largest body per step."""
     f = run / "ice_bodies.csv"
     if not f.exists():
-        raise FileNotFoundError(f"{f} missing: run bash {run}/postprocess/run_postprocess.sh {run} first")
+        raise FileNotFoundError(f"{f} missing: run postprocess/ice_bodies.py --dir {run} first")
     best = {}
     with f.open() as fh:
         for r in csv.DictReader(fh):
@@ -169,6 +169,9 @@ def main() -> int:
     ax2.set_ylabel("lens area change [%]")
     ax2.set_xlabel("time [days]")
     fig.tight_layout()
+    from figcheck import check_figure
+    for problem in check_figure(fig):
+        print(f"  figcheck: {problem}")
     fig.savefig(out / "type5_lens.png", dpi=200)
     print(f"wrote {out / 'type5_summary.csv'} and {out / 'type5_lens.png'}")
     return 0

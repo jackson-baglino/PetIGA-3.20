@@ -7,7 +7,7 @@ weeks (LOG.md keeps the history), and never let it pass about 150 lines.
 Run-level detail lives in `studies/cryosuction/RUNS.md`; session history in
 `LOG.md`; the plan itself in the iCloud folder below.
 
-**Last updated:** 2026-11-13 (session ffbfac7f)
+**Last updated:** 2026-11-17 (session 6475a664)
 
 ## Goal and deadline
 
@@ -150,6 +150,17 @@ Hypotheses: the user writes them; none recorded yet.
   pair in the shakedown. The enceladus 200k optimum is for 24 M DoF meshes.
 
 ## Done recently
+- 2026-11-17: type 5 rebuilt as approved (11 runs, `type5_tests.txt`, preflight OK, local
+  2 d shakedown of 5P-1 OK): periodic sinhyp cells at G 0 (5P), hyperbolic pores with h_net ends at
+  0.5 and 2 G_crit (5G: 0.84/3.36 K/m for the 40 um throat, 0.54/2.16 for 80), straight controls
+  (5S). Model in `studies/cryosuction/scripts/type5_model.py`; analysis `analyze_type5.py`. SI
+  draft 3.2 Table S1 has the G 0 lens on the wrong side (it stops 34/58 um short of the throat,
+  cold side); user to decide whether Claude edits the .docx. To submit after a push.
+- 2026-11-16/17: all 145 kept runs re-rendered as 15 s low-res movies in `<run>/movies/`
+  (tracers by |sigma|, slower; types 1, 2 zoomed), old movies removed (user OK); void runs in
+  `_void_scratch` (README there). Project rename to lunar_ice_harvesting tested in a worktree,
+  not applied.
+
 
 - 2026-11-13: Slate PowerPoint template for the AGU talk built and installed
   (iCloud Documents/Research/SlideTemplate/; outline script tools/update_outline.py).
