@@ -292,6 +292,25 @@ class Periodic(unittest.TestCase):
         g = bl.gap_profile(0.0, self.LX, self.W, self.WT, "cos", xt=0.0)
         self.assertAlmostEqual(g, self.WT)
 
+    def test_plug_end_faces(self):
+        # straight open pore 400 x 150 um, plug 220-320 um at 60 deg: r = 150 um, so the cold face's
+        # disc center (470 um) lies past the end. With end_faces the lens is the region between the
+        # two arcs: at height y, x from 220 - r + sqrt(r^2 - (y - 75)^2) to 320 + r - sqrt(...).
+        lx, W, r = 4.0e-4, 1.5e-4, 1.5e-4
+        pore = bl.Pore({"Lx": lx, "mean_gap": W, "walls": {"flat": True}})
+        rs = bl.Raster(pore, 2.5e-7)
+        y = np.linspace(0.0, W, 20001)
+        half = np.sqrt(r * r - (y - 0.5 * W) ** 2)
+        exact = np.trapezoid((3.2e-4 + r - half) - (2.2e-4 - r + half), y)
+        ice, rad = bl.plug(None, rs, 2.2e-4, 3.2e-4, 60.0, end_faces=True)
+        self.assertAlmostEqual(rad, r, delta=1e-12)
+        self.assertAlmostEqual(ice.sum() * rs.dx ** 2 / exact, 1.0, delta=5e-3)
+        self.assertFalse(ice[-1].any())                  # gas at the cold end
+        # default (end_faces off): unchanged behavior, the ice runs to the pore end
+        ice0, _ = bl.plug(None, rs, 2.2e-4, 3.2e-4, 60.0)
+        self.assertTrue(ice0[-1].any())
+        np.testing.assert_array_equal(ice0[rs.x < 3.0e-4], ice[rs.x < 3.0e-4])
+
     def test_hyp_profile(self):
         # hyp is the hyperbola itself: W at both ends, wt at the throat, = sqrt(wt^2 + c^2 xi^2)
         # with c = sqrt(W^2 - wt^2)/(Lx/2) everywhere (type5_model.EndsPore.g)

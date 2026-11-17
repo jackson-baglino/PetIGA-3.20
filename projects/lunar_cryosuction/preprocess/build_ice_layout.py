@@ -64,7 +64,8 @@ as a sharp region and then combined:
             the ice), allowed only outside the plug, x <= x0 - r and
             x >= x1 + r; the ice is the pore between, in [x0 - r, x1 + r].
             Faces are therefore arcs of radius r meeting the rough walls at
-            theta. r = g/(2 cos theta), with g the mean gap over the plug
+            theta. "end_faces": true also draws a face whose disc center
+            falls past an open pore end (see plug()). r = g/(2 cos theta), with g the mean gap over the plug
             ("r" in the spec overrides). theta >= 90 is not handled.
             A plug with x1 >= Lx ends at the dead end.
   caps      droplets on a wall: a disc of radius R whose center sits R cos(theta)
@@ -361,8 +362,15 @@ class Raster:
         return np.tile(a[:M] | a[M:2 * M] | a[2 * M:], (3, 1))
 
 
-def plug(r, rs: Raster, x0, x1, theta):
-    """equal-curvature plug between x0 and x1 (sharp mask)."""
+def plug(r, rs: Raster, x0, x1, theta, end_faces=False):
+    """equal-curvature plug between x0 and x1 (sharp mask).
+
+    end_faces (plug key "end_faces": true; default off, so older layouts build bit for bit):
+    in an open (non-periodic) pore, a face whose gas disc would be centered past the pore end
+    (x0 - r < 0 or x1 + r > Lx) is still drawn, with one disc of radius r centered on the
+    mid-gap line at that distance. Without it no gas center exists there and the ice runs to
+    the pore end (no face), which is right only for a plug that ends at a dead end. Needed
+    when r is large against the distance to the end (type 5: r 150 um, face 80 um from the end)."""
     ct = math.cos(math.radians(theta))
     assert ct > 0, "plugs need theta < 90"
     g = rs.yt - rs.yb
@@ -384,6 +392,12 @@ def plug(r, rs: Raster, x0, x1, theta):
             rad *= 0.95
     centers = rs.inside & (rs.D >= rad * ct) & ((rs.X <= x0 - rad) | (rs.X >= x1 + rad))
     gas = ndi.distance_transform_edt(~centers, sampling=rs.dx) <= rad
+    if end_faces and not rs.periodic:
+        for xf, side, iend in ((x0, +1, 0), (x1, -1, -1)):
+            xc = xf - side * rad
+            if xf < rs.x[-1] - rs.dx and (xc < rs.x0 or xc > rs.x[-1]):
+                yc = 0.5 * (rs.yb[iend] + rs.yt[iend])
+                gas |= (rs.X - xc) ** 2 + (rs.Y - yc) ** 2 <= rad * rad
     ice = rs.inside & ~gas & (rs.X >= x0 - rad) & (rs.X <= x1 + rad)
     return ice, rad
 
@@ -712,7 +726,7 @@ def main(argv=None) -> int:
     parts = []
     for f in spec.get("plugs", []):
         th = f.get("theta", th0)
-        m, rad = plug(f.get("r"), rs, f["x0"], f["x1"], th)
+        m, rad = plug(f.get("r"), rs, f["x0"], f["x1"], th, bool(f.get("end_faces", False)))
         ice |= m
         parts.append(f"plug {f['x0']*1e6:.0f}-{f['x1']*1e6:.0f} um, theta {th:g}, faces r {rad*1e6:.1f} um")
     if spec.get("fill"):
