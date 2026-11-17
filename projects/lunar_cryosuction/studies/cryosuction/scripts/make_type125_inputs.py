@@ -1,10 +1,14 @@
-"""Write the geometry, experiment and tests files for plan types 1, 2 and 5
-(SimulationPlan_v2, sections on types 1, 2 and 5).
+"""Write the geometry, experiment and tests files for plan types 1 and 2
+(SimulationPlan_v2, sections on types 1 and 2).
+
+Type 5 moved to make_type5_inputs.py on 2026-11-17 (redesign of 2026-11-13). The
+old type 5 (800 x 150 um pore with a bump throat, 12 runs, never submitted) was
+written by this script up to commit a17eb1b0; its inputs are in inputs/scratch,
+preprocess/scratch/layouts and studies/scratch/type5_tests_2026-11-09.txt.
 
 Type 1  one ice cap on a flat regolith wall (y0), box 600 x 300 um; the far
         face y1 is not a wall (90-degree phi face, sealed, insulating).
 Type 2  several caps on the same wall, box 600 or 900 x 300 um.
-Type 5  a lens at a smooth throat in a straight 800 x 150 um pore (walls y0, y1).
 
 Initial angles (user, 2026-11-09): droplets and caps start at liquid water's
 angle on regolith, THETA_WATER = 40 deg for now; lenses start at the wall-BC
@@ -13,8 +17,7 @@ angle THETA_BC = 60 deg (decision D1), which every experiment here prescribes.
 Caps (types 1, 2) use the solver's disc IC (-ic_type multi_grains): a disc of
 arc radius R whose center sits R cos(theta) below the wall meets it at theta;
 the solver lays the IC out on the rectangle, so no mesh or field file is
-needed. Type 5 uses preprocess/build_ice_layout.py (mesh + -ic_type phi_file):
-the lens follows the equal-curvature rule on the curved throat walls.
+needed.
 
 Orientation (as types 6, 7): depth is drawn downward, x = 0 is the top, a
 "warm top" gradient G is grad_temp0 = -G along x; "warm third" is x < Lx/3.
@@ -26,23 +29,21 @@ Vapor sets (studies/cryosuction/scripts/rhov_bc.py, plan tool T4):
   dh         vapor-gradient twin (isothermal): ends at 1 +/- dh/2, dh equal to
              the local-saturation contrast of the matching gradient run
 
-eps: type 1 8.5840e-7 m (production value, plan: R_min/eps = 29); types 2 and 5
-8.0e-7 m (plan: R_min/25 for the 20 um cap; half-throat 20 um / 25).
+eps: type 1 8.5840e-7 m (production value, plan: R_min/eps = 29); type 2
+8.0e-7 m (plan: R_min/25 for the 20 um cap).
 dtmax = 2 tau_sub(eps) (mesh_params.derived_pf_params via make_type34_inputs).
 
 Gradients and days for types 1 and 2 follow the run plan of 2026-11-12
 (docs/run_plan/build_runplan2.py): G_PROD, G_HIGH, G_ONE and the TYPE1 table
 below; every type 1/2 experiment writes N_OUT = 401 time-uniform snapshots.
 
-    venv_cryosuction/bin/python studies/cryosuction/scripts/make_type125_inputs.py [--dry-run] [--only 1,2,5]
+    venv_cryosuction/bin/python studies/cryosuction/scripts/make_type125_inputs.py [--dry-run] [--only 1,2]
 """
 from __future__ import annotations
 
 import argparse
 import datetime
-import json
 import math
-import subprocess
 import sys
 from pathlib import Path
 
@@ -53,7 +54,6 @@ from rhov_bc import fracs  # noqa: E402
 
 THETA_WATER, THETA_BC = 40.0, 60.0
 EPS1, EPS25 = 8.5840e-7, 8.0e-7
-LAYOUTS = ROOT / "preprocess/layouts"
 TODAY = datetime.date.today().isoformat()
 um = 1e-6
 
@@ -109,33 +109,6 @@ def cap_geometry(name, lx, ly, caps, eps, purpose, dry):
 """
     write(GEO / f"{name}.opts", text, dry)
     print(f"    Nx {nx} Ny {ny} ({(nx+2)*(ny+2)*3/1e6:.2f} M DOF)")
-    return name
-
-
-# --------------------------------------------------------------- throat (5)
-def throat_geometry(name, wt, lens_c, eps, purpose, dry, caps=(), grains=()):
-    lx, w, lens_len = 8.0e-4, 1.5e-4, 1.2e-4
-    spec = {
-        "name": name, "eps": eps, "Lx": lx, "mean_gap": w,
-        "comment": purpose,
-        "walls": {"flat": True},
-        "throat": {"x": 4.0e-4, "R": 2.5e-4, "gap": wt},
-        "theta_ice_init": THETA_WATER,
-        "plugs": [{"x0": lens_c - 0.5 * lens_len, "x1": lens_c + 0.5 * lens_len, "theta": THETA_BC}],
-        "caps": [{"x": x, "wall": wall, "R": R} for x, wall, R in caps],
-        "grains": [{"x": x, "y": y, "R": R} for x, y, R in grains],
-        "dtmax": 2 * tau_sub(eps),
-    }
-    lay = LAYOUTS / f"{name}.json"
-    print(f"  {'(dry) ' if dry else ''}wrote {lay.relative_to(ROOT)}")
-    if dry:
-        return name
-    lay.write_text(json.dumps(spec, indent=2) + "\n")
-    r = subprocess.run([sys.executable, str(ROOT / "preprocess/build_ice_layout.py"), str(lay)],
-                       capture_output=True, text=True, cwd=ROOT)
-    print("    " + r.stdout.replace("\n", "\n    ").rstrip())
-    if r.returncode != 0:
-        raise SystemExit(f"build_ice_layout failed for {name} (rc {r.returncode}):\n{r.stderr[-1500:]}")
     return name
 
 
@@ -329,45 +302,10 @@ def type2(dry):
     tests_file(STUDY / "type2_tests.txt", "Plan type 2", rows, dry)
 
 
-# ------------------------------------------------------------------ type 5
-def type5(dry):
-    print("\nType 5 geometry (eps %.4e, dtmax %.4e)" % (EPS25, 2 * tau_sub(EPS25)))
-    lx = 8.0e-4
-    g = {
-        "wt40": throat_geometry("t5_pore800x150um_wt40um_lens120c_eps0.80um", 4e-5, 4e-4, EPS25,
-                                "Plan 5A-1..5: 40 um throat, lens (120 um on the axis) centered in it.", dry),
-        "wt80": throat_geometry("t5_pore800x150um_wt80um_lens120c_eps0.80um", 8e-5, 4e-4, EPS25,
-                                "Plan 5A-6..8: 80 um throat, lens centered.", dry),
-        "above": throat_geometry("t5_pore800x150um_wt40um_lens120up_eps0.80um", 4e-5, 3e-4, EPS25,
-                                 "Plan 5C-1: lens starts 100 um above the throat (toward the warm top).", dry),
-        "below": throat_geometry("t5_pore800x150um_wt40um_lens120dn_eps0.80um", 4e-5, 5e-4, EPS25,
-                                 "Plan 5C-2: lens starts 100 um below the throat.", dry),
-        "5B": throat_geometry("t5_pore800x150um_wt40um_lens120c_caps_grain_eps0.80um", 4e-5, 4e-4, EPS25,
-                              "Plan 5B: lens + 2 caps + 1 grain.", dry,
-                              caps=[(1.8e-4, "bottom", 4.0e-5), (6.4e-4, "top", 3.0e-5)],
-                              grains=[(6.6e-4, 5.5e-5, 2.0e-5)]),
-    }
-    print("\nType 5 experiments")
-    e = {"res0": experiment("t5_T-20_iso_res1_theta60_120d_ac1e-2", lx, 0, "res", 120,
-                            "Plan 5A/5C at G = 0: both ends at h = 1.", dry)}
-    for G in (1, 3, 10, 30):
-        e[f"ls{G}"] = experiment(f"t5_T-20_G{G}warmtop_ls_theta60_120d_ac1e-2", lx, G, "ls", 120,
-                                 f"Plan 5A/5C: local-saturation pair at G = {G} K/m.", dry)
-    e["closed0"] = experiment("t5_T-20_iso_closed_theta60_120d_ac1e-2", lx, 0, "closed", 120,
-                              "Plan 5B-1: closed, isothermal.", dry)
-    e["closed3"] = experiment("t5_T-20_G3warmtop_closed_theta60_120d_ac1e-2", lx, 3, "closed", 120,
-                              "Plan 5B-2: closed, G = 3 K/m.", dry)
-    rows = [(f"5A-{i}", g["wt40"], e[k]) for i, k in enumerate(("res0", "ls1", "ls3", "ls10", "ls30"), 1)]
-    rows += [(f"5A-{i}", g["wt80"], e[k]) for i, k in enumerate(("res0", "ls3", "ls10"), 6)]
-    rows += [("5B-1", g["5B"], e["closed0"]), ("5B-2", g["5B"], e["closed3"])]
-    rows += [("5C-1", g["above"], e["ls3"]), ("5C-2", g["below"], e["ls3"])]
-    tests_file(STUDY / "type5_tests.txt", "Plan type 5", rows, dry)
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--only", default="1,2,5")
+    ap.add_argument("--only", default="1,2")
     a = ap.parse_args()
     want = set(a.only.split(","))
     print(f"theta: caps start at {THETA_WATER:g} deg (water placeholder), lenses at {THETA_BC:g} deg (BC, D1)")
@@ -375,8 +313,6 @@ def main() -> int:
         type1(a.dry_run)
     if "2" in want:
         type2(a.dry_run)
-    if "5" in want:
-        type5(a.dry_run)
     return 0
 
 

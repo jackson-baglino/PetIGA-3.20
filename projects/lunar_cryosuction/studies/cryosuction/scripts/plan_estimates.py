@@ -428,111 +428,28 @@ def optimal_h(a, d0, s, beta0, K):
         h_chi = 1 - d0 <chi>                the user's estimate: mean face curvature over the run.
     The trajectory depends weakly on h, so h is iterated (trajectory -> h_LS -> trajectory).
     Face speeds: v_w = Q_w/g_w toward x = 0, v_c = -Q_c/g_c toward x = 0; center = mean."""
-    th = math.radians(a.theta)
+    # The model lives in type5_model.py (EndsPore), shared with make_type5_inputs.py and analyze_type5.py.
+    from type5_model import Consts, EndsPore, rule_ls, rule_net, side_words
+    k = Consts(d0, s, beta0, K)
     W, Lx = a.W8, a.Lx8c
     print(f"\n# 8c. Optimal end humidity: no flat ends, Lx {Lx * 1e6:g} um, W {W * 1e6:g} um at the ends,"
           f" lens {a.lens8c * 1e6:g} um started {a.start8c * 1e6:g} um on the cold side; 300 d per case")
     for wt in a.wt:
-        c = math.sqrt(W * W - wt * wt) / (Lx / 2)
-
-        def g(xi, c=c, wt=wt):
-            return math.sqrt(wt * wt + (c * xi) ** 2)
-
-        def chi_face(xi, side, c=c, g=g):
-            """Face curvature 2 cos(theta + omega)/g. side = -1 for the warm face (its gas lies toward
-            x = 0), +1 for the cold face. omega > 0 when the gap widens into the face's gas,
-            omega < 0 when it narrows (the gas side runs back through the throat)."""
-            dg = c * c * xi / g(xi)
-            return 2 * math.cos(th + math.atan(0.5 * side * dg)) / g(xi)
-
-        def col(x0, x1, g=g, n=200):                 # int_x0^x1 dx/g
-            return sum(1 / g(x0 + (k + 0.5) * (x1 - x0) / n) for k in range(n)) * (x1 - x0) / n
-
-        def area(xm, L, g=g, n=200):
-            return sum(g(xm - L / 2 + (k + 0.5) * L / n) for k in range(n)) * L / n
-
-        def length(xm, A, area=area):
-            lo, hi = 1e-6, Lx
-            for _ in range(50):
-                mid = 0.5 * (lo + hi)
-                lo, hi = (mid, hi) if area(xm, mid) < A else (lo, mid)
-            return 0.5 * (lo + hi)
-
-        def state(xm, A, h, G, g=g, chi_face=chi_face, col=col, length=length):
-            L = length(xm, A)
-            xw, xc = xm - L / 2, xm + L / 2
-            if xw <= -Lx / 2 + 5e-6 or xc >= Lx / 2 - 5e-6:
-                return None
-            # heat and vapor cross the same gas columns: the drop G Lx splits as int dx/g (ice:
-            # k_ice/k_air = 115, so its share is neglected)
-            iw, ic = col(-Lx / 2, xw), col(xc, Lx / 2)
-            dTw, dTc = G * Lx * iw / (iw + ic), G * Lx * ic / (iw + ic)
-            Rw = beta0 / g(xw) + K * iw
-            Rc = beta0 / g(xc) + K * ic
-            hw, hc = 1 - d0 * chi_face(xw, -1), 1 - d0 * chi_face(xc, +1)
-            aa = 1 / Rw + 1 / Rc
-            h0 = (hw / Rw + hc / Rc + s * (dTc / Rc - dTw / Rw)) / aa
-            Qw = (h - hw + s * dTw) / Rw
-            Qc = (h - hc - s * dTc) / Rc
-            v = 0.5 * (Qw / g(xw) - Qc / g(xc))       # center speed toward x = 0
-            return v, Qw + Qc, aa, h0, 0.5 * (chi_face(xw, -1) + chi_face(xc, +1))
-
-        def run(h, G, xs=a.start8c, days=300, state=state, area=area):
-            xm, A = xs, area(xs, a.lens8c)
-            A0, t, dt, hist = A, 0.0, 6 * 3600.0, []
-            run.maxdev = 0.0
-            while t < days * DAY:
-                st = state(xm, A, h, G)
-                if st is None:
-                    break
-                v, dA, aa, h0, cm = st
-                hist.append((aa, h0, cm))
-                xm -= v * dt
-                A += dA * dt
-                t += dt
-                run.maxdev = max(run.maxdev, abs(A / A0 - 1))
-            return xm, A / A0 - 1, hist, t
-
-        # G_crit for this pore (lens held on the warm side of the throat), with h at the lens' start value
-        hstart = state(a.start8c, area(a.start8c, a.lens8c), 1.0, 0.0)[3]
-        gc = 0.0
-        for k in range(1, 300):
-            xm = -k * 0.5e-6
-            A = area(a.start8c, a.lens8c)
-            s0, s1 = state(xm, A, hstart, 0.0), state(xm, A, hstart, 1.0)
-            if s0 is None or s1 is None:
-                break
-            gc = max(gc, -s0[0] / (s1[0] - s0[0]))
-        print(f"wt {wt * 1e6:4.0f} um: end wall slope {math.degrees(math.atan(0.5 * c * c * (Lx / 2) / W)):4.1f} deg,"
+        pore = EndsPore(wt, k, W=W, L=Lx, theta=a.theta, lens=a.lens8c, start=a.start8c)
+        gc = pore.g_crit()
+        print(f"wt {wt * 1e6:4.0f} um: end wall slope {math.degrees(math.atan(0.5 * pore.c * pore.c * (Lx / 2) / W)):4.1f} deg,"
               f" G_crit ~ {gc:.3f} K/m")
-        def converge(rule, G, run=run, hstart=hstart):
-            """h -> rule(path(h)) until |dh| < 1e-12 (at most 20 passes); returns h and passes."""
-            h = hstart
-            for k in range(20):
-                hist = run(h, G)[2]
-                hn = rule(hist)
-                if abs(hn - h) < 1e-12:
-                    return hn, k + 1
-                h = hn
-            return h, 20
-
-        def rule_ls(hist):
-            return sum(x[0] ** 2 * x[1] for x in hist) / sum(x[0] ** 2 for x in hist)
-
-        def rule_net(hist):
-            return sum(x[0] * x[1] for x in hist) / sum(x[0] for x in hist)
-
         for G in (0.0, 1.0, 2.0):
-            h_ls, k_ls = converge(rule_ls, G)
-            h_net, k_net = converge(rule_net, G)
-            hist = run(h_net, G)[2]
+            h_ls, k_ls = pore.converge(rule_ls, G)
+            h_net, k_net = pore.converge(rule_net, G)
+            hist = pore.run(h_net, G)["hist"]
             h_chi = 1 - d0 * sum(x[2] for x in hist) / len(hist)
             res = []
             for lab, hh in (("h_LS", h_ls), ("h_net", h_net), ("h_chi", h_chi), ("h 1", 1.0)):
-                xm2, dA2, _, t2 = run(hh, G)
-                res.append(f"{lab} {hh:.8f}: area {dA2 * 100:+6.2f} % (max {run.maxdev * 100:.2f} %), "
-                           f"center {-xm2 * 1e6:+6.1f} um"
-                           + (f" (left at {t2 / DAY:.0f} d)" if t2 < 300 * DAY - 1 else ""))
+                r = pore.run(hh, G)
+                res.append(f"{lab} {hh:.8f}: area {r['dA'] * 100:+6.2f} % (max {r['maxdev'] * 100:.2f} %), "
+                           f"center {side_words(r['xm'])}"
+                           + (f" (left at {r['t'] / DAY:.0f} d)" if r["t"] < 300 * DAY - 1 else ""))
             print(f"   G {G:4.1f} K/m (passes LS {k_ls}, net {k_net}): " + "; ".join(res))
 
 

@@ -30,7 +30,7 @@ submitted) · **to build** (inputs not written yet).
 | 2 | Several droplets: ripening vs gradient, shielding vs spacing | 14 | **ready** (`type2_tests.txt`) | certain |
 | 3 | Lens in a flat pore: does its speed follow 2 d0 cos(theta)/H in series with diffusion? | 10 | **done** 2026-11-07: law holds to 1 % | trend |
 | 4 | Wedge: does a taper move ice to the narrow end? | 7 | **done** 2026-11-07: yes, every wedge | trend |
-| 5 | Throat: where does a lens come to rest vs gradient? | 12 | **ready** (`type5_tests.txt`) | trend |
+| 5 | Throat: where does a lens come to rest vs gradient? | 11 | **ready** (redesigned 2026-11-17, `type5_tests.txt`; periodic cell at G 0, h_net ends at 0.5 and 2 G_crit, straight controls) | trend |
 | 6 | Constriction (dog bone): how much does a neck slow a lens? | 7 | **ran** 2026-11-09/11: 5 finished, 2 hit the 48 h limit (below) | certain |
 | 7 | Realistic rough pore, mixed ice, mining conditions | 7A + 7B, 7C-1/2, 7D-1/2 (6) | 7A **ready**; 7B-7D **to build** | certain |
 | 8 | Lunar physics | - | paper 3, not this model (D6) | no |

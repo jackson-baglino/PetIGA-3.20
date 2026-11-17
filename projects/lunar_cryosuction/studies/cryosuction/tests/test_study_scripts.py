@@ -1001,5 +1001,42 @@ class CommittedTestsFilesResolve(unittest.TestCase):
                         self.assertTrue(r.stdout.endswith(f"/{name}.opts"))
 
 
+# ---------------------------------------------------------------------------
+# type5_model.py (reduced lens model of the type 5 runs, SI draft 3.2)
+# ---------------------------------------------------------------------------
+class Type5Model(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(ROOT / "studies/cryosuction/scripts"))
+        import type5_model as T
+        cls.T = T
+        cls.k = T.consts(-20.0, 1e-2)
+
+    def test_reproduces_section_8c(self):
+        # plan_estimates.py section 8c before the move to type5_model (2026-11-17): 40 um throat,
+        # G 0: h_net 0.99999087, center 34.0 um on the COLD side (Table S1 of draft 3.2 had it on
+        # the warm side); G_crit 1.682 K/m
+        pore = self.T.EndsPore(40e-6, self.k)
+        h, _ = pore.h_net(0.0)
+        self.assertAlmostEqual(h, 0.99999087, delta=5e-9)
+        r = pore.run(h, 0.0)
+        self.assertAlmostEqual(r["xm"] * 1e6, 34.0, delta=0.05)
+        self.assertLess(abs(r["dA"]), 1e-6)
+        self.assertAlmostEqual(pore.g_crit(), 1.682, delta=1e-3)
+        self.assertEqual(self.T.side_words(r["xm"]), "34.0 um on the cold side")
+
+    def test_straight_periodic_lens_does_not_move(self):
+        cell = self.T.PeriodicCell(150e-6, self.k)
+        traj = cell.run(30.0)
+        self.assertLess(abs(traj[-1][1] - traj[0][1]), 1e-12)
+
+    def test_periodic_lens_moves_toward_the_throat(self):
+        for wt in (40e-6, 80e-6):
+            traj = self.T.PeriodicCell(wt, self.k).run(100.0)
+            x = [q[1] for q in traj]
+            self.assertTrue(all(b < a for a, b in zip(x, x[1:])))   # monotonic, toward xi = 0
+            self.assertGreater(x[-1], 0.0)                          # does not overshoot
+
+
 if __name__ == "__main__":
     unittest.main()

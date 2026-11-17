@@ -1,0 +1,28 @@
+# =============================================================================
+# geometry t5_cell400x150um_wt40um_sinhyp_lens100s70_eps0.80um.opts   (preprocess/build_ice_layout.py preprocess/layouts/t5_cell400x150um_wt40um_sinhyp_lens100s70_eps0.80um.json)
+#
+# Converging-diverging cell, wall profile sinhyp (throat 40.0 um at x = 200.0 um, widest 150.0 um): Lx 400.0 um, gap 40.0-150.0 um (mean 103.1),
+# 0+0 wall bumps.
+# Walls are in the mesh; wall faces y0,y1; periodic in x (-periodic_x 1): x = 0 and x = Lx are one seam.
+# Ice from inputs/geometry/meshes/t5_cell400x150um_wt40um_sinhyp_lens100s70_eps0.80um_phi.bin (-ic_type phi_file), initial angle 60 deg:
+#   plug 220-320 um, theta 60, faces r 32.3 and 132.5 um (local)
+# ice 22.4% of the pore, sharp area 9.2470e-09 m^2, 1 bodies.
+# eps 8.0000e-07 m, h = eps/sqrt(2): Nx 708, Ny 266.
+# =============================================================================
+# DOF_GRID: 708 268
+-geom_file inputs/geometry/meshes/t5_cell400x150um_wt40um_sinhyp_lens100s70_eps0.80um.dat
+-p 2
+-C 1
+-ic_type phi_file
+-phi_file inputs/geometry/meshes/t5_cell400x150um_wt40um_sinhyp_lens100s70_eps0.80um_phi.bin
+-dim 2
+-Lx 4.000000e-04
+-Ly 1.500000e-04
+-Lz 0
+-delt_t 1.0e-4
+-eps 8.0000e-07
+-eps_valid_temp -20
+-periodic 0
+-periodic_x 1
+-wall_faces y0,y1
+-dtmax 1.1538e+03                     # 2 tau_sub at this eps (layout 'dtmax')

@@ -1,0 +1,27 @@
+# =============================================================================
+# geometry t5_pore400x150um_wt80um_hyp_lens100s70_eps0.80um.opts   (preprocess/build_ice_layout.py preprocess/layouts/t5_pore400x150um_wt80um_hyp_lens100s70_eps0.80um.json)
+#
+# Converging-diverging cell, wall profile hyp (throat 80.0 um at x = 200.0 um, widest 150.0 um): Lx 400.0 um, gap 80.0-150.0 um (mean 106.3),
+# 0+0 wall bumps.
+# Walls are in the mesh; wall faces y0,y1; x0 and x1 are the pore ends.
+# Ice from inputs/geometry/meshes/t5_pore400x150um_wt80um_hyp_lens100s70_eps0.80um_phi.bin (-ic_type phi_file), initial angle 60 deg:
+#   plug 220-320 um, theta 60, faces r 74.7 and 182.0 um (local)
+# ice 23.1% of the pore, sharp area 9.8205e-09 m^2, 1 bodies.
+# eps 8.0000e-07 m, h = eps/sqrt(2): Nx 708, Ny 266.
+# =============================================================================
+# DOF_GRID: 710 268
+-geom_file inputs/geometry/meshes/t5_pore400x150um_wt80um_hyp_lens100s70_eps0.80um.dat
+-p 2
+-C 1
+-ic_type phi_file
+-phi_file inputs/geometry/meshes/t5_pore400x150um_wt80um_hyp_lens100s70_eps0.80um_phi.bin
+-dim 2
+-Lx 4.000000e-04
+-Ly 1.500000e-04
+-Lz 0
+-delt_t 1.0e-4
+-eps 8.0000e-07
+-eps_valid_temp -20
+-periodic 0
+-wall_faces y0,y1
+-dtmax 1.1538e+03                     # 2 tau_sub at this eps (layout 'dtmax')

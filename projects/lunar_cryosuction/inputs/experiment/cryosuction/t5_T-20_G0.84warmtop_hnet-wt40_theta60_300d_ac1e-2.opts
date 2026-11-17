@@ -1,0 +1,28 @@
+# experiment/cryosuction/t5_T-20_G0.84warmtop_hnet-wt40_theta60_300d_ac1e-2.opts   (make_type5_inputs.py, 2026-11-17)
+#
+# Type 5G: throat 40 um, G = 0.84 K/m (0.5 G_crit of the 40 um throat). Model (type5_model): h_net 0.9999914485 (10 passes), lens center after 300 d 17.2 um on the warm side
+# gradient 0.84 K/m, warm at x = 0, T fixed on x0 and x1, walls insulating; each end at h_net = 0.9999914485 times rho_vs of its own temperature (rhov_bc.py --T0 -20 --G -0.84 --Lx 0.0004 --h-face 0.9999914485).
+# Wall angle theta = 60 deg from Young (gamma_is = 0.3 - 0.109 cos theta). 300 days,
+# 401 snapshots. -dtmax is in the GEOMETRY file (2 tau_sub depends on its eps).
+# Use only with the 400 um type-5 pores (the end values depend on Lx).
+#
+-temp -20.0
+-humidity 1.0
+-grad_temp0 -0.84,0.0,0.0
+-flag_BC_Tfix 1
+-Tfix_faces x0,x1
+-flag_BC_rhovfix 1
+-rhovfix_faces x0,x1
+-rhovfix_lo 1.0000075858                 # h_net rho_vs(-19.999832 C) / rho_vs(-20 C), warm end
+-rhovfix_hi 0.9999753114                 # h_net rho_vs(-20.000168 C) / rho_vs(-20 C), cold end
+-phi_open_bc 0                          # 90-degree phi face on every non-wall face
+-t_final 2.592000e+07
+-n_out 401
+-beta_sub0 7.9408e+05                     # K&P beta0 at -20 C, alpha_c = 1e-2
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000                     # cos(theta) = +0.500000
+-dtCFL 1
+-outp 0
+-outp_dphi 0.5                          # extra snapshot when phi changed by 0.5 anywhere (solver e5a593e7)
+-outp_dphi_min_dt 3600                  # at most one such snapshot an hour

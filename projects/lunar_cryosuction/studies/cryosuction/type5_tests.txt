@@ -1,0 +1,13 @@
+# Plan type 5, redesign of 2026-11-13, approved 2026-11-17 (make_type5_inputs.py, 2026-11-17).
+# RUNS.md IDs in the comments.
+t5_cell400x150um_wt40um_sinhyp_lens100s70_eps0.80um:t5_T-20_iso_periodic_closed_theta60_300d_ac1e-2   # 5P-1
+t5_cell400x150um_wt80um_sinhyp_lens100s70_eps0.80um:t5_T-20_iso_periodic_closed_theta60_300d_ac1e-2   # 5P-2
+t5_cell400x150um_flat_lens100s70_eps0.80um:t5_T-20_iso_periodic_closed_theta60_300d_ac1e-2   # 5P-0
+t5_pore400x150um_wt40um_hyp_lens100s70_eps0.80um:t5_T-20_G0.84warmtop_hnet-wt40_theta60_300d_ac1e-2   # 5G-1
+t5_pore400x150um_flat_lens100s70_eps0.80um:t5_T-20_G0.84warmtop_hnet-flat_theta60_300d_ac1e-2   # 5S-1
+t5_pore400x150um_wt40um_hyp_lens100s70_eps0.80um:t5_T-20_G3.36warmtop_hnet-wt40_theta60_300d_ac1e-2   # 5G-2
+t5_pore400x150um_flat_lens100s70_eps0.80um:t5_T-20_G3.36warmtop_hnet-flat_theta60_300d_ac1e-2   # 5S-2
+t5_pore400x150um_wt80um_hyp_lens100s70_eps0.80um:t5_T-20_G0.54warmtop_hnet-wt80_theta60_300d_ac1e-2   # 5G-3
+t5_pore400x150um_flat_lens100s70_eps0.80um:t5_T-20_G0.54warmtop_hnet-flat_theta60_300d_ac1e-2   # 5S-3
+t5_pore400x150um_wt80um_hyp_lens100s70_eps0.80um:t5_T-20_G2.16warmtop_hnet-wt80_theta60_300d_ac1e-2   # 5G-4
+t5_pore400x150um_flat_lens100s70_eps0.80um:t5_T-20_G2.16warmtop_hnet-flat_theta60_300d_ac1e-2   # 5S-4
