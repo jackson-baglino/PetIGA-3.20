@@ -1,6 +1,6 @@
 # WORKFLOW: units-verification
 
-Status: **built and run** (2026-10-22). Run `20261022-155335`: 54 literature rows verified, 0 unresolved;
+Status: **archived** (2026-11-17; its job is done). **Built and run** (2026-10-22). Agents moved from `.claude/agents/` to `agents/` on 2026-11-17. Run `20261022-155335`: 54 literature rows verified, 0 unresolved;
 `memory/semantic/units.md` updated by S5. Calibration (C0) in run `20261022-141826`.
 Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `scripts/flowchart/render_flowchart.py`.
 
@@ -127,7 +127,7 @@ give the same verdicts.
 - `transcript.jsonl`: local.
 
 Scripts live in `scripts/units_verification/`; each refuses to run while the
-workflow's definitions (this folder, the scripts, `.claude/agents/`) have
+workflow's definitions (this folder, including `agents/`, and the scripts) have
 uncommitted changes, and prints the inputs it used. Run from the project root:
 
 ```bash

@@ -1,6 +1,6 @@
 """Run a project agent headless for the units-verification workflow, and audit what it did.
 
-call_agent() takes the agent's definition from .claude/agents/<name>.md (model, tools, body as system prompt) and
+call_agent() takes the agent's definition from workflows/units-verification/agents/<name>.md (model, tools, body as system prompt) and
 runs it with scripts/agentlib.py, which copies the given images into a fresh empty folder outside the project (so
 no CLAUDE.md, memory or units table is in reach) and runs
 
@@ -22,7 +22,7 @@ from agentlib import TIMEOUT_S, AgentError, validate  # noqa: E402,F401
 
 import uvlib  # noqa: E402
 
-AGENTS_DIR = uvlib.ROOT / ".claude" / "agents"
+AGENTS_DIR = uvlib.ROOT / "workflows" / "units-verification" / "agents"
 
 
 def load_agent(name):

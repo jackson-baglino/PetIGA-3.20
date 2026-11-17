@@ -21,7 +21,7 @@ RUNS_DIR = Path(os.environ.get("UV_RUNS_DIR", ROOT / "runs" / "units-verificatio
 LITERATURE = Path.home() / ("Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/"
                             "lunar_regolith_DSM/Literature")
 # Paths whose committed state defines the workflow; a real run refuses if any is modified.
-DEFINITION_PATHS = ["workflows/units-verification", "scripts/units_verification", ".claude/agents"]
+DEFINITION_PATHS = ["workflows/units-verification", "scripts/units_verification"]
 REQUIRED_COLUMNS = ("symbol", "meaning", "unit", "source", "page", "verified")
 LITERATURE_SOURCES = ("kaempfer_plapp_2009", "moure_fu_2024", "moure_fu_2024_SI")
 

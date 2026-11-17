@@ -2,7 +2,7 @@
 
 An agent is a Markdown file in the Claude Code subagent format: YAML frontmatter (name, description, tools,
 disallowedTools, model, permissionMode, maxTurns) and the system prompt as the body. Worker definitions live in
-workflows/<name>/agents/; the units-verification workers are still in .claude/agents/.
+workflows/<name>/agents/ (CLAUDE.md, "Where agents live").
 
 call_agent() runs one task as
 
