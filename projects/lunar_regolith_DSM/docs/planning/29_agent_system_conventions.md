@@ -175,11 +175,50 @@ There are 196 tracked Python files [checked]:
 
 ## 9. Order
 
-- **Today:** mathematician steps 0–2 (doc 28), then Lab Report 3 at about 6 pm.
-- **2026-11-18:**
-  - the move of the older agents and the five orphan files;
-  - agentkit as the one launcher for the model line;
-  - the level-2 profiles with read denies;
-  - the convention tests;
-  - the Python index.
+- **Today (2026-11-17):**
+  - mathematician steps 0–1 (doc 28): step 0 committed 76f5f236, step 1 next;
+  - the units-verification agents moved and that workflow archived (65353818);
+  - Lab Report 3 at about 6 pm.
+- **2026-11-18** (the user may ask for this to run overnight):
+  1. Check in a fresh session that the `Edit(/workflows/*/agents/**)` ask rule in `.claude/settings.json`
+     prompts. It did not fire in the session where it was added.
+  2. Move the older agents' settings next to their definitions, and delete the five orphan permission files
+     (§6).
+  3. Build `scripts/agentkit/` as the one launcher, writing PROVENANCE.md (§10). The mathematician is its first
+     user (doc 28, step 2).
+  4. Build the level-2 profiles with read denies (§2).
+  5. Write the convention tests (§5).
+  6. Build the Python index (§7): a generated list plus a keep / archive / delete column with evidence, for the
+     user to decide.
 - **After that:** mathematician steps 3–5, then the next agent.
+
+## 10. PROVENANCE.md for every workflow run
+
+**What it is.** A human-readable record, in the run folder, of everything that shaped one workflow run:
+- what ran: git commit, Claude Code version, models;
+- each agent call: agent, the hashes of its definition, settings and work order, start and end, turns, tools
+  used, every blocked action, verdict;
+- every check and gate decision;
+- every deviation: retries, NEEDS_HUMAN, a barrier that fired;
+- each output, with its hash.
+
+It answers "why does this result look like this, and can I trust how it was made?" without reading transcripts.
+
+**Where it comes from.** The launcher generates it from the run's own records (`manifest.json`, `runs.db`, the
+transcripts), which already exist. It is a view of those records, not a second source of truth.
+
+**When.** For workflow runs only: a script running one or more agents toward a task, such as deriving the model
+or a literature review. Not for interactive sessions.
+
+**Protection.** No agent may edit it, so every agent's settings deny writes to `**/PROVENANCE.md`, enforced at
+three layers:
+- **permission:** `deny Edit(**/PROVENANCE.md)`;
+- **sandbox:** `denyWrite` in the agent's settings, and the same path in the level-2 profile;
+- **placement:** the file sits at the run root, outside every agent's per-call workspace.
+
+Because a barrier can fail, the file is also **tamper-evident**:
+- each entry carries the hash of the entry before it;
+- the final hash goes into `manifest.json` and the run's commit message;
+- an edit breaks the chain, and a check reports where.
+
+A barrier probe tries to edit it as an agent and must be blocked (§5).
