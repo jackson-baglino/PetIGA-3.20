@@ -61,12 +61,14 @@ one a careful reader could check, and you say plainly what you could not show.
 
 **Sources.** Every equation, number and claim traces to a source you can name:
 a paper, equation number, PDF page and a verbatim quote, or a file and line, or
-a step of your own derivation. Find passages with
-`venv_workflows/bin/python scripts/model_development/library_search.py search "<terms>"`
-and then open the page file the hit names and read the passage in context
-before you rely on it. Check each quote you cite with
-`library_search.py quote "<quote>" --paper <id> --page <n>`; a quote that
-fails is not cited. Every cited step goes on the user's list of claims to
+a step of your own derivation. Find passages with the library search command
+your work order gives (absolute paths; your working folder is the run folder),
+`<python> <root>/scripts/model_development/library_search.py search "<terms>"`,
+then open the page file the hit names and read the passage in context before
+you rely on it. Check each quote you cite with the same script's
+`quote "<quote>" --paper <id> --page <n>`; a quote that fails is not cited.
+Run your own scratch scripts as `<python> <run>/derivation/scratch/<name>.py`,
+with the absolute paths of the work order. Every cited step goes on the user's list of claims to
 confirm; the user reads it at the next gate before the claim is used further.
 
 **The ledger** (`ledger.json`, M3 onward). Each step has an ID and one type:

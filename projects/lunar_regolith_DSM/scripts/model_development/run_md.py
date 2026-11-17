@@ -243,6 +243,10 @@ def cmd_reopen(a):
         if st["stages"][s]["status"] != "skipped":
             st["stages"][s] = {"status": "pending", "note": f"after reopened {a.stage}"}
     save_state(rdir, st)
+    dec = decisions(rdir)
+    dec.append({"gate": GATES.get(a.stage, a.stage), "stage": a.stage, "time": now(), "action": "reopen",
+                "decision": a.note})
+    (rdir / "decisions.json").write_text(json.dumps(dec, indent=1) + "\n")
     log(rdir, f"user reopened {a.stage}: {a.note[:120]}")
 
 
@@ -269,15 +273,15 @@ def modeler_roots(rdir, extra_read=()):
     reads = [str(rdir), str(ROOT / "src"), str(ROOT / "include"), str(ROOT / "inputs"),
              str(ROOT / "memory" / "semantic"), str(ROOT / "docs" / "interface_width_conventions.md"),
              str(ROOT / "library" / "papers"), str(WF / "problems"), *extra_read]
-    bash = [rf"{re.escape(str(PY))} {re.escape(str(LIB))} (search|quote) .+",
-            rf"{re.escape(str(PY))} {re.escape(str(rdir))}/derivation/scratch/[\w./-]+\.py( .*)?"]
+    bash = [rf"{re.escape(str(PY))}( -[IuBE])* {re.escape(str(LIB))} (search|quote) .+",
+            rf"{re.escape(str(PY))}( -[IuBE])* {re.escape(str(rdir))}/derivation/scratch/[\w./-]+\.py( .*)?"]
     return reads, bash
 
 
 def verifier_roots(rdir):
     reads = [str(rdir / "derivation"), str(rdir / "checks"), str(rdir / "decisions.json"), str(ROOT / "src"),
              str(ROOT / "include"), str(ROOT / "inputs"), str(ROOT / "memory" / "semantic")]
-    bash = [rf"{re.escape(str(PY))} {re.escape(str(rdir))}/checks/[\w./-]+\.py( .*)?"]
+    bash = [rf"{re.escape(str(PY))}( -[IuBE])* {re.escape(str(rdir))}/checks/[\w./-]+\.py( .*)?"]
     return reads, bash
 
 
@@ -480,7 +484,7 @@ def st_test_lock(rdir, st):
         Path(w).mkdir(parents=True, exist_ok=True)
     bash = [rf"{re.escape(str(RUN_TEST))} --tests {re.escape(str(tests_dir))}/tests\.json --id [\w.-]+ --project "
             rf"{re.escape(str(wtp))} --out {re.escape(str(rdir))}/tests --draft",
-            rf"{re.escape(str(ROOT / 'venv_lunar' / 'bin' / 'python'))} {re.escape(str(tests_dir))}/[\w./-]+\.py( .*)?"]
+            rf"{re.escape(str(ROOT / 'venv_lunar' / 'bin' / 'python'))}( -[IuBE])* {re.escape(str(tests_dir))}/[\w./-]+\.py( .*)?"]
     denies = deny_common() + [str(wtp / "src"), str(wtp / "include"), str(wtp / "toy")]
     out = agent_step(rdir, st, "M5", "beth-verifier", "M5_verifier", task, cwd=wtp, reads=reads, writes=writes,
                      bash=bash, denies=denies,
