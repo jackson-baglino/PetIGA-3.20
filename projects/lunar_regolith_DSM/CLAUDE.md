@@ -155,6 +155,26 @@ model family and the purpose is one or two words: Fable → `rick`, Opus →
 `beth-checker`). The prefix must match the `model` field. Changing an
 agent's model means a new name, so old run logs still say which model ran.
 
+## Where agents live (user, 2026-11-17)
+
+- An agent run by a script lives with the workflow that owns it: the
+  definition in `workflows/<workflow>/agents/<name>.md`, and everything else
+  for that agent in the folder next to it,
+  `workflows/<workflow>/agents/<name>/` (`settings.json` for permissions,
+  hooks and sandbox; `env.allow`; `schemas/`; `tasks/`; `tests/`).
+- One name, one file. A workflow that uses another workflow's agent refers
+  to it by name; never copy a definition. Launchers find an agent by name
+  across `workflows/*/agents/`, and a test fails on a duplicate name.
+- The one exception: helpers the main session starts as subagents
+  (`beth-writer`, `beth-critic`, `morty-flowchart`) stay in `.claude/agents/`,
+  because Claude Code loads session subagents only from there.
+- Ask before editing an agent's definition or its `settings.json`, as for
+  `.claude/`.
+- Shared harness code lives in `scripts/` (`agentlib.py`, `agentkit/`), not
+  inside one workflow. The layout and the reasons are in
+  `docs/planning/28_agent_anatomy.html`. Migration of the older agents is
+  tracked there.
+
 ## Sessions and housekeeping
 
 - Session IDs are logged to `.claude/sessions.tsv` by a SessionStart hook.
