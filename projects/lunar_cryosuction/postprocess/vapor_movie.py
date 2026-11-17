@@ -245,10 +245,17 @@ def main():
                 return np.c_[grid.XG.ravel()[k] + rng.uniform(-0.5, 0.5, n) * a.grid,
                              grid.YG.ravel()[k] + rng.uniform(-0.5, 0.5, n) * a.grid]
         pts = []
-        while len(pts) < n:
+        for tries in range(200):   # bounded: once ice fills (nearly) all air in view there is no spot to find
+            if len(pts) >= n:
+                break
             c = np.c_[rng.uniform(vx0, vx1, 4 * n + 16), rng.uniform(vy0, vy1, 4 * n + 16)]
-            pts.extend(c[(air_i(c[:, ::-1]) > 0.99) & inview(c)][: n - len(pts)])
-        return np.array(pts)
+            pts.extend(c[(air_i(c[:, ::-1]) > (0.99 if tries < 100 else 0.5)) & inview(c)][: n - len(pts)])
+        if len(pts) < n:           # no air left: park the rest in view; they sit under the ice and respawn
+            c = np.c_[rng.uniform(vx0, vx1, 64 * n + 64), rng.uniform(vy0, vy1, 64 * n + 64)]
+            c = c[inview(c)]
+            pts.extend(c[rng.integers(0, len(c), n - len(pts))] if len(c) else
+                       np.repeat([[0.5 * (vx0 + vx1), 0.5 * (vy0 + vy1)]], n - len(pts), axis=0))
+        return np.array(pts)[:n]
 
     nin_x, nin_y = (grid.interp(grid.nin[0]), grid.interp(grid.nin[1])) if a.tracers else (None, None)
     dist_i = grid.interp(grid.dist) if a.tracers else None
@@ -304,9 +311,10 @@ def main():
                     ax.contour(X, Y, p, levels=[0.5], colors="k", linewidths=0.6)
                     if a.tracers:
                         nt = ntrace[i]   # draw the first nt tracers; the rest move unseen, so the count can change smoothly
-                        ax.add_collection(LineCollection(np.stack(hist, axis=1)[:nt], colors=TRACER, linewidths=0.8,
-                                                         alpha=0.9))
-                        ax.scatter(P[:nt, 0], P[:nt, 1], s=2.5, c=TRACER, edgecolors="none", zorder=5)
+                        vis = fa(P[:nt, ::-1]) >= 0.5   # tracers parked under ice (no air left in view) are hidden
+                        ax.add_collection(LineCollection(np.stack(hist, axis=1)[:nt][vis], colors=TRACER,
+                                                         linewidths=0.8, alpha=0.9))
+                        ax.scatter(P[:nt][vis, 0], P[:nt][vis, 1], s=2.5, c=TRACER, edgecolors="none", zorder=5)
                     ax.set_aspect("equal")
                     ax.set_xlim(u, v)
                     ax.set_ylim(vy0 - 2, vy1 + 2)
