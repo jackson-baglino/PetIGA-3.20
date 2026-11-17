@@ -65,7 +65,9 @@ as a sharp region and then combined:
             x >= x1 + r; the ice is the pore between, in [x0 - r, x1 + r].
             Faces are therefore arcs of radius r meeting the rough walls at
             theta. "end_faces": true also draws a face whose disc center
-            falls past an open pore end (see plug()). r = g/(2 cos theta), with g the mean gap over the plug
+            falls past an open pore end (see plug()). "faces": "local" gives
+            each face its own radius from the local gap and wall slope
+            (plug_local(); converging-diverging pores, type 5). r = g/(2 cos theta), with g the mean gap over the plug
             ("r" in the spec overrides). theta >= 90 is not handled.
             A plug with x1 >= Lx ends at the dead end.
   caps      droplets on a wall: a disc of radius R whose center sits R cos(theta)
@@ -402,6 +404,45 @@ def plug(r, rs: Raster, x0, x1, theta, end_faces=False):
     return ice, rad
 
 
+def plug_local(rs: Raster, x0, x1, theta, end_faces=False):
+    """plug whose two faces each get the radius of a circular arc spanning the LOCAL gap at
+    the contact angle (plug key "faces": "local"): r_i = g_i / (2 cos(theta + omega_i)), with
+    g_i the gap at the face's axis position x_i and omega_i the wall inclination there,
+    tan omega = -g'/2 at x0 (gas toward -x) and +g'/2 at x1 (type5_model.EndsPore.chi_face).
+    In a converging-diverging pore the equal-curvature plug (one r) must shrink r to fit the
+    narrow face, so its wide face comes out flat (about 90 deg at the walls, type 5 cell,
+    2026-11-17); here each face is drawn with its own discs (same construction as plug()).
+    The lens is then not in equilibrium (the two faces differ in curvature), which is the
+    drive the type 5 runs measure. A face whose disc does not fit is shrunk in 5 % steps."""
+    ct = math.cos(math.radians(theta))
+    assert ct > 0, "plugs need theta < 90"
+    g = rs.yt - rs.yb
+    dg = np.gradient(g, rs.dx)
+    gas = np.zeros_like(rs.inside)
+    radii = []
+    for xf, side, iend in ((x0, +1, 0), (x1, -1, -1)):
+        i = rs.idx(min(max(xf, rs.x0), rs.x[-1]))
+        om = math.atan(-side * 0.5 * dg[i])
+        rad = 0.5 * g[i] / math.cos(math.radians(theta) + om)
+        dead = xf >= rs.x[-1] - rs.dx
+        while not dead:
+            xc = xf - side * rad
+            if xc < rs.x0 or xc > rs.x[-1] or rs.D[rs.idx(xc)].max() >= rad * math.cos(math.radians(theta)):
+                break
+            rad *= 0.95
+        radii.append(rad)
+        if dead:
+            continue
+        ctr = rs.inside & (rs.D >= rad * ct) & ((rs.X <= xf - rad) if side > 0 else (rs.X >= xf + rad))
+        gas |= ndi.distance_transform_edt(~ctr, sampling=rs.dx) <= rad
+        xc = xf - side * rad
+        if end_faces and not rs.periodic and (xc < rs.x0 or xc > rs.x[-1]):
+            yc = 0.5 * (rs.yb[iend] + rs.yt[iend])
+            gas |= (rs.X - xc) ** 2 + (rs.Y - yc) ** 2 <= rad * rad
+    ice = rs.inside & ~gas & (rs.X >= x0 - radii[0]) & (rs.X <= x1 + radii[1])
+    return ice, tuple(radii)
+
+
 def fill(rs: Raster, r, theta, x0, x1):
     """equal-curvature fill (sharp mask): one ice-gas face radius r for the whole
     pore. In a channel a face of radius r meeting the walls at theta stands where
@@ -726,9 +767,14 @@ def main(argv=None) -> int:
     parts = []
     for f in spec.get("plugs", []):
         th = f.get("theta", th0)
-        m, rad = plug(f.get("r"), rs, f["x0"], f["x1"], th, bool(f.get("end_faces", False)))
+        if f.get("faces") == "local":
+            m, (r0, r1) = plug_local(rs, f["x0"], f["x1"], th, bool(f.get("end_faces", False)))
+            rtxt = f"{r0*1e6:.1f} and {r1*1e6:.1f} um (local)"
+        else:
+            m, rad = plug(f.get("r"), rs, f["x0"], f["x1"], th, bool(f.get("end_faces", False)))
+            rtxt = f"{rad*1e6:.1f} um"
         ice |= m
-        parts.append(f"plug {f['x0']*1e6:.0f}-{f['x1']*1e6:.0f} um, theta {th:g}, faces r {rad*1e6:.1f} um")
+        parts.append(f"plug {f['x0']*1e6:.0f}-{f['x1']*1e6:.0f} um, theta {th:g}, faces r {rtxt}")
     if spec.get("fill"):
         f = spec["fill"]
         th = f.get("theta", th0)

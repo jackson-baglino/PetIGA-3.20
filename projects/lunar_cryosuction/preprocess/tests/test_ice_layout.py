@@ -311,6 +311,32 @@ class Periodic(unittest.TestCase):
         self.assertTrue(ice0[-1].any())
         np.testing.assert_array_equal(ice0[rs.x < 3.0e-4], ice[rs.x < 3.0e-4])
 
+    def test_plug_local_faces(self):
+        # straight pore: both local radii are W/(2 cos 60) = W, the same lens as plug(end_faces)
+        lx, W = 4.0e-4, 1.5e-4
+        flat = bl.Pore({"Lx": lx, "mean_gap": W, "walls": {"flat": True}})
+        rs = bl.Raster(flat, 5e-7)
+        a, (r0, r1) = bl.plug_local(rs, 2.2e-4, 3.2e-4, 60.0, end_faces=True)
+        b, _ = bl.plug(None, rs, 2.2e-4, 3.2e-4, 60.0, end_faces=True)
+        self.assertAlmostEqual(r0, W, delta=1e-12)
+        self.assertAlmostEqual(r1, W, delta=1e-12)
+        np.testing.assert_array_equal(a, b)
+        # hyperbolic pore: each radius is 1/chi of type5_model (2 cos(theta + omega)/g, with
+        # tan omega = -g'/2 on the face whose gas is toward -x, +g'/2 on the other)
+        wt = 4e-5
+        hyp = bl.Pore({"Lx": lx, "walls": {"profile": "hyp", "W": W, "wt": wt}})
+        rs = bl.Raster(hyp, 2.5e-7)
+        ice, (r0, r1) = bl.plug_local(rs, 2.2e-4, 3.2e-4, 60.0, end_faces=True)
+        c2 = (W * W - wt * wt) / (0.5 * lx) ** 2
+        for xf, side, r in ((2.2e-4, -1, r0), (3.2e-4, +1, r1)):
+            xi = xf - 0.5 * lx
+            g = math.sqrt(wt * wt + c2 * xi * xi)
+            chi = 2 * math.cos(math.radians(60.0) + math.atan(0.5 * side * c2 * xi / g)) / g
+            self.assertAlmostEqual(r * chi, 1.0, delta=2e-3)
+        self.assertLess(r0, r1)                   # the face nearer the throat is more curved
+        lab, n = bl.label_bodies(ice, rs)
+        self.assertEqual(n, 1)
+
     def test_hyp_profile(self):
         # hyp is the hyperbola itself: W at both ends, wt at the throat, = sqrt(wt^2 + c^2 xi^2)
         # with c = sqrt(W^2 - wt^2)/(Lx/2) everywhere (type5_model.EndsPore.g)
