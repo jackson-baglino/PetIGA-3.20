@@ -91,7 +91,7 @@ on the model choosing to obey it.</p>
 
   <div class="ring r-rep"><div class="lab">Repository: what is written down, reviewed and tested</div>
   <div class="why">Everything above lives in git. Tests show the barriers hold, and a person reviews changes.</div>
-  <div class="files"><span class="f">agents/README.md</span><span class="f">tests/test_definition.py</span><span class="f">tests/redteam/</span><span class="f">CLAUDE.md (your sessions only)</span></div>
+  <div class="files"><span class="f">CLAUDE.md → "Where agents live"</span><span class="f">tests/test_definition.py</span><span class="f">tests/redteam/</span><span class="f">test: one name, one file</span></div>
 
    <div class="ring r-pro"><div class="lab">Prompt: what the model reads</div>
    <div class="why">Explains the job. Every "never" here needs a backstop in an outer layer.</div>
@@ -169,9 +169,9 @@ whole folder into the run record.</li>
 <h2>3. Every file, where it lives, and when it applies</h2>
 <div class="tw"><table>
 <tr><th>File</th><th>Path</th><th>Layer</th><th>What it does</th><th>When it applies</th></tr>
-<tr><td>Definition</td><td><code>agents/beth-mathematician/beth-mathematician.md</code></td><td><span class="tag t-pro">prompt</span> body<br><span class="tag t-har">harness</span> frontmatter</td><td>Role, Never list; tools, model, turn limit</td><td>Every call: the launcher passes <code>--system-prompt</code>, <code>--tools</code>, <code>--model</code>, <code>--max-turns</code></td></tr>
-<tr><td>Settings</td><td><code>agents/beth-mathematician/settings.json</code></td><td><span class="tag t-har">harness</span> <span class="tag t-env">env</span></td><td>Permission allow/deny lists, hooks, the sandbox block</td><td>Every call, through <code>--settings</code></td></tr>
-<tr><td>Environment allowlist</td><td><code>agents/beth-mathematician/env.allow</code></td><td><span class="tag t-env">env</span></td><td>The only variables passed through (PATH, HOME, TMPDIR). No SSH agent, no git helpers.</td><td>The launcher builds the process environment from it</td></tr>
+<tr><td>Definition</td><td><code>workflows/model-development/agents/beth-mathematician.md</code></td><td><span class="tag t-pro">prompt</span> body<br><span class="tag t-har">harness</span> frontmatter</td><td>Role, Never list; tools, model, turn limit</td><td>Every call: the launcher passes <code>--system-prompt</code>, <code>--tools</code>, <code>--model</code>, <code>--max-turns</code></td></tr>
+<tr><td>Settings</td><td><code>workflows/model-development/agents/beth-mathematician/settings.json</code></td><td><span class="tag t-har">harness</span> <span class="tag t-env">env</span></td><td>Permission allow/deny lists, hooks, the sandbox block</td><td>Every call, through <code>--settings</code></td></tr>
+<tr><td>Environment allowlist</td><td><code>workflows/model-development/agents/beth-mathematician/env.allow</code></td><td><span class="tag t-env">env</span></td><td>The only variables passed through (PATH, HOME, TMPDIR). No SSH agent, no git helpers.</td><td>The launcher builds the process environment from it</td></tr>
 <tr><td>Work-order schema</td><td><code>…/schemas/task.schema.json</code></td><td><span class="tag t-har">harness</span></td><td>The typed spec (the slide 7 idea)</td><td>The launcher rejects a bad work order before any call</td></tr>
 <tr><td>Answer schema</td><td><code>…/schemas/result.schema.json</code></td><td><span class="tag t-har">harness</span></td><td>The typed answer</td><td><code>--json-schema</code>, then the launcher validates again</td></tr>
 <tr><td>Task</td><td><code>…/tasks/T01_heat_weak_form/task.json</code></td><td><span class="tag t-pro">prompt</span> (data)</td><td>One work order</td><td>Copied into the run folder</td></tr>
@@ -179,22 +179,25 @@ whole folder into the run record.</li>
 <tr><td>Launcher</td><td><code>scripts/agentkit/run_agent.py</code></td><td><span class="tag t-har">harness</span></td><td>The only way in. Builds the call, runs the grader, writes the record.</td><td>You run it</td></tr>
 <tr><td>Guard hook</td><td><code>scripts/agentkit/guard.py</code></td><td><span class="tag t-har">harness</span></td><td>Bash allowlist and path checks; fails safe</td><td>Before every tool call</td></tr>
 <tr><td>Stop hook</td><td><code>scripts/agentkit/stop_check.py</code></td><td><span class="tag t-har">harness</span></td><td>No stopping until the result exists and parses</td><td>When the agent tries to finish</td></tr>
-<tr><td>Tests</td><td><code>agents/beth-mathematician/tests/</code></td><td><span class="tag t-rep">repository</span></td><td>The definition loads; the guard fails safe; escape attempts fail</td><td>Before every real run</td></tr>
+<tr><td>Tests</td><td><code>workflows/model-development/agents/beth-mathematician/tests/</code></td><td><span class="tag t-rep">repository</span></td><td>The definition loads; the guard fails safe; escape attempts fail</td><td>Before every real run</td></tr>
 <tr><td>Run folder</td><td><code>runs/agents/beth-mathematician/&lt;run_id&gt;/</code></td><td><span class="tag t-env">env</span></td><td>The only writable place. Holds the work order, scratch, result, transcript, grade and manifest.</td><td>Made fresh for each call</td></tr>
 <tr><td>Project CLAUDE.md</td><td><code>CLAUDE.md</code></td><td><span class="tag t-rep">repository</span></td><td>Guidance for <i>your</i> sessions</td><td>Never loaded by the worker</td></tr>
 </table></div>
 
 <h3>Why these places</h3>
 <ul>
-<li><b><code>agents/&lt;name&gt;/</code></b> holds everything that defines one agent, so a reviewer, or a hash in the
-run record, sees the whole agent at once.</li>
+<li><b><code>workflows/&lt;workflow&gt;/agents/&lt;name&gt;.md</code> and the folder next to it</b> hold everything
+that defines one agent, beside the workflow that owns it. A reviewer, or a hash in the run record, sees the whole
+agent at once. Another workflow refers to the agent by name; launchers look it up across
+<code>workflows/*/agents/</code>, and a test fails on a duplicate name.</li>
 <li><b><code>scripts/agentkit/</code></b> holds the harness code that every agent shares.</li>
 <li><b><code>runs/</code></b> holds output, kept apart from definitions.</li>
-<li><b>Nothing goes in <code>.claude/</code>.</b> The worker gets its settings by flag and ignores the project's
-settings.</li>
+<li><b>Nothing for a worker goes in <code>.claude/</code>.</b> The worker gets its settings by flag and ignores
+the project's settings. Only session subagents (<code>beth-writer</code>, <code>beth-critic</code>,
+<code>morty-flowchart</code>) stay in <code>.claude/agents/</code>.</li>
 </ul>
-<p class="note">A new top-level <code>agents/</code> folder changes the CLAUDE.md rule that workflow agents live in
-<code>workflows/&lt;name&gt;/agents/</code>. That edit needs your OK.</p>
+<p class="note">Decided 2026-11-17 and written into CLAUDE.md ("Where agents live"). Older agents are being moved
+to this layout.</p>
 
 <h2>4. How one call runs</h2>
 <pre><code>venv_workflows/bin/python scripts/agentkit/run_agent.py beth-mathematician --task T01_heat_weak_form</code></pre>
@@ -205,7 +208,7 @@ settings.</li>
 <li>It calls Claude Code headless, with the run folder as the working directory:
 <pre><code>claude -p "&lt;work order&gt;" --system-prompt "&lt;definition body&gt;" \
   --model claude-opus-5-5 --tools Read,Write,Edit,Bash \
-  --settings agents/beth-mathematician/settings.json --setting-sources "" \
+  --settings workflows/model-development/agents/beth-mathematician/settings.json --setting-sources "" \
   --json-schema "&lt;answer schema&gt;" --max-turns 40 \
   --permission-mode dontAsk --no-session-persistence</code></pre></li>
 <li>Claude Code enforces the tool list, the permission rules, the guard on every tool call, and the sandbox on
