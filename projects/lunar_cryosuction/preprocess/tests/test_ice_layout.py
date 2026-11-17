@@ -292,6 +292,22 @@ class Periodic(unittest.TestCase):
         g = bl.gap_profile(0.0, self.LX, self.W, self.WT, "cos", xt=0.0)
         self.assertAlmostEqual(g, self.WT)
 
+    def test_hyp_profile(self):
+        # hyp is the hyperbola itself: W at both ends, wt at the throat, = sqrt(wt^2 + c^2 xi^2)
+        # with c = sqrt(W^2 - wt^2)/(Lx/2) everywhere (type5_model.EndsPore.g)
+        x = np.linspace(0.0, self.LX, 7)
+        g = bl.gap_profile(x, self.LX, self.W, self.WT, "hyp")
+        c = math.sqrt(self.W ** 2 - self.WT ** 2) / (0.5 * self.LX)
+        np.testing.assert_allclose(g, np.sqrt(self.WT ** 2 + (c * (x - 0.5 * self.LX)) ** 2), rtol=1e-14)
+        np.testing.assert_allclose(g[[0, 3, 6]], [self.W, self.WT, self.W], rtol=1e-12)
+        # a non-periodic pore takes it; a periodic one refuses it (slope jump at the seam)
+        pore = bl.Pore({"Lx": self.LX, "walls": {"profile": "hyp", "W": self.W, "wt": self.WT}})
+        yb, yt = pore.walls(x)
+        np.testing.assert_allclose(yt - yb, g, rtol=1e-14)
+        np.testing.assert_allclose(yt + yb, self.W, rtol=1e-14)
+        with self.assertRaises(AssertionError):
+            self.cd(profile="hyp")
+
     def test_raster_has_whole_cells_per_period(self):
         rs = bl.Raster(self.cd(), 3.7e-7)
         self.assertEqual(len(rs.x), 3 * rs.M)

@@ -19,7 +19,7 @@ Overlapping bumps leave valleys with a radius of curvature of ~1 um (layout A:
 and throats) with a Gaussian of that standard deviation (see Pore._init_smooth);
 without the key the walls are as before, bit for bit.
 
-"walls": {"profile": "cos" | "sinhyp", "W": ..., "wt": ...} gives a smooth
+"walls": {"profile": "cos" | "sinhyp" | "hyp", "W": ..., "wt": ...} gives a smooth
 converging-diverging cell (plan type 5): gap g(x) about a throat at x_t
 ("x_throat", default Lx/2), walls symmetric about y = W/2 (y_bot = (W - g)/2,
 y_top = (W + g)/2), narrowest (g = wt) at the throat and widest (g = W) half a
@@ -32,6 +32,13 @@ sinhyp is the hyperbolic throat g = sqrt(wt^2 + c^2 xi^2) with xi replaced by
 (Lx/pi) sin(pi xi/Lx): equal to it to O(xi^2/Lx^2) near the throat, but
 Lx-periodic and C-infinity with zero slope at the seam. Both are periodic, so
 they serve "periodic": true (one cell of an infinite chain of pores).
+
+    hyp     g = sqrt(wt^2 + c^2 xi^2),  c = sqrt(W^2 - wt^2) / (Lx/2)
+
+hyp is the non-periodic hyperbolic throat itself (type 5 gradient runs, SI draft
+3.2 and studies/cryosuction/scripts/type5_model.py): g = W at both pore ends for
+the default x_t = Lx/2, with a slope jump if tiled, so it is refused with
+"periodic": true.
 
 The mesh maps the unit square onto the pore: control points at the Greville
 abscissae, x = Lx g_x, y = y_bot(x) + g_y (y_top(x) - y_bot(x)).
@@ -168,7 +175,10 @@ def gap_profile(x, lx, W, wt, kind, xt=None):
     if kind == "sinhyp":
         a2 = W * W - wt * wt                       # (c Lx / pi)^2
         return np.sqrt(wt * wt + a2 * np.sin(np.pi * xi / lx) ** 2)
-    raise ValueError(f"unknown wall profile {kind!r} (cos or sinhyp)")
+    if kind == "hyp":                              # not periodic: g = W at xi = +-Lx/2
+        c2 = (W * W - wt * wt) / (0.5 * lx) ** 2
+        return np.sqrt(wt * wt + c2 * xi * xi)
+    raise ValueError(f"unknown wall profile {kind!r} (cos, sinhyp or hyp)")
 
 
 class Pore:
@@ -182,6 +192,8 @@ class Pore:
             self.xt = float(w.get("x_throat", 0.5 * self.lx))
             assert 0 < self.wt < self.W, "profile needs 0 < wt < W"
             gap_profile(0.0, self.lx, self.W, self.wt, self.profile)   # name check
+            assert not (self.periodic and self.profile == "hyp"), \
+                "the hyp profile is not periodic (slope jump at the seam); use sinhyp or cos"
             self.bot = self.top = np.zeros((0, 3))
             self.H = self.W
             self.throats, self.throat = [], None
