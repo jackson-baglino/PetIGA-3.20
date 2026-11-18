@@ -200,8 +200,10 @@ There are 196 tracked Python files [checked]:
      checks.
 
 Done on 2026-11-17 ahead of this list: agentkit steps 2–3 (launcher, guard, stop check, PROVENANCE.md,
-Claude Code sandbox in the project base, `env.allow`, red-team PASS 18/18). Item 4 (OS profiles around the
-whole launcher process) is still open.
+Claude Code sandbox in the project base, `env.allow`, red-team PASS 18/18) and step 4 (first real T01 calls:
+PASS; runs `20261117-172950` and `20261117-173235`). Item 4 (OS profiles around the whole launcher process)
+is still open. Also open: make a red-team PASS on the current hashes part of the gate (§11), and add the
+prompt line "write files with the Write tool; Bash only runs python scratch/<name>.py" (needs the user's OK).
 - **After that:** mathematician steps 3–5, then the next agent.
 
 ## 10. PROVENANCE.md for every workflow run
