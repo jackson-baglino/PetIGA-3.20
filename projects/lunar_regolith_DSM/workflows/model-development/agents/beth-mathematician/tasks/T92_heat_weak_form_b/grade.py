@@ -15,6 +15,7 @@ spec = importlib.util.spec_from_file_location("grade_T01", T01)
 g = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(g)
 g.CHECK = "T92_heat_weak_form_b (T01 grader)"
+key_check = g.key_check       # the same key as T01, with the same non-LLM check
 
 if __name__ == "__main__":
     sys.exit(g.main(sys.argv))

@@ -59,6 +59,14 @@ def reference():
     return sp.Derivative(phi(x, y, t), t) + M * mu_reference()
 
 
+def key_check():
+    """The key's pedigree, with no LLM in it: the reference mu equals SymPy's Euler-Lagrange operator applied
+    to the given energy density, symbolically. Returns (ok, details)."""
+    if sp.simplify(mu_reference() - mu_from_euler_lagrange()) != 0:
+        return False, "the reference mu disagrees with SymPy's Euler-Lagrange operator"
+    return True, "reference mu equals SymPy's Euler-Lagrange operator on the given density (symbolic)"
+
+
 def parse(text):
     if not isinstance(text, str) or not text.strip():
         raise Reject("empty result_expr")
@@ -101,8 +109,9 @@ def evaluate(expr, lam, nums, point):
 def grade(text):
     """Return (pass, details). Raises nothing."""
     try:
-        if sp.simplify(mu_reference() - mu_from_euler_lagrange()) != 0:
-            return False, "grader fault: the reference mu disagrees with SymPy's Euler-Lagrange operator"
+        key_ok, why = key_check()
+        if not key_ok:
+            return False, f"grader fault: {why}"
         expr = parse(text)
         if not expr.has(phi):
             raise Reject("phi does not appear")

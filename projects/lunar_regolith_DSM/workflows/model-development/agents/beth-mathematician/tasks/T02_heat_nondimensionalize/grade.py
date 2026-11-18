@@ -8,6 +8,8 @@ arithmetic are accepted before SymPy parses it (SymPy's parser evaluates what it
 
 Reference: with x = L xi, t = (rho c L^2 / k0) s and T = T0 + DT theta,
     R = theta_s - theta_xixi - Q0 L^2 / (k0 DT).
+The key itself is checked first, with no LLM in the loop (key_check: units by pint, the change of variables
+by SymPy). If it fails, the grader refuses to grade.
 Check: with a random polynomial theta, random positive parameters and a random point (xi, s), the answer
 equals a constant multiple of R, the same pure number on every sample. Because the parameters change from
 sample to sample, an answer that still carries a dimensional factor (for example the equation multiplied by
@@ -43,6 +45,40 @@ class Reject(Exception):
 def reference():
     th = theta(xi, s)
     return sp.Derivative(th, s) - sp.Derivative(th, (xi, 2)) - Q0 * L**2 / (k0 * DT)
+
+
+def units_of(task_dir):
+    """The work order's units, as pint quantities, by symbol name ('T(x, t)' -> 'T')."""
+    import pint
+    u = pint.UnitRegistry()
+    task = json.loads((task_dir / "task.json").read_text())
+    return {s["name"].split("(")[0]: u(s["units"].replace("^", "**")) for s in task["symbols"]}
+
+
+def key_check():
+    """The key's pedigree, with no LLM in it.
+    1. Units (pint, from the work order): rho c T/t, k0 T/x^2 and Q0 all have the same dimension.
+    2. Algebra (SymPy, symbolic in every parameter): for concrete polynomial theta, put
+       T = T0 + DT theta(x/L, t k0/(rho c L^2)) into the given equation; the result divided by k0 DT / L^2 is
+       the key. Returns (ok, details)."""
+    from pathlib import Path
+    q = units_of(Path(__file__).resolve().parent)
+    terms = {"rho c T/t": q["rho"] * q["c"] * q["T"] / q["t"], "k0 T/x^2": q["k0"] * q["T"] / q["x"]**2,
+             "Q0": q["Q0"]}
+    dims = {k: v.dimensionality for k, v in terms.items()}
+    if len(set(map(str, dims.values()))) != 1:
+        return False, f"the work order's units are inconsistent: {dims}"
+    X, tt = sp.symbols("X tt")
+    tau = rho * c * L**2 / k0
+    for seed in range(100, 103):
+        lam, _, _ = sample(seed)
+        tdim = T0 + DT * lam(X / L, tt / tau)
+        given = rho * c * sp.diff(tdim, tt) - k0 * sp.diff(tdim, X, 2) - Q0
+        key = reference().replace(theta, lam).doit().subs({xi: X / L, s: tt / tau}, simultaneous=True)
+        if sp.simplify(given / (k0 * DT / L**2) - key) != 0:
+            return False, f"the key is not the given equation divided by k0 DT / L^2 (sample {seed})"
+    return True, ("units consistent (pint); key equals the substituted given equation divided by k0 DT / L^2, "
+                  "symbolically in all parameters, on 3 samples")
 
 
 def parse(text):
@@ -86,6 +122,9 @@ def evaluate(expr, lam, nums, point):
 def grade(text):
     """Return (pass, details). Raises nothing."""
     try:
+        key_ok, why = key_check()
+        if not key_ok:
+            return False, f"grader fault: {why}"
         expr = parse(text)
         if not expr.has(theta):
             raise Reject("theta does not appear")

@@ -6,7 +6,10 @@ Usage: grade.py <result.json>
 The agent never sees this file. Its answer is untrusted text, so only the allowed names, numbers and
 arithmetic are accepted before SymPy parses it (SymPy's parser evaluates what it reads).
 
-Two checks:
+The key itself is checked first, with no LLM in the loop (key_check): it must equal the integral of w times
+the given strong form, in exact arithmetic. If it does not, the grader refuses to grade.
+
+Two checks of the answer:
 1. Structure: no second x-derivative of T remains, and no derivative is applied to an expression that
    already holds a derivative of T (the conduction term really was integrated by parts).
 2. Value: with random polynomial T, w, k, Q and random rho, c, L, t, the answer equals a constant,
@@ -47,6 +50,20 @@ def reference():
             + sp.Integral(sp.Derivative(w(x), x) * k(x) * tx, (x, 0, L))
             - sp.Integral(w(x) * Q(x), (x, 0, L))
             - (sp.Subs(flux, x, L) - sp.Subs(flux, x, 0)))
+
+
+def key_check():
+    """The key's pedigree, with no LLM in it: for concrete polynomial T, w, k, Q and numbers, the reference
+    equals the integral of w times the given strong-form residual, in exact rational arithmetic. So the
+    integration by parts and the boundary term in the key are right. Returns (ok, details)."""
+    strong = (rho * c * sp.Derivative(T(x, t), t) - sp.Derivative(k(x) * sp.Derivative(T(x, t), x), x)
+              - Q(x))
+    weighted = sp.Integral(w(x) * strong, (x, 0, L))
+    for seed in range(100, 103):
+        funcs, nums = sample(seed)
+        if evaluate(reference(), funcs, nums) != evaluate(weighted, funcs, nums):
+            return False, f"the key differs from the integral of w times the strong form (sample {seed})"
+    return True, "key equals the integral of w times the strong-form residual on 3 exact samples"
 
 
 def parse(text):
@@ -107,6 +124,9 @@ def evaluate(expr, funcs, nums):
 def grade(text):
     """Return (pass, details). Raises nothing."""
     try:
+        key_ok, why = key_check()
+        if not key_ok:
+            return False, f"grader fault: {why}"
         expr = parse(text)
         structure(expr)
         ref = reference()
