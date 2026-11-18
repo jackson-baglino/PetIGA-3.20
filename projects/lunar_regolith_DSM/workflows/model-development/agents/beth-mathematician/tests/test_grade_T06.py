@@ -35,6 +35,14 @@ class Passes(unittest.TestCase):
         self.assertEqual(failed(f"3*gamma*(eps/2)*({G2}) + 3*gamma*{P}**2*(1 - {P})**2/(eps/2)"), (True, []))
 
 
+    def test_intermediate_symbols_declared_but_not_in_f(self):
+        """Found in run 20261118-123810: the agent declared H, kappa, W(phi) and delta to explain its steps;
+        f itself uses only gamma and eps. Unused declarations must not fail the grade."""
+        syms = [{"name": "H", "meaning": "barrier", "units": "J m^-3", "typical": 1e7},
+                {"name": "W(phi)", "meaning": "double well", "units": "J m^-3", "typical": 6e5}]
+        self.assertEqual(failed(f"3*gamma/eps*{P}**2*(1 - {P})**2 + 3*gamma*eps*({G2})", syms), (True, []))
+
+
 class PlantedErrorsFail(unittest.TestCase):
     def test_unequal_wells(self):
         self.assertIn("wells", failed(f"3*gamma*eps*({G2}) + 3*gamma*{P}**2*(1 - {P})**2/eps + gamma*{P}/eps")[1])

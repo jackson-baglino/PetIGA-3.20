@@ -61,13 +61,15 @@ def split(expr):
     return sp.simplify(h), sp.simplify(with_g - h)
 
 
-def draws(decl):
-    """Three sets of values: gamma, eps and the agent's own parameters (typical value times 1/2 to 2)."""
+def draws(decl, expr=None):
+    """Three sets of values: gamma, eps and the agent's own parameters that f uses (typical value times 1/2
+    to 2). Symbols the agent declared only to explain its steps (not in f) are ignored."""
+    used = [d for d in decl.values() if expr is None or expr.has(d[0])]
     out = []
     for seed in range(3):
         rng = random.Random(seed)
         vals = {GAMMA: sp.Rational(rng.randint(5, 20), 100), EPS: sp.Rational(rng.randint(1, 100), 10**8)}
-        for obj, _, typical in decl.values():
+        for obj, _, typical in used:
             if not isinstance(obj, sp.Symbol):
                 raise Reject(f"f may not hold a declared function ({obj}): at coexistence its coefficients are "
                              "constants")
@@ -149,7 +151,7 @@ def run_checks(expr, decl, units):
         results.append(("units", False, str(e)))
     try:
         h, grad = split(expr)
-        vals_list = draws(decl)
+        vals_list = draws(decl, expr)
     except Reject as e:
         return results + [("form", False, str(e))]
     for name, fn in (("wells", lambda: check_wells(h, vals_list)),
