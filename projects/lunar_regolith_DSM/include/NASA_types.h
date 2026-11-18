@@ -258,6 +258,16 @@ typedef struct {
                                      // isolates pure AC curvature relaxation from any
                                      // leakage into temperature/vapor (see assembly.c)
 
+  // -residual_model derived: the residual and Jacobian written from the blind
+  // rederivation (beth-mathematician T04-T07, 2026-11-18) in
+  // src/assembly_derived.c. Default 0 = Residual_A1. See
+  // studies/derived_model/README.md.
+  PetscInt  residual_model;   // 0 = A1 (default), 1 = derived (D1)
+  PetscBool derived_cp_mix;   // D1 heat capacity: 1 = sum phi_k rho_k c_k (T04), 0 = rho(phi)*cp(phi) as A1
+  PetscBool derived_frozen;   // D1 coupling prefactor T/rho_vs(T) taken at temp0 (as A1) instead of locally
+  PetscReal derived_M;        // D1 Allen-Cahn mobility M [m^3 J^-1 s^-1]; default mob_sub/(2 gamma)
+  PetscReal rhovs0;           // rho_vs(temp0) [kg m^-3], for the frozen coupling
+
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)
   PetscInt C;  // Continuity of basis functions

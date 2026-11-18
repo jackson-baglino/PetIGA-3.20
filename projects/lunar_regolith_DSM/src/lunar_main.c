@@ -156,6 +156,11 @@ int main(int argc, char *argv[]) {
     user.solver_view = NULL;           /* solver_evo.dat viewer, opened lazily in Monitor() */
     user.solver_snes_prev = 0; user.solver_ksp_prev = 0; user.solver_rej_prev = 0;
     user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
+    user.residual_model = 0;                   /* A1; -residual_model derived picks D1 */
+    user.derived_cp_mix = PETSC_TRUE;
+    user.derived_frozen = PETSC_FALSE;
+    user.derived_M      = -1.0;                /* < 0: mob_sub/(2 gamma), set after mob_sub */
+    user.rhovs0         = 0.0;
 
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
@@ -199,6 +204,8 @@ int main(int argc, char *argv[]) {
     char      wall_faces[64] = "";
     PetscBool test_wall_measure = PETSC_FALSE;
     PetscBool test_wall_jacobian = PETSC_FALSE;
+    PetscBool test_derived = PETSC_FALSE;
+    char      residual_model[32] = "A1";
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 2;          /* Polynomial order */
@@ -755,6 +762,11 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-phi_open_bc", "Let ice pass through vapor-reservoir faces that are not regolith (0: dphi/dn = 0 there, as before 2026-10-07)", "", user.phi_open_bc, &user.phi_open_bc, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-stall_limit", "Abort if ||U|| is bit-identical for this many consecutive steps (0 disables)", "", user.stall_limit, &user.stall_limit, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-test_wall_measure", "DEBUG: assemble the wall term on a uniform phi=1/2 field, check its surface measure, and exit", "", test_wall_measure, &test_wall_measure, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsString("-residual_model", "Residual and Jacobian: A1 (default) or derived (assembly_derived.c, blind rederivation 2026-11-18)", "", residual_model, residual_model, sizeof(residual_model), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-derived_cp_mix", "derived model: heat capacity sum_k phi_k rho_k c_k (1) or rho(phi)*cp(phi) as A1 (0)", "", user.derived_cp_mix, &user.derived_cp_mix, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-derived_frozen", "derived model: take T/rho_vs(T) in the coupling at temp0, as A1 does (1), or locally (0)", "", user.derived_frozen, &user.derived_frozen, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-derived_M", "derived model: Allen-Cahn mobility M [m^3/(J s)] (default mob_sub/(2 gamma))", "", user.derived_M, &user.derived_M, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-test_derived", "DEBUG: compare the A1 and derived residuals on a perturbed initial state, check both Jacobians by finite differences, and exit", "", test_derived, &test_derived, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-test_wall_jacobian", "DEBUG: check the analytic Jacobian against finite differences on the initial condition, and exit", "", test_wall_jacobian, &test_wall_jacobian, NULL); CHKERRQ(ierr);
 
     /* --- Output control -------------------------------------------------- */
@@ -884,6 +896,7 @@ int main(int argc, char *argv[]) {
     PetscReal d_rhovs;     /* Derivative of saturation vapor density with respect to temperature */
     RhoVS_I(&user, user.temp0, &rhoI_vs, &d_rhovs);
     rho_rhovs = user.rho_ice / rhoI_vs; /* Compute ratio */
+    user.rhovs0 = rhoI_vs;              /* for the derived model's frozen coupling */
 
     /* Adjust boundary condition flags for periodic case */
     if (user.periodic == 1 && flag_BC_Tfix)    flag_BC_Tfix    = PETSC_FALSE;
@@ -1139,6 +1152,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* Derived model (assembly_derived.c). Its mobility M multiplies dF/dphi with F = 3 gamma/eps
+     * phi^2(1-phi)^2 + 3 gamma eps |grad phi|^2, so 6 gamma M plays the role of A1's 3 mob_sub. With
+     * M = mob_sub/(2 gamma) every A1 coefficient is reproduced (studies/derived_model/README.md). */
+    if (!strcmp(residual_model, "A1")) user.residual_model = 0;
+    else if (!strcmp(residual_model, "derived")) user.residual_model = 1;
+    else SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG, "-residual_model %s: expected A1 or derived", residual_model);
+    if (user.derived_M < 0.0) user.derived_M = user.mob_sub / (2.0 * user.gamma_ia_bulk);
     /* CLI overrides for xi_T and xi_v. */
     ierr = PetscOptionsGetReal(NULL, NULL, "-xi_T", &user.xi_T, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsGetReal(NULL, NULL, "-xi_v", &user.xi_v, NULL); CHKERRQ(ierr);
@@ -1304,6 +1324,19 @@ int main(int argc, char *argv[]) {
             user.open_face[l][m] = PETSC_TRUE;
             ierr = IGASetBoundaryForm(iga, l, m, PETSC_TRUE); CHKERRQ(ierr);
         }
+    }
+
+    if (user.residual_model == 1 || test_derived) {
+        PetscBool open_any = PETSC_FALSE;
+        for (PetscInt d = 0; d < 3; d++) open_any = (PetscBool)(open_any || user.open_face[d][0] || user.open_face[d][1]);
+        if ((user.wall_any && user.costhet != 0.0) || open_any || user.axisym)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-residual_model derived has no wall, open-face or axisymmetric terms "
+                    "(the rederivation used natural boundaries); use a geometry without them.");
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   derived model: M = %.4e m^3/(J s), heat capacity %s, coupling %s\n",
+                    user.derived_M, user.derived_cp_mix ? "sum phi_k rho_k c_k" : "rho(phi)*cp(phi)",
+                    user.derived_frozen ? "frozen at temp0" : "local T");
     }
 
     // Set temperature BCs
@@ -1838,6 +1871,120 @@ int main(int argc, char *argv[]) {
                     "Unknown -ic_type. Valid: two_ice_grains_boundary ice_slab "
                     "single_ice multi_grains multi_grains_file");
         }
+    }
+
+    /* ---- -test_derived: the derived residual (D1) against A1, and both Jacobians ----------------------
+     * On the initial condition with phi mapped into [0.02, 0.98], T and rho_v perturbed at random (T +- 1 K,
+     * rho_v +- 10 % of rho_vs(temp0)) and a random V (phi_t ~ 1e-4 1/s, T_t ~ 1e-3 K/s, rho_v,t ~ 1e-3 rho_vs/s):
+     *   1. per field, ||F_D1 - F_A1|| / ||F_A1||. With -derived_cp_mix 0 -derived_frozen 1 this must be
+     *      round-off: D1 then equals A1 term by term. With the defaults it measures the physics the two
+     *      models differ in (heat capacity rule, local T in the coupling).
+     *   2. per field, for each model, ||J v - FD|| / ||J v|| with
+     *      FD = [F(U + h v, V + a h v) - F(U - h v, V - a h v)] / (2h), a = shift, so the U and U_t parts
+     *      of the Jacobian are both tested. v is random, scaled per field (1, 1 K, rho_vs(temp0)).
+     * Prints the numbers and exits; studies/derived_model/verification/check_test_derived.py grades them. */
+    if (test_derived) {
+        Vec Up, Vr, Fa, Fd, Fp, Fm, v, Jv, Vp;
+        Mat Jm;
+        PetscRandom rnd;
+        const PetscReal h = 1.0e-7, a_shift = 10.0;
+        const PetscInt  model_save = user.residual_model;
+        const char     *fname[3] = {"phi", "T", "rho_v"};
+
+        ierr = IGACreateVec(iga, &Up); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Vr); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fa); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fd); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fp); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fm); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &v);  CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Jv); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Vp); CHKERRQ(ierr);
+        ierr = IGACreateMat(iga, &Jm); CHKERRQ(ierr);
+        ierr = PetscRandomCreate(PETSC_COMM_WORLD, &rnd); CHKERRQ(ierr);
+        ierr = PetscRandomSetType(rnd, PETSCRAND48); CHKERRQ(ierr);
+        ierr = PetscRandomSetInterval(rnd, -1.0, 1.0); CHKERRQ(ierr);
+        ierr = PetscRandomSetSeed(rnd, 20261118UL); CHKERRQ(ierr);
+        ierr = PetscRandomSeed(rnd); CHKERRQ(ierr);
+
+        /* The perturbed state. */
+        ierr = VecSetRandom(v, rnd); CHKERRQ(ierr);
+        ierr = VecStrideScale(v, 0, 0.0); CHKERRQ(ierr);
+        ierr = VecStrideScale(v, 1, 1.0); CHKERRQ(ierr);
+        ierr = VecStrideScale(v, 2, 0.1 * user.rhovs0); CHKERRQ(ierr);
+        ierr = VecWAXPY(Up, 1.0, v, U); CHKERRQ(ierr);
+        /* phi -> 0.02 + 0.96 phi: strictly inside (0, 1), away from the clamps and the air_lim floor,
+         * whose kinks a finite difference cannot see past. */
+        ierr = VecStrideScale(Up, 0, 0.96); CHKERRQ(ierr);
+        ierr = VecSet(Fm, 0.0); CHKERRQ(ierr);
+        ierr = VecStrideSet(Fm, 0, 0.02); CHKERRQ(ierr);
+        ierr = VecAXPY(Up, 1.0, Fm); CHKERRQ(ierr);
+        ierr = VecSetRandom(Vr, rnd); CHKERRQ(ierr);
+        ierr = VecStrideScale(Vr, 0, 1.0e-4); CHKERRQ(ierr);
+        ierr = VecStrideScale(Vr, 1, 1.0e-3); CHKERRQ(ierr);
+        ierr = VecStrideScale(Vr, 2, 1.0e-3 * user.rhovs0); CHKERRQ(ierr);
+
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\n TEST_DERIVED  M = %.6e  6*gamma*M = %.6e  3*mob_sub = %.6e  cp_mix = %d  frozen = %d\n",
+            (double)user.derived_M, (double)(6.0 * user.gamma_ia_bulk * user.derived_M),
+            (double)(3.0 * user.mob_sub), (int)user.derived_cp_mix, (int)user.derived_frozen);
+
+        user.residual_model = 0;
+        ierr = IGAComputeIFunction(iga, a_shift, Vr, 0.0, Up, Fa); CHKERRQ(ierr);
+        user.residual_model = 1;
+        ierr = IGAComputeIFunction(iga, a_shift, Vr, 0.0, Up, Fd); CHKERRQ(ierr);
+        ierr = VecAXPY(Fd, -1.0, Fa); CHKERRQ(ierr);
+        for (PetscInt f = 0; f < 3; f++) {
+            PetscReal nd, na;
+            ierr = VecStrideNorm(Fd, f, NORM_2, &nd); CHKERRQ(ierr);
+            ierr = VecStrideNorm(Fa, f, NORM_2, &na); CHKERRQ(ierr);
+            PetscPrintf(PETSC_COMM_WORLD, " TEST_DERIVED residual %-5s ||F_D1-F_A1|| = %.6e  ||F_A1|| = %.6e  rel = %.6e\n",
+                        fname[f], (double)nd, (double)na, (double)(na > 0.0 ? nd / na : nd));
+        }
+
+        for (PetscInt model = 0; model < 2; model++) {
+            PetscReal worst[3] = {0.0, 0.0, 0.0};
+            user.residual_model = model;
+            ierr = IGAComputeIJacobian(iga, a_shift, Vr, 0.0, Up, Jm); CHKERRQ(ierr);
+            for (PetscInt k = 0; k < 3; k++) {
+                ierr = VecSetRandom(v, rnd); CHKERRQ(ierr);
+                ierr = VecStrideScale(v, 1, 1.0); CHKERRQ(ierr);
+                ierr = VecStrideScale(v, 2, user.rhovs0); CHKERRQ(ierr);
+                ierr = VecWAXPY(Fp, h, v, Up); CHKERRQ(ierr);           /* U + h v   */
+                ierr = VecWAXPY(Vp, a_shift * h, v, Vr); CHKERRQ(ierr); /* V + a h v */
+                ierr = IGAComputeIFunction(iga, a_shift, Vp, 0.0, Fp, Fd); CHKERRQ(ierr);
+                ierr = VecWAXPY(Fp, -h, v, Up); CHKERRQ(ierr);
+                ierr = VecWAXPY(Vp, -a_shift * h, v, Vr); CHKERRQ(ierr);
+                ierr = IGAComputeIFunction(iga, a_shift, Vp, 0.0, Fp, Fm); CHKERRQ(ierr);
+                ierr = VecAXPY(Fd, -1.0, Fm); CHKERRQ(ierr);
+                ierr = VecScale(Fd, 1.0 / (2.0 * h)); CHKERRQ(ierr);
+                ierr = MatMult(Jm, v, Jv); CHKERRQ(ierr);
+                ierr = VecAXPY(Fd, -1.0, Jv); CHKERRQ(ierr);
+                for (PetscInt f = 0; f < 3; f++) {
+                    PetscReal nd, nj;
+                    ierr = VecStrideNorm(Fd, f, NORM_2, &nd); CHKERRQ(ierr);
+                    ierr = VecStrideNorm(Jv, f, NORM_2, &nj); CHKERRQ(ierr);
+                    if (nj > 0.0 && nd / nj > worst[f]) worst[f] = nd / nj;
+                }
+            }
+            for (PetscInt f = 0; f < 3; f++)
+                PetscPrintf(PETSC_COMM_WORLD, " TEST_DERIVED jacobian %-7s %-5s worst ||Jv-FD||/||Jv|| = %.6e\n",
+                            model ? "derived" : "A1", fname[f], (double)worst[f]);
+        }
+        user.residual_model = model_save;
+
+        ierr = PetscRandomDestroy(&rnd); CHKERRQ(ierr);
+        ierr = MatDestroy(&Jm); CHKERRQ(ierr);
+        ierr = VecDestroy(&Up); CHKERRQ(ierr);
+        ierr = VecDestroy(&Vr); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fa); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fd); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fp); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fm); CHKERRQ(ierr);
+        ierr = VecDestroy(&v);  CHKERRQ(ierr);
+        ierr = VecDestroy(&Jv); CHKERRQ(ierr);
+        ierr = VecDestroy(&Vp); CHKERRQ(ierr);
+        goto cleanup;
     }
 
     /* ---- -test_wall_jacobian: analytic Jacobian vs finite differences ------

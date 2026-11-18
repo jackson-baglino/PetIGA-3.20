@@ -199,6 +199,7 @@ PetscErrorCode Residual(IGAPoint pnt,
                         PetscReal t, const PetscScalar *U,
                         PetscScalar *Re, void *ctx)
 {
+    if (((AppCtx*)ctx)->residual_model == 1) return Residual_D1(pnt, shift, V, t, U, Re, ctx);
     return Residual_A1(pnt, shift, V, t, U, Re, ctx);
 }
 
@@ -372,6 +373,7 @@ PetscErrorCode Jacobian(IGAPoint pnt,
                         PetscReal t, const PetscScalar *U,
                         PetscScalar *Je, void *ctx)
 {
+    if (((AppCtx*)ctx)->residual_model == 1) return Jacobian_D1(pnt, shift, V, t, U, Je, ctx);
     return Jacobian_A1(pnt, shift, V, t, U, Je, ctx);
 }
 
