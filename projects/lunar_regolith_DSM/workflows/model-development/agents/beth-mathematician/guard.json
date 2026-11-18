@@ -1,0 +1,4 @@
+{
+  "bash_allow": ["python scratch/[A-Za-z0-9_-]+\\.py"],
+  "required_outputs": ["derivation.md"]
+}

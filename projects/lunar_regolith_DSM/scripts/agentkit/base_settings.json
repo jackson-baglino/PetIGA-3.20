@@ -1,0 +1,21 @@
+{
+  "_about": "The project base for every script-run agent (doc 29 §2). The launcher adds these denies to the agent's own settings.json; an agent's file may add rules but never remove these. '//ROOT/' is replaced with the project's absolute path.",
+  "permissions": {
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.netrc)",
+      "Read(~/Library/Keychains/**)",
+      "Read(~/.claude/**)",
+      "Read(//ROOT/docs/planning/**)",
+      "Read(//ROOT/library/**)",
+      "Read(//ROOT/workflows/*/agents/**)",
+      "Read(//ROOT/.claude/**)",
+      "Read(//ROOT/scripts/agentkit/**)",
+      "Edit(**/PROVENANCE.md)",
+      "Edit(//**/PROVENANCE.md)"
+    ]
+  }
+}

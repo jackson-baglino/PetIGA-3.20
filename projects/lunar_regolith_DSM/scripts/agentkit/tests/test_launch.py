@@ -1,0 +1,163 @@
+"""Tests of the launcher with the fake `claude` (no model is called), on beth-mathematician and task T01.
+
+Each scenario checks the verdict and the run record: PASS, FAIL, ABSTAIN, ERROR; the hooks really run through
+the composed settings; the audit catches a barrier that failed; PROVENANCE.md verifies against manifest.json;
+and a real model call is refused while any enforcer is unbuilt.
+"""
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+KIT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(KIT))
+import launch  # noqa: E402
+import provenance  # noqa: E402
+
+FAKE = KIT / "tests" / "fake_claude.py"
+AGENT, TASK = "beth-mathematician", "T01_heat_weak_form"
+
+
+class Scenarios(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.log = Path(self.tmp.name) / "fake.jsonl"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_scenario(self, scenario):
+        with mock.patch.dict(os.environ, {"AGENTKIT_FAKE_SCENARIO": scenario, "AGENTKIT_FAKE_LOG": str(self.log)}):
+            verdict, run_dir = launch.run_agent(AGENT, TASK, runs_root=self.tmp.name, fake=str(FAKE))
+        manifest = json.loads((run_dir / "manifest.json").read_text())
+        notes = [json.loads(s) for s in self.log.read_text().splitlines()]
+        return verdict, run_dir, manifest, notes
+
+    def check_record(self, run_dir, manifest):
+        ok, msg, last = provenance.verify(run_dir / "PROVENANCE.md")
+        self.assertTrue(ok, msg)
+        self.assertEqual(last, manifest["provenance_chain"])
+        for f in ("settings.json", "transcript.jsonl", "workspace/task.json"):
+            self.assertTrue((run_dir / f).is_file(), f)
+
+    def test_pass(self):
+        verdict, run_dir, manifest, notes = self.run_scenario("pass")
+        self.assertEqual(verdict, "PASS", manifest["problems"])
+        self.check_record(run_dir, manifest)
+        self.assertTrue(json.loads((run_dir / "grade.json").read_text())["pass"])
+        argv = notes[0]["argv"]
+        self.assertEqual(argv[argv.index("--setting-sources") + 1], "")      # no CLAUDE.md, no other settings
+        self.assertEqual(argv[argv.index("--model") + 1], "claude-opus-5-5")
+        self.assertIn("You are the mathematician", argv[argv.index("--system-prompt") + 1])
+        self.assertEqual(manifest["guard_blocks"], 0)
+
+    def test_wrong_answer_fails(self):
+        verdict, run_dir, manifest, _ = self.run_scenario("wrong")
+        self.assertEqual(verdict, "FAIL")
+        self.check_record(run_dir, manifest)
+
+    def test_blocked_abstains(self):
+        verdict, run_dir, manifest, _ = self.run_scenario("blocked")
+        self.assertEqual(verdict, "ABSTAIN")
+        self.assertFalse((run_dir / "grade.json").exists())
+        self.check_record(run_dir, manifest)
+
+    def test_no_answer_is_an_error(self):
+        verdict, _, manifest, _ = self.run_scenario("no_answer")
+        self.assertEqual(verdict, "ERROR")
+        self.assertIn("no structured answer", manifest["problems"])
+
+    def test_forbidden_attempts_are_blocked_and_recorded(self):
+        verdict, run_dir, manifest, notes = self.run_scenario("probe")
+        self.assertEqual(verdict, "PASS", manifest["problems"])     # blocked attempts are not a failure ...
+        self.assertEqual(manifest["guard_blocks"], 4)                # ... but each one is recorded
+        self.assertEqual([n["blocked"] for n in notes if n.get("tool")][:4], [True] * 4)
+        self.assertFalse((run_dir / "PROVENANCE.md").read_text().count("forged"))
+        self.assertIn("guard blocked Bash", (run_dir / "PROVENANCE.md").read_text())
+        self.check_record(run_dir, manifest)
+
+    def test_a_failed_barrier_is_caught_by_the_audit(self):
+        verdict, _, manifest, _ = self.run_scenario("bypass")
+        self.assertEqual(verdict, "ERROR")
+        self.assertTrue(any(p.startswith("BARRIER FAILURE: Read") for p in manifest["problems"]))
+
+    def test_command_line_with_relative_paths(self):
+        """Found in the first hand run: a relative --fake path broke once the agent ran in its own folder."""
+        with tempfile.TemporaryDirectory() as d:
+            env = dict(os.environ, AGENTKIT_FAKE_SCENARIO="pass")
+            p = subprocess.run([sys.executable, "scripts/agentkit/launch.py", AGENT, "--task", TASK,
+                                "--runs-root", os.path.relpath(d, launch.ROOT),
+                                "--fake", "scripts/agentkit/tests/fake_claude.py"],
+                               cwd=launch.ROOT, capture_output=True, text=True, env=env)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertTrue(p.stdout.startswith("PASS"))
+
+    def test_stop_hook_sends_the_agent_back(self):
+        verdict, _, manifest, notes = self.run_scenario("forgets")
+        stops = [n for n in notes if n.get("stop")]
+        self.assertEqual([s["blocked"] for s in stops], [True, False])
+        self.assertEqual(verdict, "PASS", manifest["problems"])
+
+
+class Gates(unittest.TestCase):
+    def test_real_call_refused_while_enforcers_unbuilt(self):
+        with mock.patch.object(subprocess, "run", side_effect=AssertionError("no process may start")):
+            with self.assertRaises(launch.LaunchError) as cm:
+                launch.run_agent(AGENT, TASK, runs_root=tempfile.mkdtemp())
+        self.assertIn("unbuilt", str(cm.exception))
+
+    def test_name_must_be_unique(self):
+        with tempfile.TemporaryDirectory() as d:
+            for wf in ("a", "b"):
+                (Path(d) / "workflows" / wf / "agents").mkdir(parents=True)
+                (Path(d) / "workflows" / wf / "agents" / "beth-x.md").write_text("---\nname: beth-x\n---\n")
+            with self.assertRaises(launch.LaunchError):
+                launch.find_agent("beth-x", root=Path(d))
+
+    def test_unknown_task_refused(self):
+        with self.assertRaises(launch.LaunchError):
+            launch.run_agent(AGENT, "T99_none", runs_root=tempfile.mkdtemp(), fake=str(FAKE))
+
+
+class Settings(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.folder = Path(self.tmp.name) / "beth-x"
+        self.folder.mkdir()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def compose(self, own):
+        (self.folder / "settings.json").write_text(json.dumps(own))
+        return launch.compose_settings(self.folder, Path(self.tmp.name) / "out.json")
+
+    def test_base_denies_always_present(self):
+        s = self.compose({"permissions": {"allow": ["Read(./**)"]}})
+        deny = s["permissions"]["deny"]
+        self.assertIn("Read(~/.ssh/**)", deny)
+        self.assertIn(f"Read(/{launch.ROOT}/docs/planning/**)", deny)
+        self.assertIn("Edit(**/PROVENANCE.md)", deny)
+        self.assertEqual(s["permissions"]["allow"], ["Read(./**)"])
+        self.assertIn("guard.py", s["hooks"]["PreToolUse"][0]["hooks"][0]["command"])
+        self.assertIn("stop_check.py", s["hooks"]["Stop"][0]["hooks"][0]["command"])
+
+    def test_agent_cannot_set_hooks_or_modes(self):
+        with self.assertRaises(launch.LaunchError):
+            self.compose({"permissions": {}, "hooks": {}})
+        with self.assertRaises(launch.LaunchError):
+            self.compose({"permissions": {"defaultMode": "bypassPermissions"}})
+
+    def test_real_agent_settings_compose(self):
+        _, folder, _ = launch.find_agent(AGENT)
+        s = launch.compose_settings(folder, Path(self.tmp.name) / "out.json")
+        self.assertIn("Bash(python scratch/*)", s["permissions"]["allow"])
+        self.assertIn("WebFetch", s["permissions"]["deny"])
+
+
+if __name__ == "__main__":
+    unittest.main()
