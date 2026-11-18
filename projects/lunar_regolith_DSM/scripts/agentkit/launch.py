@@ -165,10 +165,10 @@ def parse_events(text):
 def audit(events, agent, workspace, bash_allow):
     """(problems, result event, calls). Every tool call that ran is re-checked against the guard's policy, so a
     call the guard should have blocked but did not is reported as a barrier failure."""
-    problems, result, model, uses, errored = [], None, None, {}, {}
+    problems, result, model, mode, uses, errored = [], None, None, None, {}, {}
     for e in events:
         if e.get("type") == "system" and e.get("subtype") == "init":
-            model = e.get("model")
+            model, mode = e.get("model"), e.get("permissionMode")
         content = (e.get("message") or {}).get("content")
         if e.get("type") == "assistant" and isinstance(content, list):
             for c in content:
@@ -198,6 +198,8 @@ def audit(events, agent, workspace, bash_allow):
             problems.append(f"BARRIER FAILURE: {name} {json.dumps(inp)[:160]} ran although {why}")
     if model != agent["model"]:
         problems.append(f"session model {model!r}, pinned {agent['model']!r}")
+    if mode != agent["permission_mode"]:      # found in the first real T01 run: a silent switch to "default"
+        problems.append(f"session permission mode {mode!r}, definition says {agent['permission_mode']!r}")
     if result is None:
         problems.append("no result event")
     elif result.get("subtype") != "success" or result.get("is_error"):
@@ -325,7 +327,7 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
     workspace.mkdir(parents=True)
     shutil.copyfile(task_file, workspace / "task.json")
     settings_path = run_dir / "settings.json"
-    compose_settings(folder, settings_path, workspace=workspace)
+    composed = compose_settings(folder, settings_path, workspace=workspace)
     env = build_env(workspace, run_dir, policy, folder, fake=bool(fake))
     claude = [str(PY), str(fake)] if fake else [CLAUDE_BIN]
     version = subprocess.run(claude + ["--version"], capture_output=True, text=True, env=env).stdout.strip()
@@ -352,7 +354,7 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
         targets, decoy = redteam_setup(run_dir, workspace, folder, grader)
     cli_schema = {k: v for k, v in answer_schema.items() if k != "$schema"}   # Claude Code rejects "$schema"
     cmd = agentlib.command(agent, REDTEAM_ORDER if redteam else work_order_text(task_id), cli_schema,
-                           settings=settings_path)
+                           settings=settings_path, allow=composed["permissions"]["allow"])
     cmd = claude + cmd[1:]
     started, t0, timed_out = now(), time.time(), False
     try:
@@ -402,7 +404,8 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
     prov.add("agent call", [
         f"started {started}, {seconds} s, exit {code}, turns {(result or {}).get('num_turns')}",
         f"tokens: input {usage.get('input_tokens')}, output {usage.get('output_tokens')}",
-        f"tool calls: {used or 'none'}", "transcript: transcript.jsonl"])
+        f"tool calls: {used or 'none'}", "transcript: transcript.jsonl"]
+        + [f"Claude Code said on stderr: {ln.strip()[:240]}" for ln in err.splitlines() if ln.strip()][:5])
     prov.add("barrier events", [f"guard blocked {g['tool']} {json.dumps(g['input'])[:120]}: {g['reason']}"
                                 for g in blocked] + [p for p in problems if p.startswith("BARRIER")] or ["none"])
     prov.add("answer", [f"status: {answer.get('status')}", f"result_expr: {str(answer.get('result_expr'))[:300]}",

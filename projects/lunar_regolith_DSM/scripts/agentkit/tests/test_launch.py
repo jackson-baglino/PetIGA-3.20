@@ -98,6 +98,17 @@ class Scenarios(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertTrue(p.stdout.startswith("PASS"))
 
+    def test_silent_permission_mode_switch_is_an_error(self):
+        with mock.patch.dict(os.environ, {"AGENTKIT_FAKE_MODE": "default"}):
+            verdict, _, manifest, _ = self.run_scenario("pass")
+        self.assertEqual(verdict, "ERROR")
+        self.assertTrue(any("permission mode 'default'" in p for p in manifest["problems"]))
+
+    def test_allowed_tools_passed_explicitly(self):
+        _, _, _, notes = self.run_scenario("pass")
+        argv = notes[0]["argv"]
+        self.assertIn("Bash(python scratch/*)", argv[argv.index("--allowedTools") + 1])
+
     def test_stop_hook_sends_the_agent_back(self):
         verdict, _, manifest, notes = self.run_scenario("forgets")
         stops = [n for n in notes if n.get("stop")]
@@ -107,10 +118,22 @@ class Scenarios(unittest.TestCase):
 
 class Gates(unittest.TestCase):
     def test_real_call_refused_while_enforcers_unbuilt(self):
-        with mock.patch.object(subprocess, "run", side_effect=AssertionError("no process may start")):
+        planned = ["N9 (a rule): planned: step 3"]
+        with mock.patch.object(launch, "unbuilt_enforcers", return_value=planned), \
+                mock.patch.object(subprocess, "run", side_effect=AssertionError("no process may start")):
             with self.assertRaises(launch.LaunchError) as cm:
                 launch.run_agent(AGENT, TASK, runs_root=tempfile.mkdtemp())
         self.assertIn("unbuilt", str(cm.exception))
+
+    def test_unbuilt_enforcers_reads_the_status(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "tests").mkdir()
+            (Path(d) / "tests" / "enforcers.json").write_text(json.dumps({"enforcers": [
+                {"id": "N1", "rule": "a", "status": "built (step 2)"},
+                {"id": "N2", "rule": "b", "status": "prompt only"},
+                {"id": "N3", "rule": "c", "status": "tools: built; sandbox: planned step 3"}]}))
+            self.assertEqual(launch.unbuilt_enforcers(Path(d)), ["N3 (c): tools: built; sandbox: planned step 3"])
+            self.assertEqual(launch.unbuilt_enforcers(Path(d) / "missing"), ["tests/enforcers.json is missing"])
 
     def test_name_must_be_unique(self):
         with tempfile.TemporaryDirectory() as d:

@@ -45,7 +45,8 @@ class Session:
     def __init__(self, argv):
         self.settings = json.loads(Path(arg(argv, "--settings")).read_text())
         self.events, self.n = [], 0
-        self.events.append({"type": "system", "subtype": "init", "model": arg(argv, "--model")})
+        self.events.append({"type": "system", "subtype": "init", "model": arg(argv, "--model"),
+                            "permissionMode": os.environ.get("AGENTKIT_FAKE_MODE") or arg(argv, "--permission-mode")})
 
     def hooks(self, event_name, payload, tool=None):
         """Run the hooks for one event; (blocked, stderr)."""
