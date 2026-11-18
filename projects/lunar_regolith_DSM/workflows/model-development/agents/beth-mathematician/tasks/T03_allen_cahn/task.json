@@ -1,0 +1,28 @@
+{
+  "task_id": "T03_allen_cahn",
+  "goal": "variational_derivative",
+  "statement": "Take the Ginzburg-Landau free energy F[phi] given below, on a 2D domain Omega. Compute its variational derivative mu = deltaF/deltaphi by taking the first variation and integrating the gradient term by parts. Take the variation of phi to vanish on the boundary of Omega, so no boundary term remains. Then write the Allen-Cahn equation, Derivative(phi, t) = -M*mu, move every term to one side so that it reads R = 0 with the coefficient of Derivative(phi(x, y, t), t) equal to 1, and return R with mu written out in full.",
+  "symbols": [
+    {"name": "x", "meaning": "first position coordinate", "units": "m"},
+    {"name": "y", "meaning": "second position coordinate", "units": "m"},
+    {"name": "t", "meaning": "time", "units": "s"},
+    {"name": "phi(x, y, t)", "meaning": "phase field (order parameter)", "units": "1"},
+    {"name": "kappa", "meaning": "gradient energy coefficient, constant, positive", "units": "J m^-1"},
+    {"name": "W", "meaning": "double-well height, constant, positive", "units": "J m^-3"},
+    {"name": "M", "meaning": "mobility, constant, positive", "units": "m^3 J^-1 s^-1"}
+  ],
+  "given": [
+    "F = Integral(kappa/2*(Derivative(phi(x, y, t), x)**2 + Derivative(phi(x, y, t), y)**2) + W*phi(x, y, t)**2*(1 - phi(x, y, t))**2, over Omega)"
+  ],
+  "assumptions": [
+    "kappa, W and M are constant and positive",
+    "phi is smooth on the closure of Omega",
+    "the variation of phi vanishes on the boundary of Omega"
+  ],
+  "deliverable": {
+    "kind": "sympy_expression",
+    "allowed_names": ["x", "y", "t", "phi", "kappa", "W", "M", "Derivative"],
+    "notes": "Write a second derivative as Derivative(phi(x, y, t), (x, 2)). The answer is a pointwise equation, so it holds no integral. Use only the allowed names, numbers, + - * / ** and parentheses."
+  },
+  "hand_estimate": null
+}
