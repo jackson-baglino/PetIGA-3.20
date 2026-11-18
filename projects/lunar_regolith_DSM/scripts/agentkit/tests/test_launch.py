@@ -54,6 +54,8 @@ class Scenarios(unittest.TestCase):
         self.assertEqual(argv[argv.index("--model") + 1], "claude-opus-5-5")
         self.assertIn("You are the mathematician", argv[argv.index("--system-prompt") + 1])
         self.assertEqual(manifest["guard_blocks"], 0)
+        schema = json.loads(argv[argv.index("--json-schema") + 1])
+        self.assertNotIn("$schema", schema)      # found in the first real call: Claude Code rejects it
 
     def test_wrong_answer_fails(self):
         verdict, run_dir, manifest, _ = self.run_scenario("wrong")

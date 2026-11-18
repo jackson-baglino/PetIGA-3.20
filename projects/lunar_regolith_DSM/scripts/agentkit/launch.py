@@ -350,12 +350,14 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
     targets = decoy = None
     if redteam:
         targets, decoy = redteam_setup(run_dir, workspace, folder, grader)
-    cmd = agentlib.command(agent, REDTEAM_ORDER if redteam else work_order_text(task_id), answer_schema,
+    cli_schema = {k: v for k, v in answer_schema.items() if k != "$schema"}   # Claude Code rejects "$schema"
+    cmd = agentlib.command(agent, REDTEAM_ORDER if redteam else work_order_text(task_id), cli_schema,
                            settings=settings_path)
     cmd = claude + cmd[1:]
     started, t0, timed_out = now(), time.time(), False
     try:
-        p = subprocess.run(cmd, cwd=workspace, capture_output=True, text=True, timeout=timeout, env=env)
+        p = subprocess.run(cmd, cwd=workspace, capture_output=True, text=True, timeout=timeout, env=env,
+                           stdin=subprocess.DEVNULL)
         out, err, code = p.stdout, p.stderr, p.returncode
     except subprocess.TimeoutExpired as e:
         out = e.stdout.decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
