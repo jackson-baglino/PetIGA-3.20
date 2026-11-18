@@ -1,5 +1,5 @@
 {
-  "_about": "The project base for every script-run agent (doc 29 §2). The launcher adds these denies to the agent's own settings.json; an agent's file may add rules but never remove these. '//ROOT/' is replaced with the project's absolute path.",
+  "_about": "The project base for every script-run agent (doc 29 §2). The launcher adds these to the agent's own settings.json; an agent's file may add permission rules but never remove these, and may not set sandbox or hooks. Placeholders: '//ROOT/' (permission rules) and '{ROOT}' are the project's absolute path, '{GITROOT}' the git repository's, '{WORKSPACE}' the agent's working folder for this call.",
   "permissions": {
     "deny": [
       "Read(~/.ssh/**)",
@@ -17,5 +17,30 @@
       "Edit(**/PROVENANCE.md)",
       "Edit(//**/PROVENANCE.md)"
     ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": [
+        "~/.ssh",
+        "~/.aws",
+        "~/.gnupg",
+        "~/.config/gh",
+        "~/.netrc",
+        "~/Library/Keychains",
+        "~/.claude",
+        "~/Library/Mobile Documents",
+        "{GITROOT}"
+      ],
+      "allowRead": [
+        "{ROOT}/venv_workflows",
+        "{WORKSPACE}"
+      ]
+    },
+    "network": {
+      "allowedDomains": []
+    }
   }
 }

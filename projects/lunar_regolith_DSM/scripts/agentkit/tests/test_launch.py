@@ -123,6 +123,40 @@ class Gates(unittest.TestCase):
             launch.run_agent(AGENT, "T99_none", runs_root=tempfile.mkdtemp(), fake=str(FAKE))
 
 
+class Environment(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.rdir = Path(self.tmp.name)
+        self.ws = self.rdir / "workspace"
+        self.ws.mkdir()
+        _, self.folder, _ = launch.find_agent(AGENT)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_only_listed_variables_pass(self):
+        secrets = {"SSH_AUTH_SOCK": "/tmp/agent.sock", "GIT_ASKPASS": "/x", "ANTHROPIC_API_KEY": "sk-test",
+                   "GITHUB_TOKEN": "t", "HOME": "/Users/test"}
+        with mock.patch.dict(os.environ, secrets):
+            env = launch.build_env(self.ws, self.rdir, {"bash_allow": []}, self.folder)
+        for k in ("SSH_AUTH_SOCK", "GIT_ASKPASS", "ANTHROPIC_API_KEY", "GITHUB_TOKEN"):
+            self.assertNotIn(k, env)
+        self.assertEqual(env["HOME"], "/Users/test")
+        self.assertTrue(env["PATH"].startswith(str(launch.PY.parent)))
+        self.assertTrue(env["TMPDIR"].startswith(str(self.ws)))
+
+    def test_env_allow_may_not_set_launcher_variables(self):
+        f = Path(self.tmp.name) / "beth-y"
+        f.mkdir()
+        (f / "env.allow").write_text("HOME\nPATH\n")
+        with self.assertRaises(launch.LaunchError):
+            launch.env_names(f)
+
+    def test_env_allow_is_required(self):
+        with self.assertRaises(launch.LaunchError):
+            launch.env_names(Path(self.tmp.name))
+
+
 class Settings(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -151,6 +185,25 @@ class Settings(unittest.TestCase):
             self.compose({"permissions": {}, "hooks": {}})
         with self.assertRaises(launch.LaunchError):
             self.compose({"permissions": {"defaultMode": "bypassPermissions"}})
+
+    def test_sandbox_comes_from_the_base_and_is_filled_in(self):
+        ws = Path(self.tmp.name) / "run" / "workspace"
+        s = self.compose_with_workspace({"permissions": {}}, ws)
+        sb = s["sandbox"]
+        self.assertTrue(sb["enabled"] and sb["failIfUnavailable"])
+        self.assertFalse(sb["allowUnsandboxedCommands"])
+        self.assertEqual(sb["network"]["allowedDomains"], [])
+        self.assertIn(str(ws), sb["filesystem"]["allowRead"])
+        self.assertIn(str(launch.git_root()), sb["filesystem"]["denyRead"])
+        self.assertNotRegex(json.dumps(sb), r"\{(ROOT|GITROOT|WORKSPACE)\}|//ROOT/")   # all filled
+
+    def test_agent_cannot_set_its_own_sandbox(self):
+        with self.assertRaises(launch.LaunchError):
+            self.compose({"permissions": {}, "sandbox": {"enabled": False}})
+
+    def compose_with_workspace(self, own, ws):
+        (self.folder / "settings.json").write_text(json.dumps(own))
+        return launch.compose_settings(self.folder, Path(self.tmp.name) / "out.json", workspace=ws)
 
     def test_real_agent_settings_compose(self):
         _, folder, _ = launch.find_agent(AGENT)
