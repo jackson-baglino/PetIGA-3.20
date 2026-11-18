@@ -96,6 +96,9 @@ class Session:
 
 def answer(expr, status="done", questions=()):
     return {"status": status, "result_expr": expr, "assumptions_used": ["rho, c constant"],
+            "symbols": [{"name": "k(x)", "meaning": "thermal conductivity", "units": "W m^-1 K^-1",
+                         "typical": 2}],
+            "neglected": [{"effect": "radiation", "why": "small at these temperatures"}],
             "questions": list(questions),
             "steps": [{"id": "S1", "statement": "multiply by w and integrate", "from": ["given"],
                        "operation": "multiply by w, integrate over (0, L)"},

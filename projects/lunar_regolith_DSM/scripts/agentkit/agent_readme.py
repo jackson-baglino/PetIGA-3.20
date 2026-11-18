@@ -119,7 +119,9 @@ def generated(name):
     for d in tasks:
         task = load_json(d / "task.json")
         expect = launch.load_expectation(d)
-        kind = f"probe: expected {expect['outcome']}" if expect else "known answer"
+        kind = (f"probe: expected {expect['outcome']}" if expect else
+                "blind derivation: checks with no key, then a comparison" if not task.get("given")
+                else "known answer")
         out.append(f"| `{d.name}` | {task['goal']} | {kind} | {cell(key_check_doc(d / 'grade.py'))} |")
     files = sorted(rel(p) for p in folder.rglob("*")
                    if p.is_file() and "__pycache__" not in p.parts and p.name != "README.md")

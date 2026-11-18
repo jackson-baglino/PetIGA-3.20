@@ -4,7 +4,7 @@
   "description": "The typed answer. Passed to Claude Code with --json-schema and validated again by the launcher; the grader reads result_expr.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["status", "result_expr", "steps", "assumptions_used", "questions"],
+  "required": ["status", "result_expr", "symbols", "steps", "assumptions_used", "neglected", "questions"],
   "properties": {
     "status": {"enum": ["done", "blocked"]},
     "result_expr": {"type": "string", "description": "The result as one SymPy expression, using only the work order's allowed names. Empty when blocked."},
@@ -21,7 +21,33 @@
         }
       }
     },
+    "symbols": {
+      "type": "array",
+      "description": "Every symbol you introduced that the work order does not define: parameters, material properties, functions. A quantity that depends on others is a function; write its name with its arguments, for example k(phi, T). Units in SI, written like 'W m^-1 K^-1'; '1' for dimensionless.",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "meaning", "units", "typical"],
+        "properties": {
+          "name": {"type": "string"},
+          "meaning": {"type": "string"},
+          "units": {"type": "string"},
+          "typical": {"type": "number", "description": "A typical value in the stated SI units for ice and vapor near 200 K, to the right order of magnitude (for a function, a typical value of the function)."}
+        }
+      }
+    },
     "assumptions_used": {"type": "array", "items": {"type": "string"}},
+    "neglected": {
+      "type": "array",
+      "description": "Every physical effect you considered and left out, with the reason it is small (an estimate where you can give one).",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["effect", "why"],
+        "properties": {
+          "effect": {"type": "string"},
+          "why": {"type": "string"}
+        }
+      }
+    },
     "questions": {"type": "array", "items": {"type": "string"}, "description": "What stopped the work, or what the user should decide. Empty when done."}
   }
 }
