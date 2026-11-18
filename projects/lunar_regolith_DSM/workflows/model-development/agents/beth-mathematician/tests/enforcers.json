@@ -9,7 +9,7 @@
         "harness",
         "environment"
       ],
-      "status": "permission rules (dontAsk + allow ./**) and guard.py path check: built (step 2); sandbox allowWrite/denyRead for Bash children: planned step 3"
+      "status": "built (step 2: permissions, guard; step 3: sandbox, red-team PASS runs/model-development/beth-mathematician/20261117-172402_redteam)"
     },
     {
       "id": "N2",
@@ -28,7 +28,7 @@
         "harness",
         "environment"
       ],
-      "status": "tools: built (step 1); sandbox: planned step 3"
+      "status": "built (step 1: tools; step 3: sandbox network, red-team PASS runs/model-development/beth-mathematician/20261117-172402_redteam)"
     },
     {
       "id": "N4",
@@ -47,7 +47,7 @@
         "harness",
         "environment"
       ],
-      "status": "guard.py and permission deny: built (step 2); sandbox denyWrite: planned step 3"
+      "status": "built (step 2: guard, permission deny; step 3: sandbox write limit, red-team PASS runs/model-development/beth-mathematician/20261117-172402_redteam)"
     },
     {
       "id": "N6",

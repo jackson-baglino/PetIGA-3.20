@@ -41,7 +41,7 @@ PY = ROOT / "venv_workflows" / "bin" / "python"
 TIMEOUT_S = 1800
 GRADER_TIMEOUT_S = 300
 OWN_KEYS = {"permissions"}                    # the sandbox and hooks come only from the base and the launcher
-SET_BY_LAUNCHER = {"PATH", "TMPDIR", "CLAUDE_CODE_DISABLE_AUTO_MEMORY"}
+SET_BY_LAUNCHER = {"PATH", "TMPDIR", "CLAUDE_CODE_DISABLE_AUTO_MEMORY", "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB"}
 CLAUDE_BIN = shutil.which("claude") or "claude"   # absolute, so the agent's PATH need not include it
 MATCHER = "Read|Write|Edit|NotebookEdit|Glob|Grep|Bash|WebFetch|WebSearch|Agent|Skill|Task"
 EXIT = {"PASS": 0, "FAIL": 1, "ABSTAIN": 3, "ERROR": 4}
@@ -143,7 +143,7 @@ def build_env(workspace, run_dir, policy, folder, fake=False):
     tmp = workspace / ".tmp"
     tmp.mkdir(exist_ok=True)
     env.update(PATH=f"{PY.parent}{os.pathsep}/usr/bin{os.pathsep}/bin", TMPDIR=str(tmp),
-               CLAUDE_CODE_DISABLE_AUTO_MEMORY="1",
+               CLAUDE_CODE_DISABLE_AUTO_MEMORY="1", CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="1",
                AGENTKIT_WORKSPACE=str(workspace), AGENTKIT_BASH_ALLOW=json.dumps(policy["bash_allow"]),
                AGENTKIT_REQUIRED=json.dumps(policy.get("required_outputs", [])),
                AGENTKIT_GUARD_LOG=str(run_dir / "guard.jsonl"))

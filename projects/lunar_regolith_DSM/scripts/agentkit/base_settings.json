@@ -1,5 +1,5 @@
 {
-  "_about": "The project base for every script-run agent (doc 29 §2). The launcher adds these to the agent's own settings.json; an agent's file may add permission rules but never remove these, and may not set sandbox or hooks. Placeholders: '//ROOT/' (permission rules) and '{ROOT}' are the project's absolute path, '{GITROOT}' the git repository's, '{WORKSPACE}' the agent's working folder for this call.",
+  "_about": "The project base for every script-run agent (doc 29 \u00a72). The launcher adds these to the agent's own settings.json; an agent's file may add permission rules but never remove these, and may not set sandbox or hooks. Placeholders: '//ROOT/' (permission rules) and '{ROOT}' are the project's absolute path, '{GITROOT}' the git repository's, '{WORKSPACE}' the agent's working folder for this call.",
   "permissions": {
     "deny": [
       "Read(~/.ssh/**)",
@@ -41,6 +41,64 @@
     },
     "network": {
       "allowedDomains": []
+    },
+    "credentials": {
+      "envVars": [
+        {
+          "name": "CLAUDE_CODE_MESSAGING_TOKEN",
+          "mode": "deny"
+        },
+        {
+          "name": "CLAUDE_CODE_OAUTH_TOKEN",
+          "mode": "deny"
+        },
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "mode": "deny"
+        },
+        {
+          "name": "SSH_AUTH_SOCK",
+          "mode": "deny"
+        },
+        {
+          "name": "GIT_ASKPASS",
+          "mode": "deny"
+        },
+        {
+          "name": "VSCODE_GIT_ASKPASS_MAIN",
+          "mode": "deny"
+        },
+        {
+          "name": "GITHUB_TOKEN",
+          "mode": "deny"
+        },
+        {
+          "name": "GH_TOKEN",
+          "mode": "deny"
+        }
+      ],
+      "files": [
+        {
+          "path": "~/.ssh",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.aws",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.gnupg",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.config/gh",
+          "mode": "deny"
+        },
+        {
+          "path": "~/.netrc",
+          "mode": "deny"
+        }
+      ]
     }
   }
 }
