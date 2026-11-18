@@ -22,7 +22,7 @@ the old flat layout are removed (they are copies; the sources stay).
 import argparse, shutil
 from pathlib import Path
 
-HPC = Path.home() / "SimulationResults/HPC_results/enceladus_DSM"
+HPC = Path("/Volumes/Seagate/enceladus_DSM")     # moved off ~/SimulationResults/HPC_results 2026-11
 SAMPLES = HPC / "keff_sintering_campaign/compare/figure_samples"
 MOLARO = Path(__file__).resolve().parents[3] / "studies/molaro_2019/manuscript"
 CANON = [("Figure1_mechanisms_aggregate", SAMPLES), ("Figure2_homogenization_method", SAMPLES),
@@ -69,13 +69,16 @@ ITERATIONS = {
         "bar) to the max, gamma = 3 power norm so the depletion halo at the neck shows (the far field is "
         "flat). Fig 7 without the all-phi variant."),
     "v6_2026-10-20": (
-        {"Figure1_mechanisms_aggregate": "_v5", "Figure2_homogenization_method": "_v4_bluered",
+        {"Figure1_mechanisms_aggregate": "_v8_log5", "Figure2_homogenization_method": "_v4_bluered",
          "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4_amp_fit_s2",
          "Figure6_keff_collapse": "_v2", "Figure7_state_law": "_v2", "omit": ["Figure7_state_law_allphi"]},
         [],
         "Fig 4 fitted lines restored: the free power law (a = 0.29) and the one-third theory curve were "
         "missing from v5 (a tick-list variable overwrote the fit window in fig_demmenie.py). Nothing else "
-        "changed from v5. 2026-10-24: Fig 6(c) plots k_eff/k_eff,r against SSA/SSA_r instead of theta."),
+        "changed from v5. 2026-10-24: Fig 6(c) plots k_eff/k_eff,r against SSA/SSA_r instead of theta. "
+        "2026-11-18: Fig 1(b) log-spaced, 0/1.3/3.9/10/30 d (fig1_strip_variants.py, log5); the 1.3 and 3.9 d "
+        "frames are the same packing at -40 and -30 C, at -20 C-equivalent age t*tau_sub(-20)/tau_sub(T). "
+        "The caption needs a sentence saying so."),
 }
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

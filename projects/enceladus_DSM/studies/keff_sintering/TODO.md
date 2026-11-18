@@ -248,6 +248,7 @@ GRL); both PDFs are in `Literature/`.
   - [x] One tables file `tables/tables.tex` (material, k_eff fixed, k_eff
     temperature, grain pair), one command per table.
   - [x] Fig. 1 = (a) mechanisms + (b) `aggregate_strip` (decided 2026-10-06; no setting panel).
+    (b) is log-spaced since 2026-11-18: `fig1_strip_variants.py` variant `log5`, 1.3/3.9 d from the -40/-30 C runs; caption sentence needed.
   - [x] Fig. 3 variant with grain shrinkage as (c)(d): `Figure3_molaro_validation`.
   - [ ] Fig. 5 gallery, Fig. 7 state law, Fig. 8 timescale map: samples in
     `LOC/keff_sintering_campaign/compare/figure_samples/`
