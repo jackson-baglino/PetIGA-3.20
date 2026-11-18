@@ -231,6 +231,15 @@ build the new diffuse-domain model. Lab Report 3 is due tonight; its tutorial sh
   - T05: vapor mass balance with a phase-change source;
   - T06: the free energy, with its double well;
   - T07: the phase-field equation.
+- **T04 result** (run `20261118-120651_T04_heat_latent`): PASS, 72 s, all five checks, no "other" terms. Derived
+  from the mixture enthalpy, subtracting h_v times the water balance (S6), so L(T) = h_v − h_i appears
+  naturally; it used pint. It drops vapor enthalpy transport c_v j·∇T (ratio about 2e-6). Two differences
+  from the current model, for the user to judge: (1) heat capacity: the agent's volume mix
+  φρ_i c_i + (1−φ)ρ_a c_a against the code's product ρ(φ)·c_p(φ) of two linear blends
+  (`material_properties.c:61-110`), which agree at φ = 0 and 1 but differ inside the interface (about 25 %
+  lower at φ = 1/2 for ρ_a ≪ ρ_i, c_i ≈ 2 c_a); (2) L(T) instead of constant L. One estimate was off: its
+  radiative conductivity 4σT³d at 200 K and d = 100 µm is 1.8e-4 W/m/K, not 1e-5; the conclusion (negligible
+  next to about 2 W/m/K) holds.
 - Material properties stay general (they may depend on φ and T) until the equations are derived.
 - No fixed symbol list in a work order: a list can limit the scope of what the agent thinks to include. The
   agent names its own symbols, with meanings and units, in its answer.
