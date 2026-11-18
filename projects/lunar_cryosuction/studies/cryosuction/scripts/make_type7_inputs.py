@@ -11,12 +11,24 @@ STATUS issue 5); dead end x = L sealed (no vapor flux); phi: 90-degree face on b
 contact angle 60 deg. Isothermal set: T fixed on every face (as the earlier 7A). Gradient sets: T fixed on
 the two ends only, walls insulating (as types 1, 2, 6). Output: 401 snapshots plus event snapshots.
 
-    venv_cryosuction/bin/python studies/cryosuction/scripts/make_type7_inputs.py [--dry-run]
+Saturated set (--set sat, user 2026-11-17): 21 runs on C1, C4, C7, 120 days. Vapor starts saturated
+everywhere (-humidity 1.0 gives rho_vs(T(x)) in the air) and the collector on x0 holds the saturation
+density of its OWN temperature (rhov_bc.fracs "local-sat"), so the temperature gradient is the only
+driver of harvest. Temperature: both ends fixed at the IC values and the walls y0, y1 held at the same
+linear profile (-Twall_faces y0,y1 -Twall_profile linear, symmetric Nitsche), as the regolith around
+the pore would set it.
+
+  7S0-1,4,7          G = 0 control (same thermal conditions with dT = 0)
+  7SD-G-1,4,7        G = 10, 20, 50 K/m, warm end at the dead end (x = L): ice should move to the collector
+  7SC-G-1,4,7        G = 10, 20, 50 K/m, warm end at the collector (x = 0)
+
+    venv_cryosuction/bin/python studies/cryosuction/scripts/make_type7_inputs.py [--set v5|sat] [--dry-run]
 """
 from __future__ import annotations
 
 import argparse
 import datetime
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -25,13 +37,14 @@ STUDY = ROOT / "studies/cryosuction"
 TODAY = datetime.date.today().isoformat()
 DAYS, N_OUT, G = 60, 401, 20.0
 GEOM = "type7v5_C{}_2D_L1800um_eps0.86um"
+LX, T0 = 1.8e-3, -20.0                  # pore length (preprocess/layouts/type7v5_C*.json) and mean T
+SAT_DAYS, SAT_G, SAT_CONFIGS = 120, (10.0, 20.0, 50.0), (1, 4, 7)
 
 COMMON = """-temp -20.0
 -humidity 1.0
 -flag_BC_rhovfix 1
 -rhovfix_faces x0
--rhovfix_lo 0.990                       # collector: 0.990 rho_vs(T0) (decision D2)
--phi_open_bc 0                          # 90-degree phi face on the pore ends
+{collector}-phi_open_bc 0                          # 90-degree phi face on the pore ends
 -t_final {tf:.6e}                       # {days} days
 -n_out {nout}                              # time-uniform snapshots
 -beta_sub0 7.9408e5                     # K&P beta0 at -20 C, alpha_c = 1e-2
@@ -45,10 +58,13 @@ COMMON = """-temp -20.0
 """
 
 
-def experiment(name, head, thermal, dry):
+D2 = "-rhovfix_lo 0.990                       # collector: 0.990 rho_vs(T0) (decision D2)\n"
+
+
+def experiment(name, head, thermal, dry, days=DAYS, collector=D2):
     text = (f"# experiment/cryosuction/{name}.opts   (make_type7_inputs.py, {TODAY})\n#\n" + head +
             "# -dtmax is in the GEOMETRY file (2 tau_sub at its eps).\n#\n" + thermal +
-            COMMON.format(tf=DAYS * 86400.0, days=DAYS, nout=N_OUT))
+            COMMON.format(tf=days * 86400.0, days=days, nout=N_OUT, collector=collector))
     path = EXP / f"{name}.opts"
     print(f"  {'(dry) ' if dry else ''}wrote {path.relative_to(ROOT)}")
     if not dry:
@@ -56,10 +72,55 @@ def experiment(name, head, thermal, dry):
     return name
 
 
+def sat_experiment(G, warm, dry):
+    """Saturated set: grad_temp0 = +G (warm dead end, x = L) or -G (warm collector, x = 0); G = 0 control."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from rhov_bc import fracs
+    g = G if warm == "deadend" else -G
+    lo, _, Tlo, Thi, _ = fracs(T0, g, LX, "local-sat")
+    tcold, twarm = min(Tlo, Thi), max(Tlo, Thi)
+    s0 = LX if g > 0 else 0.0
+    if G == 0:
+        name, what = f"t7s_T-20_hsat_iso_wallT_theta60_{SAT_DAYS}d_n401_ac1e-2", "G = 0 control"
+    else:
+        name = f"t7s_T-20_hsat_G{G:g}warm{warm}_wallT_theta60_{SAT_DAYS}d_n401_ac1e-2"
+        what = f"G = {G:g} K/m, warm end at the {'dead end (x = L)' if warm == 'deadend' else 'collector (x = 0)'}"
+    head = (f"# Plan type 7S (saturated, user 2026-11-17): {what}. Vapor saturated at start; the collector\n"
+            f"# holds the saturation density of its own temperature ({Tlo:.6f} C); T fixed on both ends and\n"
+            f"# on the walls (linear wall profile from {twarm:.6f} C at x = {s0:g} m to {tcold:.6f} C).\n")
+    thermal = (f"-grad_temp0 {g:.1f},0.0,0.0\n-flag_BC_Tfix 1\n-Tfix_faces x0,x1                        # ends at the IC values\n"
+               f"-Twall_faces y0,y1                       # walls: T_w = T_init + dT (1 - |x - s0| / L), Nitsche\n"
+               f"-Twall_profile linear\n-Twall_axis 0\n-Twall_s0 {s0:.6e}\n-Twall_length {LX:.6e}\n"
+               f"-Twall_dT {abs(g) * LX:.6e}                    # G Lx\n-Twall_Tinit {tcold:.10f}             # cold end\n")
+    coll = (f"-rhovfix_lo {lo:.10f}                 # rho_vs({Tlo:.6f} C) / rho_vs(-20 C): saturated at the "
+            f"collector's own T (rhov_bc.py --T0 -20 --G {g:g} --Lx {LX:g} --local-sat)\n")
+    return experiment(name, head, thermal, dry, days=SAT_DAYS, collector=coll)
+
+
+def main_sat(dry) -> int:
+    ctrl = sat_experiment(0.0, "deadend", dry)
+    rows = [(f"7S0-{i}", ctrl, i) for i in SAT_CONFIGS]
+    for warm, tag in (("deadend", "SD"), ("collector", "SC")):
+        for G in SAT_G:
+            name = sat_experiment(G, warm, dry)
+            rows += [(f"7{tag}-{G:g}-{i}", name, i) for i in SAT_CONFIGS]
+    lines = [f"# Plan type 7S (make_type7_inputs.py --set sat, {TODAY}): saturated vapor, collector saturated at its own T,",
+             "# linear wall temperature; C1, C4, C7 x (G 0; G 10, 20, 50 K/m warm dead end / warm collector). 21 runs, 120 d."]
+    lines += [f"{GEOM.format(i)}:{e}   # {rid}" for rid, e, i in rows]
+    path = STUDY / "type7sat_tests.txt"
+    print(f"  {'(dry) ' if dry else ''}wrote {path.relative_to(ROOT)}  ({len(rows)} runs)")
+    if not dry:
+        path.write_text("\n".join(lines) + "\n")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--set", choices=("v5", "sat"), default="v5")
     a = ap.parse_args()
+    if a.set == "sat":
+        return main_sat(a.dry_run)
     iso = experiment(
         f"t7_T-20_h0.990_iso_theta60_{DAYS}d_n401_ac1e-2",
         "# Plan type 7A (v5): isothermal harvest; collector at x = 0, sealed dead end at x = L.\n",

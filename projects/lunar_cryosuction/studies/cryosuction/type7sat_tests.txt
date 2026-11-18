@@ -1,0 +1,23 @@
+# Plan type 7S (make_type7_inputs.py --set sat, 2026-11-17): saturated vapor, collector saturated at its own T,
+# linear wall temperature; C1, C4, C7 x (G 0; G 10, 20, 50 K/m warm dead end / warm collector). 21 runs, 120 d.
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hsat_iso_wallT_theta60_120d_n401_ac1e-2   # 7S0-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hsat_iso_wallT_theta60_120d_n401_ac1e-2   # 7S0-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hsat_iso_wallT_theta60_120d_n401_ac1e-2   # 7S0-7
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hsat_G10warmdeadend_wallT_theta60_120d_n401_ac1e-2   # 7SD-10-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hsat_G10warmdeadend_wallT_theta60_120d_n401_ac1e-2   # 7SD-10-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hsat_G10warmdeadend_wallT_theta60_120d_n401_ac1e-2   # 7SD-10-7
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hsat_G20warmdeadend_wallT_theta60_120d_n401_ac1e-2   # 7SD-20-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hsat_G20warmdeadend_wallT_theta60_120d_n401_ac1e-2   # 7SD-20-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hsat_G20warmdeadend_wallT_theta60_120d_n401_ac1e-2   # 7SD-20-7
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hsat_G50warmdeadend_wallT_theta60_120d_n401_ac1e-2   # 7SD-50-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hsat_G50warmdeadend_wallT_theta60_120d_n401_ac1e-2   # 7SD-50-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hsat_G50warmdeadend_wallT_theta60_120d_n401_ac1e-2   # 7SD-50-7
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hsat_G10warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SC-10-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hsat_G10warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SC-10-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hsat_G10warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SC-10-7
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hsat_G20warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SC-20-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hsat_G20warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SC-20-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hsat_G20warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SC-20-7
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hsat_G50warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SC-50-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hsat_G50warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SC-50-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hsat_G50warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SC-50-7

@@ -150,6 +150,11 @@ Hypotheses: the user writes them; none recorded yet.
   pair in the shakedown. The enceladus 200k optimum is for 24 M DoF meshes.
 
 ## Done recently
+- 2026-11-17: type 7 v5 (13 runs) downloaded, postprocessed, low-res movies; results in RUNS.md (ice
+  empties from the collector inward; G 20 changes harvest time by -7..+18 %; C1 warm dead end to resume).
+  Type 7S built (21 runs, `type7sat_tests.txt`, preflight OK): saturated vapor, collector saturated at its
+  own T, linear wall temperature (-Twall_faces, Nitsche), G 0/10/20/50 both directions, C1/C4/C7, 120 d.
+  Local 30-step check on the C7 mesh: wall T within 2e-6 of T_w (first mapped-mesh use). To submit after a push.
 - 2026-11-17: type 5 rebuilt as approved (11 runs, `type5_tests.txt`, preflight OK, local
   2 d shakedown of 5P-1 OK): periodic sinhyp cells at G 0 (5P), hyperbolic pores with h_net ends at
   0.5 and 2 G_crit (5G: 0.84/3.36 K/m for the 40 um throat, 0.54/2.16 for 80), straight controls
