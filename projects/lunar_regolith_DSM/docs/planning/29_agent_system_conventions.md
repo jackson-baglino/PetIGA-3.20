@@ -178,7 +178,9 @@ There are 196 tracked Python files [checked]:
 - **Today (2026-11-17):**
   - mathematician steps 0–1 (doc 28): step 0 committed 76f5f236, step 1 next;
   - the units-verification agents moved and that workflow archived (65353818);
-  - Lab Report 3 at about 6 pm.
+  - Lab Report 3 moved to 2026-11-18 (user).
+- **2026-11-18, first:** Lab Report 3 (late deadline 11:59 PM): a tutorial that shows the system working
+  end to end on beth-mathematician and T01.
 - **2026-11-18** (the user may ask for this to run overnight):
   1. ~~Check that the ask rule prompts.~~ Done 2026-11-17: a fresh headless session could write a control
      file but not a file under `workflows/*/agents/`.
