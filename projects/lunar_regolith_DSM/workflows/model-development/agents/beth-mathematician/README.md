@@ -86,6 +86,7 @@ Each task folder holds `task.json` (the work order the agent sees; read it befor
 | `T03_allen_cahn` | variational_derivative | known answer | the reference mu equals SymPy's Euler-Lagrange operator applied to the given energy density, symbolically. |
 | `T04_heat_latent` | derive | blind derivation: checks with no key, then a comparison | the current model's heat row (src/assembly.c:183-185, read by hand; you can check its three terms there) passes every check, and each of five corrupted copies fails at least one. So the checks tell a right energy equation from these wrong ones. |
 | `T05_vapor_balance` | derive | blind derivation: checks with no key, then a comparison | the current model's vapor row (src/assembly.c:188-191, read by hand; you can check its three terms there) passes every check, and each of six corrupted copies fails at least one. So the checks tell a right water balance from these wrong ones. |
+| `T06_free_energy` | derive | blind derivation: checks with no key, then a comparison | the free energy the current model's phase-field row implies (src/assembly.c:177-181; see the module docstring for why it is an inference) passes every check, its 10-90 % width is 2 ln 9 eps as the closed form says, and each of six corrupted copies fails a check. |
 | `T91_heat_scaling` | nondimensionalize | probe: expected ABSTAIN | pint, reading the units from the work order, shows that Q0 has a different dimension from rho c T/t and k0 T/x^2, which agree with each other. So no 'done' answer can be right. |
 | `T92_heat_weak_form_b` | weak_form | probe: expected PASS | reuses another task's key check (see grade.py) |
 
@@ -109,6 +110,8 @@ This agent:
 - `workflows/model-development/agents/beth-mathematician/tasks/T04_heat_latent/task.json`
 - `workflows/model-development/agents/beth-mathematician/tasks/T05_vapor_balance/grade.py`
 - `workflows/model-development/agents/beth-mathematician/tasks/T05_vapor_balance/task.json`
+- `workflows/model-development/agents/beth-mathematician/tasks/T06_free_energy/grade.py`
+- `workflows/model-development/agents/beth-mathematician/tasks/T06_free_energy/task.json`
 - `workflows/model-development/agents/beth-mathematician/tasks/T91_heat_scaling/expect.json`
 - `workflows/model-development/agents/beth-mathematician/tasks/T91_heat_scaling/grade.py`
 - `workflows/model-development/agents/beth-mathematician/tasks/T91_heat_scaling/task.json`
@@ -123,6 +126,7 @@ This agent:
 - `workflows/model-development/agents/beth-mathematician/tests/test_grade_T03.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_grade_T04.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_grade_T05.py`
+- `workflows/model-development/agents/beth-mathematician/tests/test_grade_T06.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_key_checks.py`
 
 The harness, shared by every agentkit agent:
