@@ -1,3 +1,10 @@
+## 2026-11-18 — Figure 1(b) snapshot-spacing variants
+
+- The -20 C master run (phi 0.325, seed 1702) saved only 0/10/19/30 d, so a log-spaced strip cannot come from it alone. The same packing at -40/-30/-10/-5 C fills the missing ages via the tau_sub time rescaling; checked on the phase field (matched ages differ in 0.01-0.06 % of pixels vs ~2 % between -20 C frames).
+- New `studies/keff_sintering/figures/fig1_strip_variants.py`: seven `Figure1_mechanisms_aggregate_v8_<name>` copies (current, log5, log4, log5_best, window, outline, long) over the untouched v5 panel (a), plus contact sheet `Figure1_v8_variants.png`, in the Seagate campaign's `compare/figure_samples/`. Manuscript figures not overwritten; awaiting the user's pick.
+
+---
+
 ## 2026-11-01 — /init: commands and architecture in CLAUDE.md
 
 - Added the standard header, a Commands section (make, check_ic_types.sh, run script, postprocess, venv, verification drivers) and an Architecture section (opts layering, solver flow, AppCtx, in-line k_eff, sibling project, run folder staging, HPC) to CLAUDE.md.
