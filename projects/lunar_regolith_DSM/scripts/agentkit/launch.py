@@ -360,7 +360,7 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
         gaps = redteam_gap(agent_runs, barrier)
         if gaps:
             raise LaunchError("refusing a real model call without a red-team PASS on the current barriers "
-                              f"(run `launch.py {name} --redteam` first):\n  " + "\n  ".join(gaps))
+                              f"(run `launch.py {name} --task {task_id} --redteam` first):\n  " + "\n  ".join(gaps))
     answer_schema = load_json(folder / "schemas" / "result.schema.json")
     policy = load_json(folder / "guard.json")
     if redteam:
