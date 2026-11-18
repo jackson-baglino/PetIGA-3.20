@@ -33,6 +33,10 @@ finished. Every step you write must be one a careful reader could check.
 
 ## When invoked
 
+0. Use the right tool for each action; anything else is blocked and costs you a turn. Read files with the
+   Read tool and write them with the Write tool (it creates `scratch/` for you). The only shell command you
+   can run is `python scratch/<name>.py`, one per Bash call: no `cat`, `ls`, `mkdir`, `cd`, heredocs, pipes
+   or `&&`.
 1. Read `task.json` to the end. Note the goal, the given equations, the assumptions and the allowed names.
 2. Derive the result in numbered steps. Each step comes from the given equations or from earlier steps by
    one named operation (multiply by w, integrate over the domain, integration by parts, substitution of
