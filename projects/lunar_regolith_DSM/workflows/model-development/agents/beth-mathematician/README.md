@@ -84,7 +84,8 @@ Each task folder holds `task.json` (the work order the agent sees; read it befor
 | `T01_heat_weak_form` | weak_form | known answer | for concrete polynomial T, w, k, Q and numbers, the reference equals the integral of w times the given strong-form residual, in exact rational arithmetic. So the integration by parts and the boundary term in the key are right. |
 | `T02_heat_nondimensionalize` | nondimensionalize | known answer | 1. Units (pint, from the work order): rho c T/t, k0 T/x^2 and Q0 all have the same dimension. 2. Algebra (SymPy, symbolic in every parameter): for concrete polynomial theta, put T = T0 + DT theta(x/L, t k0/(rho c L^2)) into the given equation; the result divided by k0 DT / L^2 is the key. |
 | `T03_allen_cahn` | variational_derivative | known answer | the reference mu equals SymPy's Euler-Lagrange operator applied to the given energy density, symbolically. |
-| `T04_heat_latent` | derive | blind derivation: checks with no key, then a comparison | the current model's heat row (src/assembly.c:173-175, read by hand; you can check its three terms there) passes every check, and each of five corrupted copies fails at least one. So the checks tell a right energy equation from these wrong ones. |
+| `T04_heat_latent` | derive | blind derivation: checks with no key, then a comparison | the current model's heat row (src/assembly.c:183-185, read by hand; you can check its three terms there) passes every check, and each of five corrupted copies fails at least one. So the checks tell a right energy equation from these wrong ones. |
+| `T05_vapor_balance` | derive | blind derivation: checks with no key, then a comparison | the current model's vapor row (src/assembly.c:188-191, read by hand; you can check its three terms there) passes every check, and each of six corrupted copies fails at least one. So the checks tell a right water balance from these wrong ones. |
 | `T91_heat_scaling` | nondimensionalize | probe: expected ABSTAIN | pint, reading the units from the work order, shows that Q0 has a different dimension from rho c T/t and k0 T/x^2, which agree with each other. So no 'done' answer can be right. |
 | `T92_heat_weak_form_b` | weak_form | probe: expected PASS | reuses another task's key check (see grade.py) |
 
@@ -106,18 +107,22 @@ This agent:
 - `workflows/model-development/agents/beth-mathematician/tasks/T03_allen_cahn/task.json`
 - `workflows/model-development/agents/beth-mathematician/tasks/T04_heat_latent/grade.py`
 - `workflows/model-development/agents/beth-mathematician/tasks/T04_heat_latent/task.json`
+- `workflows/model-development/agents/beth-mathematician/tasks/T05_vapor_balance/grade.py`
+- `workflows/model-development/agents/beth-mathematician/tasks/T05_vapor_balance/task.json`
 - `workflows/model-development/agents/beth-mathematician/tasks/T91_heat_scaling/expect.json`
 - `workflows/model-development/agents/beth-mathematician/tasks/T91_heat_scaling/grade.py`
 - `workflows/model-development/agents/beth-mathematician/tasks/T91_heat_scaling/task.json`
 - `workflows/model-development/agents/beth-mathematician/tasks/T92_heat_weak_form_b/expect.json`
 - `workflows/model-development/agents/beth-mathematician/tasks/T92_heat_weak_form_b/grade.py`
 - `workflows/model-development/agents/beth-mathematician/tasks/T92_heat_weak_form_b/task.json`
+- `workflows/model-development/agents/beth-mathematician/tasks/_shared/blind.py`
 - `workflows/model-development/agents/beth-mathematician/tests/enforcers.json`
 - `workflows/model-development/agents/beth-mathematician/tests/test_definition.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_grade_T01.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_grade_T02.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_grade_T03.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_grade_T04.py`
+- `workflows/model-development/agents/beth-mathematician/tests/test_grade_T05.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_key_checks.py`
 
 The harness, shared by every agentkit agent:

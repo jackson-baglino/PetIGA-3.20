@@ -235,7 +235,7 @@ class Probes(unittest.TestCase):
         """Each task: a valid work order, a grader, and a valid expect.json for probe tasks (T9x)."""
         _, folder, _ = launch.find_agent(AGENT)
         schema = json.loads((folder / "schemas" / "task.schema.json").read_text())
-        tasks = sorted(d for d in (folder / "tasks").iterdir() if d.is_dir())
+        tasks = sorted(d for d in (folder / "tasks").iterdir() if d.is_dir() and not d.name.startswith(("_", ".")))
         self.assertGreaterEqual(len(tasks), 4)
         for d in tasks:
             task = json.loads((d / "task.json").read_text())

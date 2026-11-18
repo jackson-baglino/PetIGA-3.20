@@ -16,7 +16,7 @@ there is no single answer key. The grade has two parts.
    - conduction:   a hot spot (T peaked at a point, phi uniform and static) cools: T_t < 0 at the peak;
    - conservation: with phi and T static and periodic in x, R integrates to zero over a period, so
                    conduction is the divergence of a flux and moves energy without making it.
-2. A comparison with the current model (src/assembly.c:173-175, with the time scaling xi_T = 1 and the
+2. A comparison with the current model (src/assembly.c:183-185, with the time scaling xi_T = 1 and the
    phase-change switch on): R_ref = rho(phi) cp(phi) T_t - div(k(phi) grad T) - rho_i L phi_t. The agent's
    terms are grouped by role (storage, conduction, phase change, other) beside the reference's, with the
    effects the agent left out, for the user to judge. Terms in "other" are listed, not failed: a term the
@@ -30,144 +30,39 @@ Prints one JSON line {"check", "pass", "details"}; exits 0 on pass, 1 on fail, 2
 import hashlib
 import json
 import math
-import random
-import re
 import sys
 from pathlib import Path
 
-import pint
 import sympy as sp
-from sympy.core.function import AppliedUndef
-from sympy.parsing.sympy_parser import parse_expr
 
-CHECK = "T04_heat_latent"
 HERE = Path(__file__).resolve().parent
-UREG = pint.UnitRegistry()
-MAX_LEN = 4000
-RESERVED = {"Derivative", "Integral", "Subs", "Function", "Symbol", "Lambda", "lambda", "import"}
+sys.path.insert(0, str(HERE.parent / "_shared"))
+import blind  # noqa: E402
+from blind import COORDS, T_SCALE, Reject, T, lam, phi, solve_rate, t, x, y, z  # noqa: E402,F401
 
-x, y, z, t = sp.symbols("x y z t", real=True)
-COORDS = (x, y, z)
-T, phi = sp.Function("T"), sp.Function("phi")
-FIXED = {"x": x, "y": y, "z": z, "t": t, "T": T, "phi": phi}
-
-
-class Reject(Exception):
-    pass
-
-
-def quantity(text):
-    try:
-        q = UREG(str(text).replace("^", "**"))
-    except Exception as e:
-        raise Reject(f"units {text!r} do not parse: {e}") from None
-    return q if isinstance(q, UREG.Quantity) else UREG.Quantity(q, "dimensionless")
+pint = blind.pint
+CHECK = "T04_heat_latent"
+FIXED = blind.fixed_symbols(HERE)
 
 
 def fixed_units():
-    task = json.loads((HERE / "task.json").read_text())
-    return {s["name"].split("(")[0].strip(): quantity(s["units"]) for s in task["symbols"]}
+    return blind.fixed_units(HERE)
 
 
 def declared(symbols):
-    """{name: (sympy object, units, typical value)} for the agent's own symbols."""
-    out = {}
-    for s in symbols or []:
-        m = re.fullmatch(r"\s*([A-Za-z][A-Za-z0-9_]*)\s*(\(.*\))?\s*", str(s.get("name", "")))
-        if not m:
-            raise Reject(f"symbol name {s.get('name')!r} is not a name or a name with arguments")
-        name, is_func = m.group(1), bool(m.group(2))
-        if name in RESERVED or name.startswith("_"):
-            raise Reject(f"symbol name {name!r} is reserved")
-        if name in FIXED:
-            continue                          # the work order defines it
-        try:
-            typical = sp.Rational(str(s.get("typical")))
-        except (TypeError, ValueError):
-            raise Reject(f"symbol {name!r} has no numeric typical value") from None
-        if typical == 0:
-            raise Reject(f"symbol {name!r} has a typical value of 0")
-        out[name] = (sp.Function(name) if is_func else sp.Symbol(name, real=True), quantity(s.get("units")), typical)
-    return out
+    return blind.declared(symbols, FIXED)
 
 
 def parse(text, decl):
-    if not isinstance(text, str) or not text.strip():
-        raise Reject("empty result_expr")
-    if len(text) > MAX_LEN:
-        raise Reject(f"result_expr longer than {MAX_LEN} characters")
-    if not re.fullmatch(r"[A-Za-z0-9_+\-*/(),. \t\n]*", text):
-        raise Reject("characters outside names, numbers, + - * / ** ( ) , and spaces")
-    if re.search(r"(?<![0-9])\.|\.(?![0-9])", text):
-        raise Reject("'.' is allowed only inside a decimal number")
-    names = set(re.findall(r"[A-Za-z_][A-Za-z_0-9]*", text))
-    unknown = names - set(FIXED) - set(decl) - {"Derivative"}
-    if unknown:
-        raise Reject(f"names neither in the work order nor declared in symbols: {sorted(unknown)}")
-    local = dict(FIXED, Derivative=sp.Derivative, **{n: d[0] for n, d in decl.items()})
-    try:
-        return parse_expr(text, local_dict=local, evaluate=True)
-    except Exception as e:      # a parse error is the agent's fault, not the grader's
-        raise Reject(f"does not parse: {type(e).__name__}: {e}") from None
+    return blind.parse(text, decl, FIXED)
 
 
 def dims(e, units):
-    """The units of e as a pint quantity; raises Reject when a sum mixes units."""
-    if e.is_Number:
-        return UREG.Quantity(1, "dimensionless")
-    if isinstance(e, sp.Symbol):
-        return units[e.name]
-    if isinstance(e, AppliedUndef):
-        return units[e.func.__name__]
-    if isinstance(e, sp.Derivative):
-        q = dims(e.expr, units)
-        for v, n in e.variable_count:
-            q = q / dims(v, units) ** int(n)
-        return q
-    if isinstance(e, sp.Add):
-        qs = [(a, dims(a, units)) for a in e.args]
-        first = qs[0][1].dimensionality
-        bad = [(str(a), str(q.dimensionality)) for a, q in qs if q.dimensionality != first]
-        if bad:
-            raise Reject(f"terms with different units: {str(qs[0][0])[:80]} is {first}; {bad[:3]}")
-        return qs[0][1]
-    if isinstance(e, sp.Mul):
-        q = UREG.Quantity(1, "dimensionless")
-        for a in e.args:
-            q = q * dims(a, units)
-        return q
-    if isinstance(e, sp.Pow) and e.exp.is_Number:
-        return dims(e.base, units) ** float(e.exp)
-    raise Reject(f"cannot take the units of {type(e).__name__}: {str(e)[:80]}")
-
-
-T_SCALE = 200        # K: the fields below are near 200 K, the temperature the typical values refer to
+    return blind.dims(e, units)
 
 
 def concrete(expr, decl, Tlam, philam, seed):
-    """expr with each declared parameter replaced by its typical value times a random factor in [1/2, 2], each
-    declared function by its typical value times a random smooth positive variation of its arguments
-    (scaled by 200 K for an argument holding T, by 1 otherwise), and T, phi by the given fields; derivatives
-    evaluated. Typical values keep the sizes physical, so a sign that depends on sizes (rho_ice - rho_v)
-    is judged at physical sizes."""
-    rng = random.Random(seed)
-    e = expr
-    for obj, _, typical in decl.values():
-        factor = sp.Rational(rng.randint(2, 8), 4)
-        if isinstance(obj, sp.Symbol):
-            e = e.subs(obj, typical * factor)
-        else:
-            coef = [sp.Rational(rng.randint(1, 10), 50) for _ in range(8)]
-            def poly(*args, c=coef, base=typical * factor):
-                return base * (1 + sum(c[i] * (a / (T_SCALE if a.has(T) else 1))**2
-                                       for i, a in enumerate(args[:8])))
-            e = e.replace(lambda a, f=obj: isinstance(a, AppliedUndef) and a.func == f,
-                          lambda a, p=poly: p(*a.args))
-    return e.replace(T, Tlam).replace(phi, philam).doit()
-
-
-def lam(body):
-    return sp.Lambda((x, y, z, t), body)
+    return blind.concrete(expr, decl, {T: Tlam, phi: philam}, seed)
 
 
 def check_equilibrium(expr, decl):
@@ -180,13 +75,6 @@ def check_equilibrium(expr, decl):
             if v != 0:
                 return False, f"uniform T and a static phi give R = {v}, not 0: a source out of nothing"
     return True, "R = 0 for uniform T and a static phi (3 draws, 2 points)"
-
-
-def solve_rate(e, a):
-    sol = [s for s in sp.solve(sp.Eq(e, 0), a) if s.is_real]
-    if len(sol) != 1:
-        raise Reject(f"expected one real T_t from R = 0, found {sol}")
-    return sol[0]
 
 
 def check_latent_sign(expr, decl):
@@ -302,7 +190,7 @@ def evaluate(text, symbols):
 
 
 def key_check():
-    """The key's pedigree, with no LLM in it: the current model's heat row (src/assembly.c:173-175, read by
+    """The key's pedigree, with no LLM in it: the current model's heat row (src/assembly.c:183-185, read by
     hand; you can check its three terms there) passes every check, and each of five corrupted copies fails
     at least one. So the checks tell a right energy equation from these wrong ones."""
     ok, results, _ = evaluate(REFERENCE, REF_SYMBOLS)
@@ -329,7 +217,7 @@ def grade(answer):
             "checks": [{"check": n, "pass": p, "details": d} for n, p, d in results],
             "comparison (for the user)": {
                 "agent's terms by role": groups,
-                "current model (src/assembly.c:173-175)": {
+                "current model (src/assembly.c:183-185)": {
                     "storage": [REF_STORAGE], "conduction": [f"-{REF_CONDUCTION}"],
                     "phase change": [f"-{REF_LATENT}"], "other": []},
                 "agent's symbols": answer.get("symbols"),

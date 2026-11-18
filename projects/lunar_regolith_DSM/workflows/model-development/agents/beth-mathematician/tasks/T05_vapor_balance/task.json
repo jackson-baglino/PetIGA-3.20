@@ -1,0 +1,24 @@
+{
+  "task_id": "T05_vapor_balance",
+  "goal": "derive",
+  "statement": "We are modeling the pore space of a granular material (lunar regolith) in which water ice sublimates and deposits. Treat the pore space as a three-dimensional region filled with solid ice and gas (air that contains water vapor). The local volume fraction of ice is the phase field phi(x, y, z, t), between 0 and 1: phi = 1 in ice and phi = 0 in gas, with a thin, smooth transition between the two. Ice turns into vapor (sublimation) and vapor into ice (deposition), so phi changes in time. The vapor density rho_v(x, y, z, t) is the mass of water vapor per unit volume of gas. In this task phi and the temperature T are known; their own equations are separate tasks. Derive the partial differential equation for rho_v that expresses conservation of water mass, including the exchange of mass between ice and vapor. Start from a conservation principle. State every assumption, and list every effect you leave out with the reason it is small. Keep the material properties general: do not assume a property is constant unless a step needs it, and say so when one does. Write the result as R = 0 in 3D Cartesian coordinates and return R.",
+  "symbols": [
+    {"name": "x", "meaning": "first position coordinate", "units": "m"},
+    {"name": "y", "meaning": "second position coordinate", "units": "m"},
+    {"name": "z", "meaning": "third position coordinate", "units": "m"},
+    {"name": "t", "meaning": "time", "units": "s"},
+    {"name": "T(x, y, z, t)", "meaning": "temperature", "units": "K"},
+    {"name": "phi(x, y, z, t)", "meaning": "local volume fraction of ice (phase field), between 0 and 1", "units": "1"},
+    {"name": "rho_v(x, y, z, t)", "meaning": "vapor density: mass of water vapor per unit volume of gas", "units": "kg m^-3"}
+  ],
+  "given": [],
+  "assumptions": [
+    "phi(x, y, z, t) and T(x, y, z, t) are known, smooth fields"
+  ],
+  "deliverable": {
+    "kind": "sympy_expression",
+    "allowed_names": ["x", "y", "z", "t", "T", "phi", "rho_v", "Derivative"],
+    "notes": "You may also use every name you declare in the symbols list of your answer. A material property that depends on other quantities is a function: declare it as, for example, D(phi, T) and write it in R as D(phi(x, y, z, t), T(x, y, z, t)). Use only these names, numbers, + - * / ** and parentheses; write each derivative with Derivative, for example Derivative(rho_v(x, y, z, t), x)."
+  },
+  "hand_estimate": null
+}
