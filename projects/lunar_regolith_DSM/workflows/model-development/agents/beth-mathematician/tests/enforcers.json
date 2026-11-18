@@ -9,7 +9,7 @@
         "harness",
         "environment"
       ],
-      "status": "built (step 2: permissions, guard; step 3: sandbox, red-team PASS runs/model-development/beth-mathematician/20261117-172402_redteam)"
+      "status": "built (step 2: permissions, guard; step 3: sandbox, red-team PASS runs/model-development/beth-mathematician/20261117-173220_redteam)"
     },
     {
       "id": "N2",
@@ -28,7 +28,7 @@
         "harness",
         "environment"
       ],
-      "status": "built (step 1: tools; step 3: sandbox network, red-team PASS runs/model-development/beth-mathematician/20261117-172402_redteam)"
+      "status": "built (step 1: tools; step 3: sandbox network, red-team PASS runs/model-development/beth-mathematician/20261117-173220_redteam)"
     },
     {
       "id": "N4",
@@ -47,7 +47,7 @@
         "harness",
         "environment"
       ],
-      "status": "built (step 2: guard, permission deny; step 3: sandbox write limit, red-team PASS runs/model-development/beth-mathematician/20261117-172402_redteam)"
+      "status": "built (step 2: guard, permission deny; step 3: sandbox write limit, red-team PASS runs/model-development/beth-mathematician/20261117-173220_redteam)"
     },
     {
       "id": "N6",

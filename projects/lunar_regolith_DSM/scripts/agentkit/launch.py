@@ -139,11 +139,13 @@ def env_names(folder):
 
 def build_env(workspace, run_dir, policy, folder, fake=False):
     """Only the variables in the agent's env.allow pass through; the launcher sets the rest."""
+    # Not CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: it makes Claude Code force the permission mode to "default"
+    # (2026-11-17). Secrets are removed by env.allow here and by the sandbox's credentials deny list.
     env = {n: os.environ[n] for n in env_names(folder) if n in os.environ}
     tmp = workspace / ".tmp"
     tmp.mkdir(exist_ok=True)
     env.update(PATH=f"{PY.parent}{os.pathsep}/usr/bin{os.pathsep}/bin", TMPDIR=str(tmp),
-               CLAUDE_CODE_DISABLE_AUTO_MEMORY="1", CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="1",
+               CLAUDE_CODE_DISABLE_AUTO_MEMORY="1",
                AGENTKIT_WORKSPACE=str(workspace), AGENTKIT_BASH_ALLOW=json.dumps(policy["bash_allow"]),
                AGENTKIT_REQUIRED=json.dumps(policy.get("required_outputs", [])),
                AGENTKIT_GUARD_LOG=str(run_dir / "guard.jsonl"))
