@@ -22,7 +22,16 @@ the pore would set it.
   7SD-G-1,4,7        G = 10, 20, 50 K/m, warm end at the dead end (x = L): ice should move to the collector
   7SC-G-1,4,7        G = 10, 20, 50 K/m, warm end at the collector (x = 0)
 
-    venv_cryosuction/bin/python studies/cryosuction/scripts/make_type7_inputs.py [--set v5|sat] [--dry-run]
+Pumped warm collector (--set pump, user 2026-11-18): replaces 7SC. A warm collector saturated at its own
+T is the wettest point of the pore and feeds it (7SC ice grew 13-359 %). A heated device that collects must
+also remove vapor: the collector holds H_PUMP = 0.99 times the saturation density of its own temperature
+(rhov_bc.fracs "h-face"; the 1 % deficit of batch 1, now at the face's own T). 9 runs: C1, C4, C7 x G 10,
+20, 50 K/m, warm end at the collector, walls and ends as 7S. Controls: the batch-1 isothermal runs 7A-1/4/7
+(0.99 rho_vs(-20 C), which is the face's own T at G = 0).
+
+  7SP-G-1,4,7        G = 10, 20, 50 K/m, warm pumped collector (x = 0)
+
+    venv_cryosuction/bin/python studies/cryosuction/scripts/make_type7_inputs.py [--set v5|sat|pump] [--dry-run]
 """
 from __future__ import annotations
 
@@ -39,6 +48,7 @@ DAYS, N_OUT, G = 60, 401, 20.0
 GEOM = "type7v5_C{}_2D_L1800um_eps0.86um"
 LX, T0 = 1.8e-3, -20.0                  # pore length (preprocess/layouts/type7v5_C*.json) and mean T
 SAT_DAYS, SAT_G, SAT_CONFIGS = 120, (10.0, 20.0, 50.0), (1, 4, 7)
+H_PUMP = 0.99                           # pumped collector: humidity at the face's own temperature
 
 COMMON = """-temp -20.0
 -humidity 1.0
@@ -72,28 +82,37 @@ def experiment(name, head, thermal, dry, days=DAYS, collector=D2):
     return name
 
 
-def sat_experiment(G, warm, dry):
-    """Saturated set: grad_temp0 = +G (warm dead end, x = L) or -G (warm collector, x = 0); G = 0 control."""
+def sat_experiment(G, warm, dry, h=None):
+    """Saturated set: grad_temp0 = +G (warm dead end, x = L) or -G (warm collector, x = 0); G = 0 control.
+    h: pumped collector at h times the saturation density of its own temperature (None: saturated)."""
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from rhov_bc import fracs
     g = G if warm == "deadend" else -G
-    lo, _, Tlo, Thi, _ = fracs(T0, g, LX, "local-sat")
+    lo, _, Tlo, Thi, _ = fracs(T0, g, LX, "local-sat" if h is None else "h-face", 1.0 if h is None else h)
     tcold, twarm = min(Tlo, Thi), max(Tlo, Thi)
     s0 = LX if g > 0 else 0.0
     if G == 0:
         name, what = f"t7s_T-20_hsat_iso_wallT_theta60_{SAT_DAYS}d_n401_ac1e-2", "G = 0 control"
     else:
-        name = f"t7s_T-20_hsat_G{G:g}warm{warm}_wallT_theta60_{SAT_DAYS}d_n401_ac1e-2"
+        htag = "hsat" if h is None else f"hface{h:.3f}"
+        name = f"t7s_T-20_{htag}_G{G:g}warm{warm}_wallT_theta60_{SAT_DAYS}d_n401_ac1e-2"
         what = f"G = {G:g} K/m, warm end at the {'dead end (x = L)' if warm == 'deadend' else 'collector (x = 0)'}"
-    head = (f"# Plan type 7S (saturated, user 2026-11-17): {what}. Vapor saturated at start; the collector\n"
-            f"# holds the saturation density of its own temperature ({Tlo:.6f} C); T fixed on both ends and\n"
+    holds = ("the saturation density of its own temperature" if h is None
+             else f"{h:g} times the saturation density of its own temperature (pumped)")
+    head = (("# Plan type 7S (saturated, user 2026-11-17): " if h is None else "# Plan type 7SP (pumped, user 2026-11-18): ") + f"{what}. "
+            f"Vapor saturated at start; the collector\n"
+            f"# holds {holds} ({Tlo:.6f} C); T fixed on both ends and\n"
             f"# on the walls (linear wall profile from {twarm:.6f} C at x = {s0:g} m to {tcold:.6f} C).\n")
     thermal = (f"-grad_temp0 {g:.1f},0.0,0.0\n-flag_BC_Tfix 1\n-Tfix_faces x0,x1                        # ends at the IC values\n"
                f"-Twall_faces y0,y1                       # walls: T_w = T_init + dT (1 - |x - s0| / L), Nitsche\n"
                f"-Twall_profile linear\n-Twall_axis 0\n-Twall_s0 {s0:.6e}\n-Twall_length {LX:.6e}\n"
                f"-Twall_dT {abs(g) * LX:.6e}                    # G Lx\n-Twall_Tinit {tcold:.10f}             # cold end\n")
-    coll = (f"-rhovfix_lo {lo:.10f}                 # rho_vs({Tlo:.6f} C) / rho_vs(-20 C): saturated at the "
-            f"collector's own T (rhov_bc.py --T0 -20 --G {g:g} --Lx {LX:g} --local-sat)\n")
+    if h is None:
+        coll = (f"-rhovfix_lo {lo:.10f}                 # rho_vs({Tlo:.6f} C) / rho_vs(-20 C): saturated at the "
+                f"collector's own T (rhov_bc.py --T0 -20 --G {g:g} --Lx {LX:g} --local-sat)\n")
+    else:
+        coll = (f"-rhovfix_lo {lo:.10f}                 # {h:g} rho_vs({Tlo:.6f} C) / rho_vs(-20 C): pumped collector "
+                f"(rhov_bc.py --T0 -20 --G {g:g} --Lx {LX:g} --h-face {h:g})\n")
     return experiment(name, head, thermal, dry, days=SAT_DAYS, collector=coll)
 
 
@@ -114,13 +133,30 @@ def main_sat(dry) -> int:
     return 0
 
 
+def main_pump(dry) -> int:
+    rows = []
+    for G in SAT_G:
+        name = sat_experiment(G, "collector", dry, h=H_PUMP)
+        rows += [(f"7SP-{G:g}-{i}", name, i) for i in SAT_CONFIGS]
+    lines = [f"# Plan type 7SP (make_type7_inputs.py --set pump, {TODAY}): warm collector pumped to {H_PUMP:g} of the",
+             "# saturation density of its own T (replaces 7SC); C1, C4, C7 x G 10, 20, 50 K/m. 9 runs, 120 d."]
+    lines += [f"{GEOM.format(i)}:{e}   # {rid}" for rid, e, i in rows]
+    path = STUDY / "type7pump_tests.txt"
+    print(f"  {'(dry) ' if dry else ''}wrote {path.relative_to(ROOT)}  ({len(rows)} runs)")
+    if not dry:
+        path.write_text("\n".join(lines) + "\n")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--set", choices=("v5", "sat"), default="v5")
+    ap.add_argument("--set", choices=("v5", "sat", "pump"), default="v5")
     a = ap.parse_args()
     if a.set == "sat":
         return main_sat(a.dry_run)
+    if a.set == "pump":
+        return main_pump(a.dry_run)
     iso = experiment(
         f"t7_T-20_h0.990_iso_theta60_{DAYS}d_n401_ac1e-2",
         "# Plan type 7A (v5): isothermal harvest; collector at x = 0, sealed dead end at x = L.\n",

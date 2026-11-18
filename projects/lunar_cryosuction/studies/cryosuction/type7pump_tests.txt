@@ -1,0 +1,11 @@
+# Plan type 7SP (make_type7_inputs.py --set pump, 2026-11-18): warm collector pumped to 0.99 of the
+# saturation density of its own T (replaces 7SC); C1, C4, C7 x G 10, 20, 50 K/m. 9 runs, 120 d.
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hface0.990_G10warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SP-10-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hface0.990_G10warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SP-10-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hface0.990_G10warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SP-10-7
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hface0.990_G20warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SP-20-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hface0.990_G20warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SP-20-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hface0.990_G20warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SP-20-7
+type7v5_C1_2D_L1800um_eps0.86um:t7s_T-20_hface0.990_G50warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SP-50-1
+type7v5_C4_2D_L1800um_eps0.86um:t7s_T-20_hface0.990_G50warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SP-50-4
+type7v5_C7_2D_L1800um_eps0.86um:t7s_T-20_hface0.990_G50warmcollector_wallT_theta60_120d_n401_ac1e-2   # 7SP-50-7
