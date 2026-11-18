@@ -2,7 +2,7 @@
 
 Each scenario checks the verdict and the run record: PASS, FAIL, ABSTAIN, ERROR; the hooks really run through
 the composed settings; the audit catches a barrier that failed; PROVENANCE.md verifies against manifest.json;
-and a real model call is refused while any enforcer is unbuilt.
+and a real model call is refused while any enforcer is unbuilt or no red-team PASS matches the current barriers.
 """
 import json
 import os
@@ -134,6 +134,57 @@ class Gates(unittest.TestCase):
                 {"id": "N3", "rule": "c", "status": "tools: built; sandbox: planned step 3"}]}))
             self.assertEqual(launch.unbuilt_enforcers(Path(d)), ["N3 (c): tools: built; sandbox: planned step 3"])
             self.assertEqual(launch.unbuilt_enforcers(Path(d) / "missing"), ["tests/enforcers.json is missing"])
+
+    def write_redteam(self, runs, run_id, barrier, verdict="PASS", fake=False):
+        d = Path(runs) / f"{run_id}_redteam"
+        d.mkdir(parents=True)
+        (d / "manifest.json").write_text(json.dumps({"verdict": verdict, "fake": fake, "barrier": barrier}))
+
+    def test_redteam_gap_needs_a_real_pass_on_the_same_barriers(self):
+        fp = {"scripts/agentkit/guard.py": "aaa", "(Claude Code) version": "2.1.326"}
+        with tempfile.TemporaryDirectory() as runs:
+            self.assertIn("no red-team PASS", launch.redteam_gap(runs, fp)[0])
+            self.write_redteam(runs, "20261117-000001", fp, verdict="ERROR")
+            self.write_redteam(runs, "20261117-000002", fp, fake=True)
+            self.assertIn("no red-team PASS", launch.redteam_gap(runs, fp)[0])   # a failed or fake run never counts
+            self.write_redteam(runs, "20261117-000003", fp)
+            self.assertEqual(launch.redteam_gap(runs, fp), [])
+            changed = dict(fp, **{"scripts/agentkit/guard.py": "bbb"})
+            gap = launch.redteam_gap(runs, changed)
+            self.assertIn("20261117-000003", gap[0])
+            self.assertIn("scripts/agentkit/guard.py", gap[0])
+            self.assertNotIn("version", gap[0])
+
+    def test_fingerprint_covers_barriers_not_prompt_text(self):
+        definition, folder, _ = launch.find_agent(AGENT)
+        agent = launch.agentlib.load_agent(definition)
+        fp = launch.barrier_fingerprint(folder, agent, "v1")
+        for key in ("scripts/agentkit/guard.py", "scripts/agentkit/launch.py", "scripts/agentkit/base_settings.json",
+                    f"{launch.agentlib.rel(folder)}/settings.json", f"{launch.agentlib.rel(folder)}/guard.json",
+                    f"{launch.agentlib.rel(folder)}/env.allow", "(Claude Code) version"):
+            self.assertIn(key, fp)
+        self.assertNotIn(launch.agentlib.rel(definition), fp)
+        self.assertEqual(fp, launch.barrier_fingerprint(folder, dict(agent, system_prompt="other text"), "v1"))
+        self.assertNotEqual(fp, launch.barrier_fingerprint(folder, dict(agent, tools=agent["tools"] + ["WebFetch"]), "v1"))
+        self.assertNotEqual(fp, launch.barrier_fingerprint(folder, agent, "v2"))
+
+    def test_real_call_refused_without_a_current_redteam_pass(self):
+        """A stand-in not named fake_claude.py is treated as the real thing: the gates apply."""
+        with tempfile.TemporaryDirectory() as d:
+            stub = Path(d) / "claude_stub.py"
+            stub.write_text(FAKE.read_text())
+            runs = Path(d) / "runs"
+            with mock.patch.object(launch, "unbuilt_enforcers", return_value=[]):
+                with self.assertRaises(launch.LaunchError) as cm:
+                    launch.run_agent(AGENT, TASK, runs_root=runs, fake=str(stub))
+                self.assertIn("red-team", str(cm.exception))
+                self.assertFalse(runs.exists())                      # refused before any run folder or call
+                definition, folder, _ = launch.find_agent(AGENT)
+                fp = launch.barrier_fingerprint(folder, launch.agentlib.load_agent(definition),
+                                                "0.0.0 (fake_claude, tests only)")
+                self.write_redteam(runs, "20261117-000001", fp)
+                verdict, _ = launch.run_agent(AGENT, TASK, runs_root=runs, fake=str(stub))
+            self.assertEqual(verdict, "PASS")
 
     def test_name_must_be_unique(self):
         with tempfile.TemporaryDirectory() as d:

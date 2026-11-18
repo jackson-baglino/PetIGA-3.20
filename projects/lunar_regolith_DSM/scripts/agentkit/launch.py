@@ -6,7 +6,10 @@
 What one call does, in order:
  1. finds the agent by name: exactly one definition in workflows/*/agents/ or .claude/agents/;
  2. loads the definition (name, pinned model, tools) and checks the work order against the task schema;
- 3. refuses a real model call while any enforcer in the agent's tests/enforcers.json is still "planned";
+ 3. refuses a real model call while any enforcer in the agent's tests/enforcers.json is still "planned", or
+    when no red-team PASS is on record for exactly the current barriers (doc 29 §11, "drift"): the harness
+    files, the agent's settings.json, guard.json and env.allow, its tools and model, and the Claude Code
+    version. Any change to one of those needs a fresh `--redteam` run before the next real call;
  4. makes a run folder; the agent's working folder (workspace/) holds only a copy of task.json;
  5. composes the settings: the project base denies + the agent's own permissions + the standard hooks
     (guard.py before every tool call, stop_check.py when the agent stops); an agent's file may only narrow;
@@ -16,8 +19,7 @@ What one call does, in order:
  8. checks the answer against the answer schema and the required files, then runs the task's grader;
  9. writes manifest.json and PROVENANCE.md (hash-chained) with the verdict: PASS, FAIL, ABSTAIN or ERROR.
 
-Exit code: 0 PASS, 1 FAIL, 3 ABSTAIN, 4 ERROR, 5 refused before any call. Not yet here (doc 28, step 3): the
-OS sandbox profile and the environment allowlist; until then the agent inherits this process's environment.
+Exit code: 0 PASS, 1 FAIL, 3 ABSTAIN, 4 ERROR, 5 refused before any call.
 """
 import argparse
 import json
@@ -79,6 +81,38 @@ def unbuilt_enforcers(folder):
     if not f.is_file():
         return ["tests/enforcers.json is missing"]
     return [f"{e['id']} ({e['rule']}): {e['status']}" for e in load_json(f)["enforcers"] if "planned" in e["status"]]
+
+
+def barrier_fingerprint(folder, agent, version):
+    """What the red-team result depends on: every file that sets a barrier, the agent's tools and model, and the
+    Claude Code version (its sandbox is part of the barrier). Prompt text and tasks are not barriers."""
+    files = [*sorted(KIT.glob("*.py")), KIT / "base_settings.json", ROOT / "scripts" / "agentlib.py",
+             *(folder / n for n in ("settings.json", "guard.json", "env.allow"))]
+    fp = {agentlib.rel(f): agentlib.sha256(f) for f in files if f.is_file()}
+    fp["(definition) tools and model"] = json.dumps(
+        {k: agent[k] for k in ("model", "tools", "disallowed", "permission_mode")}, sort_keys=True)
+    fp["(Claude Code) version"] = version
+    return fp
+
+
+def redteam_gap(agent_runs, fingerprint):
+    """[] when a real red-team PASS on exactly these barriers is on record in `agent_runs`; else the reason."""
+    latest = None
+    for m in sorted(Path(agent_runs).glob("*_redteam/manifest.json"), reverse=True):
+        try:
+            man = load_json(m)
+        except (OSError, ValueError):
+            continue
+        if man.get("verdict") != "PASS" or man.get("fake", True) or not man.get("barrier"):
+            continue
+        if man["barrier"] == fingerprint:
+            return []
+        latest = latest or (m.parent.name, man["barrier"])
+    if latest is None:
+        return [f"no red-team PASS with a barrier record in {agentlib.rel(agent_runs)}"]
+    run, old = latest
+    changed = sorted(k for k in set(old) | set(fingerprint) if old.get(k) != fingerprint.get(k))
+    return [f"the latest red-team PASS ({run}) was on other barriers; changed since: {', '.join(changed)}"]
 
 
 def fill(value, root, workspace):
@@ -317,6 +351,16 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
         gaps = unbuilt_enforcers(folder)
         if gaps:
             raise LaunchError("refusing a real model call while enforcers are unbuilt:\n  " + "\n  ".join(gaps))
+    claude = [str(PY), str(fake)] if fake else [CLAUDE_BIN]
+    version = subprocess.run(claude + ["--version"], capture_output=True, text=True,
+                             stdin=subprocess.DEVNULL).stdout.strip()
+    barrier = barrier_fingerprint(folder, agent, version)
+    agent_runs = Path(runs_root or ROOT / "runs" / workflow / name)
+    if not redteam and not (fake and Path(fake).name == "fake_claude.py"):
+        gaps = redteam_gap(agent_runs, barrier)
+        if gaps:
+            raise LaunchError("refusing a real model call without a red-team PASS on the current barriers "
+                              f"(run `launch.py {name} --redteam` first):\n  " + "\n  ".join(gaps))
     answer_schema = load_json(folder / "schemas" / "result.schema.json")
     policy = load_json(folder / "guard.json")
     if redteam:
@@ -324,15 +368,13 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
         agent = dict(agent, system_prompt=DRIVER_PROMPT)
 
     run_id = f"{time.strftime('%Y%m%d-%H%M%S')}_{'redteam' if redteam else task_id}"
-    run_dir = Path(runs_root or ROOT / "runs" / workflow / name) / run_id
+    run_dir = agent_runs / run_id
     workspace = run_dir / "workspace"
     workspace.mkdir(parents=True)
     shutil.copyfile(task_file, workspace / "task.json")
     settings_path = run_dir / "settings.json"
     composed = compose_settings(folder, settings_path, workspace=workspace)
     env = build_env(workspace, run_dir, policy, folder, fake=bool(fake))
-    claude = [str(PY), str(fake)] if fake else [CLAUDE_BIN]
-    version = subprocess.run(claude + ["--version"], capture_output=True, text=True, env=env).stdout.strip()
     commit, dirty = git_state([definition, folder, KIT])
     hashes = {agentlib.rel(p): agentlib.sha256(p) for p in
               [definition, *sorted(q for q in folder.rglob("*") if q.is_file() and "__pycache__" not in q.parts),
@@ -380,7 +422,7 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
     blocked = [g for g in guard_log if not g["allowed"]]
     if redteam:
         return finish_redteam(run_dir, prov, events, problems, targets, decoy, started, seconds, code, name,
-                              agent, workflow, commit, dirty, version, hashes)
+                              agent, workflow, commit, dirty, version, hashes, barrier, bool(fake))
     answer = (result or {}).get("structured_output")
     answer_path = run_dir / "answer.json"
     if answer is None:
@@ -427,7 +469,7 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
 
 
 def finish_redteam(run_dir, prov, events, problems, targets, decoy, started, seconds, code, name, agent,
-                   workflow, commit, dirty, version, hashes):
+                   workflow, commit, dirty, version, hashes, barrier, fake):
     """Judge the probes, remove anything a probe managed to create, and write the record."""
     probes = parse_probes(events)
     failed = [p for p in probes if p["outcome"] not in ("skipped", p["expect"])]
@@ -452,8 +494,8 @@ def finish_redteam(run_dir, prov, events, problems, targets, decoy, started, sec
     manifest = {"run_id": run_dir.name, "agent": name, "model": agent["model"], "workflow": workflow,
                 "mode": "redteam", "started": started, "seconds": seconds, "verdict": verdict,
                 "problems": problems, "probes": len(probes), "git_commit": commit,
-                "uncommitted_definitions": dirty, "claude_code": version, "hashes": hashes,
-                "provenance_chain": final}
+                "uncommitted_definitions": dirty, "claude_code": version, "fake": fake, "hashes": hashes,
+                "barrier": barrier, "provenance_chain": final}
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     return verdict, run_dir
 
