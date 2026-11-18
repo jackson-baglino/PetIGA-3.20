@@ -240,6 +240,20 @@ build the new diffuse-domain model. Lab Report 3 is due tonight; its tutorial sh
   lower at φ = 1/2 for ρ_a ≪ ρ_i, c_i ≈ 2 c_a); (2) L(T) instead of constant L. One estimate was off: its
   radiative conductivity 4σT³d at 200 K and d = 100 µm is 1.8e-4 W/m/K, not 1e-5; the conclusion (negligible
   next to about 2 W/m/K) holds.
+- **T05 result** (`20261118-123403_T05_vapor_balance`): PASS, 58 s. Total water m = ρ_iφ + (1−φ)ρ_v, flux
+  through the gas fraction; its product-rule form is the code's vapor row (`assembly.c:188-191`) term for
+  term. Left out, with reasons: Stefan flow, Soret diffusion, Knudsen transport (folded into D(T)), adsorption.
+- **T06 result**: the first run (`20261118-123810`) FAILED on a grader fault (an unused declared symbol was
+  rejected); fixed (caed762a), and a regrade of the saved answer passes. Rerun `20261118-124045`: PASS with the
+  same f as the first run, f = 3γ/ε·φ²(1−φ)² + 3γε|∇φ|², the energy the code's row implies; 10–90 % width
+  2 ln 9 ε.
+- **T07 result** (`20261118-124517_T07_phase_field`): PASS, 90 s. φ_t = −M δG/δφ with G = F − ∫Δg h(φ),
+  h = φ³(10 − 15φ + 6φ²), so h′ = 30φ²(1−φ)² (the code's φ²(1−φ)² shape), and Δg = ρ_i R_v T (ρ_v − ρ_vs)/ρ_vs
+  (linearized ideal-vapor chemical potential). For the user: the code has a separate coupling α/ρ_i with
+  α = 3λ M/ε (λ from K&P's thin-interface analysis); the agent ties the coupling to the same mobility M by
+  thermodynamics. Whether the two agree is not checked; the sharp-interface limit decides it.
+- **Open:** `test_grade_T05.test_exchange_counted_twice` fails by design (an error of 1e-9 relative, below the
+  tolerance that lets an agent drop ρ_vφ_t); the user held its removal, decision pending.
 - Material properties stay general (they may depend on φ and T) until the equations are derived.
 - No fixed symbol list in a work order: a list can limit the scope of what the agent thinks to include. The
   agent names its own symbols, with meanings and units, in its answer.
