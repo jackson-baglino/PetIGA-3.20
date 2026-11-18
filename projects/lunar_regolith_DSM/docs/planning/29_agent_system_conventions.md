@@ -180,8 +180,8 @@ There are 196 tracked Python files [checked]:
   - the units-verification agents moved and that workflow archived (65353818);
   - Lab Report 3 at about 6 pm.
 - **2026-11-18** (the user may ask for this to run overnight):
-  1. Check in a fresh session that the `Edit(/workflows/*/agents/**)` ask rule in `.claude/settings.json`
-     prompts. It did not fire in the session where it was added.
+  1. ~~Check that the ask rule prompts.~~ Done 2026-11-17: a fresh headless session could write a control
+     file but not a file under `workflows/*/agents/`.
   2. Move the older agents' settings next to their definitions, and delete the five orphan permission files
      (§6).
   3. Build `scripts/agentkit/` as the one launcher, writing PROVENANCE.md (§10). The mathematician is its first
@@ -190,6 +190,16 @@ There are 196 tracked Python files [checked]:
   5. Write the convention tests (§5).
   6. Build the Python index (§7): a generated list plus a keep / archive / delete column with evidence, for the
      user to decide.
+  7. One file of model IDs (`workflows/models.json`: family to pinned ID) and a test that every agent's
+     frontmatter, the session model in `.claude/settings.json` and every script's model map agree with it.
+  8. Close the shell-command gap for the main session: the ask rule covers Claude Code's edit tools only, so
+     a script run from Bash can still change agent files. Options: a sandbox for the main session's Bash that
+     denies writes under `workflows/*/agents/`, and an approved hash per agent folder that the launcher
+     checks.
+
+Done on 2026-11-17 ahead of this list: agentkit steps 2–3 (launcher, guard, stop check, PROVENANCE.md,
+Claude Code sandbox in the project base, `env.allow`, red-team PASS 18/18). Item 4 (OS profiles around the
+whole launcher process) is still open.
 - **After that:** mathematician steps 3–5, then the next agent.
 
 ## 10. PROVENANCE.md for every workflow run
