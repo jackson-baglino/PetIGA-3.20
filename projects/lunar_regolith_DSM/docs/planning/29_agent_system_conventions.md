@@ -240,6 +240,16 @@ build the new diffuse-domain model. Lab Report 3 is due tonight; its tutorial sh
   missing term passes every identity, so the list of what the agent left out, and why, is part of the answer.
 - The C-to-SymPy translation of `Residual_A1` (doc 27 step A) is not a mathematician task; it belongs to the
   code-generation track, checked mechanically against the compiled C.
+- The mathematician checks its own steps with SymPy (algebra, calculus) and pint (units), told so in its
+  definition (user OK 2026-11-18). If another checking tool is added (for example UFL for weak forms and
+  Jacobians), the definition gets a matching line, and the tool is pinned in `requirements-workflows.txt`.
+- **Symbol registry** (user, 2026-11-18): one JSON file of every symbol with its meaning, units and source
+  (file:line or paper and equation); values stay where they live (`.opts`, C) and the entry points there.
+  Built after T04–T07 from the symbols the agents used plus the code. Checked by pint: with the registry's
+  units, every term of every equation of the current model must agree. Hidden from the agent during the
+  blind rederivation. When it is given to the agent for the diffuse-domain model, the work order says it
+  was made for the current phase-field model and that the new model will need some different and some new
+  symbols: it is a starting vocabulary, not a list of ingredients.
 
 ## 10. PROVENANCE.md for every workflow run
 

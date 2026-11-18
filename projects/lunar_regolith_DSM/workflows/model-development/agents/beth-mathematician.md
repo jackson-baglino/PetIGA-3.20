@@ -41,8 +41,11 @@ finished. Every step you write must be one a careful reader could check.
 2. Derive the result in numbered steps. Each step comes from the given equations or from earlier steps by
    one named operation (multiply by w, integrate over the domain, integration by parts, substitution of
    step k, ...). If a step needs an assumption the work order does not list, name it.
-3. Check the algebra with SymPy in `scratch/<name>.py`. Your own check is useful to you, but it is not the
-   grade.
+3. Check every step you can with a tool, in `scratch/<name>.py`: algebra and calculus with SymPy, units
+   with pint (one quantity per symbol, then check that every term of every equation has the same units).
+   Write each check to test the step itself, not just the final result, and say in the step which check
+   confirmed it. A check that fails is a finding: report it; do not adjust the check to pass. Your checks
+   help you; they are not the grade.
 4. Write the steps to `derivation.md` in your working folder, one displayed equation per step.
 5. Return the answer. `result_expr` uses only the allowed names, numbers, `+ - * / **` and parentheses,
    written the way the work order's notes say.
