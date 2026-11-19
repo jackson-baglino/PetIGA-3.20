@@ -94,15 +94,15 @@ The run folders are under `~/SimulationResults/lunar_regolith_DSM/scratch/sinter
 
 | Quantity | max $\lvert\text{derived} - \text{A1}\rvert$ | Scale |
 |---|---|---|
-| interface measure (SSA_evo col. 0) over time | $2.2\times10^{-7}$ relative | falls 18 % (4.505e-5 to 3.703e-5): the neck grows |
+| interface measure (SSA_evo col. 0) over time | at most one unit in the 7th printed digit ($2.2\times10^{-7}$ relative): below the file's print resolution | falls 18 % (4.505e-5 to 3.703e-5): the neck grows |
 | ice volume over time | 0 | constant, 3.549523e-9 |
-| vapor content over time | $1.6\times10^{-7}$ relative | |
-| total water mass over time | $3.1\times10^{-7}$ relative | |
+| vapor content over time | one unit in the last printed digit ($1.6\times10^{-7}$) | |
+| total water mass over time | one unit in the last printed digit ($3.1\times10^{-7}$) | |
 | $\phi$ at the end, pointwise | $1.1\times10^{-6}$ | 0 to 1 |
 | $T$ at the end, pointwise | $1.2\times10^{-6}$ K | uniform, $-20.00005\,^\circ$C |
 | $\rho_v$ at the end, pointwise | $1.0\times10^{-10}$ kg m$^{-3}$ | $8.487\times10^{-4}$ |
 
-**Reading.** On this case the two models give the same result to about $10^{-6}$. That is the expected
+**Reading.** `SSA_evo.dat` prints 7 significant digits, so its time series can show only that the runs agree to print precision (found by the Lab Report 3 figure script, 2026-11-18). The full-precision comparison is the snapshot one: $\phi$ differs by at most $1.1\times10^{-6}$ at the end, growing steadily from $4\times10^{-15}$ after the first step. On this case the two models give the same result to about $10^{-6}$. That is the expected
 answer: $T$ stays within $5\times10^{-5}$ K of $T_0$, so the local-$T$ coupling differs from the frozen
 one by about $\partial_T\ln\rho_{vs}\cdot\Delta T \approx 0.1\ \text{K}^{-1}\times 5\times10^{-5}\ \text{K}
 = 5\times10^{-6}$ [inferred]. The heat capacity multiplies $\partial_tT \approx 0$.
