@@ -1,7 +1,7 @@
 """Independent critique of a workflow design (workflows/literature-review/WORKFLOW.md, section 11).
 
 Each critic agent (.claude/agents/<name>.md) runs headless in a fresh empty folder holding only a copy of the
-design, through the units-verification caller (scripts/units_verification/agents.py: clean folder, pinned model,
+design, through scripts/agentlib.py (clean folder, pinned model,
 transcript audit, schema check, one retry). WebSearch is pre-approved because dontAsk mode refuses it otherwise.
 The critics run in parallel and never see each other's output.
 
@@ -19,7 +19,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "units_verification"))
-import agents  # noqa: E402
+sys.path.insert(0, str(HERE.parent))
+import agentlib  # noqa: E402
 import uvlib  # noqa: E402
 
 ROOT = uvlib.ROOT
@@ -53,7 +54,7 @@ def main():
                 (ROOT / args.focus).read_text()
 
     design = (ROOT / args.design).resolve()
-    paths = [args.design, "scripts/design_critique", "scripts/units_verification/agents.py"] + \
+    paths = [args.design, "scripts/design_critique", "scripts/agentlib.py"] + \
             ([args.focus] if args.focus else []) + \
             [f".claude/agents/{a}.md" for a in args.agents]
     dirty = uvlib.run(["git", "status", "--porcelain", "--", *paths], cwd=ROOT).strip()
@@ -62,7 +63,6 @@ def main():
     commit = uvlib.run(["git", "rev-parse", "HEAD"], cwd=ROOT).strip()
 
     schema = json.loads(SCHEMA_PATH.read_text())
-    agents.TIMEOUT_S = TIMEOUT_S
     run_id = args.run_id or uvlib.new_run_id()
     rdir = ROOT / "runs" / "design-critique" / run_id
     rdir.mkdir(parents=True, exist_ok=True)
@@ -71,9 +71,12 @@ def main():
 
     def one(name):
         try:
-            out, info = agents.call_agent(rdir, "critique", name, name, task, {"WORKFLOW.md": design}, schema,
-                                          check=check, allow=("WebSearch",))
-        except agents.AgentError as e:
+            # General agents live in .claude/agents/ (CLAUDE.md, "Where agents live"); the units-verification
+            # wrapper looked only in its own workflow folder after the 2026-11-17 move (65353818).
+            agent = agentlib.load_agent(ROOT / ".claude" / "agents" / f"{name}.md", name)
+            out, info = agentlib.call_agent(rdir, "critique", agent, name, task, schema, files={"WORKFLOW.md": design},
+                                            check=check, allow=("WebSearch",), timeout=TIMEOUT_S)
+        except agentlib.AgentError as e:
             return name, None, {"error": json.loads(str(e))}
         uvlib.write_json(rdir / "critiques" / f"{name}.json", out)
         return name, out, info
