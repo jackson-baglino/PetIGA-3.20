@@ -153,9 +153,10 @@ def main() -> int:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     plt.rcParams.update({"font.size": 8})
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6.5, 6.0), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.5, 6.0), sharex=True)
+    cmap = plt.cm.tab10 if len(tracks) <= 10 else plt.cm.tab20
     for k, (row, t, xi, ar, tm, xm, am) in enumerate(tracks):
-        c = plt.cm.tab10(k % 10)
+        c = cmap(k % cmap.N)
         lab = f"{row['kind']} wt {row['wt_um']:.0f}, G {row['G_K_per_m']:.2f}"
         ax1.plot(t / DAY, xi * 1e6, color=c, lw=1.2, label=lab)
         ax1.plot(tm / DAY, xm * 1e6, color=c, lw=0.9, ls="--")
@@ -165,7 +166,7 @@ def main() -> int:
     ax1.axhline(0, color="0.5", lw=0.6)
     ax1.set_ylabel("lens center from the throat [µm]\n(+ cold side)")
     ax1.set_title("solid: simulation; dashed: type5_model", fontsize=8)
-    ax1.legend(fontsize=7, ncol=2, frameon=False)
+    ax1.legend(fontsize=7, frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0))
     ax2.set_ylabel("lens area change [%]")
     ax2.set_xlabel("time [days]")
     fig.tight_layout()
