@@ -13,6 +13,7 @@
 - Thesis split: this project is paper 3 (literature review and the new model); paper 2 runs the frozen two-phase model in `projects/lunar_cryosuction` (tag `lunar_cryosuction/model-freeze-v1`); paper 1 is `enceladus_DSM`.  (2026-11-04 · user)
 - B1 (the literature-review line) is closed; the library is used on demand by the model line (`scripts/model_development/library_search.py`, `add_paper.py`), and claims are checked only when the model cites them.  (2026-11-16 · user)
 - Fable is not available on our account: a request for `claude-fable-5-1` was served by `claude-opus-5-5` without an error; a daily SessionStart hook (`~/.claude/hooks/fable_check.sh`) rechecks.  (2026-11-16 · user; probe)
+- On the rederivation tasks T04–T07 the single-prompt baseline with no tools (`--no-tools`) passed 4/4, the same as the agent; the agent's measured advantage is evidence at each step (20 of 25 steps checked, the baseline 0).  (2026-11-18 · run tutorial_20261118-172653; user-approved 2026-11-19)
 
 ## Solver
 
