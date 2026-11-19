@@ -6,13 +6,13 @@ the way Claude Code does (PreToolUse before each tool call, Stop before ending; 
 calls the hooks allow, and prints stream-json events like a real session. A scenario chosen by
 AGENTKIT_FAKE_SCENARIO decides what the "agent" tries:
 
-    pass       write derivation.md, run an allowed script, return the correct T01 answer
+    pass       write scratch/check.py, run it (an allowed script), return the correct T01 answer
     wrong      the same, but the answer has the conduction sign flipped
     blocked    return status "blocked" with a question
     probe      first try four forbidden things (read /etc/hosts, write ../PROVENANCE.md, curl, a chained
                command), then do what "pass" does
     bypass     read /etc/hosts WITHOUT asking the guard (a barrier that failed), then "pass"
-    forgets    try to stop before writing derivation.md, then write it when the Stop hook objects
+    forgets    try to stop before writing scratch/check.py, then write it when the Stop hook objects
     no_answer  end without a structured answer
 
 Notes for the tests go to AGENTKIT_FAKE_LOG (one JSON line each), including the full argument list.
@@ -70,6 +70,7 @@ class Session:
                         if ask_guard else (False, ""))
         if not blocked:
             if name == "Write":
+                Path(inp["file_path"]).parent.mkdir(parents=True, exist_ok=True)
                 Path(inp["file_path"]).write_text(inp["content"])
             out = "ok"
         else:
@@ -95,15 +96,20 @@ class Session:
 
 
 def answer(expr, status="done", questions=()):
-    return {"status": status, "result_expr": expr, "assumptions_used": ["rho, c constant"],
-            "symbols": [{"name": "k(x)", "meaning": "thermal conductivity", "units": "W m^-1 K^-1",
-                         "typical": 2}],
+    return {"status": status, "result_expr": expr, "result_latex": "\\int_0^L \\rho c\\,w\\,T_t\\,dx = 0",
+            "assumptions_used": ["$\\rho$ and $c$ are constant"],
+            "symbols": [{"name": "k(x)", "latex": "k(x)", "meaning": "thermal conductivity",
+                         "units": "W m^-1 K^-1", "typical": 2}],
             "neglected": [{"effect": "radiation", "why": "small at these temperatures"}],
             "questions": list(questions),
-            "steps": [{"id": "S1", "statement": "multiply by w and integrate", "from": ["given"],
-                       "operation": "multiply by w, integrate over (0, L)"},
-                      {"id": "S2", "statement": "integrate the conduction term by parts", "from": ["S1"],
-                       "operation": "integration by parts"}]}
+            "steps": [{"id": "S1", "title": "Weighted integral", "why": "Multiply the equation by a test function "
+                       "$w$ and integrate over the bar.", "from": ["given"],
+                       "operation": "multiply by w, integrate over (0, L)", "latex": "\\int_0^L w\\,T_t\\,dx = 0",
+                       "check": {"function": "check_s1", "printed": "0"}},
+                      {"id": "S2", "title": "Integration by parts", "why": "Move one derivative from $T$ onto $w$ "
+                       "so the form needs only first derivatives.", "from": ["S1"],
+                       "operation": "integration by parts", "latex": "\\int_0^L w_x\\,k\\,T_x\\,dx",
+                       "check": {"function": "", "printed": "identity, see S1"}}]}
 
 
 def main(argv):
@@ -113,7 +119,7 @@ def main(argv):
     note(argv=argv)
     scenario = os.environ.get("AGENTKIT_FAKE_SCENARIO", "pass")
     s = Session(argv)
-    deriv = {"file_path": str(Path.cwd() / "derivation.md"), "content": "S1 ... S2 ...\n"}
+    deriv = {"file_path": str(Path.cwd() / "scratch" / "check.py"), "content": "def check_s1():\n    print(0)\n"}
     if scenario == "probe":
         s.tool("Read", {"file_path": "/etc/hosts"})
         s.tool("Write", {"file_path": str(Path.cwd().parent / "PROVENANCE.md"), "content": "forged"})

@@ -1,53 +1,167 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "beth-mathematician answer",
-  "description": "The typed answer. Passed to Claude Code with --json-schema and validated again by the launcher; the grader reads result_expr.",
+  "description": "The typed answer. Passed to Claude Code with --json-schema and validated again by the launcher; the grader reads result_expr, and scripts/agentkit/render_derivation.py writes derivation.md from the rest.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["status", "result_expr", "symbols", "steps", "assumptions_used", "neglected", "questions"],
+  "required": [
+    "status",
+    "result_expr",
+    "result_latex",
+    "symbols",
+    "steps",
+    "assumptions_used",
+    "neglected",
+    "questions"
+  ],
   "properties": {
-    "status": {"enum": ["done", "blocked"]},
-    "result_expr": {"type": "string", "description": "The result as one SymPy expression, using only the work order's allowed names. Empty when blocked."},
+    "status": {
+      "enum": [
+        "done",
+        "blocked"
+      ]
+    },
+    "result_expr": {
+      "type": "string",
+      "description": "The result as one SymPy expression, using only the work order's allowed names. Empty when blocked."
+    },
     "steps": {
       "type": "array",
       "items": {
-        "type": "object", "additionalProperties": false,
-        "required": ["id", "statement", "from", "operation"],
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "why",
+          "from",
+          "operation",
+          "latex",
+          "check"
+        ],
         "properties": {
-          "id": {"type": "string", "pattern": "^S[0-9]+$"},
-          "statement": {"type": "string"},
-          "from": {"type": "array", "items": {"type": "string"}, "description": "IDs of earlier steps, or 'given'."},
-          "operation": {"type": "string", "description": "The named operation: multiply by w, integrate over (0, L), integration by parts, substitution of S3, ..."}
+          "id": {
+            "type": "string",
+            "pattern": "^S[0-9]+$"
+          },
+          "title": {
+            "type": "string",
+            "description": "A few words: what this step produces."
+          },
+          "why": {
+            "type": "string",
+            "minLength": 20,
+            "description": "One to three plain sentences: what this step does, and why it is the next step. Symbols in LaTeX between $...$, never Unicode or ASCII names."
+          },
+          "from": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "IDs of earlier steps, 'given', or assumption numbers A1, A2, ... (1-based, in the order of assumptions_used)."
+          },
+          "operation": {
+            "type": "string",
+            "description": "The named operation: multiply by w, integrate over (0, L), integration by parts, substitution of S3, ..."
+          },
+          "latex": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The step's one displayed equation in LaTeX, without $ delimiters. Every symbol in it is in the work order or in your symbols list."
+          },
+          "check": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "function",
+              "printed"
+            ],
+            "properties": {
+              "function": {
+                "type": "string",
+                "description": "The function in scratch/check.py that checks this step, or empty when the step has no check."
+              },
+              "printed": {
+                "type": "string",
+                "description": "What the check printed; or, with no function, why the step cannot be checked by a tool."
+              }
+            }
+          }
         }
-      }
+      },
+      "description": "The derivation as a linear story: each step follows from the given equations, the assumptions or earlier steps by one named operation. derivation.md is generated from these fields."
     },
     "symbols": {
       "type": "array",
-      "description": "Every symbol you introduced that the work order does not define: parameters, material properties, functions. A quantity that depends on others is a function; write its name with its arguments, for example k(phi, T). Units in SI, written like 'W m^-1 K^-1'; '1' for dimensionless.",
+      "description": "Every symbol you introduced that the work order does not define: parameters, material properties, functions. A quantity that depends on others is a function; write its name with its arguments, for example k(phi, T). Units in SI, written like 'W m^-1 K^-1'; '1' for dimensionless. Declare every symbol your step equations use that the work order does not define, including intermediate ones (a residual R, a curvature K, a profile phi_0).",
       "items": {
-        "type": "object", "additionalProperties": false,
-        "required": ["name", "meaning", "units", "typical"],
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "latex",
+          "meaning",
+          "units",
+          "typical"
+        ],
         "properties": {
-          "name": {"type": "string"},
-          "meaning": {"type": "string"},
-          "units": {"type": "string"},
-          "typical": {"type": "number", "description": "A typical value in the stated SI units for ice and vapor near 200 K, to the right order of magnitude (for a function, a typical value of the function)."}
+          "name": {
+            "type": "string"
+          },
+          "latex": {
+            "type": "string",
+            "description": "How the symbol is written in LaTeX, for example \\rho_{vs}(T) or M(\\phi, T); the same string you use in the step equations."
+          },
+          "meaning": {
+            "type": "string"
+          },
+          "units": {
+            "type": "string"
+          },
+          "typical": {
+            "type": "number",
+            "description": "A typical value in the stated SI units for ice and vapor near 200 K, to the right order of magnitude (for a function, a typical value of the function)."
+          }
         }
       }
     },
-    "assumptions_used": {"type": "array", "items": {"type": "string"}},
+    "assumptions_used": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Numbered A1, A2, ... in this order; write symbols in LaTeX between $...$."
+    },
     "neglected": {
       "type": "array",
       "description": "Every physical effect you considered and left out, with the reason it is small (an estimate where you can give one).",
       "items": {
-        "type": "object", "additionalProperties": false,
-        "required": ["effect", "why"],
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "effect",
+          "why"
+        ],
         "properties": {
-          "effect": {"type": "string"},
-          "why": {"type": "string"}
+          "effect": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
         }
       }
     },
-    "questions": {"type": "array", "items": {"type": "string"}, "description": "What stopped the work, or what the user should decide. Empty when done."}
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "What stopped the work, or what the user should decide. Empty when done."
+    },
+    "result_latex": {
+      "type": "string",
+      "description": "The result as one LaTeX equation (no $ delimiters), for example R = \\partial_t\\phi + ... = 0. Empty when blocked."
+    }
   }
 }

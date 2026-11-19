@@ -3,16 +3,16 @@
   "goal": "derive",
   "statement": "We are modeling the pore space of a granular material (lunar regolith) in which water ice sublimates and deposits. Treat the pore space as a three-dimensional region filled with solid ice and gas (air that contains water vapor). The local volume fraction of ice is the phase field phi(x, y, z, t), between 0 and 1: phi = 1 in ice and phi = 0 in gas. At phase coexistence the ice-gas interface is described by the free energy F[phi] given below, which you derived in an earlier task. Away from coexistence, ice deposits where the vapor density rho_v exceeds the saturation vapor density rho_vs(T) at the local temperature, and sublimates where rho_v is below it. There is no nucleation: ice grows or shrinks only where ice already meets gas. In this task rho_v and T are known fields; their equations are separate tasks. Derive the equation for how phi evolves in time, combining the relaxation of the interface toward the equilibrium described by F with the growth or sublimation driven by the departure of rho_v from rho_vs(T). State every assumption, and list every effect you leave out with the reason. Keep the coefficients general where you can, and say what each one means physically. Write the result as R = 0 in 3D Cartesian coordinates and return R.",
   "symbols": [
-    {"name": "x", "meaning": "first position coordinate", "units": "m"},
-    {"name": "y", "meaning": "second position coordinate", "units": "m"},
-    {"name": "z", "meaning": "third position coordinate", "units": "m"},
-    {"name": "t", "meaning": "time", "units": "s"},
-    {"name": "phi(x, y, z, t)", "meaning": "local volume fraction of ice (phase field), between 0 and 1", "units": "1"},
-    {"name": "T(x, y, z, t)", "meaning": "temperature", "units": "K"},
-    {"name": "rho_v(x, y, z, t)", "meaning": "vapor density: mass of water vapor per unit volume of gas", "units": "kg m^-3"},
-    {"name": "rho_vs(T)", "meaning": "saturation vapor density over a flat ice surface at temperature T", "units": "kg m^-3"},
-    {"name": "gamma", "meaning": "energy per unit area of the ice-gas interface, constant", "units": "J m^-2"},
-    {"name": "eps", "meaning": "the length that sets the width of the diffuse interface, constant", "units": "m"}
+    {"name": "x", "latex": "x", "meaning": "first position coordinate", "units": "m"},
+    {"name": "y", "latex": "y", "meaning": "second position coordinate", "units": "m"},
+    {"name": "z", "latex": "z", "meaning": "third position coordinate", "units": "m"},
+    {"name": "t", "latex": "t", "meaning": "time", "units": "s"},
+    {"name": "phi(x, y, z, t)", "latex": "\\phi", "meaning": "local volume fraction of ice (phase field), between 0 and 1", "units": "1"},
+    {"name": "T(x, y, z, t)", "latex": "T", "meaning": "temperature", "units": "K"},
+    {"name": "rho_v(x, y, z, t)", "latex": "\\rho_v", "meaning": "vapor density: mass of water vapor per unit volume of gas", "units": "kg m^-3"},
+    {"name": "rho_vs(T)", "latex": "\\rho_{vs}(T)", "meaning": "saturation vapor density over a flat ice surface at temperature T", "units": "kg m^-3"},
+    {"name": "gamma", "latex": "\\gamma", "meaning": "energy per unit area of the ice-gas interface, constant", "units": "J m^-2"},
+    {"name": "eps", "latex": "\\varepsilon", "meaning": "the length that sets the width of the diffuse interface, constant", "units": "m"}
   ],
   "given": [
     "F = Integral(3*gamma/eps*phi**2*(1 - phi)**2 + 3*gamma*eps*(Derivative(phi, x)**2 + Derivative(phi, y)**2 + Derivative(phi, z)**2), over the volume)"

@@ -48,7 +48,7 @@ Exit codes: 0 PASS, 1 FAIL, 3 ABSTAIN (the agent returned `blocked`), 4 ERROR, 5
 - **Permission rules** (`settings.json`): allow `Read(./**)`, `Edit(./**)`, `Bash(python scratch/*)`; deny `WebFetch`, `WebSearch`, `Agent`, `NotebookEdit`, `Skill`
 - **Every tool call** passes `scripts/agentkit/guard.py` first: file paths must resolve inside the working folder, PROVENANCE.md is never writable, and a shell command must be one plain command matching the allowlist
 - **Shell allowlist** (`guard.json`): `python scratch/[A-Za-z0-9_-]+\.py`
-- **Required outputs** (checked by `stop_check.py` before the agent may finish): `derivation.md`
+- **Required outputs** (checked by `stop_check.py` before the agent may finish): `scratch/check.py`
 - **Environment** (`env.allow`): HOME, USER, LOGNAME, LANG; the launcher adds PATH, TMPDIR and its own AGENTKIT_* variables and drops everything else
 
 ## Sandbox

@@ -17,7 +17,8 @@
         "properties": {
           "name": {"type": "string"},
           "meaning": {"type": "string"},
-          "units": {"type": "string"}
+          "units": {"type": "string"},
+          "latex": {"type": "string", "description": "How the symbol is written in LaTeX."}
         }
       }
     },

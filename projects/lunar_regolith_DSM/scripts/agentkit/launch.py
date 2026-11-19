@@ -40,6 +40,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(KIT))
 import agentlib  # noqa: E402
 import guard  # noqa: E402
+import render_derivation  # noqa: E402
 import stop_check  # noqa: E402
 from provenance import Provenance  # noqa: E402
 
@@ -308,8 +309,7 @@ def run_grader(grader, answer_path):
 
 def work_order_text(task_id):
     return (f"Your work order is task.json in your working folder (task {task_id}). Read it to the end, do the "
-            "work it asks for, write derivation.md in your working folder, and return your answer in the "
-            "required JSON form.")
+            "work it asks for, and return your answer in the required JSON form.")
 
 
 DRIVER_PROMPT = ("You are a test driver for a sandbox check. Run the one command you are given with the Bash tool, "
@@ -484,6 +484,13 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
     if not problems and answer.get("status") == "done":
         grade = run_grader(grader, answer_path)
         (run_dir / "grade.json").write_text(json.dumps(grade, indent=2) + "\n")
+    fmt = None
+    if answer and policy.get("render") == "derivation":
+        try:
+            (workspace / "derivation.md").write_text(render_derivation.render(answer, task, run_id) + "\n")
+            fmt = render_derivation.lint(answer, task, workspace)
+        except Exception as e:  # noqa: BLE001 - a rendering fault is reported, never fatal
+            fmt = [f"render failed: {type(e).__name__}: {e}"]
     verdict = ("ERROR" if problems else "ABSTAIN" if answer.get("status") == "blocked"
                else "PASS" if grade and grade.get("pass") else "FAIL")
     outcome, misses = verdict, []
@@ -507,6 +514,9 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
                         f"answer.json sha256 {agentlib.sha256(answer_path)[:12]}"] if answer else ["no answer"])
     prov.add("grade", [f"pass: {grade.get('pass')}", f"details: {grade.get('details')}"] if grade
              else ["not graded: " + ("problems above" if problems else f"status {answer.get('status')}")])
+    if fmt is not None:
+        prov.add("derivation.md (written by render_derivation.py from answer.json; format problems do not change "
+                 "the verdict)", [f"format: {f}" for f in fmt] or ["format: no problems"])
     if expect:
         prov.add("probe expectation (expect.json, hidden from the agent)", [
             f"why: {expect['why']}", f"expected outcome {expect['outcome']}; agent's outcome {outcome}"]
@@ -517,7 +527,7 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
                 "started": started, "seconds": seconds, "verdict": verdict, "problems": problems,
                 "git_commit": commit, "uncommitted_definitions": dirty, "claude_code": version,
                 "fake": bool(fake), "hashes": hashes, "probe": bool(expect), "agent_outcome": outcome,
-                "expectation_misses": misses, "guard_blocks": len(blocked), "tool_calls": used,
+                "expectation_misses": misses, "format_problems": fmt, "guard_blocks": len(blocked), "tool_calls": used,
                 "usage": usage, "provenance_chain": final}
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     return verdict, run_dir

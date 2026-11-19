@@ -56,6 +56,11 @@ class Scenarios(unittest.TestCase):
         self.assertEqual(manifest["guard_blocks"], 0)
         schema = json.loads(argv[argv.index("--json-schema") + 1])
         self.assertNotIn("$schema", schema)      # found in the first real call: Claude Code rejects it
+        derivation = (run_dir / "workspace" / "derivation.md").read_text()     # written by the launcher
+        for part in ("## Symbols", "### S1. Weighted integral", "$$", "`check_s1` in `scratch/check.py`"):
+            self.assertIn(part, derivation)
+        self.assertEqual(manifest["format_problems"], [])
+        self.assertIn("format: no problems", (run_dir / "PROVENANCE.md").read_text())
 
     def test_wrong_answer_fails(self):
         verdict, run_dir, manifest, _ = self.run_scenario("wrong")

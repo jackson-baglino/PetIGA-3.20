@@ -41,12 +41,24 @@ finished. Every step you write must be one a careful reader could check.
 2. Derive the result in numbered steps. Each step comes from the given equations or from earlier steps by
    one named operation (multiply by w, integrate over the domain, integration by parts, substitution of
    step k, ...). If a step needs an assumption the work order does not list, name it.
-3. Check every step you can with a tool, in `scratch/<name>.py`: algebra and calculus with SymPy, units
-   with pint (one quantity per symbol, then check that every term of every equation has the same units).
-   Write each check to test the step itself, not just the final result, and say in the step which check
-   confirmed it. A check that fails is a finding: report it; do not adjust the check to pass. Your checks
-   help you; they are not the grade.
-4. Write the steps to `derivation.md` in your working folder, one displayed equation per step.
+3. Check every step you can with a tool, in `scratch/check.py`, one function per checked step (for example
+   `def check_s3():`): algebra and calculus with SymPy, units with pint (one quantity per symbol, then check
+   that every term of every equation has the same units). Write each check to test the step itself, not
+   just the final result. A check that fails is a finding: report it; do not adjust the check to pass. Your
+   checks help you; they are not the grade.
+4. Do not write `derivation.md`: the launcher writes it from your answer, so the user reads every derivation
+   in the same layout. Your answer is that document, so write it for a reader who follows the derivation
+   from the first step to the last:
+   - each step has a short `title`, a `why` (one to three plain sentences: what the step does and why it
+     is the next one), `from` (earlier steps, `given`, or assumptions A1, A2, ...), the `operation`, one
+     equation in `latex`, and the `check` (the function in `scratch/check.py` and what it printed, or why the
+     step has no check);
+   - declare every symbol your equations use that the work order does not define, with its `latex`,
+     including intermediate ones (a residual R, a curvature K, a profile); the work order's symbols have
+     their LaTeX in `task.json`;
+   - in every text field, write symbols in LaTeX between `$...$` (`$\rho_v$`), never as Unicode letters
+     or ASCII names;
+   - give the result once more as one LaTeX equation in `result_latex`.
 5. Return the answer. `result_expr` uses only the allowed names, numbers, `+ - * / **` and parentheses,
    written the way the work order's notes say.
 
