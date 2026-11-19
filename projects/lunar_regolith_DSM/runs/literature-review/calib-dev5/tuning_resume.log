@@ -1,0 +1,36 @@
+li_2009 call 4: 2 items, 19.6 s
+li_2009 call 5: 1 items, 12.3 s
+usage this invocation: {"input_tokens": 8, "cache_creation_input_tokens": 28817, "cache_read_input_tokens": 32100, "output_tokens": 3149, "calls": 2, "calls_without_usage": 0}
+{
+ "per_kind": {
+  "changed_digit": {
+   "caught": 11,
+   "n": 11,
+   "lower_bound": 0.7616
+  },
+  "equation_sign_or_exponent": {
+   "caught": 2,
+   "n": 2,
+   "lower_bound": 0.2236
+  },
+  "wrong_unit": {
+   "caught": 1,
+   "n": 1,
+   "lower_bound": 0.05
+  }
+ },
+ "by_source": {
+  "script": {
+   "caught": 14,
+   "n": 14,
+   "lower_bound": 0.8074
+  }
+ },
+ "controls_flagged": 5,
+ "controls": 30,
+ "control_verdicts": {
+  "supported": 27,
+  "overstated": 2,
+  "unsupported": 1
+ }
+}
