@@ -40,6 +40,18 @@ class Passes(unittest.TestCase):
         self.assertEqual(failed(f"Derivative({P}, t) + Lphi({TT})*{MU} - {drive}"), (True, []))
 
 
+    def test_unused_symbol_with_typical_zero(self):
+        """Found in run 20261118-162313: the agent declared the residual R with typical value 0. A symbol the
+        result does not use needs no size."""
+        syms = SYMS + [{"name": "R", "meaning": "residual", "units": "s^-1", "typical": 0}]
+        self.assertEqual(failed(RIGHT, syms), (True, []))
+
+    def test_used_symbol_with_typical_zero_refused(self):
+        syms = [dict(s, typical=0) if s["name"] == "rho_ice" else s for s in SYMS]
+        ok, why = failed(RIGHT, syms)
+        self.assertFalse(ok)
+
+
 class PlantedErrorsFail(unittest.TestCase):
     def test_nucleation_in_gas(self):
         drive = f"beta({TT})/eps*({RV} - rho_vs({TT}))/rho_ice"

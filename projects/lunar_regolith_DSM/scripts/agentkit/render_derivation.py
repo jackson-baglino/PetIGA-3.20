@@ -123,22 +123,49 @@ def check_functions(workspace):
     return set(re.findall(r"^def\s+([A-Za-z_]\w*)\s*\(", f.read_text(), re.M)) if f.exists() else None
 
 
+ATOM = re.compile(r"(\\[A-Za-z]+|[A-Za-z])(?:_(\{[^{}]*\}|[A-Za-z0-9]))?")
+WRAPPERS = re.compile(r"\\(?:mathbf|boldsymbol|bm|hat|dot|ddot|tilde|bar|vec|overline)\s*(?:\{([^{}]*)\}|(\\?[A-Za-z]))")
+NOTATION = {"d", "n", "V", "S", "A", "\\partial", "\\nabla", "\\delta", "\\infty"}  # differentials, normal, region
+
+
+def atoms(latex):
+    """The symbols of a LaTeX string as (base, subscript) pairs: \\rho_{vs} -> ('\\rho', 'vs'), h_i -> ('h', 'i').
+    Text blocks are dropped, decorations (\\mathbf{q}, \\dot m) are unwrapped, and anything inside the
+    subscript braces is not looked at."""
+    s = re.sub(r"\\(text|mathrm|operatorname|mathit)\{[^{}]*\}", " ", latex or "")
+    s = WRAPPERS.sub(lambda m: m.group(1) or m.group(2), s)
+    out = []
+    for m in ATOM.finditer(s):
+        base, sub = m.group(1), (m.group(2) or "").strip("{}").replace(" ", "")
+        out.append((base, sub))
+    return out
+
+
+def declared_atoms(latex):
+    """The symbol a declared LaTeX string names: its atoms outside any argument list, h_i(T) -> h_i."""
+    head = re.split(r"[(\[]", latex or "", maxsplit=1)[0]
+    return {(b, sub) for b, sub in atoms(head)}
+
+
 def leftover_symbols(latex, declared):
-    s = re.sub(r"\\(text|mathrm|operatorname|mathit)\{[^{}]*\}", " ", latex)
-    s = re.sub(r"_\{(\w)\}", r"_\1", s)
-    for d in sorted(declared, key=len, reverse=True):
-        d = re.sub(r"_\{(\w)\}", r"_\1", d)
-        if d:
-            s = s.replace(d, " ")
-    found = {f"\\{g}" for g in re.findall(r"\\([A-Za-z]+)", s) if g in GREEK}
-    s = re.sub(r"\\[A-Za-z]+", " ", s)
-    found |= {c for c in re.findall(r"(?<![A-Za-z])([A-Za-z])(?![A-Za-z])", s) if c not in LETTER_OK}
+    """Greek letters and single Latin letters in a step equation that no declared symbol accounts for."""
+    known = set()
+    for d in declared:
+        known |= declared_atoms(d)
+    found = set()
+    for base, sub in atoms(latex):
+        is_symbol = (base.startswith("\\") and base[1:] in GREEK) or len(base) == 1
+        if not is_symbol or base in NOTATION or (base, sub) in known or (sub and (base, "") in known
+                                                                         and sub.isdigit()):
+            continue
+        found.add(base + (f"_{{{sub}}}" if sub else ""))
     return sorted(found)
 
 
 def lint(answer, task, workspace):
     problems = []
     declared = [latex_of(s) for s in task.get("symbols", []) + answer.get("symbols", [])]
+    declared += [m.group(1) for g in task.get("given", []) for m in [re.match(r"\s*([A-Za-z]\w*)\s*=", g)] if m]
     funcs = check_functions(workspace)
     texts = [("assumption", a) for a in answer.get("assumptions_used", [])]
     texts += [(f"neglected '{n.get('effect', '')[:30]}'", n.get("effect", "") + " " + n.get("why", ""))

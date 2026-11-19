@@ -77,8 +77,9 @@ def declared(symbols, fixed):
             typical = sp.Rational(str(s.get("typical")))
         except (TypeError, ValueError):
             raise Reject(f"symbol {name!r} has no numeric typical value") from None
-        if typical == 0:
-            raise Reject(f"symbol {name!r} has a typical value of 0")
+        # A typical value of 0 is refused only for a symbol the result uses (concrete); the agent may declare
+        # intermediate symbols with no natural size (a residual R, an enthalpy with an arbitrary zero).
+        # Found in runs 20261118-161936 (h_v) and 20261118-162313 (R).
         out[name] = (sp.Function(name) if is_func else sp.Symbol(name, real=True), quantity(s.get("units")), typical)
     return out
 
@@ -148,8 +149,13 @@ def concrete(expr, decl, fields, seed):
     sizes (rho_ice - rho_v) is judged at physical sizes."""
     rng = random.Random(seed)
     e = expr
-    for obj, _, typical in decl.values():
+    used = expr.free_symbols | {a.func for a in expr.atoms(AppliedUndef)}
+    for name, (obj, _, typical) in decl.items():
         factor = sp.Rational(rng.randint(2, 8), 4)
+        if obj not in used:
+            continue
+        if typical == 0:
+            raise Reject(f"symbol {name!r} is used in the result but has a typical value of 0")
         if isinstance(obj, sp.Symbol):
             e = e.subs(obj, typical * factor)
         else:
