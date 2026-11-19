@@ -11,8 +11,9 @@ settings: the periodic cell (5P) for -periodic_x 1 runs, the ends model (5G, 5S)
 h taken from the run's -rhovfix_lo (h = frac / (rho_vs(T_warm)/rho_vs(T0)), rhov_bc.fracs) and
 G from -grad_temp0. Water closure is read from water_budget.csv when present.
 
-Writes <out>/type5_summary.csv and <out>/type5_lens.png (center and area against time, run and
-model), and prints one line per run.
+Writes <out>/type5_summary.csv, <out>/type5_lens.png (center and area against time, run and
+model) and <out>/type5_velocity.png (warm-face, cold-face and centroid velocities from ice_bodies.csv,
+--window-day running mean, with the model center velocity), and prints one line per run.
 
     venv_cryosuction/bin/python studies/cryosuction/scripts/analyze_type5.py <batch or run folders...> [--out DIR]
 """
@@ -66,7 +67,9 @@ def settings(run: Path):
 
 
 def lens_track(run: Path, lx: float):
-    """arrays t [s], xi [m] (center from the throat), A/A0, from the largest body per step."""
+    """arrays t [s], xi [m] (center from the throat), A/A0, from the largest body per step, and a
+    dict of that body's velocities [m/s] from ice_bodies.csv: v_face_lo (warm face), v_face_hi
+    (cold face), v_com_x (area centroid); + = toward the cold end."""
     f = run / "ice_bodies.csv"
     if not f.exists():
         raise FileNotFoundError(f"{f} missing: run postprocess/ice_bodies.py --dir {run} first")
@@ -76,12 +79,63 @@ def lens_track(run: Path, lx: float):
             s = int(r["step"])
             a = float(r["area_m2"])
             if s not in best or a > best[s][1]:
-                best[s] = (float(r["t_s"]), a, float(r["face_lo"]), float(r["face_hi"]))
+                best[s] = (float(r["t_s"]), a, float(r["face_lo"]), float(r["face_hi"]),
+                           float(r["v_face_lo"]), float(r["v_face_hi"]), float(r["v_com_x"]))
     rows = [best[s] for s in sorted(best)]
     t = np.array([r[0] for r in rows])
     A = np.array([r[1] for r in rows])
     xc = 0.5 * (np.array([r[2] for r in rows]) + np.array([r[3] for r in rows]))
-    return t, xc - 0.5 * lx, A / A[0]
+    vel = {k: np.array([r[4 + j] for r in rows]) for j, k in enumerate(("v_face_lo", "v_face_hi", "v_com_x"))}
+    return t, xc - 0.5 * lx, A / A[0], vel
+
+
+def smooth_rate(t, v, window):
+    """v averaged over +-window/2 in time (box filter on the non-uniform snapshot times): the
+    event snapshots (-outp_dphi) put some snapshots minutes apart, where np.gradient is noisy."""
+    out = np.empty_like(v)
+    for i, ti in enumerate(t):
+        m = np.abs(t - ti) <= 0.5 * window
+        out[i] = np.mean(v[m])
+    return out
+
+
+def velocity_figure(tracks, out, window):
+    """one panel per run: warm-face, cold-face and centroid velocity [um/day], model center (dashed)."""
+    import matplotlib.pyplot as plt
+    n = len(tracks)
+    ncol = 3
+    nrow = (n + 1 + ncol - 1) // ncol
+    fig, axs = plt.subplots(nrow, ncol, figsize=(7.5, 2.0 * nrow), sharex=True)
+    axs = axs.ravel()
+    um_d = 1e6 * DAY
+    for ax, (row, t, _xi, _ar, vel, tm, xm, _am) in zip(axs, tracks):
+        d = t / DAY
+        ax.plot(d, smooth_rate(t, vel["v_face_lo"], window) * um_d, color="tab:red", lw=1.0, label="warm face")
+        ax.plot(d, smooth_rate(t, vel["v_face_hi"], window) * um_d, color="tab:blue", lw=1.0, label="cold face")
+        ax.plot(d, smooth_rate(t, vel["v_com_x"], window) * um_d, color="k", lw=1.2, label="center of mass")
+        if len(tm) > 2:
+            ax.plot(tm / DAY, np.gradient(xm, tm) * um_d, color="0.45", lw=1.0, ls="--", label="model center")
+        ax.axhline(0, color="0.6", lw=0.5)
+        ax.set_title(f"{row['kind']} wt {row['wt_um']:.0f} um, G {row['G_K_per_m']:.2f} K/m", fontsize=8)
+    for ax in axs[n:]:
+        ax.axis("off")
+    h, lab = axs[0].get_legend_handles_labels()
+    axs[n].legend(h, lab, loc="center", fontsize=8, frameon=False,
+                  title=f"+ = toward the cold end\n{window / DAY:g} d running mean", title_fontsize=8)
+    for ax in axs[:n]:
+        ax.tick_params(labelsize=7)
+    for k in range(n):
+        if k % ncol == 0:
+            axs[k].set_ylabel("velocity [um/day]", fontsize=8)
+        if k >= n - ncol:
+            axs[k].set_xlabel("time [days]", fontsize=8)
+            axs[k].xaxis.set_tick_params(labelbottom=True)
+    fig.tight_layout()
+    from figcheck import check_figure
+    for problem in check_figure(fig):
+        print(f"  figcheck: {problem}")
+    fig.savefig(out / "type5_velocity.png", dpi=200)
+    print(f"wrote {out / 'type5_velocity.png'}")
 
 
 def model_track(st, lens0, start0, days):
@@ -115,6 +169,7 @@ def main() -> int:
     ap.add_argument("paths", nargs="+")
     ap.add_argument("--out", default=None, help="output folder (default: the first path)")
     ap.add_argument("--lens", type=float, default=1.0e-4, help="initial lens length on the axis [m]")
+    ap.add_argument("--window", type=float, default=5.0, help="running-mean window for the velocities [days]")
     ap.add_argument("--start", type=float, default=7.0e-5, help="initial center, cold side of the throat [m]")
     a = ap.parse_args()
     runs = run_folders(a.paths)
@@ -125,7 +180,7 @@ def main() -> int:
     for run in runs:
         st = settings(run)
         try:
-            t, xi, ar = lens_track(run, st["Lx"])
+            t, xi, ar, vel = lens_track(run, st["Lx"])
         except FileNotFoundError as e:
             print(f"SKIP {run.name}: {e}")
             continue
@@ -139,7 +194,7 @@ def main() -> int:
                "xi_model_end_um": f"{x_model_end * 1e6:.2f}", "area_end_rel": f"{ar[-1] - 1:+.4f}",
                "area_maxdev": f"{np.max(np.abs(ar - 1)):.4f}", "water_closure": f"{water_closure(run):.2e}"}
         rows.append(row)
-        tracks.append((row, t, xi, ar, tm, xm, am))
+        tracks.append((row, t, xi, ar, vel, tm, xm, am))
         print(f"{kind} wt {st['wt'] * 1e6:5.1f} um, G {st['G']:5.2f} K/m, {days:6.1f} d: lens center "
               f"{side_words(xi[-1])} (model {side_words(x_model_end)}); area {ar[-1] - 1:+.2%}  {run.name}")
     if not rows:
@@ -155,7 +210,7 @@ def main() -> int:
     plt.rcParams.update({"font.size": 8})
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.5, 6.0), sharex=True)
     cmap = plt.cm.tab10 if len(tracks) <= 10 else plt.cm.tab20
-    for k, (row, t, xi, ar, tm, xm, am) in enumerate(tracks):
+    for k, (row, t, xi, ar, _vel, tm, xm, am) in enumerate(tracks):
         c = cmap(k % cmap.N)
         lab = f"{row['kind']} wt {row['wt_um']:.0f}, G {row['G_K_per_m']:.2f}"
         ax1.plot(t / DAY, xi * 1e6, color=c, lw=1.2, label=lab)
@@ -175,6 +230,8 @@ def main() -> int:
         print(f"  figcheck: {problem}")
     fig.savefig(out / "type5_lens.png", dpi=200)
     print(f"wrote {out / 'type5_summary.csv'} and {out / 'type5_lens.png'}")
+    plt.close(fig)
+    velocity_figure(tracks, out, a.window * DAY)
     return 0
 
 
