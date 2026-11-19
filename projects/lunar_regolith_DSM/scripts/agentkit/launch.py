@@ -307,6 +307,17 @@ def run_grader(grader, answer_path):
     return g
 
 
+BASELINE_NOTE = ("\n\n## This run: single-prompt baseline\n\nIn this run you have no tools: you cannot read "
+                 "or write files or run scripts, so ignore the steps above that use them. The work order is in "
+                 "the prompt. Derive the result without tool checks; for each step's check, give an empty "
+                 "function and write 'no tools in this run'.")
+
+
+def baseline_order(task_file):
+    return ("Your work order (task.json) follows. Do the work it asks for and return your answer in the required "
+            "JSON form.\n\n" + Path(task_file).read_text())
+
+
 def work_order_text(task_id):
     return (f"Your work order is task.json in your working folder (task {task_id}). Read it to the end, do the "
             "work it asks for, and return your answer in the required JSON form.")
@@ -375,9 +386,11 @@ def parse_probes(events):
     return probes
 
 
-def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redteam=False):
+def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redteam=False, no_tools=False):
     """Run one task. Returns (verdict, run folder). `fake` is the path of a stand-in for `claude` (tests only).
-    redteam=True runs the escape probes in the agent's real sandbox instead of the task (doc 29 §5)."""
+    redteam=True runs the escape probes in the agent's real sandbox instead of the task (doc 29 §5).
+    no_tools=True is the single-prompt baseline: the same model, definition, work order, answer schema and grader,
+    but no tools (so no SymPy or pint checks and no files); the work order is put in the prompt."""
     fake = str(Path(fake).resolve()) if fake else None          # the agent runs in its own folder, so
     runs_root = Path(runs_root).resolve() if runs_root else None  # every path we pass must be absolute
     definition, folder, workflow = find_agent(name)
@@ -412,8 +425,12 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
     if redteam:
         policy = dict(policy, required_outputs=[])
         agent = dict(agent, system_prompt=DRIVER_PROMPT)
+    if no_tools:
+        policy = dict(policy, required_outputs=[])
+        agent = dict(agent, tools=[], system_prompt=agent["system_prompt"] + BASELINE_NOTE)
 
-    run_id = f"{time.strftime('%Y%m%d-%H%M%S')}_{'redteam' if redteam else task_id}"
+    suffix = "redteam" if redteam else f"{task_id}_baseline" if no_tools else task_id
+    run_id = f"{time.strftime('%Y%m%d-%H%M%S')}_{suffix}"
     run_dir = agent_runs / run_id
     workspace = run_dir / "workspace"
     workspace.mkdir(parents=True)
@@ -435,7 +452,8 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
         f"{agentlib.sha256(grader)[:12]})",
         f"git commit: {commit[:10]}; uncommitted definition files: {dirty or 'none'}",
         f"Claude Code: {version or 'unknown'}" + (" (FAKE, no model called)" if fake else ""),
-        f"tools: {', '.join(agent['tools'])}; disallowed: {', '.join(agent['disallowed'])}",
+        ("MODE: single-prompt baseline (--no-tools): no tools, work order in the prompt; " if no_tools else "")
+        + f"tools: {', '.join(agent['tools']) or 'none'}; disallowed: {', '.join(agent['disallowed'])}",
         f"working folder: {agentlib.rel(workspace)}; settings: {agentlib.rel(settings_path)}",
         "file hashes: see manifest.json"])
 
@@ -443,7 +461,8 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
     if redteam:
         targets, decoy = redteam_setup(run_dir, workspace, folder, grader)
     cli_schema = {k: v for k, v in answer_schema.items() if k != "$schema"}   # Claude Code rejects "$schema"
-    cmd = agentlib.command(agent, REDTEAM_ORDER if redteam else work_order_text(task_id), cli_schema,
+    order = REDTEAM_ORDER if redteam else baseline_order(task_file) if no_tools else work_order_text(task_id)
+    cmd = agentlib.command(agent, order, cli_schema,
                            settings=settings_path, allow=composed["permissions"]["allow"])
     cmd = claude + cmd[1:]
     started, t0, timed_out = now(), time.time(), False
@@ -527,7 +546,8 @@ def run_agent(name, task_id, runs_root=None, fake=None, timeout=TIMEOUT_S, redte
                 "started": started, "seconds": seconds, "verdict": verdict, "problems": problems,
                 "git_commit": commit, "uncommitted_definitions": dirty, "claude_code": version,
                 "fake": bool(fake), "hashes": hashes, "probe": bool(expect), "agent_outcome": outcome,
-                "expectation_misses": misses, "format_problems": fmt, "guard_blocks": len(blocked), "tool_calls": used,
+                "expectation_misses": misses, "format_problems": fmt,
+                "mode": "baseline-no-tools" if no_tools else "task", "guard_blocks": len(blocked), "tool_calls": used,
                 "usage": usage, "provenance_chain": final}
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     return verdict, run_dir
@@ -571,10 +591,13 @@ def main(argv=None):
     ap.add_argument("--task", required=True)
     ap.add_argument("--runs-root", help="folder for the run (default runs/<workflow>/<agent>/)")
     ap.add_argument("--redteam", action="store_true", help="run the escape probes in the agent's sandbox")
+    ap.add_argument("--no-tools", action="store_true",
+                    help="single-prompt baseline: same model, work order, schema and grader, but no tools")
     ap.add_argument("--fake", help=argparse.SUPPRESS)          # tests: path of fake_claude.py
     a = ap.parse_args(argv)
     try:
-        verdict, run_dir = run_agent(a.agent, a.task, a.runs_root, a.fake, redteam=a.redteam)
+        verdict, run_dir = run_agent(a.agent, a.task, a.runs_root, a.fake, redteam=a.redteam,
+                                     no_tools=a.no_tools)
     except LaunchError as e:
         print(f"refused: {e}", file=sys.stderr)
         return 5

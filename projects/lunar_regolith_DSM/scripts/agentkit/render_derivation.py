@@ -155,8 +155,8 @@ def leftover_symbols(latex, declared):
     found = set()
     for base, sub in atoms(latex):
         is_symbol = (base.startswith("\\") and base[1:] in GREEK) or len(base) == 1
-        if not is_symbol or base in NOTATION or (base, sub) in known or (sub and (base, "") in known
-                                                                         and sub.isdigit()):
+        derivative_or_index = sub and (sub.isdigit() or set(sub) <= set("xyztX"))   # T_t, w_x, phi_0
+        if not is_symbol or base in NOTATION or (base, sub) in known or (derivative_or_index and (base, "") in known):
             continue
         found.add(base + (f"_{{{sub}}}" if sub else ""))
     return sorted(found)

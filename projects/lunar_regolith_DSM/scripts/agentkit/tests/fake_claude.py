@@ -14,6 +14,7 @@ AGENTKIT_FAKE_SCENARIO decides what the "agent" tries:
     bypass     read /etc/hosts WITHOUT asking the guard (a barrier that failed), then "pass"
     forgets    try to stop before writing scratch/check.py, then write it when the Stop hook objects
     no_answer  end without a structured answer
+    answer_only  call no tools; return the correct answer (the --no-tools baseline)
 
 Notes for the tests go to AGENTKIT_FAKE_LOG (one JSON line each), including the full argument list.
 """
@@ -119,6 +120,9 @@ def main(argv):
     note(argv=argv)
     scenario = os.environ.get("AGENTKIT_FAKE_SCENARIO", "pass")
     s = Session(argv)
+    if scenario == "answer_only":
+        s.finish(answer(CORRECT))
+        return 0
     deriv = {"file_path": str(Path.cwd() / "scratch" / "check.py"), "content": "def check_s1():\n    print(0)\n"}
     if scenario == "probe":
         s.tool("Read", {"file_path": "/etc/hosts"})

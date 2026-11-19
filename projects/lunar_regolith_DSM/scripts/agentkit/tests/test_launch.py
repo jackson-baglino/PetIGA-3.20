@@ -114,6 +114,19 @@ class Scenarios(unittest.TestCase):
         argv = notes[0]["argv"]
         self.assertIn("Bash(python scratch/*)", argv[argv.index("--allowedTools") + 1])
 
+    def test_no_tools_baseline(self):
+        with mock.patch.dict(os.environ, {"AGENTKIT_FAKE_SCENARIO": "answer_only",
+                                          "AGENTKIT_FAKE_LOG": str(self.log)}):
+            verdict, run_dir = launch.run_agent(AGENT, TASK, runs_root=self.tmp.name, fake=str(FAKE), no_tools=True)
+        manifest = json.loads((run_dir / "manifest.json").read_text())
+        argv = json.loads(self.log.read_text().splitlines()[0])["argv"]
+        self.assertEqual(verdict, "PASS", manifest["problems"])
+        self.assertEqual(argv[argv.index("--tools") + 1], "")
+        self.assertIn('"task_id"', argv[argv.index("-p") + 1])           # the work order is in the prompt
+        self.assertIn("single-prompt baseline", argv[argv.index("--system-prompt") + 1])
+        self.assertEqual(manifest["mode"], "baseline-no-tools")
+        self.assertTrue(run_dir.name.endswith("_baseline"))
+
     def test_stop_hook_sends_the_agent_back(self):
         verdict, _, manifest, notes = self.run_scenario("forgets")
         stops = [n for n in notes if n.get("stop")]
