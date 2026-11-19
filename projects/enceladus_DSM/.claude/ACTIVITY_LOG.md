@@ -1,3 +1,10 @@
+## 2026-11-19 — Intuition for the homogenization t vectors
+
+- Read Calonne 2011/2014/2019 and Auriault 2009 (ch. 4, heat conduction; the bilaminate example) for how they describe the corrector t. Calonne 2014 is the only one with a physical gloss ("fluctuations of the temperature field induced by a macroscopic gradient").
+- Checked the picture on the master run's saved t_x (corrector/, step 29 and 238): ice carries on average 0.29 G at 0 d and 0.50 G at 30 d, air 2.3 G and 2.0 G; t_x falls about 0.9 um per um inside grains (grains nearly isothermal). Read-only; nothing committed besides this entry.
+
+---
+
 ## 2026-11-18 — Figure 1(b) snapshot-spacing variants
 
 - The -20 C master run (phi 0.325, seed 1702) saved only 0/10/19/30 d, so a log-spaced strip cannot come from it alone. The same packing at -40/-30/-10/-5 C fills the missing ages via the tau_sub time rescaling; checked on the phase field (matched ages differ in 0.01-0.06 % of pixels vs ~2 % between -20 C frames).
