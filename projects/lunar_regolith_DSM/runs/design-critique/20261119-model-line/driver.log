@@ -1,0 +1,3 @@
+run 20261119-model-line: design runs/design-critique/bundles/model_line_20261119.md (sha256 132311ec2d09), commit 67416baa, critics ['beth-critic']
+beth-critic: {"n_findings": 21, "by_severity": {"critical": 6, "major": 10, "minor": 5}, "n_unclear": 7}
+manifest: runs/design-critique/20261119-model-line/manifest.json

@@ -1,0 +1,265 @@
+{
+  "findings": [
+    {
+      "id": "F1",
+      "area": "checks",
+      "where": "LOG Remaining 2 \"three T07 runs gave a variational coupling with constant M, with M(T), and a free alpha as in the code\"; doc 29 §9 T07 result; studies/derived_model/README \"written from the agent's answer.json\"; WORKFLOW §6 \"Rerunning a stage with the same inputs must reach the same verified conclusions\"",
+      "severity": "critical",
+      "problem": "(Q1 weak point 1, Q5) The T07 grader gives PASS to physically different phase-field equations, so the equation that becomes 'the derived model' depends on which run a person happened to pick, and a rerun does not reproduce it.",
+      "failure_scenario": "Run 20261118-124517 tied the coupling to M with local T and a 30·ρ_i R_v T/ρ_vs factor. D1 was coded from that run. Run 20261118-173013, the one recorded in the tutorial PROVENANCE, returned a free constant alpha (30·alpha·φ²(1−φ)²(ρ_v−ρ_vs)). Both PASS on all four checks, because bulk, growth and relaxation are all tested at one constant T (T_SCALE + 0·x) and at saturation. A temperature dependence that is wrong, or that contradicts Gibbs–Thomson, passes units, bulk, growth and relaxation alike. A third party who reruns T07 gets a different but equally 'verified' equation. The D1 code and the '1.8e-16 equal to A1' result then belong to a choice nobody graded.",
+      "fix": "Add a key-free physical check to the T07 grader that fixes the coupling: at v_n = 0 on a curved interface, the answer must give σ = d_0·K with d_0 = γ/(ρ_i R_v T) (doc 30 §2 already derives this). Also evaluate growth at two different T. Run each blind task several times, record the spread of answers, and treat answers that are structurally different but all PASS as 'not determined', for the user to decide. Record in the manifest which run D1 was built from, and why.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F2",
+      "area": "checks",
+      "where": "doc 29 §3 item 10 \"a key written by Opus and an answer written by Opus share blind spots\"; LOG \"planted-error tests catch 23 of 24\"; T05/T07 grade.py key_check \"the current model's ... row ... passes every check, and each of six corrupted copies fails\"",
+      "severity": "critical",
+      "problem": "(Q2) The work orders, the 'no-key' checks, the planted errors that prove the graders, the reference comparisons, the D1 C code and the review (doc 30) were all written by the same main session on the same model family as the agent (Opus 5.5), and each grader is calibrated so that the current code's row passes, so the checks have no independent author.",
+      "failure_scenario": "The grader author chooses which physical properties to test and which six corruptions to plant. Any error the author does not think of (for example a wrong T-dependence, a wrong φ-weight in the diffusivity, or a missing term) is neither tested nor planted. '23 of 24 caught' therefore measures the author's own list. The key_check requires the current code to pass, so a grader that would reject a correct model differing from A1, or accept an A1-like error, is tuned toward A1. This is the opposite of the doc 29 key rule. Agent, grader and reviewer share the same priors, which come from pretraining on K&P-style models.",
+      "fix": "Have the user, or a script that does not use an LLM, generate the planted errors systematically: for every term, flip its sign, multiply its coefficient by 2, drop it, swap φ and 1−φ, and swap ∇·(a∇b) with a∇²b. Report the catch rate over that full set. Have the user sign off each grader's list of checks before it is used, and record that sign-off in the grader's header.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F3",
+      "area": "checks",
+      "where": "LOG \"--no-tools single-prompt baseline. On T04–T07 it also passed 4/4; the agent's measured advantage is step-level evidence (20 of 25 steps carry a run check)\"; render_derivation.lint \"each step's check names a function defined in workspace/scratch/check.py\"",
+      "severity": "critical",
+      "problem": "The graders do not tell the tool-using agent apart from a no-tool prompt, and the one claimed advantage ('steps carry a run check') rests on `check.printed`, a free-text field the agent writes about itself that nothing compares with what the checks actually printed.",
+      "failure_scenario": "The agent writes `def check_s3(): pass` in scratch/check.py, runs it once (or not at all), and fills `printed: 'PASS: identity holds'` for every step. The lint finds the function name and passes. stop_check passes because check.py is not empty. The audit only re-checks the allowlist. The derivation.md the user reads, and the Lab Report claim '20 of 25 steps carry a run check', would then report checks that never ran or never tested the step.",
+      "fix": "After the call, the launcher reruns scratch/check.py itself in the sandbox and records the output per function. Alternatively, extract the Bash tool_result text from the transcript and require each step's `printed` text to appear in it verbatim. If a check function has an empty body or no assertion, the step counts as unchecked.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F4",
+      "area": "checks",
+      "where": "LOG Remaining 3 \"The same agent writes code ... graded by compile, FD Jacobian, residual identity with A1 (D1 is the reference) and a manufactured solution\"; doc 27 §4 \"The math agent cannot write C\"; WORKFLOW §5 M5 \"the tests are written from the spec, before the code, by an agent that never sees the code\"",
+      "severity": "critical",
+      "problem": "(Q1 weak point 2, Q3) The plan has the agent that derives the equations also write the code, and uses a hand-written D1 as the reference. This removes the two separations the approved design relied on: deriver vs coder, and coder vs an independent test author.",
+      "failure_scenario": "The agent derives an equation with a wrong term and then writes C that implements that same wrong term. The FD Jacobian check passes, because the Jacobian is consistent with the wrong residual. An MMS source built from the same equations passes, because doc 27 §4 says MMS 'checks the discretization, not the equations'. The A1 identity only holds at ψ ≡ 1 and with derived_frozen/cp_mix switched to A1 behavior. The new physics, where D1 and A1 differ, therefore has no check that does not come from the same agent.",
+      "fix": "Either keep doc 27 (C kernels generated from a user-signed model.py, with no agent writing C), or restore the beth-verifier role: a different call with no access to the code writes the locked tests and tolerances from the spec. Record in the plan which person or model wrote each check.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F5",
+      "area": "assumptions",
+      "where": "LOG Remaining 1–5; doc 31 §1 \"T09 ... decides the T07 coupling question\"; studies/derived_model/README \"This case cannot separate the models\"",
+      "severity": "critical",
+      "problem": "(Q4) No item in the road ahead validates any model against physics. Every numerical comparison so far and in the plan is code against code (D1 vs A1), and T09 is an analytic task graded by the same kind of grader.",
+      "failure_scenario": "The diffuse-domain model is derived, coded and shown equal to A1 at ψ ≡ 1, and the thesis states it is correct. It is never shown to reproduce the Kelvin equilibrium radius, a planar kinetics-plus-diffusion front speed, closed-box water and energy conservation, or the body-fitted solution as eps_s → 0. The DDM error is O(eps_s) or O(eps_s²) depending on how the boundary condition is approximated, so a first-order wall approximation could bias neck growth with no test showing it. A1 itself was never validated against these either, so 'equals A1' inherits A1's errors.",
+      "fix": "Before DDM code is trusted, add numerical physics tests to the locked list: (1) equilibrium of a grain against σ = d_0/R (Gibbs–Thomson); (2) a 1D planar front against the analytic attachment-plus-diffusion speed; (3) closed-box total water and energy to round-off; (4) MMS order; (5) DDM convergence in eps_s against a body-fitted A1 run with the wall term, checking the expected order. Run T09's sharp-interface prediction numerically with (1) and (2).",
+      "confidence": "high",
+      "source": "https://arxiv.org/pdf/1407.7480"
+    },
+    {
+      "id": "F6",
+      "area": "robustness",
+      "where": "doc 31 §3 \"A script recomputed each derived value: t08_sizes.py, kept in the session scratchpad, not in the repository\"; doc 31 §5 \"I prototyped G3 ... in the session scratchpad, not committed\"; studies/derived_model run folders under \"~/SimulationResults/.../scratch/\"",
+      "severity": "critical",
+      "problem": "(Q5) Results tagged [checked] rest on scripts and runs that are not in the repository: the T08 reference values, the G3 prototype, and the D1 comparison runs in a scratch tree.",
+      "failure_scenario": "A third party, or the thesis committee, reruns T08. G6 compares the agent's group sizes with values in task.json, and those values come from an uncommitted t08_sizes.py and an outp.txt in ~/SimulationResults/scratch. The scratch tree is outside git and may be purged. If a value in the table is wrong, for example σ_0, which is inferred from an experiment name, G6 enforces the wrong number and nobody can trace it.",
+      "fix": "Commit t08_sizes.py and the G3 prototype under studies/ with their inputs. Copy the outp.txt and opts of each run cited as a reference into the repository, or record their sha256 in the doc. Remove the [checked] tag from any claim whose script is not committed.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F7",
+      "area": "checks",
+      "where": "doc 31 §6 \"How T08 settles the held T05 test ... G3 samples β at random O(1) values ... so the error is caught outright\"",
+      "severity": "major",
+      "problem": "T08 cannot catch the T05 blind spot, because in T08 the vapor equation is given to the agent, with its exchange term written by the author. A double-counted exchange that the agent derives in T05 never reaches T08's grader.",
+      "failure_scenario": "A future blind T05 run, or the DDM vapor balance, returns ∂t[(1−φ)ρ_v] + (ρ_i−ρ_v)∂tφ. The T05 grader passes it (relative error 9.2e-7 against a tolerance of 1e-6 at −20 °C, per doc 31 §3). The inverted test's docstring says 'T08 G3 catches it', but T08 only nondimensionalizes the code's correct equation. The error is recorded as verified.",
+      "fix": "Grade T05-type answers in dimensionless form: sample ρ_v/ρ_i at O(1) inside the T05 grader itself, or require the agent to state the exchange term exactly and report dropped terms separately. Do not cite T08 as the backstop.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F8",
+      "area": "assumptions",
+      "where": "WORKFLOW §2 M1 \"today's constitutive laws are Earth-air laws\"; §5 G:Scope \"air or lunar laws\"; LOG Remaining 1–5 (no scope step); doc 31 table D_0 \"(T/273.15)^1.81 law\", k_g = 0.02; scaling_analysis.tex §3 \"A diffusion equation is not valid inside a resolved pore\"",
+      "severity": "major",
+      "problem": "(Q3, Q4) The M1 Scope stage and the G:Scope and G:Selection gates were skipped. As a result T08, T09 and the DDM derivation proceed on air-at-1-atm laws (Massman D_v, mixing-ratio ρ_vs, gas conduction), which the project's own documents say do not hold in lunar vacuum.",
+      "failure_scenario": "T08 measures the vapor-to-interface time ratio and 'justifies' ξ_v = 1e-3 using air diffusivity. T09 fixes the coupling from those groups. The DDM is derived with Fickian vapor transport. In vacuum, Kn ≫ 1, k_gas → 0 and ρ_vs is that of pure vapor. Every group and the ξ_v justification then refer to a regime the thesis does not model, while all the checks pass.",
+      "fix": "Hold G:Scope (air or lunar laws, Knudsen closure, grain conductivity) before T08, or parameterize T08 so that the transport law is an explicit choice and state the regime on every group it reports.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F9",
+      "area": "robustness",
+      "where": "LOG Remaining 1–5 and \"Bottlenecks: The user's review time per derivation\"; PILLARS \"Sun 29 Nov Lab Report 4: end-to-end run on the user's problem\"",
+      "severity": "major",
+      "problem": "(Q1 weak point 3, Q4) The plan for the 10 days to 29 Nov is in series, and the DDM derivation (the user's problem) comes last, behind a coding-agent design, a library tool and a symbol registry. Each of these needs new schemas, graders, a red-team rerun and user review.",
+      "failure_scenario": "T08 needs four schema and definition changes, a red-team rerun and six user decisions (doc 31 §7). T09 needs a new grader. Item 3 needs a new agent design to approve. On past evidence (B1 took 17 days against a 3–5 day budget; two grader faults in one session), the line reaches 29 Nov with no DDM equation derived. Lab Report 4's 'end-to-end run on the user's problem' then has to be the current model.",
+      "fix": "Put the DDM derivation tasks (each small and graded) right after T08 and T09. Defer the library tool and the coding agent. Define in writing now what counts as 'end-to-end' for Lab Report 4 if the DDM is not reached.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F10",
+      "area": "checks",
+      "where": "T07 task.json statement \"There is no nucleation ... growth or sublimation driven by the departure of rho_v from rho_vs(T)\", given F equal to the code's; beth-mathematician.md \"a grader you never see checks result_expr against a known answer\"; doc 29 §9 \"Blind rederivation ... told the problem, never the equations\"",
+      "severity": "major",
+      "problem": "(Q2, Q5) The 'blind' work orders encode much of the expected structure, and the model has likely seen K&P-type models in pretraining, so agreement with the code is weak evidence of an independent derivation.",
+      "failure_scenario": "T07 hands the agent the code's F, the driving variable (ρ_v − ρ_vs(T)), the no-nucleation constraint that forces a φ²(1−φ)² factor, and the allowed name rho_vs. A model that recalls Kaempfer & Plapp writes the code's form with no real derivation. The 4/4 no-tool baseline pass is consistent with this. The thesis would cite 'blind rederivation reproduced the model' as validation.",
+      "fix": "Report the blind tasks as consistency checks, not as independent validation. For the DDM, write work orders that state only conservation principles and boundary physics, and include at least one task whose correct answer differs from well-known published forms. That task measures recall against derivation.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F11",
+      "area": "checks",
+      "where": "doc 30 §2 \"The two routes give the same coupling [checked] ... exactly 1 at T = T0\"; studies/derived_model/README \"So the coupling that the code got from the thin-interface analysis is the one the agent got from the free energy\"",
+      "severity": "major",
+      "problem": "The '[checked]' equivalence is an algebraic identity under the chosen map M = M_code/(2γ) with a_1 = 5. It does not show that the variational coupling has the code's thin-interface-corrected kinetics: τ includes (1+δ) through a_2, and the correction is on by default.",
+      "failure_scenario": "The variational form ties the kinetic coefficient and the capillary term to one M. The Karma–Rappel λ choice corrects interface-width errors that a plain variational model keeps. The mapping hides that in M, so 'same coupling' is recorded as fact. T09 may then be treated as already settled, and the DDM inherits a kinetic coefficient that is wrong at O(ε/ℓ).",
+      "fix": "Downgrade the claim to 'equal under the parameter map at T0', list the thin-interface terms (δ, a_2) that the map absorbs, and let T09, with a numerical front-speed test, decide.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F12",
+      "area": "checks",
+      "where": "T05 grade.py \"near T = 200 K and rho_v = 1e-6\"; blind.py \"T_SCALE = 200\"; doc 31 §3 \"The margin at our working temperature, however, is a factor of about 1.1, not 1000\"",
+      "severity": "major",
+      "problem": "The size-dependent graders evaluate at 200 K values, which are neither the working runs (253 K) nor the lunar target (40–120 K), so size-dependent tolerances such as T05's 1e-6 are judged in the wrong regime.",
+      "failure_scenario": "At 253 K, ρ_v/ρ_i = 9.2e-7, just under the tolerance. At lunar temperatures ρ_vs drops by orders of magnitude, so any O(ρ_v/ρ_i) error is invisible. A term that matters at 253 K but not at 200 K, or the reverse, is accepted or rejected for reasons unrelated to the model's use.",
+      "fix": "Take the scales from the work order (the reference state of each task) instead of module constants, and run each size-sensitive check at both ends of the intended range.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F13",
+      "area": "checks",
+      "where": "stop_check.py \"Blocks at most once\"; guard.json required_outputs [\"scratch/check.py\"]; WORKFLOW §3.2 \"Stop hook ... Runs the stage's structural pre-check, for example ledger schema valid and no unsourced step\"; doc 28 \"refuses to stop until the result file exists and parses\"",
+      "severity": "major",
+      "problem": "(Q3) The built Stop hook checks only that scratch/check.py exists and is non-empty, and blocks once. The design's structural pre-check (schema valid, no unsourced step, checks passing) was not built.",
+      "failure_scenario": "The agent writes a one-line check.py and returns. The stop is allowed. A step with no source or check reaches the answer. The lint reports it but by design never changes the verdict.",
+      "fix": "Make stop_check run the lint and require every step's check function to exist and to have run (see F3). Alternatively, make lint problems on steps turn a PASS into NEEDS_REVIEW.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F14",
+      "area": "robustness",
+      "where": "PROVENANCE.md T07 run \"uncommitted definition files: ['?? .../tutorial/README.md']\"; CLAUDE.md \"A workflow run uses only committed definitions; commit before running\"; launch.py git_state only records",
+      "severity": "minor",
+      "problem": "(Q3) The launcher records a dirty tree but does not refuse to run, so a recorded run can come from definitions that are in no commit.",
+      "failure_scenario": "Here only a README was untracked. The same path lets an edited, uncommitted grader.py or task.json produce a PASS recorded at a commit that does not contain them. Only the 12-character hash prefix in PROVENANCE would reveal it.",
+      "fix": "Refuse a real call (exit 5) when any file in the agent folder, KIT or agentlib.py is dirty, except under an explicit --dev flag that tags the run as not a result (WORKFLOW §7).",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F15",
+      "area": "robustness",
+      "where": "launch.py run_grader (stderr discarded on success); grade.py prints \"sympy {sp.__version__}, pint ...\" to stderr; manifest fields",
+      "severity": "major",
+      "problem": "(Q5) The manifest does not record the Python, SymPy and pint versions used by the grader, or the hash of the workflows lock file, and the grader's version line goes to stderr, which is thrown away on success.",
+      "failure_scenario": "After a venv rebuild, a SymPy change in simplify or solve alters `solve_rate` or `at_origin` behavior. A replay (`run_tutorial.sh --replay`) regrades with the current grader and current SymPy and gets a different verdict, with no record of which versions produced the original PASS.",
+      "fix": "Store the grader's stderr in grade.json, and add python, sympy and pint versions plus the sha256 of requirements-workflows.lock to manifest.json. Have replay compare the grader hash with the recorded one and warn on a mismatch.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F16",
+      "area": "robustness",
+      "where": "launch.py audit \"if model != agent['model']\" (init event only); doc 25 §1.3 \"A claude -p request for claude-fable-5-1 returned success but was served by claude-opus-5-5 (modelUsage). It was a silent fallback\"",
+      "severity": "major",
+      "problem": "The model audit reads only the init event's model, but the project has already seen a silent fallback that was visible only in `modelUsage`.",
+      "failure_scenario": "claude-opus-5-5 is retired or rate-limited and the request is served by another model. Init still echoes the requested ID. The audit passes, and the manifest records opus-5-5 for an answer another model wrote.",
+      "fix": "In audit(), also require that the keys of the result event's modelUsage are exactly {pinned model}, and fail with ERROR otherwise.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F17",
+      "area": "checks",
+      "where": "doc 31 §5 G5 \"The number of groups is at most the number of parameters minus the rank of their dimension matrix\"; deliverable notes \"dimensionless function ... khat(phi, theta) with definition k(phi, T_r + DT*theta)/k_i\"",
+      "severity": "major",
+      "problem": "The T08 checks cannot detect a group that is hidden inside a declared 'dimensionless function', and G5 checks redundancy but not completeness.",
+      "failure_scenario": "The agent defines ghat(phi, u) = (rho_i − rho_vs0·(1+σ0 u))/rho_vs0 as a 'function'. G2 finds it dimensionless. G3 holds as an identity. G1 sees no dimensional symbol. But β = ρ_vs/ρ_i is never declared as a group, so G6 never sizes it and the user and T09 never see the smallness that doc 31 §6 relies on.",
+      "fix": "Require that every dimensionless function equals 1 at the reference state (φ, θ, u at reference) and depends only on fields and declared groups. Require that the declared groups span the full Buckingham set (equality, not 'at most').",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F18",
+      "area": "assumptions",
+      "where": "docs/material_parameters.md §2.2 \"ρᵥₛ at 200 K | ~4×10⁻⁸ | kg/m³\"",
+      "severity": "minor",
+      "problem": "The parameter document gives ρ_vs at 200 K about 40 times too low. The ice vapor pressure at 200 K is about 0.16 Pa, which gives ρ_vs ≈ 1.7e-6 kg m⁻³ (blind.py's 1.6e-6 is right).",
+      "failure_scenario": "The symbol registry (Remaining 5) is built 'from the symbols the agents used plus the code', with doc 38 as a likely value source. Its pint check verifies units, not values. A 40× error in ρ_vs then enters lunar-temperature group estimates and DDM scales unchecked.",
+      "fix": "Correct the row from Murphy & Koop (2005). Have the registry check each value against a cited formula numerically, not only its units.",
+      "confidence": "medium",
+      "source": "https://www.eol.ucar.edu/data-software/conventions-and-standards/water-vapor-pressure-formulations"
+    },
+    {
+      "id": "F19",
+      "area": "robustness",
+      "where": "launch.py barrier_fingerprint \"(Claude Code) version\"; redteam_gap refuses any real call when the version changes",
+      "severity": "minor",
+      "problem": "Because the Claude Code version is part of the drift fingerprint and Claude Code is not pinned, any auto-update blocks every real call until someone reruns the red-team, with no automatic recovery.",
+      "failure_scenario": "During an overnight batch of T08/T09 runs, Claude Code updates. Every later call exits 5 and the batch stalls until a person reruns --redteam.",
+      "fix": "Pin the Claude Code version for line runs (record it in requirements or a lock), or have the launcher run the red-team automatically once on a fingerprint change before continuing.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F20",
+      "area": "robustness",
+      "where": "WORKFLOW §3.1 \"retry once on a malformed result\"; §3.2 \"Usage-limit handling ... the script stops with the resume command\"; launch.py (no retry, no resume, no runs.db)",
+      "severity": "minor",
+      "problem": "(Q3) The built launcher has no retry on a malformed answer, no handling of usage-limit errors and no resume state. All three are in the approved design.",
+      "failure_scenario": "A usage-limit error mid-call is recorded as ERROR with a partial transcript. A batch script does not know to stop and keeps launching calls that all fail.",
+      "fix": "Detect the limit error in the result event, return a distinct exit code that the batch script stops on, and retry once on a schema failure as the design says.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F21",
+      "area": "checks",
+      "where": "PROVENANCE T07 \"format: S2: possibly undefined in the equation: a, e, l, r ... format problems do not change the verdict\"",
+      "severity": "minor",
+      "problem": "The derivation the user reads and approves can contain undefined symbols while the verdict is PASS. The lint flagged four steps in the recorded T07 run and nothing followed.",
+      "failure_scenario": "The user approves a derivation.md whose step equations use undefined letters, possibly an unexplained factor. The undefined-symbol rule that M9's check_doc.py is meant to enforce is already being waived at the derivation stage.",
+      "fix": "Report lint problems as a separate NEEDS_REVIEW status shown at the top of PROVENANCE, or fix the lint's false positives so its output can be enforced.",
+      "confidence": "medium",
+      "source": null
+    }
+  ],
+  "unclear": [
+    {
+      "where": "WORKFLOW.md (part 4) status line vs docs 28–31",
+      "issue": "WORKFLOW.md says \"S3:Build is next. Nothing below is built except library_search.py and add_paper.py\" and names beth-modeler, beth-verifier and beth-model-foreman. What was built is a different single agent, beth-mathematician, with graders written in the main session, under doc 27/29. No updated design was approved. Which document is now the approved design the runs are measured against?"
+    },
+    {
+      "where": "LOG Remaining 3 vs doc 27 §4",
+      "issue": "\"The same agent writes code\" contradicts doc 27's approved direction, \"The math agent cannot write C\", where C is generated from model.py. It is not stated whether doc 27 was withdrawn."
+    },
+    {
+      "where": "README task table T07 \"Kind: known answer\" vs T04–T06 \"blind derivation: checks with no key\"",
+      "issue": "T07 is labeled known answer in the generated README but described as blind and key-free elsewhere (tutorial, doc 29 §9). Which is it?"
+    },
+    {
+      "where": "stop_check.py docstring \"Blocks at most once\" vs WORKFLOW §3.2 \"Claude Code's 8-block cap\"",
+      "issue": "The design and the code describe different stop-blocking behavior. The 8-block cap is not something I could confirm in the documentation."
+    },
+    {
+      "where": "enforcers.json N1 \"sandbox for Bash\" and doc 28 \"sandbox denyRead block the rest\"",
+      "issue": "Claude Code's sandbox filesystem rules apply to Bash and its child processes, not to the built-in Read tool (code.claude.com/docs/en/sandboxing). Read isolation therefore rests on the permission denies and guard.py alone. The documents should say so, so that the sandbox is not counted as a second barrier for Read."
+    },
+    {
+      "where": "doc 31 §3 σ_0 = 1e-5 \"[inferred from experiment names]\"",
+      "issue": "The Gibbs–Thomson scale d_0/R_g ≈ 1e-9 m / 1.5e-5 m ≈ 7e-5 is larger than the chosen σ_0. It is unclear whether σ_0 is meant to be the imposed supersaturation or the curvature-driven one. G6 will enforce whichever value is written."
+    },
+    {
+      "where": "LOG \"Housekeeping ... doc 26 (superseded by doc 29)\" vs doc 27 \"Doc 26 (hardening) still applies\"",
+      "issue": "It is not clear whether doc 26's hardening items, for example the tolerance diff check G6 cited in doc 29 §11, still apply."
+    }
+  ]
+}
