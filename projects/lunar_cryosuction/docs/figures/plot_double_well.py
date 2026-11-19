@@ -38,7 +38,6 @@ INK = "#1C2229"      # dk1, text
 INK2 = "#2E3640"     # dk2, tick labels
 MUTED = "#66707C"    # accent3, axes and guide lines
 CRIMSON = "#8A1F2E"  # accent1, the curve (same as the equation labels)
-SLATE = "#3F5F7A"    # accent2, annotations
 
 DEFAULT_FONT = Path("/Applications/Microsoft PowerPoint.app/Contents/Resources/"
                     "DFonts/Franklin Gothic Book.ttf")
@@ -91,8 +90,6 @@ def main() -> None:
     ax.plot(phi, F, color=CRIMSON, lw=3.0, zorder=3, solid_capstyle="round")
     ax.plot([0.0, 1.0], [0.0, 0.0], "o", ms=9, color=CRIMSON,
             mec="white", mew=1.5, zorder=4)
-    ax.text(0.5, barrier + 0.09 * (1.6 * barrier), "energy barrier",
-            ha="center", va="bottom", color=SLATE, fontsize=16)
 
     ax.set_xlim(phi[0], phi[-1])
     ax.set_ylim(-0.08 * 1.6 * barrier, 1.6 * barrier)
