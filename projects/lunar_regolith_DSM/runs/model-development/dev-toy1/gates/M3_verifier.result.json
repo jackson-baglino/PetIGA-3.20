@@ -1,0 +1,23 @@
+{
+ "status": "done",
+ "outputs": [
+  "checks/m3_assumptions.py",
+  "checks/m3_selftest_planted.py"
+ ],
+ "evidence": [
+  "Ledger revision 3 (sha256 13a85b39\u2026) has 48 derived steps. m3_common.py found every one listed in the COVERS list of at least one check script that ran. structure: every derived step names an operation and cites only steps that come earlier in the list order, with no duplicate ids. 3 pass, 0 fail.",
+  "m3_assumptions.py: 9 pass, 0 fail. The two try-2 findings are fixed. required_premises: S5 is now among S12's premises and S6 among S21's and S22's, so no needed hypothesis is missing. tref_constant_for_S13: S1 now states T_ref is constant in t, and S1 is in S13's premises. Without that, S13 would gain the extra term -c_p*rho*dT_ref/dt.",
+  "I tightened tref_constant_for_S13 in m3_assumptions.py. The symbols table no longer counts as an assumption: only an assumption statement counts, and it must be among S13's premises. A planted ledger with the T_ref clause removed from S1 now fails this check (plant_drop_Tref_const_S1).",
+  "m3_strong_form.py: 9 pass (S9-S17). On test fields the SymPy residuals are 0: the Leibniz rule, the fundamental theorem of calculus, localization, S3 substituted into S12, the derivative of S4, S15, and S17 = S15/(rho c_p).",
+  "m3_reduction.py: 5 pass. With psi = 1 and phi uniform, src/assembly.c line 183 (R[a][1]) integrated by parts gives rho c_p T_t - k T_xx. The toy minus the code is exactly -q, the source. S40 checked against the FACE_WALL lines 81-87: the heat row Rb[a][1] = 0. S46 and S47 also pass: no eps or eps_s appears in S15.",
+  "m3_scaling.py: 12 pass (S20-S31). The chain-rule residuals are 0. The coefficient of S24 reduces to 1. S26 and S29 boundary data match. With Pint, S31 gives kappa = 1 m^2/s, t_c = 1 s, DeltaT_q = 1 K and Q = 1, each with ratio 1.0, within the 1 % rule.",
+  "m3_uniqueness.py: 9 pass (S33-S38, S48-S50). The integration-by-parts boundary term is 0 when w vanishes at the ends; a control with w nonzero at an end gives 3/5. The finite-difference minimum of theta is 0.0 and its maximum 0.1249986.",
+  "m3_steady_flux.py: 6 pass (S39, S41-S45). dsolve gives C1 + C2*xi - xi^2/2, the maximum is 1/8 at xi = 1/2, F_0 = F_L = qL/2, and F_0 + F_L - int q = 0.",
+  "m3_conservation_energy.py: 6 pass. The toy has no water, so the conservation check is on energy. Insulated box: d/dt int e = L*q, conserved when q = 0. Dirichlet box: the energy balance closes exactly. The series balance agrees to 1.1e-16. Without the source, dE/dt + kappa int T_x^2 = 0, and in a backward-Euler run E fell from 0.294 to 1.27e-7 and never rose in any step.",
+  "m3_series.py: 8 pass (S51-S57, S32). min g on (0, 0.1] = 0.4744875 >= 0.474. tau_g = 0.0139141. Bounds at tau = 1: 6.5856e-5 <= 6.59e-5 and 6.6726e-6 <= 6.68e-6. The series matches the finite-difference solution to 4.7e-8 or better. theta_xixi(0, tau) = -1.",
+  "m3_units.py: 51 pass. Every term in every relation of S1-S57 has consistent units, for example S15 in W m^-3. The units given in S19 and S31 match the symbols table.",
+  "m3_selftest_planted.py: 59 of 59 planted errors (sign, factor, exponent, value, dropped premise, dropped T_ref clause) fail the check they target, and every unmodified check passes. Three plants are new this round: drop_Tref_const_S1, drop_S5_from_S12 and drop_S6_from_S21."
+ ],
+ "questions": [],
+ "summary": "I reran all ten m3 check scripts against ledger revision 3, and every derived step S9-S57 was checked by at least one script that ran. Every check passes: 118 claims, no failures, so there are no findings this round. The two failures from try 2 (premises missing from S12, S21 and S22, and nothing stating that T_ref is constant) are fixed in the ledger. Before rerunning, I tightened the T_ref check so the symbols table no longer counts; only an assumption that S13 cites does. I also added three planted-error cases for the try-3 changes, and all 59 planted errors are caught. The toy has no water, so the conservation check covers energy instead; the \u03c8 \u2261 1 comparison with src/assembly.c line 183 differs only by the source term q."
+}

@@ -1,0 +1,60 @@
+{
+ "run_id": "dev-toy1",
+ "problem": "toy",
+ "dev": true,
+ "stages": {
+  "M1": {
+   "status": "approved",
+   "note": "read gates/G:Scope.md",
+   "approved": "2026-11-16T14:17:14-08:00"
+  },
+  "M2": {
+   "status": "approved",
+   "note": "read gates/G:Selection.md",
+   "approved": "2026-11-16T14:21:08-08:00"
+  },
+  "M3": {
+   "status": "approved",
+   "note": "read gates/G:Derivation.md",
+   "approved": "2026-11-16T18:46:32-08:00"
+  },
+  "M4": {
+   "status": "approved",
+   "note": "read gates/G:Discretization.md",
+   "approved": "2026-11-16T19:22:30-08:00"
+  },
+  "M5": {
+   "status": "approved",
+   "note": "read gates/G:Test lock.md",
+   "approved": "2026-11-16T19:37:56-08:00"
+  },
+  "M6": {
+   "status": "done",
+   "note": "layers infra, heat"
+  },
+  "M7": {
+   "status": "skipped",
+   "note": "closed 2026-11-19 by the user: the line design was replaced on 2026-11-17 (one agent at a time, doc 28/29)"
+  },
+  "M8": {
+   "status": "skipped"
+  },
+  "M9": {
+   "status": "skipped",
+   "note": "closed 2026-11-19 by the user: the line design was replaced on 2026-11-17 (one agent at a time, doc 28/29)"
+  }
+ },
+ "feedback": {
+  "M3": "DEV TOY DRY RUN (main session, plumbing only). Try 3: fix the verifier's two remaining failures in checks/results_M3.json: add S5 to S12's premises and S6 to S21's and S22's; state T_ref constant in time as an assumption (or in S1) and cite it in S13. D-b: (a) accept S6 as broadened. D-c: (a) leave the upper bound theta <= 1/8 out. Bring derivation.md up to date (S48-S57 coverage, S32 wording). Run your scratch scripts; do not do arithmetic by hand."
+ },
+ "model_name": "heat1d-fd-be",
+ "worktree": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1",
+ "branch": "feat/md-dev-dev-toy1",
+ "layers_done": [
+  "infra",
+  "heat"
+ ],
+ "triage_n": 0,
+ "worktree_project": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM",
+ "tests_dir": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM/studies/heat1d-fd-be/tests"
+}

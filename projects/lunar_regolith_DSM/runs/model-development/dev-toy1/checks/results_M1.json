@@ -1,0 +1,690 @@
+{
+ "stage": "M1",
+ "time": "2026-11-16T14:16:25-08:00",
+ "all_pass": true,
+ "scripts": [
+  {
+   "script": "m1_nondim.py",
+   "exit": 0,
+   "claims": [
+    {
+     "inputs": "symbolic; parameters L,k,rho,cp,q,T0 positive; series truncation N=4001 odd modes for numeric checks"
+    },
+    {
+     "check": "dimensionless_form",
+     "claim": "rho c_p T_t = k T_xx + q  <=>  theta_tau = theta_xixi + 1 (divided by q; no parameters remain)",
+     "pass": true,
+     "details": {
+      "residual_difference": "0",
+      "free_symbols_left": "['tau', 'xi']"
+     }
+    },
+    {
+     "check": "dimensionless_bc_ic",
+     "claim": "T=T0 at ends and t=0  <=>  theta=0",
+     "pass": true,
+     "details": {
+      "theta_at_T0": 0
+     }
+    },
+    {
+     "check": "Q_form",
+     "claim": "theta' = T/T0 gives theta'_tau = theta'_xixi + Q with Q = q L^2/(k T0)",
+     "pass": true,
+     "details": {
+      "residual_difference": "0"
+     }
+    },
+    {
+     "check": "steady_parabola",
+     "claim": "T0 + q x (L-x)/(2k) solves k T'' + q = 0 with T(0)=T(L)=T0",
+     "pass": true,
+     "details": {
+      "ode": "0",
+      "bc0": "0",
+      "bcL": "0"
+     }
+    },
+    {
+     "check": "peak_location",
+     "claim": "peak of steady parabola at x = L/2",
+     "pass": true,
+     "details": {
+      "x_star": "[L/2]"
+     }
+    },
+    {
+     "check": "peak_value",
+     "claim": "T(L/2) - T0 = q L^2/(8k)",
+     "pass": true,
+     "details": {
+      "peak": "L**2*q/(8*k)"
+     }
+    },
+    {
+     "check": "theta_range",
+     "claim": "steady theta in [0, 1/8] on xi in [0,1]",
+     "pass": true,
+     "details": {
+      "theta_ss": "xi*(1 - xi)/2"
+     }
+    },
+    {
+     "check": "Q_over_8",
+     "claim": "Delta T_max / T0 = Q/8",
+     "pass": true,
+     "details": {}
+    },
+    {
+     "check": "balance_scale",
+     "claim": "balancing k DeltaT/L^2 with q gives DeltaT ~ q L^2/k",
+     "pass": true,
+     "details": {
+      "DeltaT": "[L**2*q/k]"
+     }
+    },
+    {
+     "check": "time_scale",
+     "claim": "storage balances conduction on t ~ L^2/kappa",
+     "pass": true,
+     "details": {
+      "t_c": "[L**2*c_p*rho/k]"
+     }
+    },
+    {
+     "check": "end_flux",
+     "claim": "steady outward flux j.n = q L/2 at each end (sum = q L, the source)",
+     "pass": true,
+     "details": {
+      "out_x0": "L*q/2",
+      "out_xL": "L*q/2"
+     }
+    },
+    {
+     "check": "slowest_mode_rate",
+     "claim": "sin(pi x/L) decays as exp(-pi^2 kappa t/L^2)",
+     "pass": true,
+     "details": {
+      "lambda": "[pi**2*k/(L**2*c_p*rho)]"
+     }
+    },
+    {
+     "check": "series_coeffs",
+     "claim": "sine coefficients of theta_ss are nonnegative (b_n = 2(1-(-1)^n)/(n pi)^3)",
+     "pass": true,
+     "details": {
+      "b_n": "2*(1 - (-1)**n)/(pi**3*n**3)",
+      "b1": 0.12900613773279795
+     }
+    },
+    {
+     "check": "max_principle_range",
+     "claim": "for q >= 0, T(x,t) in [T0, T0 + qL^2/(8k)] (theta in [0,1/8])",
+     "pass": true,
+     "details": {
+      "violation": null
+     }
+    },
+    {
+     "check": "steady_at_tau99",
+     "claim": "at tau = t_99 ~= 0.47 the transient is within ~1 % of the steady peak (first mode at 1 % of its initial amplitude; higher modes negligible)",
+     "pass": true,
+     "details": {
+      "tau99": 0.46660129411871826,
+      "max_abs_theta_err": 0.001290061377327979,
+      "err_over_peak": 0.010320491018623833,
+      "first_mode_amp_ratio": 0.009999999999999995
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m1_scales.py",
+   "exit": 0,
+   "claims": [
+    {
+     "inputs_file": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/runs/model-development/dev-toy1/checks/m1_inputs.json",
+     "reference_case": {
+      "L": [
+       1.0,
+       "m"
+      ],
+      "k": [
+       1.0,
+       "W/(m*K)"
+      ],
+      "rho": [
+       1.0,
+       "kg/m**3"
+      ],
+      "cp": [
+       1.0,
+       "J/(kg*K)"
+      ],
+      "q": [
+       1.0,
+       "W/m**3"
+      ],
+      "T0": [
+       1.0,
+       "K"
+      ]
+     },
+     "rel_tol": 0.01
+    },
+    {
+     "check": "kappa",
+     "claim": "kappa = k/(rho c_p) = 1 m^2/s",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 1.0,
+      "claimed": 1.0,
+      "units": "meter ** 2 / second",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "x_c",
+     "claim": "x_c = L = 1 m",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 1.0,
+      "claimed": 1.0,
+      "units": "meter",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "t_c",
+     "claim": "t_c = L^2/kappa = 1 s",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 1.0,
+      "claimed": 1.0,
+      "units": "second",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "t_slow",
+     "claim": "t_slow = L^2/(pi^2 kappa) ~= 0.1013 s",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 0.10132118364233778,
+      "claimed": 0.1013,
+      "units": "second",
+      "rel_diff": 0.00020907416964799965,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "ln100",
+     "claim": "ln 100 ~= 4.605",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 4.605170185988092,
+      "claimed": 4.605,
+      "units": "dimensionless",
+      "rel_diff": 3.695541776266853e-05,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "t_99",
+     "claim": "t_99 = t_slow ln 100 ~= 0.4666 s",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 0.46660129411871826,
+      "claimed": 0.4666,
+      "units": "second",
+      "rel_diff": 2.7735000621605888e-06,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "t_99_direct",
+     "claim": "mode sin(pi x/L) at 1 % of initial amplitude at t ~= 0.4666 s",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 0.4666012941187182,
+      "claimed": 0.4666,
+      "units": "second",
+      "rel_diff": 2.77350006204162e-06,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "tau_steady",
+     "claim": "steady state at tau >~ 0.47 (= t_99/t_c)",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 0.46660129411871826,
+      "claimed": 0.47,
+      "units": "dimensionless",
+      "rel_diff": 0.007283961540871717,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "dT_q",
+     "claim": "Delta T_q = q L^2/k = 1 K",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 1.0,
+      "claimed": 1.0,
+      "units": "kelvin",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "dT_max",
+     "claim": "Delta T_max = q L^2/(8k) = 0.125 K",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 0.125,
+      "claimed": 0.125,
+      "units": "kelvin",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "dTmax_over_T0",
+     "claim": "Delta T_max / T_0 = 0.125",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 0.125,
+      "claimed": 0.125,
+      "units": "dimensionless",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "Q",
+     "claim": "Q = q L^2/(k T_0) = 1 (dimensionless)",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 1.0,
+      "claimed": 1.0,
+      "units": "dimensionless",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "Q_equals_dTq_over_T0",
+     "claim": "Q = Delta T_q / T_0",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 1.0,
+      "claimed": 1.0,
+      "units": "dimensionless",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "Q_over_8",
+     "claim": "Delta T_max / T_0 = Q/8 = 0.125",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 0.125,
+      "claimed": 0.125,
+      "units": "dimensionless",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "end_flux",
+     "claim": "steady end flux -k dT/dx at x=L equals q L/2 (0.5 W/m^2 ref case)",
+     "pass": true,
+     "details": {
+      "units_ok": true,
+      "computed": 0.5,
+      "claimed": 0.5,
+      "units": "watt / meter ** 2",
+      "rel_diff": 0.0,
+      "tol": 0.01
+     }
+    },
+    {
+     "check": "order_of_magnitude",
+     "claim": "Delta T_max/T_0 is of order 1e-1 (Mechanisms, T-dependence row)",
+     "pass": true,
+     "details": {
+      "log10_floor": -1
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m1_units.py",
+   "exit": 0,
+   "claims": [
+    {
+     "notation_units": {
+      "x": "m",
+      "t": "s",
+      "L": "m",
+      "T": "K",
+      "T0": "K",
+      "k": "W/(m*K)",
+      "rho": "kg/m**3",
+      "cp": "J/(kg*K)",
+      "kappa": "m**2/s",
+      "q": "W/m**3",
+      "j": "W/m**2",
+      "dTq": "K",
+      "xi": "dimensionless",
+      "tau": "dimensionless",
+      "theta": "dimensionless",
+      "Q": "dimensionless",
+      "n": "dimensionless"
+     }
+    },
+    {
+     "check": "kappa_def",
+     "claim": "kappa = k/(rho c_p) has units m^2/s",
+     "pass": true,
+     "details": {
+      "lhs": "[length] ** 2 / [time]",
+      "rhs": "[length] ** 2 / [time]"
+     }
+    },
+    {
+     "check": "flux_def",
+     "claim": "j = -k dT/dx has units W/m^2",
+     "pass": true,
+     "details": {
+      "lhs": "[mass] / [time] ** 3",
+      "rhs": "[mass] / [time] ** 3"
+     }
+    },
+    {
+     "check": "dTq_def",
+     "claim": "Delta T_q = q L^2/k has units K",
+     "pass": true,
+     "details": {
+      "lhs": "[temperature]",
+      "rhs": "[temperature]"
+     }
+    },
+    {
+     "check": "Q_def",
+     "claim": "Q = q L^2/(k T0) is dimensionless",
+     "pass": true,
+     "details": {
+      "lhs": "dimensionless",
+      "rhs": "dimensionless"
+     }
+    },
+    {
+     "check": "xi_def",
+     "claim": "xi = x/L is dimensionless",
+     "pass": true,
+     "details": {
+      "lhs": "dimensionless",
+      "rhs": "dimensionless"
+     }
+    },
+    {
+     "check": "tau_def",
+     "claim": "tau = kappa t/L^2 is dimensionless",
+     "pass": true,
+     "details": {
+      "lhs": "dimensionless",
+      "rhs": "dimensionless"
+     }
+    },
+    {
+     "check": "theta_def",
+     "claim": "theta = (T-T0)/Delta T_q is dimensionless",
+     "pass": true,
+     "details": {
+      "lhs": "dimensionless",
+      "rhs": "dimensionless"
+     }
+    },
+    {
+     "check": "pde_storage_vs_source",
+     "claim": "rho c_p dT/dt has units of q (W/m^3)",
+     "pass": true,
+     "details": {
+      "lhs": "[mass] / [length] / [time] ** 3",
+      "rhs": "[mass] / [length] / [time] ** 3"
+     }
+    },
+    {
+     "check": "pde_conduction_vs_source",
+     "claim": "k d2T/dx2 has units of q (W/m^3)",
+     "pass": true,
+     "details": {
+      "lhs": "[mass] / [length] / [time] ** 3",
+      "rhs": "[mass] / [length] / [time] ** 3"
+     }
+    },
+    {
+     "check": "flux_div_vs_source",
+     "claim": "dj/dx has units of q",
+     "pass": true,
+     "details": {
+      "lhs": "[mass] / [length] / [time] ** 3",
+      "rhs": "[mass] / [length] / [time] ** 3"
+     }
+    },
+    {
+     "check": "caloric",
+     "claim": "e = rho c_p (T - T_ref) has units J/m^3",
+     "pass": true,
+     "details": {
+      "lhs": "[mass] / [length] / [time] ** 2",
+      "rhs": "[mass] / [length] / [time] ** 2"
+     }
+    },
+    {
+     "check": "caloric_rate",
+     "claim": "de/dt has units of q",
+     "pass": true,
+     "details": {
+      "lhs": "[mass] / [length] / [time] ** 3",
+      "rhs": "[mass] / [length] / [time] ** 3"
+     }
+    },
+    {
+     "check": "t_c",
+     "claim": "t_c = L^2/kappa has units s",
+     "pass": true,
+     "details": {
+      "lhs": "[time]",
+      "rhs": "[time]"
+     }
+    },
+    {
+     "check": "t_slow",
+     "claim": "t_slow = L^2/(pi^2 kappa) has units s",
+     "pass": true,
+     "details": {
+      "lhs": "[time]",
+      "rhs": "[time]"
+     }
+    },
+    {
+     "check": "dTmax",
+     "claim": "q L^2/(8k) has units K",
+     "pass": true,
+     "details": {
+      "lhs": "[temperature]",
+      "rhs": "[temperature]"
+     }
+    },
+    {
+     "check": "parabola",
+     "claim": "q x (L-x)/(2k) has units K",
+     "pass": true,
+     "details": {
+      "lhs": "[temperature]",
+      "rhs": "[temperature]"
+     }
+    },
+    {
+     "check": "end_flux",
+     "claim": "q L/2 has units of flux j (W/m^2)",
+     "pass": true,
+     "details": {
+      "lhs": "[mass] / [time] ** 3",
+      "rhs": "[mass] / [time] ** 3"
+     }
+    },
+    {
+     "check": "balance",
+     "claim": "k DeltaT/L^2 has units of q",
+     "pass": true,
+     "details": {
+      "lhs": "[mass] / [length] / [time] ** 3",
+      "rhs": "[mass] / [length] / [time] ** 3"
+     }
+    },
+    {
+     "check": "beta_dT",
+     "claim": "beta Delta T_max is dimensionless with beta = d ln k/dT in 1/K",
+     "pass": true,
+     "details": {
+      "lhs": "dimensionless",
+      "rhs": "dimensionless"
+     }
+    },
+    {
+     "check": "Q_form_source",
+     "claim": "in theta'=T/T0 form, source term Q matches theta'_tau units",
+     "pass": true,
+     "details": {
+      "lhs": "dimensionless",
+      "rhs": "dimensionless"
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m1_validity.py",
+   "exit": 0,
+   "claims": [
+    {
+     "inputs_file": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/runs/model-development/dev-toy1/checks/m1_inputs.json",
+     "reference_case": {
+      "L": [
+       1.0,
+       "m"
+      ],
+      "k": [
+       1.0,
+       "W/(m*K)"
+      ],
+      "rho": [
+       1.0,
+       "kg/m**3"
+      ],
+      "cp": [
+       1.0,
+       "J/(kg*K)"
+      ],
+      "q": [
+       1.0,
+       "W/m**3"
+      ],
+      "T0": [
+       1.0,
+       "K"
+      ]
+     }
+    },
+    {
+     "check": "T_positive",
+     "claim": "temperature range is > 0 K (Notation: T > 0)",
+     "pass": true,
+     "details": {
+      "T_min_K": 1.0,
+      "T_max_K": 1.125
+     }
+    },
+    {
+     "check": "fourier_relative_excursion",
+     "claim": "Fourier/constant k: relative excursion over the range Delta T_max/T0 = 0.125, as stated in the 'Holds?' column",
+     "pass": true,
+     "details": {
+      "T_min_K": 1.0,
+      "T_max_K": 1.125,
+      "dTmax_over_T0": 0.125
+     }
+    },
+    {
+     "check": "fourier_beta_bound",
+     "claim": "constant-k error ~ 1e-1 x power m: beta dT_max = m * 0.125 (< 1 only for |m| < 8; no beta sourced, accepted by brief)",
+     "pass": true,
+     "details": {
+      "m_for_beta_dT_eq_1": 8.0
+     }
+    },
+    {
+     "check": "caloric_range",
+     "claim": "caloric law: no phase change listed inside [T0, T0+qL^2/(8k)] (file states none; brief line 21 excludes phase change)",
+     "pass": true,
+     "details": {
+      "T_min_K": 1.0,
+      "T_max_K": 1.125,
+      "transition_temperatures_in_file": []
+     }
+    },
+    {
+     "check": "source_range",
+     "claim": "source q uniform and T-independent, valid over any T range",
+     "pass": true,
+     "details": {
+      "T_min_K": 1.0,
+      "T_max_K": 1.125
+     }
+    },
+    {
+     "check": "q_sign_consistency",
+     "claim": "stated T range [T0, T0+qL^2/(8k)] requires q >= 0; reference q = 1 >= 0",
+     "pass": true,
+     "details": {
+      "q": "1.0 watt / meter ** 3"
+     }
+    },
+    {
+     "check": "note_continuum_at_1K",
+     "claim": "continuum validity at T0 = 1 K (reference case) is not assessable: no material",
+     "pass": true,
+     "details": {
+      "informational": true
+     }
+    }
+   ],
+   "stderr": ""
+  }
+ ],
+ "verifier_summary": "I wrote four M1 check scripts and one shared input file: m1_scales.py (numbers, with Pint), m1_nondim.py (symbolic, with SymPy, plus a series solution), m1_units.py (units in the notation table) and m1_validity.py (constitutive-law ranges against the stated temperature range). They cover every numeric claim in ## Mechanisms and ## Scales, and they print one JSON line per claim. All four ran and exited 0. 56 claims passed and none failed. One precision note: at \u03c4 \u2248 0.47 the error in the whole solution is 1.03 % of the peak, not quite 1 %. Because every reference parameter is 1, numbers alone cannot catch swapped parameters, so the symbolic and unit checks cover those formulas."
+}

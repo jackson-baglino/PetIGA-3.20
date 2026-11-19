@@ -1,0 +1,10 @@
+{"check": "infra-2", "used": {"project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_ptr84gaw/wt/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "infra-2", "used": {"module_file": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_ptr84gaw/wt/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "infra-2", "claim": "oracle f_m(0.5,0.1) equals the spec sample", "pass": true, "details": {"oracle": 0.5336200848195802, "sample": 0.5336200848195806}}
+{"check": "infra-2", "claim": "oracle f_m(0.25,0.5) equals the spec sample", "pass": true, "details": {"oracle": 0.29290120625964855, "sample": 0.292901206259649}}
+{"check": "infra-2", "claim": "C1 n=4 tau=0.1: on - off = -f at all rows", "pass": true, "details": {"max_abs_err": 2.220446049250313e-16, "diff": [-0.18413950451281247, -0.53362008481958, -0.18413950451281247]}}
+{"check": "infra-2", "claim": "C1: row at xi=0.5, tau=0.1 matches the spec sample", "pass": true, "details": {"got": 0.53362008481958, "sample": 0.5336200848195806}}
+{"check": "infra-2", "claim": "C1 n=4 tau=0.5: on - off = -f at all rows", "pass": true, "details": {"max_abs_err": 4.440892098500626e-16, "diff": [-0.2929012062596481, -0.8522596144545522, -0.292901206259649]}}
+{"check": "infra-2", "claim": "C1: row at xi=0.25, tau=0.5 matches the spec sample", "pass": true, "details": {"got": 0.2929012062596481, "sample": 0.292901206259649}}
+{"check": "infra-2", "claim": "P n=8 tau=0.37 A=1.3 B=-0.7: on - off = -f with Q = 44/39", "pass": true, "details": {"max_abs_err": 1.7763568394002505e-15, "Q": 1.1282051282051282}}
+{"check": "infra-2", "claim": "MMS option on adds exactly -f(xi_j, tau) of M4-9 to every row, with A, B from params['mms'] and Q from params", "pass": true, "details": {"n_claims": 7, "failed": []}}

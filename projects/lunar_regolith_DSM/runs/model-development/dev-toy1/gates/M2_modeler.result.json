@@ -1,0 +1,20 @@
+{
+ "status": "done",
+ "outputs": [
+  "derivation/selection.md"
+ ],
+ "evidence": [
+  "Sections: selection.md has three '## Candidate:' sections (FD-BE, FEM-Galerkin, Series), then '## Comparison' with a table covering fidelity, geometry flexibility, cost, fit to the solver, robustness, and buildable and verifiable by December, then '## Recommendation' naming heat1d-fd-be (letters, digits and hyphens only).",
+  "Quote check: selection.md contains no verbatim paper quotes, so the check passes trivially. citations.json is unchanged ([]) because no paper is cited.",
+  "Spec line references: I re-read each spec_problem.md line I cite. L3-5 (dry run, not citable), L42 (t_99 = 0.4666), L46-47 (peak 1/8), L50-52 (dimensionless form), L98-100 (Dirichlet ends; end flux qL/2), L108-111 (out of scope), L109 (NumPy toy/heat1d.py), L129-130 (brief fixes FD + backward Euler). Each matches the text.",
+  "Hand-checked derivations: D1 (second difference exact on quadratics, from the Taylor remainder). D2 (nodal exactness of the steady state, using eigenvalues lambda_k = (4/h^2) sin^2(k pi h/2) > 0). D3 and D4 (backward Euler mode factor in (0,1); M-matrix bounds 0 <= theta <= theta_s). D7 (P1 Green's-function nodal exactness). D8 (consistent-mass M-matrix needs dtau >= h^2/6, i.e. 4.07e-5 for h = 1/64). D8b (lumped P1 is the same as FD-BE). D9 (series coefficients 4/(k pi)^3 for odd k; the check sum at xi = 1/2 equals 1/8).",
+  "Hand-computed numbers: lambda_1(h = 1/64) \u2248 9.8676. Slowest-mode backward Euler error at dtau = 1e-3 is about 2.34e-4 (0.19% of the 1/8 peak). Residual transient at tau = 1 is about 6.7e-6. Series tail for K = 11 is about 2.7e-4. DOFs: 63 (FD, P1), 64 (quadratic B-spline).",
+  "Limitation: I could not run library_search.py or scratch Python, because the guard blocked both (no commands are listed for this stage). All support is either a spec line or a derivation step shown in the file, and all arithmetic was done by hand. The verifier should recompute the numbers."
+ ],
+ "questions": [
+  "G:Selection: do you confirm FD-BE (finite differences with backward Euler, which the brief already specifies), with the closed-form series as the test reference? My recommendation is yes. The alternative is to reopen the brief and use FEM-Galerkin, which is closer to PetIGA but adds no check for this toy, because lumped P1 is the same scheme.",
+  "Do you confirm the reference discretization N = 64, dtau = 1e-3, tau_end = 1? tau_end = 1 leaves margin above tau_99 \u2248 0.467, as G:Scope asked.",
+  "Process note for the line: this stage's guard blocks library_search.py. If later M2 runs need paper citations, should the work order list that command?"
+ ],
+ "summary": "I wrote derivation/selection.md with three candidates for the toy rod: finite differences with backward Euler (FD-BE), Galerkin finite elements, and the closed-form eigenfunction series. Each comes with derived failure modes, DOF counts for a reference case (N = 64, dtau = 1e-3), fit to the NumPy toy solver, and verification steps. A comparison table and a recommendation follow. I recommend FD-BE (branch feat/heat1d-fd-be): it is what the brief specifies, it stays stable and within 0 \u2264 \u03b8 \u2264 1/8 for any time step, and it matches the parabola exactly at the nodes. The series serves as the reference for the transient convergence test, because the steady test cannot detect spatial order. No papers are cited and citations.json stays empty: the guard blocked library_search.py and scratch Python at this stage, so every claim rests on spec lines or hand derivations written out in the file."
+}

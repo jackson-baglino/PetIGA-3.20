@@ -1,0 +1,9 @@
+{"check": "heat-8", "used": {"project": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-8", "used": {"module_file": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-8", "claim": "transient K=100: q = 0 gives T == T0 exactly", "pass": true, "details": {"max_dev": 0.0}}
+{"check": "heat-8", "claim": "transient K=100: q < 0 gives T <= T0 everywhere, < T0 inside, ends = T0", "pass": true, "details": {"max_T_minus_T0": 0.0, "interior_max": -0.07801384379867216}}
+{"check": "heat-8", "claim": "transient K=100: T(-q) - T0 = -(T(+q) - T0)", "pass": true, "details": {"rel_err": 6.318230402068022e-15}}
+{"check": "heat-8", "claim": "steady: q = 0 gives T == T0 exactly", "pass": true, "details": {"max_dev": 0.0}}
+{"check": "heat-8", "claim": "steady: q < 0 gives T <= T0 everywhere, < T0 inside, ends = T0", "pass": true, "details": {"max_T_minus_T0": 0.0, "interior_max": -0.11279296875}}
+{"check": "heat-8", "claim": "steady: T(-q) - T0 = -(T(+q) - T0)", "pass": true, "details": {"rel_err": 9.689219124001466e-16}}
+{"check": "heat-8", "claim": "q = 0: T == T0 exactly; q < 0: T <= T0 (strictly inside) and T(-q) - T0 = -(T(q) - T0)", "pass": true, "details": {"n_claims": 6, "failed": []}}

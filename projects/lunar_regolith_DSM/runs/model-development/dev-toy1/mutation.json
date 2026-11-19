@@ -1,0 +1,117 @@
+{
+ "candidates": 197,
+ "mutations": [
+  {
+   "n": 1,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 5,
+   "kind": "double_literal",
+   "applied": true,
+   "original": "Spec: runs/model-development/dev-toy1/derivation/spec.md (M4-1 ... M4-9); term IDs T1-T5 follow code_map.json.",
+   "mutated": "Spec: runs/model-development/dev-toy1/derivation/spec.md (M4-1 ... M4-18); term IDs T1-T5 follow code_map.json.",
+   "caught": false,
+   "caught_by": null
+  },
+  {
+   "n": 2,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 31,
+   "kind": "double_literal",
+   "applied": true,
+   "original": "G_L = 1.0  # Dirichlet data theta'(0, tau) (S29)",
+   "mutated": "G_L = 2.0",
+   "caught": true,
+   "caught_by": "infra-1"
+  },
+  {
+   "n": 3,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 74,
+   "kind": "plus_to_minus",
+   "applied": true,
+   "original": "f = A sin(pi xi)[e^-tau + pi^2 (1 - e^-tau)] + 2 pi B xi(1 - xi) cos(2 pi tau) + 2 B sin(2 pi tau) - Q",
+   "mutated": "f = A sin(pi xi)[e^-tau - pi^2 (1 - e^-tau)] + 2 pi B xi(1 - xi) cos(2 pi tau) + 2 B sin(2 pi tau) - Q",
+   "caught": false,
+   "caught_by": null
+  },
+  {
+   "n": 4,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 98,
+   "kind": "minus_to_plus",
+   "applied": true,
+   "original": "if U.shape != (n - 1,) or Udot.shape != (n - 1,):",
+   "mutated": "if U.shape != (n + 1,) or Udot.shape != (n - 1,):",
+   "caught": true,
+   "caught_by": "infra-1"
+  },
+  {
+   "n": 5,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 133,
+   "kind": "double_literal",
+   "applied": true,
+   "original": "sup = np.full(m, -1.0 / h**2)",
+   "mutated": "sup = np.full(m, -2.0 / h**2)",
+   "caught": true,
+   "caught_by": "infra-3"
+  },
+  {
+   "n": 6,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 179,
+   "kind": "plus_to_minus",
+   "applied": true,
+   "original": "U = 1.0 + 0.1 * rng.standard_normal(m)",
+   "mutated": "U = 1.0 - 0.1 * rng.standard_normal(m)",
+   "caught": false,
+   "caught_by": null
+  },
+  {
+   "n": 7,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 226,
+   "kind": "double_literal",
+   "applied": true,
+   "original": "_STEP_RTOL = 1.0e-10  # t_end/dt must be an integer to within this relative amount (spec \"Grid and scales\")",
+   "mutated": "_STEP_RTOL = 2e-10",
+   "caught": false,
+   "caught_by": null
+  },
+  {
+   "n": 8,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 281,
+   "kind": "double_literal",
+   "applied": true,
+   "original": "if not dtau > 0.0:",
+   "mutated": "if not dtau > 0.0:",
+   "caught": false,
+   "caught_by": null
+  },
+  {
+   "n": 9,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 347,
+   "kind": "double_literal",
+   "applied": true,
+   "original": "\"\"\"Direct steady solve (M4-5): residual with Udot = 0 and f = 0, J with shift = 0. Returns (x, T), length n+1.",
+   "mutated": "\"\"\"Direct steady solve (M4-10): residual with Udot = 0 and f = 0, J with shift = 0. Returns (x, T), length n+1.",
+   "caught": false,
+   "caught_by": null
+  },
+  {
+   "n": 10,
+   "file": "projects/lunar_regolith_DSM/toy/heat1d.py",
+   "line": 385,
+   "kind": "plus_to_minus",
+   "applied": true,
+   "original": "if V.size == n + 1:",
+   "mutated": "if V.size == n - 1:",
+   "caught": true,
+   "caught_by": "heat-6"
+  }
+ ],
+ "caught": 4,
+ "total": 10
+}

@@ -1,0 +1,36 @@
+{
+ "id": "heat-11",
+ "claim": "verifier's addition: solve raises ValueError iff t_end/dt is not an integer within 1e-10 relative (decision G:Discretization 2 (a))",
+ "runner": "python",
+ "project": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 2.0
+ },
+ "started": "20261116-193558",
+ "draft": true,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 1,
+ "timed_out": false,
+ "check": {
+  "check": "heat-11",
+  "claim": "solve raises ValueError iff t_end/dt is not an integer within 1e-10 relative",
+  "pass": false,
+  "details": {
+   "n_claims": 1,
+   "failed": [
+    "test ran without an exception"
+   ]
+  },
+  "exit": 1
+ },
+ "pass": false,
+ "wall_seconds": 0.2
+}

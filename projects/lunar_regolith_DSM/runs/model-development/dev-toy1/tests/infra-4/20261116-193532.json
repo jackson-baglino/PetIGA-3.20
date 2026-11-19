@@ -1,0 +1,36 @@
+{
+ "id": "infra-4",
+ "claim": "check_jacobian reports failure on a Jacobian with the shift term removed, the super-diagonal sign flipped, or the sub-diagonal halved; the unmodified Jacobian passes",
+ "runner": "python",
+ "project": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 2.0
+ },
+ "started": "20261116-193532",
+ "draft": true,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 1,
+ "timed_out": false,
+ "check": {
+  "check": "infra-4",
+  "claim": "check_jacobian reports failure when the shift term is dropped, an off-diagonal sign is flipped, or an off-diagonal is halved",
+  "pass": false,
+  "details": {
+   "n_claims": 1,
+   "failed": [
+    "test ran without an exception"
+   ]
+  },
+  "exit": 1
+ },
+ "pass": false,
+ "wall_seconds": 0.2
+}

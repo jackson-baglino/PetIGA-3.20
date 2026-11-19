@@ -1,0 +1,34 @@
+{
+ "id": "heat-8",
+ "claim": "q = 0 gives T == T0 exactly (S37); q < 0 gives T <= T0, strictly inside, ends T0 (C2, S38); T(-q) - T0 = -(T(q) - T0)",
+ "runner": "python",
+ "project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_ptr84gaw/wt/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 2.0
+ },
+ "started": "20261116-194507",
+ "draft": false,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 0,
+ "timed_out": false,
+ "check": {
+  "check": "heat-8",
+  "claim": "q = 0: T == T0 exactly; q < 0: T <= T0 (strictly inside) and T(-q) - T0 = -(T(q) - T0)",
+  "pass": true,
+  "details": {
+   "n_claims": 6,
+   "failed": []
+  },
+  "exit": 0
+ },
+ "pass": true,
+ "wall_seconds": 0.2
+}

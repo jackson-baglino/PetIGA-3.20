@@ -1,0 +1,7 @@
+{"check": "heat-12", "used": {"project": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-12", "used": {"module_file": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-12", "claim": "C1 N=8 dtau=0.05 K=4 mms off: solve = M4-4 oracle", "pass": true, "details": {"max_abs_diff": 4.440892098500626e-16, "U_mid": 1.098636995206834, "oracle_mid": 1.0986369952068336}}
+{"check": "heat-12", "claim": "C1 N=8 dtau=0.05 K=4 mms on: solve = M4-4 oracle", "pass": true, "details": {"max_abs_diff": 6.661338147750939e-16, "U_mid": 1.1462756522517195, "oracle_mid": 1.146275652251719}}
+{"check": "heat-12", "claim": "P N=8 dtau=0.05 K=3 mms on: solve = M4-4 oracle", "pass": true, "details": {"max_abs_diff": 2.220446049250313e-16, "U_mid": 1.0455948034975104, "oracle_mid": 1.0455948034975102}}
+{"check": "heat-12", "claim": "P N=7 dtau=0.2 K=2 mms off: solve = M4-4 oracle", "pass": true, "details": {"max_abs_diff": 2.220446049250313e-16, "U_mid": 1.1217606583535338, "oracle_mid": 1.121760658353534}}
+{"check": "heat-12", "claim": "solve(n, dt, t_end, params) equals K backward-Euler steps of M4-4 computed with a dense solver", "pass": true, "details": {"n_claims": 4, "failed": []}}

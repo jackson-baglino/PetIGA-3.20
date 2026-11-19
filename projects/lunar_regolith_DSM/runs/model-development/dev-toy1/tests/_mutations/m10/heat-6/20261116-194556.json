@@ -1,0 +1,36 @@
+{
+ "id": "heat-6",
+ "claim": "steady half-cell end fluxes F'_0 = F'_1 = Q/2, dimensional (k T0/L) F' = qL/2 (S45, V4)",
+ "runner": "python",
+ "project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8z9udoxj/wt/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 2.0
+ },
+ "started": "20261116-194556",
+ "draft": false,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 1,
+ "timed_out": false,
+ "check": {
+  "check": "heat-6",
+  "claim": "steady half-cell end fluxes F'_0 = F'_1 = Q/2, dimensional (k T0/L) F' = qL/2",
+  "pass": false,
+  "details": {
+   "n_claims": 1,
+   "failed": [
+    "test ran without an exception"
+   ]
+  },
+  "exit": 1
+ },
+ "pass": false,
+ "wall_seconds": 0.2
+}

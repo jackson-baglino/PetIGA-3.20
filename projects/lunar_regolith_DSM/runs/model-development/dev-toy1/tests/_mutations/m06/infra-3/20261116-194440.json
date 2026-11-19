@@ -1,0 +1,34 @@
+{
+ "id": "infra-3",
+ "claim": "jacobian_tridiag = shift dF/dUdot + dF/dU of residual() at shifts 0, 10, 1e3, 1e5, in every group (full, boundary rows, interior rows, dF/dU, dF/dUdot); module check_jacobian reports pass",
+ "runner": "python",
+ "project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8_foegeh/wt/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 2.0
+ },
+ "started": "20261116-194440",
+ "draft": false,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 0,
+ "timed_out": false,
+ "check": {
+  "check": "infra-3",
+  "claim": "jacobian_tridiag = shift*dF/dUdot + dF/dU of residual() at shifts 0, 10, 1e3, 1e5; check_jacobian passes",
+  "pass": true,
+  "details": {
+   "n_claims": 147,
+   "failed": []
+  },
+  "exit": 0
+ },
+ "pass": true,
+ "wall_seconds": 0.2
+}

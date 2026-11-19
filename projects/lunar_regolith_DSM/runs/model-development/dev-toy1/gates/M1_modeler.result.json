@@ -1,0 +1,22 @@
+{
+ "status": "done",
+ "outputs": [
+  "derivation/spec_problem.md",
+  "derivation/citations.json",
+  "derivation/scratch/m1_scales.py"
+ ],
+ "evidence": [
+  "Both files exist. spec_problem.md has the seven level-2 headings in the required order: Problem (line 9), Mechanisms (20), Scales (31), Constitutive laws (66), Notation (76), Out of scope (102), Choices for the user (114). I checked this with a grep for '^## '.",
+  "citations.json is the empty list []. No paper is cited because the brief says the toy must not be cited and needs no papers (toy_heat1d.md lines 3-4 and 23). With nothing cited, there are no quotes to check, and library_search.py quote was not run.",
+  "Every number in Scales and Mechanisms names its source. Each one is either a brief file and line (lines 8, 9, 13, 17, 21, 22) or a computation shown in the text: kappa=1, t_c=1 s, t_slow=1/pi^2\u22480.1013 s, t_99\u22480.4666 s, dT_q=1 K, dT_max=qL^2/(8k)=0.125 K, Q=1, dT_max/T0=Q/8=0.125. All of these come from the proposed C1 unit reference case.",
+  "I re-ran these numbers with scratch/m1_scales.py and the output matched: kappa=1.0 t_diff=1.0 t_slow=0.101321 t_99=0.466601 dT_q=1.0 Q=1.0 dT_max=0.125.",
+  "The sign of the outward normal is given (n=-1 at x=0, n=+1 at x=L), along with the range of each field. The steady end flux qL/2 is derived from the parabola in the text.",
+  "Limitation: no number could be sourced for the out-of-scope mechanisms (beta=dlnk/dT, surface loss coefficients) because the brief names no material. These mechanisms are excluded by the brief's decision (line 21), and the text says so."
+ ],
+ "questions": [
+  "C1: The brief gives no reference values for L, k, rho, c_p, q and T_0. Do you accept the unit case (all equal to 1 in SI units, so Q = 1) that I recommend? All reference numbers in spec_problem.md are provisional until you decide.",
+  "C2: Should negative q (a heat sink) be allowed? I recommend allowing any real q in the code and testing with q > 0. The parabola test holds for any sign; only the stated range of T assumes q >= 0.",
+  "Do you approve the notation table, including the dimensionless variables xi, tau, theta and the group Q = qL^2/(k T_0)? It becomes locked once you approve it."
+ ],
+ "summary": "I wrote the M1 scope for the toy 1D heat problem. Conduction, the uniform source and heat storage are in; everything else is out, as the brief decides. The time scale is L^2/kappa; the slowest mode decays to 1 % after about 0.47 L^2/kappa, which sets how long the steady-state test must run. With theta = (T\u2212T0)/(qL^2/k), the equation has no parameters, and the one dimensionless group is Q = qL^2/(k T0); the peak temperature rise is Q/8 = 0.125 of T0 in the reference case. No paper is cited, so citations.json is empty. The reference values rest on choice C1 (unit case), which you still need to decide."
+}

@@ -1,0 +1,6 @@
+{"check": "heat-4", "used": {"project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_uk5dcnm5/wt/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-4", "used": {"module_file": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_uk5dcnm5/wt/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-4", "claim": "max|theta - theta_s| <= 2e-5 (D-d)", "pass": true, "details": {"d": 7.017166760769911e-06}}
+{"check": "heat-4", "claim": "max|theta - theta_s| equals the discrete floor 7.0172e-6 within 1 %", "pass": true, "details": {"d": 7.017166760769911e-06, "ratio": 0.9999952631776079}}
+{"check": "heat-4", "claim": "theta <= theta_s at every node", "pass": true, "details": {"max_excess": 0.0}}
+{"check": "heat-4", "claim": "tau_end = 1, N = 64, dtau = 1e-3: max|theta - theta_s| <= 2e-5 and equals the discrete floor 7.0172e-6 within 1 %", "pass": true, "details": {"n_claims": 3, "failed": []}}

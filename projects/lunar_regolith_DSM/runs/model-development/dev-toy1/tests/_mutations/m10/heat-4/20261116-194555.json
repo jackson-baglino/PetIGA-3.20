@@ -1,0 +1,34 @@
+{
+ "id": "heat-4",
+ "claim": "tau_end = 1 with the reference discretization: max|theta - theta_s| <= 2e-5 (D-d) and equals the fully discrete floor 7.0172e-6 within 1 %; theta <= theta_s everywhere",
+ "runner": "python",
+ "project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8z9udoxj/wt/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 5.0
+ },
+ "started": "20261116-194555",
+ "draft": false,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 0,
+ "timed_out": false,
+ "check": {
+  "check": "heat-4",
+  "claim": "tau_end = 1, N = 64, dtau = 1e-3: max|theta - theta_s| <= 2e-5 and equals the discrete floor 7.0172e-6 within 1 %",
+  "pass": true,
+  "details": {
+   "n_claims": 3,
+   "failed": []
+  },
+  "exit": 0
+ },
+ "pass": true,
+ "wall_seconds": 0.3
+}

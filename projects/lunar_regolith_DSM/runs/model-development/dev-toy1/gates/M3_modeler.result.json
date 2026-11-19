@@ -1,0 +1,28 @@
+{
+ "status": "done",
+ "outputs": [
+  "derivation/ledger.json",
+  "derivation/derivation.md",
+  "derivation/scratch/m3_try3.py",
+  "derivation/scratch/m3_ledger_check.py"
+ ],
+ "evidence": [
+  "Verifier failure 'required_premises' (results_M3.json lines 27-42): S12.from is now [S11, S6, S5], and its operation says the integrand is continuous because q is constant (S5). S21.from and S22.from are now [S20, S6], and their operations cite S6 for differentiability in t, and twice in x. Confirmed by m3_ledger_check.py.",
+  "Verifier failure 'tref_constant_for_S13' (results_M3.json lines 44-57): S1 now states 'T_{ref} constant in x and t'. S13.from contains S1, and its operation attributes T_ref constancy in t to S1. m3_try3.py shows that d_t[rho c_p (T - T_ref(t))] = c_p rho (T_t - T_ref'(t)), and that the extra term vanishes for constant T_ref. S1's if_wrong records what the term would mean, and the T_ref symbol entry now says it is constant (S1).",
+  "D-b(a): S6 is unchanged (broadened form kept). D-c(a): theta <= 1/8 is left out; derivation.md section 5 and the last section say so.",
+  "Scratch scripts run with venv_workflows/bin/python -I. m3_series.py: S52 and S53 symbolic OK, beta_1 = 4/pi^3, beta_2 = 0. S54 term solves the heat equation. g(0.1) = 0.4744874604, against the true d_tau theta(1/2, 0.1) = 0.4744874604. S57 bounds at tau = 1 are 6.5856e-5 and 6.6726e-6 and equal the series maxima. min theta on the grid is -1.8e-17 (roundoff).",
+  "m3_try3.py: S21 and S22 chain-rule residuals are 0. S31 gives kappa = t_c = DeltaT_q = Q = 1. tau_g = 0.0139141. g' signs at tau_g/2, tau_g, 2tau_g, 0.1 are +8.59, ~0, -6.37, -4.68. S56 intermediates are 0.474546 and 5.88987e-5. S57 values are exp(-pi^2) = 5.17232e-5 and 4/pi^3 = 0.129006. The tau = 0.3 storage bound is 0.0659, and the D-d ratio is 6.67e-6/(1/8) = 5.34e-5. All agree with the earlier hand values. The ledger (S31, S56, S57) and derivation.md now quote these outputs.",
+  "m3_ledger_check.py on the final files: 57 steps (8 assumptions, 1 choice, 48 derived), ids unique, every type has its required fields, every derived premise comes earlier in list order, and every step id named in an operation is in its 'from'. Problems: none.",
+  "Done criterion, derivation.md coverage: 'ids not mentioned in derivation.md: []'. Every one of the 57 ids appears, and every \\tag is a ledger id. 55 ids have a tagged display; S1 and S8 are prose assumptions, mentioned but not displayed.",
+  "Done criterion, citations: no step is of type 'cited' (the brief forbids paper citations for the toy), so no quote check applies. citations.json stays empty.",
+  "Done criterion, symbols: the symbols list is unchanged in membership (41 entries) and global. Only the T_ref meaning was edited. No new symbol was introduced at try 3.",
+  "derivation.md brought up to date. Section 0 is rewritten for try 3. S48-S57 are presented in sections 5 and 8, with numbers in tables from the scratch runs. The S32 display uses the ledger wording ('no term is negligible', 'near steady: conduction balances the source'). The stale claims about uncovered steps and 'S32_magnitudes' are removed; the current check is m3_series.py/S32. The 'no scratch run' bullet is replaced.",
+  "Statement strings were not edited for any step, so the verifier's planted-error substitutions (results_M3.json self-test) still find their target text. Only S1's statement gained the T_ref clause.",
+  "Extra change beyond the note: S28.from gained S21 and S22. Its operation says 'as in S21-S22', which the verifier listed as informative. This is recorded in derivation.md section 0."
+ ],
+ "questions": [
+  "S28 now also lists S21 and S22 as premises, for consistency with S34, which lists S9 for an 'as in' reference. The note did not ask for this. Keep it, or revert it to the try-2 premise list?",
+  "decisions.json now records the G:Derivation send-back (2026-11-16T18:28:21-08:00), but it still has no entry for the try-2 decisions D2(a), D3(a), D4(a), or for the 'C1, C2 and the notation stand' note cited in the ledger. Should the line record them, so the gate can verify those citations?"
+ ],
+ "summary": "Try 3 fixes the verifier's two remaining failures. S12 now lists S5 as a premise, and S21 and S22 list S6. S1 now states that T_ref is constant in x and t, and S13 cites it. A scratch script confirms the term \u2212\u03c1c_p dT_ref/dt that a time-dependent T_ref would add. S6 stays broadened (D-b (a)) and \u03b8 \u2264 1/8 stays out (D-c (a)). No step id or displayed equation changed; the one extra edit is S28's premise list (S21, S22), raised as a question. Both scratch scripts now run, every number in the ledger and derivation.md is quoted from their output (all match the earlier hand values), and a structural self-check reports no problems, with all 57 ids mentioned in derivation.md. derivation.md is rewritten to present S48\u2013S57 and S32 in the ledger's wording and to drop the stale remarks."
+}

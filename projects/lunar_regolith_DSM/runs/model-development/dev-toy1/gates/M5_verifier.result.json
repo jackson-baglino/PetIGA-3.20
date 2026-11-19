@@ -1,0 +1,44 @@
+{
+ "status": "done",
+ "outputs": [
+  "studies/heat1d-fd-be/tests/tests.json",
+  "studies/heat1d-fd-be/tests/INTERFACE.md",
+  "studies/heat1d-fd-be/tests/reference/README.md",
+  "studies/heat1d-fd-be/tests/test_infra_1.py",
+  "studies/heat1d-fd-be/tests/test_infra_2.py",
+  "studies/heat1d-fd-be/tests/test_infra_3.py",
+  "studies/heat1d-fd-be/tests/test_infra_4.py",
+  "studies/heat1d-fd-be/tests/test_heat_1.py",
+  "studies/heat1d-fd-be/tests/test_heat_2.py",
+  "studies/heat1d-fd-be/tests/test_heat_3.py",
+  "studies/heat1d-fd-be/tests/test_heat_4.py",
+  "studies/heat1d-fd-be/tests/test_heat_5.py",
+  "studies/heat1d-fd-be/tests/test_heat_6.py",
+  "studies/heat1d-fd-be/tests/test_heat_7.py",
+  "studies/heat1d-fd-be/tests/test_heat_8.py",
+  "studies/heat1d-fd-be/tests/test_heat_9.py",
+  "studies/heat1d-fd-be/tests/test_heat_10.py",
+  "studies/heat1d-fd-be/tests/test_heat_11.py",
+  "studies/heat1d-fd-be/tests/test_heat_12.py",
+  "studies/heat1d-fd-be/tests/test_heat_13.py",
+  "studies/heat1d-fd-be/tests/test_heat_14.py",
+  "../../../projects/lunar_regolith_DSM/runs/model-development/dev-toy1/tests/_verifier_ref/ (verifier's own reference module ok/ and planted-error copies mut_ftime, mut_kappa, mut_gR, mut_shift, mut_flux, mut_mmsQ; never run, see questions)"
+ ],
+ "evidence": [
+  "Every test has a check script: tests.json lists 18 tests (infra-1..4, heat-1..14). Each one's 'script' and 'check' is the same file test_<id>.py, so there are 18 files, and each prints one JSON line per claim and a summary line last.",
+  "Caps: all 18 tests are runner 'python' with 1 rank and wall_minutes between 2 and 10 (heat-1 has 10: 100,000 BE steps at N = 16 and 32). run_test.sh accepted every one in --draft mode; the caps it recorded were ranks 1 and wall 2/5/10 minutes.",
+  "Baseline: no test has baseline 'main' (work order: 'No baseline tests on main for the toy'). So the 'every baseline test passed on main' part of the done criterion holds with nothing to run. reference/README.md records this.",
+  "Plumbing run on the worktree with the listed command, one call per id: all 18 result JSONs exist under dev-toy1/tests/<id>/20261116-1934xx-1936xx.json. No result contains 'check printed no JSON'. infra-1 log line 2 shows the expected failure ModuleNotFoundError: No module named 'toy'. So every script compiles, imports the module from --project (or from cwd in the check pass), and reports a verdict.",
+  "Spec claims covered: M4-6 terms T1-T4 (infra-1, incl. T3 alone = -1/h^2 in rows 1, N-1); T5 / M4-9 vs the spec samples 0.5336200848195806 and 0.2929012062596490 (infra-2); M4-7 entries and a central difference split into full/boundary/interior/dF/dU/dF/dUdot at shifts 0, 10, 1e3, 1e5 (infra-3); check_jacobian sensitivity (infra-4); orders 2 in h and 1 in dt, with magnitudes pinned to the spec's 5.2340e-4/1.3016e-4 and 7.5869e-4/3.7746e-4 (heat-1, heat-2); M4-5 steady exact (heat-3); D-d at tau = 1 with a 2e-5 bound and the floor 7.0172e-6 within 1 % (heat-4); D4 bounds (heat-5); S45 fluxes (heat-6); S44 with non-unit P and _scales = (3/35, 44/39, 140/3, 39/4) (heat-7); S37/S38 (heat-8).",
+  "Verifier additions: transient scaling invariance P vs C1 with the same Q (heat-9; catches a wrong kappa or MMS forcing evaluated at dimensional time); dt rule M4-8 (heat-10); ValueError rule from decision 2(a) (heat-11); a dense-solver oracle of M4-4 with large steps (heat-12; catches forcing at tau^n, which the order test cannot); energy decay ||U^K - U_s|| <= (1 + dtau lambda_1)^-K E_0, with ratio >= 0.99 at K = 1000 (heat-13); exact discrete global heat balance with half-cell fluxes, derived in the script header (heat-14).",
+  "Not applicable for the toy, recorded in tests.json 'not_applicable': psi = 1 vs today's model, neck width of two sintering grains, closed-box water, regression on main. heat-14 is the conservation test and heat-13 the energy test."
+ ],
+ "questions": [
+  "Interface (needed before M6): spec.md names residual, jacobian_tridiag and solve_steady but does not give their arguments. The tests assume residual(tau, U, Udot, n, params) -> (n-1,), jacobian_tridiag(shift, n, params) -> (sub, diag, sup) with sub[0] and sup[-1] unused, and solve_steady(n, params) -> (x, T). They also assume end_fluxes takes f_end as a pair (f(0,tau), f(1,tau)) and returns (F'_0, F'_1), and that check_jacobian returns a dict with a boolean 'pass' and looks up the module-level jacobian_tridiag by name at call time (infra-4 depends on that). All of this is written in tests/INTERFACE.md. Do you approve these signatures, so the modeler implements to them?",
+  "Calibration not run: the guard allows run_test.sh only with --project set to the worktree. So I could not run the tests against my own independent reference module (dev-toy1/tests/_verifier_ref/ok) or its six planted-error copies. The test bodies are therefore unexecuted: syntax and imports are confirmed, but runtime and tolerance behavior on a correct implementation are not. Should the line allow `run_test.sh ... --project <run>/tests/_verifier_ref/<name> --out <run>/tests/_verifier_ref/results --draft` for this stage, so I can show each test passes on a correct module and fails on each mutant before G:Test lock?",
+  "Tolerances to approve: heat-1 |p-2| <= 0.1 with magnitudes within 2 %; heat-2 |p-1| <= 0.1 with magnitudes within 2 %; heat-4 d <= 2e-5 (D-d) and the floor 7.0172e-6 within 1 %; heat-3/7 1e-11 in theta'; heat-12 1e-12; heat-13 0.99 lower ratio; heat-14 1e-9 max(1,|Q|); infra-3 1e-8 relative with a central-difference step of 1e-3. The reasons are in tests.json. The magnitude checks in heat-1/2/4 rely on the spec's scratch numbers, which I could not reproduce independently (see the calibration question). Do you accept these values, or would you rather keep only the order and the bound claims until calibration?",
+  "heat-5 samples 'every step' at selected step counts, because solve() returns only the final state. Is that acceptable, or should the interface expose step_be(U, tau_new, dtau, n, params) so the test can check every step?",
+  "No instruction-like text was found in the files I read."
+ ],
+ "summary": "I wrote 18 tests for heat1d-fd-be in studies/heat1d-fd-be/tests: infra-1..4 and heat-1..8 from the spec's Layers, plus heat-9..14 of my own (transient scaling, the dt rule, the ValueError rule, a dense M4-4 oracle, energy decay, and the discrete global heat balance). Each test is one self-contained script that serves as both the run script and the check, and each entry in tests.json has a tolerance, its reason, a layer, a cost, and \"baseline\": \"none\". Every test ran on the worktree under the caps with the listed command. Each printed a JSON verdict and failed only on the missing toy module, as expected before M6; no test needs a baseline on main. The tests have not been calibrated against a correct implementation. The guard blocked running them against my own reference module and its planted-error copies, so the code that does the checking has never run. The function signatures the spec leaves open are written down in INTERFACE.md for approval."
+}

@@ -1,0 +1,8 @@
+{"check": "heat-7", "used": {"project": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-7", "used": {"module_file": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-7", "claim": "n=64: x_j = L j/n", "pass": true, "details": {}}
+{"check": "heat-7", "claim": "n=64: T = S44 at every node", "pass": true, "details": {"max_rel_err": 1.503071171800212e-15, "T_mid": 14.833333333333314, "Te_mid": 14.833333333333334}}
+{"check": "heat-7", "claim": "n=9: x_j = L j/n", "pass": true, "details": {}}
+{"check": "heat-7", "claim": "n=9: T = S44 at every node", "pass": true, "details": {"max_rel_err": 1.3664283380001927e-16, "T_mid": 14.810699588477366, "Te_mid": 14.810699588477366}}
+{"check": "heat-7", "claim": "_scales(P) = (kappa, Q, t_c, k T0/L^2)", "pass": true, "details": {"got": [0.08571428571428572, 1.1282051282051282, 46.666666666666664, 9.75], "expected": [0.08571428571428572, 1.1282051282051282, 46.666666666666664, 9.75]}}
+{"check": "heat-7", "claim": "P parameters: solve_steady gives T = T0 + q x(L - x)/(2k) at the nodes; _scales(P) = (3/35, 44/39, 140/3, 39/4)", "pass": true, "details": {"n_claims": 5, "failed": []}}

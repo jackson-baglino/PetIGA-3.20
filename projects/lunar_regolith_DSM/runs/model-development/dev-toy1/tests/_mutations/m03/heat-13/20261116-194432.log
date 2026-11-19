@@ -1,0 +1,9 @@
+{"check": "heat-13", "used": {"project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_iqxc3o8d/wt/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-13", "used": {"module_file": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_iqxc3o8d/wt/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-13", "claim": "C1: E_K nonincreasing", "pass": true, "details": {"worst_increase": 0.0}}
+{"check": "heat-13", "claim": "C1: E_K <= (1 + dtau lambda_1)^-K E_0", "pass": true, "details": {"worst_excess": 0.0, "ratios": {"1": 0.9998901971155644, "2": 0.9997994352438672, "5": 0.9996045355267399, "10": 0.9994302425707292, "20": 0.9993111987633375, "50": 0.999277625625428, "100": 0.9992772518012961, "200": 0.9992772515971888, "500": 0.9992772515969853, "1000": 0.9992772515925769}}}
+{"check": "heat-13", "claim": "C1: E_1000 >= 0.99 of the mode-1 bound (decay rate is lambda_1)", "pass": true, "details": {"ratio": 0.9992772515925769}}
+{"check": "heat-13", "claim": "P: E_K nonincreasing", "pass": true, "details": {"worst_increase": 0.0}}
+{"check": "heat-13", "claim": "P: E_K <= (1 + dtau lambda_1)^-K E_0", "pass": true, "details": {"worst_excess": 0.0, "ratios": {"1": 0.9998901971155643, "2": 0.9997994352438672, "5": 0.9996045355267393, "10": 0.9994302425707288, "20": 0.9993111987633371, "50": 0.9992776256254288, "100": 0.9992772518012927, "200": 0.9992772515971962, "500": 0.9992772515972919, "1000": 0.9992772515776946}}}
+{"check": "heat-13", "claim": "P: E_1000 >= 0.99 of the mode-1 bound (decay rate is lambda_1)", "pass": true, "details": {"ratio": 0.9992772515776946}}
+{"check": "heat-13", "claim": "||U^K - U_s|| is nonincreasing, <= (1 + dtau lambda_1)^-K ||U^0 - U_s||, and >= 0.99 of that bound at K = 1000", "pass": true, "details": {"n_claims": 6, "failed": []}}

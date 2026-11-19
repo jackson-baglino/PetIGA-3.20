@@ -1,0 +1,27 @@
+{
+  "_source": "derivation/spec_problem.md, ## Scales, reference case C1(a) (provisional)",
+  "reference_case": {
+    "L":   [1.0, "m"],
+    "k":   [1.0, "W/(m*K)"],
+    "rho": [1.0, "kg/m**3"],
+    "cp":  [1.0, "J/(kg*K)"],
+    "q":   [1.0, "W/m**3"],
+    "T0":  [1.0, "K"]
+  },
+  "claimed": {
+    "kappa":        [1.0, "m**2/s"],
+    "x_c":          [1.0, "m"],
+    "t_c":          [1.0, "s"],
+    "t_slow":       [0.1013, "s"],
+    "ln100":        [4.605, ""],
+    "t_99":         [0.4666, "s"],
+    "dT_q":         [1.0, "K"],
+    "dT_max":       [0.125, "K"],
+    "dTmax_over_T0":[0.125, ""],
+    "Q":            [1.0, ""],
+    "Q_over_8":     [0.125, ""],
+    "tau_steady":   [0.47, ""],
+    "end_flux":     [0.5, "W/m**2"]
+  },
+  "rel_tol": 0.01
+}

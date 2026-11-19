@@ -1,0 +1,3017 @@
+{
+ "stage": "M3",
+ "time": "2026-11-16T18:36:43-08:00",
+ "all_pass": true,
+ "scripts": [
+  {
+   "script": "m3_assumptions.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "from_lists",
+     "claim": "each step named as a premise by an operation is listed in that step's from",
+     "pass": true,
+     "details": {
+      "missing from from-lists": {},
+      "informative: \"as in Sx\" pattern citations (not required in from)": {
+       "S28": [
+        "as in S21-S22"
+       ],
+       "S34": [
+        "as in S9"
+       ]
+      }
+     }
+    },
+    {
+     "check": "required_premises",
+     "claim": "every hypothesis an operation needs is among its premises (directly or through the steps it cites)",
+     "pass": true,
+     "details": {
+      "hypotheses not in the step's premises or their closure": {}
+     }
+    },
+    {
+     "check": "tref_constant_for_S13",
+     "claim": "S13 needs T_ref constant in time, and an assumption states it",
+     "pass": true,
+     "details": {
+      "extra term in S13 if T_ref depends on t": "-c_p*rho*Derivative(Tref(t), t)",
+      "assumptions stating T_ref constant in t": [
+       "S1"
+      ],
+      "stating assumption among S13 premises": true,
+      "S13 operation attributes T_ref constancy to S1": false,
+      "T_ref in symbols table (informative only)": [
+       "reference temperature of the caloric law, constant in x and t (S1); drops out of every equation"
+      ],
+      "finding": null
+     }
+    },
+    {
+     "check": "regularity_at_ends",
+     "claim": "S6 makes T, T_x, T_xx, T_t continuous up to x = 0 and x = L for t > 0",
+     "pass": true,
+     "details": {
+      "S6 has C^{2,1} on [0,L] x (0,inf)": true,
+      "needed by": [
+       "S9-S11 with a = 0 or b = L",
+       "S34",
+       "S35",
+       "S39",
+       "S45",
+       "S32 (theta_tau at xi = 0)"
+      ]
+     }
+    },
+    {
+     "check": "continuity_at_t0",
+     "claim": "S6 makes T continuous on [0,L] x [0,inf), including t = 0",
+     "pass": true,
+     "details": {
+      "S6 has C on [0,L] x [0,inf)": true,
+      "needed by": [
+       "S36 (E -> 0 as t -> 0+)",
+       "S48 (compact set)"
+      ]
+     }
+    },
+    {
+     "check": "theta_nonnegative",
+     "claim": "the ledger supplies theta >= 0 and S38's sign clause uses it",
+     "pass": true,
+     "details": {
+      "S50 states theta >= 0": true,
+      "S38 cites S50": true
+     }
+    },
+    {
+     "check": "k_constant_for_S14",
+     "claim": "S14 needs k constant, and cites S1 for it",
+     "pass": true,
+     "details": {
+      "extra term if k = k(x)": "-Derivative(T(x, t), x)*Derivative(kx(x), x)",
+      "S1 (k constant) in S14 from": true
+     }
+    },
+    {
+     "check": "q_nonzero",
+     "claim": "every step that uses theta rests on S20, which is restricted to q != 0",
+     "pass": true,
+     "details": {
+      "uses theta and rests on S20 (q != 0)": {
+       "S20": true,
+       "S21": true,
+       "S22": true,
+       "S23": true,
+       "S24": true,
+       "S25": true,
+       "S26": true,
+       "S48": true,
+       "S49": true,
+       "S50": true,
+       "S38": true,
+       "S41": true,
+       "S42": true,
+       "S43": true,
+       "S51": true,
+       "S53": true,
+       "S54": true,
+       "S55": true,
+       "S56": true,
+       "S57": true,
+       "S32": true
+      },
+      "S20 restricts to q != 0": true
+     }
+    },
+    {
+     "check": "source_positive_for_S50",
+     "claim": "the minimum principle S50 has the strictly positive source it relies on",
+     "pass": true,
+     "details": {
+      "S25 source": "1",
+      "why": "S50 contradicts theta_tau - theta_xixi <= 0 at a negative interior minimum only if the source > 0"
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_common.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "structure",
+     "claim": "every derived step names an operation and cites existing earlier steps",
+     "pass": true,
+     "details": {
+      "problems": {},
+      "duplicate ids": false,
+      "n_derived": 48
+     }
+    },
+    {
+     "check": "parse_report",
+     "claim": "statements parse into SymPy relations (informative)",
+     "pass": true,
+     "details": {
+      "relation pieces parsed": 112,
+      "not parsed (informative)": {
+       "S18": [
+        "\\left.\\text{S15}\\right|_{\\psi\\equiv 1} = \\text{S15} \\quad \\text{(the reduction i (tokenize: unexpected character '_')"
+       ],
+       "S32": [
+        "= 1 (ParseError: unexpected token ('op', '='))"
+       ],
+       "S47": [
+        "= (ParseError: unexpected token ('op', '='))",
+        "= 0 (ParseError: unexpected token ('op', '='))"
+       ]
+      }
+     }
+    },
+    {
+     "check": "coverage",
+     "claim": "every derived step is listed in COVERS of at least one m3 check",
+     "pass": true,
+     "details": {
+      "missing": [],
+      "n_derived": 48,
+      "covered_by": {
+       "S9": [
+        "m3_assumptions.py",
+        "m3_strong_form.py",
+        "m3_units.py"
+       ],
+       "S10": [
+        "m3_assumptions.py",
+        "m3_strong_form.py",
+        "m3_units.py"
+       ],
+       "S11": [
+        "m3_assumptions.py",
+        "m3_strong_form.py",
+        "m3_units.py"
+       ],
+       "S12": [
+        "m3_assumptions.py",
+        "m3_strong_form.py",
+        "m3_units.py"
+       ],
+       "S13": [
+        "m3_assumptions.py",
+        "m3_strong_form.py",
+        "m3_units.py"
+       ],
+       "S14": [
+        "m3_assumptions.py",
+        "m3_strong_form.py",
+        "m3_units.py"
+       ],
+       "S15": [
+        "m3_assumptions.py",
+        "m3_conservation_energy.py",
+        "m3_strong_form.py",
+        "m3_units.py"
+       ],
+       "S16": [
+        "m3_assumptions.py",
+        "m3_strong_form.py",
+        "m3_units.py"
+       ],
+       "S17": [
+        "m3_assumptions.py",
+        "m3_conservation_energy.py",
+        "m3_strong_form.py",
+        "m3_units.py"
+       ],
+       "S18": [
+        "m3_assumptions.py",
+        "m3_reduction.py"
+       ],
+       "S20": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S21": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S22": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S23": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S24": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S25": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S26": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S27": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S28": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S29": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S30": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S31": [
+        "m3_assumptions.py",
+        "m3_scaling.py",
+        "m3_units.py"
+       ],
+       "S33": [
+        "m3_assumptions.py",
+        "m3_uniqueness.py",
+        "m3_units.py"
+       ],
+       "S34": [
+        "m3_assumptions.py",
+        "m3_uniqueness.py",
+        "m3_units.py"
+       ],
+       "S35": [
+        "m3_assumptions.py",
+        "m3_uniqueness.py",
+        "m3_units.py"
+       ],
+       "S36": [
+        "m3_assumptions.py",
+        "m3_uniqueness.py",
+        "m3_units.py"
+       ],
+       "S37": [
+        "m3_assumptions.py",
+        "m3_uniqueness.py",
+        "m3_units.py"
+       ],
+       "S48": [
+        "m3_assumptions.py",
+        "m3_uniqueness.py",
+        "m3_units.py"
+       ],
+       "S49": [
+        "m3_assumptions.py",
+        "m3_uniqueness.py",
+        "m3_units.py"
+       ],
+       "S50": [
+        "m3_assumptions.py",
+        "m3_uniqueness.py",
+        "m3_units.py"
+       ],
+       "S38": [
+        "m3_assumptions.py",
+        "m3_uniqueness.py",
+        "m3_units.py"
+       ],
+       "S39": [
+        "m3_assumptions.py",
+        "m3_conservation_energy.py",
+        "m3_steady_flux.py",
+        "m3_units.py"
+       ],
+       "S40": [
+        "m3_assumptions.py",
+        "m3_reduction.py"
+       ],
+       "S41": [
+        "m3_assumptions.py",
+        "m3_steady_flux.py",
+        "m3_units.py"
+       ],
+       "S42": [
+        "m3_assumptions.py",
+        "m3_steady_flux.py",
+        "m3_units.py"
+       ],
+       "S43": [
+        "m3_assumptions.py",
+        "m3_steady_flux.py",
+        "m3_units.py"
+       ],
+       "S44": [
+        "m3_assumptions.py",
+        "m3_conservation_energy.py",
+        "m3_steady_flux.py",
+        "m3_units.py"
+       ],
+       "S45": [
+        "m3_assumptions.py",
+        "m3_steady_flux.py",
+        "m3_units.py"
+       ],
+       "S51": [
+        "m3_assumptions.py",
+        "m3_series.py",
+        "m3_units.py"
+       ],
+       "S52": [
+        "m3_assumptions.py",
+        "m3_series.py",
+        "m3_units.py"
+       ],
+       "S53": [
+        "m3_assumptions.py",
+        "m3_series.py",
+        "m3_units.py"
+       ],
+       "S54": [
+        "m3_assumptions.py",
+        "m3_conservation_energy.py",
+        "m3_series.py",
+        "m3_units.py"
+       ],
+       "S55": [
+        "m3_assumptions.py",
+        "m3_series.py",
+        "m3_units.py"
+       ],
+       "S56": [
+        "m3_assumptions.py",
+        "m3_series.py",
+        "m3_units.py"
+       ],
+       "S57": [
+        "m3_assumptions.py",
+        "m3_series.py",
+        "m3_units.py"
+       ],
+       "S32": [
+        "m3_assumptions.py",
+        "m3_series.py",
+        "m3_units.py"
+       ],
+       "S46": [
+        "m3_assumptions.py",
+        "m3_reduction.py"
+       ],
+       "S47": [
+        "m3_assumptions.py",
+        "m3_reduction.py"
+       ]
+      }
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_conservation_energy.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "closed_box_energy",
+     "claim": "closed (insulated) box: total energy changes only by int q; conserved for q = 0",
+     "pass": true,
+     "details": {
+      "d/dt int e (S3, S15)": "L*q",
+      "int q": "L*q",
+      "conserved for q = 0": true
+     }
+    },
+    {
+     "check": "dirichlet_energy_balance",
+     "claim": "Dirichlet box: d/dt int e = int q - F_0 - F_L (S3, S15, S39)",
+     "pass": true,
+     "details": {
+      "d/dt int e - (int q - F0 - FL)": "0"
+     }
+    },
+    {
+     "check": "series_energy_balance",
+     "claim": "the S54 series obeys the global balance d/dtau int theta = 1 - outward fluxes",
+     "pass": true,
+     "details": {
+      "(tau, d/dtau int theta, source + theta_xi(1) - theta_xi(0))": [
+       [
+        0.02,
+        0.6808462612175025,
+        0.6808462612175026
+       ],
+       [
+        0.1,
+        0.30211809377327326,
+        0.30211809377327326
+       ],
+       [
+        0.5,
+        0.005829521073839648,
+        0.00582952107383955
+       ]
+      ],
+      "max diff": 1.1102230246251565e-16
+     }
+    },
+    {
+     "check": "energy_identity_no_source",
+     "claim": "without the source, dE/dt = -kappa int T_x^2 <= 0 for E = 1/2 int (T-T0)^2 (S17, Dirichlet)",
+     "pass": true,
+     "details": {
+      "(dE/dt + kappa int T_x^2, dE/dt at t=0.3) on test fields": [
+       [
+        "0",
+        -0.7317488481253684
+       ],
+       [
+        "0",
+        -7.5063918409907116
+       ]
+      ]
+     }
+    },
+    {
+     "check": "energy_decay_no_source",
+     "claim": "without the source, E = 1/2 int (T-T0)^2 does not increase (backward-Euler solve of S17, Dirichlet)",
+     "pass": true,
+     "details": {
+      "coef of d2T/dx2 (S17)": "k/(c_p*rho)",
+      "source at q=0": 0.0,
+      "E0": 0.2942534906414997,
+      "E_end": 1.2712487471953714e-07,
+      "max step increase": -4.216550887094164e-09
+     }
+    },
+    {
+     "check": "steady_state_vs_S44",
+     "claim": "the steady state of S17 (finite differences) equals S44 within 1 %",
+     "pass": true,
+     "details": {
+      "max |FD - S44| / max |S44 - T0|": 9.947598300641403e-14,
+      "q": 3.0
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_probe_env.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "environment",
+     "claim": "sympy, numpy, scipy and pint are importable",
+     "pass": true,
+     "details": {
+      "sympy": "1.14.0",
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "pint": "0.25.3"
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_reduction.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "S18",
+     "claim": "\\left.\\text{S15}\\right|_{\\psi\\equiv 1} = \\text{S15} \\quad \\text{(the reduction is the identity, term by term: storage, conduction, source)}",
+     "pass": true,
+     "details": {
+      "grain/ice symbols in S15": [],
+      "S15|psi=1 == S15": true,
+      "S8 states psi, phi absent (psi == 1)": true
+     }
+    },
+    {
+     "check": "reduction_vs_Residual_A1",
+     "claim": "with psi == 1 (no grains, uniform phi) S15 equals today's Residual_A1 heat block term by term, plus only the source q",
+     "pass": true,
+     "details": {
+      "code line": 183,
+      "code weak heat (R[a][1])": "rho * cp * N * tem_t + xi_T * thcond * gN_gtem - pc * xi_T * rho_ice * lat_sub * phi_t * N",
+      "code strong 1D (phi uniform, xi_T=1, rw=1)": "c_p*rho*Derivative(T(x, t), t) - k*Derivative(T(x, t), (x, 2))",
+      "integration by parts checked on test N, T": true,
+      "k, c_p, rho are phi-mixtures (constant for uniform phi)": true,
+      "toy S15 residual": "c_p*rho*Derivative(T(x, t), t) - k*Derivative(T(x, t), (x, 2)) - q",
+      "storage matches": true,
+      "conduction matches": true,
+      "toy - code": "-q",
+      "difference is exactly -q (the source)": true,
+      "assumed": "xi_T = 1, phi uniform and constant, axisym off, decouple flag irrelevant (phi_t = 0)"
+     }
+    },
+    {
+     "check": "S40",
+     "claim": "\\text{wall (contact-angle) condition: none}",
+     "pass": true,
+     "details": {
+      "Rb[a][1] in code": "0.0",
+      "wall term acts only through phi": true,
+      "FACE_WALL block lines": [
+       81,
+       87
+      ],
+      "operation cites lines": [
+       "81",
+       "87"
+      ],
+      "S40 states none": true,
+      "S8 excludes phi": true
+     }
+    },
+    {
+     "check": "S46",
+     "claim": "\\text{thin-interface correction: does not apply}",
+     "pass": true,
+     "details": {
+      "interface symbols in S15": []
+     }
+    },
+    {
+     "check": "S47",
+     "claim": "\\lim_{eps,\\,eps_s\\to 0}\\text{S15} = \\text{S15};\\quad O(eps) \\text{ and } O(eps_s) \\text{ corrections} \\equiv 0",
+     "pass": true,
+     "details": {
+      "limit leaves S15 unchanged": true,
+      "dS15/d(eps, eps_s) at 0": [
+       "0",
+       "0"
+      ]
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_scaling.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "S20",
+     "claim": "\\Delta T_q \\equiv \\frac{qL^2}{k},\\quad x_c = L,\\quad t_c = \\frac{L^2}{\\kappa},\\quad \\xi \\equiv \\frac{x}{L},\\quad \\tau \\equiv \\frac{\\kappa t}{L^2},\\quad T = T_0 + \\Delta T_q\\,\\theta(\\xi,\\tau)\\quad (q\\ne 0)",
+     "pass": true,
+     "details": {
+      "xi == x/x_c": true,
+      "tau == t/t_c": true,
+      "xi in [0,1] for x in [0,L]": true,
+      "DeltaT_q = 0 only if q = 0": true,
+      "T = T_0 + DeltaT_q*theta": true,
+      "q != 0 stated": true,
+      "defs": {
+       "DeltaT_q": "L**2*q/k",
+       "x_c": "L",
+       "t_c": "L**2/kappa",
+       "xi": "x/L",
+       "tau": "kappa*t/L**2",
+       "T": "DeltaT_q*theta(xi, tau) + T_0"
+      }
+     }
+    },
+    {
+     "check": "S21",
+     "claim": "\\frac{\\partial T}{\\partial t} = \\frac{\\kappa\\,\\Delta T_q}{L^2}\\,\\frac{\\partial \\theta}{\\partial \\tau}",
+     "pass": true,
+     "details": {
+      "lhs-rhs on test theta": [
+       [
+        "frac { d_ T } { d_ t } = frac { kappa DeltaT_q } { L ^ 2 } frac { d_ theta } { d_ tau }",
+        "0"
+       ],
+       [
+        "frac { d_ T } { d_ t } = frac { kappa DeltaT_q } { L ^ 2 } frac { d_ theta } { d_ tau }",
+        "0"
+       ]
+      ]
+     }
+    },
+    {
+     "check": "S22",
+     "claim": "\\frac{\\partial T}{\\partial x} = \\frac{\\Delta T_q}{L}\\frac{\\partial \\theta}{\\partial \\xi},\\qquad \\frac{\\partial^2 T}{\\partial x^2} = \\frac{\\Delta T_q}{L^2}\\frac{\\partial^2 \\theta}{\\partial \\xi^2}",
+     "pass": true,
+     "details": {
+      "lhs-rhs on test theta": [
+       [
+        "frac { d_ T } { d_ x } = frac { DeltaT_q } { L } frac { d_ theta } { d_ xi }",
+        "0"
+       ],
+       [
+        "frac { d_ T } { d_ x } = frac { DeltaT_q } { L } frac { d_ theta } { d_ xi }",
+        "0"
+       ],
+       [
+        "frac { d_ ^ 2 T } { d_ x ^ 2 } = frac { DeltaT_q } { L ^ 2 } frac { d_ ^ 2 theta } { d_ xi ^ 2 }",
+        "0"
+       ],
+       [
+        "frac { d_ ^ 2 T } { d_ x ^ 2 } = frac { DeltaT_q } { L ^ 2 } frac { d_ ^ 2 theta } { d_ xi ^ 2 }",
+        "0"
+       ]
+      ]
+     }
+    },
+    {
+     "check": "S23",
+     "claim": "\\frac{\\kappa\\,\\Delta T_q}{L^2}\\frac{\\partial \\theta}{\\partial \\tau} = \\kappa\\,\\frac{\\Delta T_q}{L^2}\\frac{\\partial^2 \\theta}{\\partial \\xi^2} + \\frac{q}{\\rho c_p}",
+     "pass": true,
+     "details": {
+      "S17 vs S23 on test theta": [
+       [
+        true,
+        "equal"
+       ],
+       [
+        true,
+        "equal"
+       ]
+      ]
+     }
+    },
+    {
+     "check": "S24",
+     "claim": "\\frac{\\partial \\theta}{\\partial \\tau} = \\frac{\\partial^2 \\theta}{\\partial \\xi^2} + \\frac{q L^2}{\\rho c_p\\,\\kappa\\,\\Delta T_q}",
+     "pass": true,
+     "details": {
+      "divisor (ratio of tau-coefficients)": "DeltaT_q*kappa/L**2",
+      "S23 - divisor*S24": "0",
+      "divisor proportional to q (nonzero iff q != 0)": true
+     }
+    },
+    {
+     "check": "S25",
+     "claim": "\\frac{\\partial \\theta}{\\partial \\tau} = \\frac{\\partial^2 \\theta}{\\partial \\xi^2} + 1 \\quad \\text{in } (0,1)\\times(0,\\infty)",
+     "pass": true,
+     "details": {
+      "S24 with S16, S20": "Derivative(theta(xi, tau), tau) - Derivative(theta(xi, tau), (xi, 2)) - 1",
+      "S25": "Derivative(theta(xi, tau), tau) - Derivative(theta(xi, tau), (xi, 2)) - 1",
+      "compare": "equal",
+      "parameters left in S25": []
+     }
+    },
+    {
+     "check": "S26",
+     "claim": "\\theta(0,\\tau) = \\theta(1,\\tau) = 0,\\qquad \\theta(\\xi,0) = 0",
+     "pass": true,
+     "details": {
+      "expected from S7 via S20": {
+       "(0, tau)": "0",
+       "(1, tau)": "0",
+       "(xi, 0)": "0"
+      },
+      "stated in S26": {
+       "(0, tau)": "0",
+       "(1, tau)": "0",
+       "(xi, 0)": "0"
+      }
+     }
+    },
+    {
+     "check": "S27",
+     "claim": "T = T_0\\,\\theta'(\\xi,\\tau),\\qquad Q \\equiv \\frac{qL^2}{k\\,T_0}",
+     "pass": true,
+     "details": {
+      "T = T_0*theta'": true,
+      "Q finite at q = 0": true,
+      "S7 gives T_0 > 0": true,
+      "Q * k T_0 / (q L^2) = 1": true
+     }
+    },
+    {
+     "check": "S28",
+     "claim": "\\frac{\\kappa T_0}{L^2}\\frac{\\partial \\theta'}{\\partial \\tau} = \\kappa\\frac{T_0}{L^2}\\frac{\\partial^2 \\theta'}{\\partial \\xi^2} + \\frac{q}{\\rho c_p}",
+     "pass": true,
+     "details": {
+      "S17 vs S28 on test theta'": [
+       [
+        true,
+        "equal"
+       ],
+       [
+        true,
+        "equal"
+       ]
+      ]
+     }
+    },
+    {
+     "check": "S29",
+     "claim": "\\frac{\\partial \\theta'}{\\partial \\tau} = \\frac{\\partial^2 \\theta'}{\\partial \\xi^2} + Q,\\qquad \\theta'(0,\\tau)=\\theta'(1,\\tau)=1,\\quad \\theta'(\\xi,0)=1",
+     "pass": true,
+     "details": {
+      "divisor": "T_0*kappa/L**2",
+      "S28 - divisor*S29 (Q, kappa substituted)": "0",
+      "data expected": {
+       "(0, tau)": "1",
+       "(1, tau)": "1",
+       "(xi, 0)": "1"
+      },
+      "data stated": {
+       "(0, tau)": "1",
+       "(1, tau)": "1",
+       "(xi, 0)": "1"
+      }
+     }
+    },
+    {
+     "check": "S30",
+     "claim": "Q = \\frac{\\Delta T_q}{T_0},\\qquad \\theta' = 1 + Q\\,\\theta \\quad (q\\ne 0)",
+     "pass": true,
+     "details": {
+      "Q relation residual": "0",
+      "theta' relation residual": "0"
+     }
+    },
+    {
+     "check": "S31",
+     "claim": "\\kappa = 1\\,\\mathrm{m^2\\,s^{-1}},\\quad t_c = 1\\,\\mathrm{s},\\quad \\Delta T_q = 1\\,\\mathrm{K},\\quad Q = 1",
+     "pass": true,
+     "details": {
+      "kappa": {
+       "computed": "1.0 meter ** 2 / second",
+       "stated": "1.0 meter ** 2 / second",
+       "ratio": 1.0,
+       "within_1pct": true
+      },
+      "t_c": {
+       "computed": "1.0 second",
+       "stated": "1.0 second",
+       "ratio": 1.0,
+       "within_1pct": true
+      },
+      "DeltaT_q": {
+       "computed": "1.0 kelvin",
+       "stated": "1.0 kelvin",
+       "ratio": 1.0,
+       "within_1pct": true
+      },
+      "Q": {
+       "computed": "1.0 dimensionless",
+       "stated": "1.0 dimensionless",
+       "ratio": 1.0,
+       "within_1pct": true
+      }
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_selftest_planted.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "plant_sign_S9",
+     "claim": "planted error is caught by m3_strong_form.py/S9",
+     "pass": true,
+     "details": {
+      "script": "m3_strong_form.py",
+      "check": "S9",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S9.statement: '= \\\\int_a^b' -> '= -\\\\int_a^b'"
+     }
+    },
+    {
+     "check": "plant_sign_S10",
+     "claim": "planted error is caught by m3_strong_form.py/S10",
+     "pass": true,
+     "details": {
+      "script": "m3_strong_form.py",
+      "check": "S10",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S10.statement: '= -\\\\int_a^b' -> '= \\\\int_a^b'"
+     }
+    },
+    {
+     "check": "plant_sign_S11_source",
+     "claim": "planted error is caught by m3_strong_form.py/S11",
+     "pass": true,
+     "details": {
+      "script": "m3_strong_form.py",
+      "check": "S11",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S11.statement: '- q\\\\right)' -> '+ q\\\\right)'"
+     }
+    },
+    {
+     "check": "plant_sign_S12_source",
+     "claim": "planted error is caught by m3_strong_form.py/S12",
+     "pass": true,
+     "details": {
+      "script": "m3_strong_form.py",
+      "check": "S12",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S12.statement: '= q \\\\quad' -> '= -q \\\\quad'"
+     }
+    },
+    {
+     "check": "plant_factor_S13_storage",
+     "claim": "planted error is caught by m3_strong_form.py/S13",
+     "pass": true,
+     "details": {
+      "script": "m3_strong_form.py",
+      "check": "S13",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S13.statement: '\\\\rho c_p \\\\frac' -> '\\\\rho \\\\frac'"
+     }
+    },
+    {
+     "check": "plant_exponent_S14",
+     "claim": "planted error is caught by m3_strong_form.py/S14",
+     "pass": true,
+     "details": {
+      "script": "m3_strong_form.py",
+      "check": "S14",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S14.statement: '\\\\frac{\\\\partial^2 T}{\\\\partial x^2}' -> '\\\\frac{\\\\partial T}{\\\\partial x}'"
+     }
+    },
+    {
+     "check": "plant_sign_S15_conduction",
+     "claim": "planted error is caught by m3_strong_form.py/S15",
+     "pass": true,
+     "details": {
+      "script": "m3_strong_form.py",
+      "check": "S15",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S15.statement: '= k\\\\,' -> '= -k\\\\,'"
+     }
+    },
+    {
+     "check": "plant_sign_S15_vs_code",
+     "claim": "planted error is caught by m3_reduction.py/reduction_vs_Residual_A1",
+     "pass": true,
+     "details": {
+      "script": "m3_reduction.py",
+      "check": "reduction_vs_Residual_A1",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S15.statement: '= k\\\\,' -> '= -k\\\\,'"
+     }
+    },
+    {
+     "check": "plant_factor_S16",
+     "claim": "planted error is caught by m3_strong_form.py/S16",
+     "pass": true,
+     "details": {
+      "script": "m3_strong_form.py",
+      "check": "S16",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S16.statement: '\\\\frac{k}{\\\\rho c_p}' -> '\\\\frac{k}{\\\\rho}'"
+     }
+    },
+    {
+     "check": "plant_factor_S17_source",
+     "claim": "planted error is caught by m3_strong_form.py/S17",
+     "pass": true,
+     "details": {
+      "script": "m3_strong_form.py",
+      "check": "S17",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S17.statement: '\\\\frac{q}{\\\\rho c_p}' -> '\\\\frac{q}{\\\\rho}'"
+     }
+    },
+    {
+     "check": "plant_units_S17_source",
+     "claim": "planted error is caught by m3_units.py/units_S17",
+     "pass": true,
+     "details": {
+      "script": "m3_units.py",
+      "check": "units_S17",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S17.statement: '\\\\frac{q}{\\\\rho c_p}' -> '\\\\frac{q}{\\\\rho}'"
+     }
+    },
+    {
+     "check": "plant_grain_in_S15",
+     "claim": "planted error is caught by m3_reduction.py/S18",
+     "pass": true,
+     "details": {
+      "script": "m3_reduction.py",
+      "check": "S18",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S15.statement: '+ q \\\\quad' -> '+ q\\\\,\\\\psi \\\\quad'"
+     }
+    },
+    {
+     "check": "plant_exponent_S20_tau",
+     "claim": "planted error is caught by m3_scaling.py/S20",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S20",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S20.statement: '\\\\frac{\\\\kappa t}{L^2}' -> '\\\\frac{\\\\kappa t}{L}'"
+     }
+    },
+    {
+     "check": "plant_factor_S21_kappa",
+     "claim": "planted error is caught by m3_scaling.py/S21",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S21",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S21.statement: '\\\\frac{\\\\kappa\\\\,\\\\Delta T_q}{L^2}' -> '\\\\frac{\\\\Delta T_q}{L^2}'"
+     }
+    },
+    {
+     "check": "plant_exponent_S22",
+     "claim": "planted error is caught by m3_scaling.py/S22",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S22",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S22.statement: '\\\\frac{\\\\Delta T_q}{L^2}\\\\frac{\\\\partial^2' -> '\\\\frac{\\\\Delta T_q}{L}\\\\frac{\\\\partial^2'"
+     }
+    },
+    {
+     "check": "plant_sign_S23_source",
+     "claim": "planted error is caught by m3_scaling.py/S23",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S23",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S23.statement: '+ \\\\frac{q}{\\\\rho c_p}' -> '- \\\\frac{q}{\\\\rho c_p}'"
+     }
+    },
+    {
+     "check": "plant_factor_S24",
+     "claim": "planted error is caught by m3_scaling.py/S24",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S24",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S24.statement: '{\\\\rho c_p\\\\,\\\\kappa\\\\,\\\\Delta T_q}' -> '{\\\\rho c_p\\\\,\\\\Delta T_q}'"
+     }
+    },
+    {
+     "check": "plant_value_S25_source",
+     "claim": "planted error is caught by m3_scaling.py/S25",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S25",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S25.statement: '+ 1 \\\\quad' -> '+ 2 \\\\quad'"
+     }
+    },
+    {
+     "check": "plant_data_S26",
+     "claim": "planted error is caught by m3_scaling.py/S26",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S26",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S26.statement: '\\\\theta(1,\\\\tau) = 0' -> '\\\\theta(1,\\\\tau) = 1'"
+     }
+    },
+    {
+     "check": "plant_exponent_S27_Q",
+     "claim": "planted error is caught by m3_scaling.py/S27",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S27",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S27.statement: '\\\\frac{qL^2}{k\\\\,T_0}' -> '\\\\frac{qL}{k\\\\,T_0}'"
+     }
+    },
+    {
+     "check": "plant_factor_S28_source",
+     "claim": "planted error is caught by m3_scaling.py/S28",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S28",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S28.statement: '\\\\frac{q}{\\\\rho c_p}' -> '\\\\frac{q}{\\\\rho}'"
+     }
+    },
+    {
+     "check": "plant_factor_S29_Q",
+     "claim": "planted error is caught by m3_scaling.py/S29",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S29",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S29.statement: '+ Q,' -> '+ 2Q,'"
+     }
+    },
+    {
+     "check": "plant_sign_S30",
+     "claim": "planted error is caught by m3_scaling.py/S30",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S30",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S30.statement: '= 1 + Q' -> '= 1 - Q'"
+     }
+    },
+    {
+     "check": "plant_value_S31_tc",
+     "claim": "planted error is caught by m3_scaling.py/S31",
+     "pass": true,
+     "details": {
+      "script": "m3_scaling.py",
+      "check": "S31",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S31.statement: 't_c = 1' -> 't_c = 2'"
+     }
+    },
+    {
+     "check": "plant_sign_S33_pde",
+     "claim": "planted error is caught by m3_uniqueness.py/S33",
+     "pass": true,
+     "details": {
+      "script": "m3_uniqueness.py",
+      "check": "S33",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S33.statement: '= \\\\kappa\\\\frac' -> '= -\\\\kappa\\\\frac'"
+     }
+    },
+    {
+     "check": "plant_factor_S34_E",
+     "claim": "planted error is caught by m3_uniqueness.py/S34",
+     "pass": true,
+     "details": {
+      "script": "m3_uniqueness.py",
+      "check": "S34",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S34.statement: '\\\\equiv \\\\frac12' -> '\\\\equiv \\\\frac14'"
+     }
+    },
+    {
+     "check": "plant_sign_S35",
+     "claim": "planted error is caught by m3_uniqueness.py/S35",
+     "pass": true,
+     "details": {
+      "script": "m3_uniqueness.py",
+      "check": "S35",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S35.statement: '= -\\\\kappa' -> '= \\\\kappa'"
+     }
+    },
+    {
+     "check": "plant_sign_S36",
+     "claim": "planted error is caught by m3_uniqueness.py/S36",
+     "pass": true,
+     "details": {
+      "script": "m3_uniqueness.py",
+      "check": "S36",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S36.statement: 'T_1 \\\\equiv T_2' -> 'T_1 \\\\equiv -T_2'"
+     }
+    },
+    {
+     "check": "plant_value_S37",
+     "claim": "planted error is caught by m3_uniqueness.py/S37",
+     "pass": true,
+     "details": {
+      "script": "m3_uniqueness.py",
+      "check": "S37",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S37.statement: '\\\\equiv T_0' -> '\\\\equiv 2T_0'"
+     }
+    },
+    {
+     "check": "plant_closed_set_S6",
+     "claim": "planted error is caught by m3_uniqueness.py/S48",
+     "pass": true,
+     "details": {
+      "script": "m3_uniqueness.py",
+      "check": "S48",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S6.statement: 'T \\\\in C\\\\big([0,L]\\\\times[0,\\\\infty)\\\\big)' -> 'T \\\\in C\\\\big([0,L]\\\\times(0,\\\\infty)\\\\big)'"
+     }
+    },
+    {
+     "check": "plant_closed_set_S6_assump",
+     "claim": "planted error is caught by m3_assumptions.py/continuity_at_t0",
+     "pass": true,
+     "details": {
+      "script": "m3_assumptions.py",
+      "check": "continuity_at_t0",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S6.statement: 'T \\\\in C\\\\big([0,L]\\\\times[0,\\\\infty)\\\\big)' -> 'T \\\\in C\\\\big([0,L]\\\\times(0,\\\\infty)\\\\big)'"
+     }
+    },
+    {
+     "check": "plant_flip_S49",
+     "claim": "planted error is caught by m3_uniqueness.py/S49",
+     "pass": true,
+     "details": {
+      "script": "m3_uniqueness.py",
+      "check": "S49",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S49.statement: '(\\\\xi_*,\\\\tau_*) \\\\ge 0' -> '(\\\\xi_*,\\\\tau_*) \\\\le 0'"
+     }
+    },
+    {
+     "check": "plant_flip_S50",
+     "claim": "planted error is caught by m3_uniqueness.py/S50",
+     "pass": true,
+     "details": {
+      "script": "m3_uniqueness.py",
+      "check": "S50",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S50.statement: '\\\\ge 0' -> '\\\\le 0'"
+     }
+    },
+    {
+     "check": "plant_sign_S38",
+     "claim": "planted error is caught by m3_uniqueness.py/S38",
+     "pass": true,
+     "details": {
+      "script": "m3_uniqueness.py",
+      "check": "S38",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S38.statement: 'sign of } q' -> 'sign of } -q'"
+     }
+    },
+    {
+     "check": "plant_drop_S50_from_S38",
+     "claim": "planted error is caught by m3_assumptions.py/theta_nonnegative",
+     "pass": true,
+     "details": {
+      "script": "m3_assumptions.py",
+      "check": "theta_nonnegative",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S38.from: '\"S50\"' -> '\"S6\"'"
+     }
+    },
+    {
+     "check": "plant_drop_S9_from_S11",
+     "claim": "planted error is caught by m3_assumptions.py/from_lists",
+     "pass": true,
+     "details": {
+      "script": "m3_assumptions.py",
+      "check": "from_lists",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S11.from: '\"S9\", ' -> ''"
+     }
+    },
+    {
+     "check": "plant_drop_Tref_const_S1",
+     "claim": "planted error is caught by m3_assumptions.py/tref_constant_for_S13",
+     "pass": true,
+     "details": {
+      "script": "m3_assumptions.py",
+      "check": "tref_constant_for_S13",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S1.statement: 'T_{ref} \\\\text{ constant in } x \\\\text{ and } t;' -> ''"
+     }
+    },
+    {
+     "check": "plant_drop_S5_from_S12",
+     "claim": "planted error is caught by m3_assumptions.py/required_premises",
+     "pass": true,
+     "details": {
+      "script": "m3_assumptions.py",
+      "check": "required_premises",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S12.from: ', \"S5\"' -> ''"
+     }
+    },
+    {
+     "check": "plant_drop_S6_from_S21",
+     "claim": "planted error is caught by m3_assumptions.py/required_premises",
+     "pass": true,
+     "details": {
+      "script": "m3_assumptions.py",
+      "check": "required_premises",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S21.from: ', \"S6\"' -> ''"
+     }
+    },
+    {
+     "check": "plant_sign_S39_F0",
+     "claim": "planted error is caught by m3_steady_flux.py/S39",
+     "pass": true,
+     "details": {
+      "script": "m3_steady_flux.py",
+      "check": "S39",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S39.statement: 'F_0 = -j(0,t)' -> 'F_0 = j(0,t)'"
+     }
+    },
+    {
+     "check": "plant_wall_S40",
+     "claim": "planted error is caught by m3_reduction.py/S40",
+     "pass": true,
+     "details": {
+      "script": "m3_reduction.py",
+      "check": "S40",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S40.statement: 'none' -> 'one term'"
+     }
+    },
+    {
+     "check": "plant_sign_S41",
+     "claim": "planted error is caught by m3_steady_flux.py/S41",
+     "pass": true,
+     "details": {
+      "script": "m3_steady_flux.py",
+      "check": "S41",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S41.statement: '= -1' -> '= 1'"
+     }
+    },
+    {
+     "check": "plant_factor_S42",
+     "claim": "planted error is caught by m3_steady_flux.py/S42",
+     "pass": true,
+     "details": {
+      "script": "m3_steady_flux.py",
+      "check": "S42",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S42.statement: '-\\\\frac{\\\\xi^2}{2}' -> '-\\\\xi^2'"
+     }
+    },
+    {
+     "check": "plant_value_S43_max",
+     "claim": "planted error is caught by m3_steady_flux.py/S43",
+     "pass": true,
+     "details": {
+      "script": "m3_steady_flux.py",
+      "check": "S43",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S43.statement: '\\\\frac18' -> '\\\\frac14'"
+     }
+    },
+    {
+     "check": "plant_factor_S44",
+     "claim": "planted error is caught by m3_steady_flux.py/S44",
+     "pass": true,
+     "details": {
+      "script": "m3_steady_flux.py",
+      "check": "S44",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S44.statement: '{2k}' -> '{k}'"
+     }
+    },
+    {
+     "check": "plant_factor_S44_numeric",
+     "claim": "planted error is caught by m3_conservation_energy.py/steady_state_vs_S44",
+     "pass": true,
+     "details": {
+      "script": "m3_conservation_energy.py",
+      "check": "steady_state_vs_S44",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S44.statement: '{2k}' -> '{k}'"
+     }
+    },
+    {
+     "check": "plant_factor_S45",
+     "claim": "planted error is caught by m3_steady_flux.py/S45",
+     "pass": true,
+     "details": {
+      "script": "m3_steady_flux.py",
+      "check": "S45",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S45.statement: '\\\\frac{qL}{2}' -> 'qL'"
+     }
+    },
+    {
+     "check": "plant_text_S46",
+     "claim": "planted error is caught by m3_reduction.py/S46",
+     "pass": true,
+     "details": {
+      "script": "m3_reduction.py",
+      "check": "S46",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S46.statement: 'does not apply' -> 'applies'"
+     }
+    },
+    {
+     "check": "plant_value_S47",
+     "claim": "planted error is caught by m3_reduction.py/S47",
+     "pass": true,
+     "details": {
+      "script": "m3_reduction.py",
+      "check": "S47",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S47.statement: '\\\\equiv 0' -> '\\\\equiv 1'"
+     }
+    },
+    {
+     "check": "plant_factor_S51_ic",
+     "claim": "planted error is caught by m3_series.py/S51",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S51",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S51.statement: 'v(\\\\xi,0) = \\\\frac{\\\\xi(1-\\\\xi)}{2}' -> 'v(\\\\xi,0) = \\\\xi(1-\\\\xi)'"
+     }
+    },
+    {
+     "check": "plant_factor_S52",
+     "claim": "planted error is caught by m3_series.py/S52",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S52",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S52.statement: '\\\\frac{2((-1)^\\\\ell - 1)}' -> '\\\\frac{((-1)^\\\\ell - 1)}'"
+     }
+    },
+    {
+     "check": "plant_exponent_S53",
+     "claim": "planted error is caught by m3_series.py/S53",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S53",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S53.statement: '{(\\\\ell\\\\pi)^3} = \\\\begin' -> '{(\\\\ell\\\\pi)^2} = \\\\begin'"
+     }
+    },
+    {
+     "check": "plant_exponent_S54",
+     "claim": "planted error is caught by m3_series.py/S54",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S54",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S54.statement: '\\\\frac{4}{(\\\\ell\\\\pi)^3}' -> '\\\\frac{4}{(\\\\ell\\\\pi)^2}'"
+     }
+    },
+    {
+     "check": "plant_factor_S55",
+     "claim": "planted error is caught by m3_series.py/S55",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S55",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S55.statement: '\\\\frac{4}{\\\\ell\\\\pi}' -> '\\\\frac{2}{\\\\ell\\\\pi}'"
+     }
+    },
+    {
+     "check": "plant_value_S56",
+     "claim": "planted error is caught by m3_series.py/S56",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S56",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S56.statement: '\\\\ge 0.474' -> '\\\\ge 0.48'"
+     }
+    },
+    {
+     "check": "plant_exponent_S57_bound",
+     "claim": "planted error is caught by m3_series.py/S57",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S57",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S57.statement: '\\\\le \\\\frac{4}{\\\\pi}\\\\exp(-\\\\pi^2\\\\tau)' -> '\\\\le \\\\frac{4}{\\\\pi}\\\\exp(-2\\\\pi^2\\\\tau)'"
+     }
+    },
+    {
+     "check": "plant_value_S57",
+     "claim": "planted error is caught by m3_series.py/S57",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S57",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S57.statement: '6.59\\\\times 10^{-5}' -> '6.59\\\\times 10^{-6}'"
+     }
+    },
+    {
+     "check": "plant_value_S32",
+     "claim": "planted error is caught by m3_series.py/S32",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S32",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S32.statement: '6.7\\\\times 10^{-6}' -> '6.7\\\\times 10^{-7}'"
+     }
+    },
+    {
+     "check": "plant_value_S32_early",
+     "claim": "planted error is caught by m3_series.py/S32",
+     "pass": true,
+     "details": {
+      "script": "m3_series.py",
+      "check": "S32",
+      "pass_on_original": true,
+      "pass_on_planted": false,
+      "planted": "S32.statement: '\\\\ge 0.47' -> '\\\\ge 0.5'"
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_series.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "S51",
+     "claim": "v \\equiv \\theta_s - \\theta:\\quad \\frac{\\partial v}{\\partial \\tau} = \\frac{\\partial^2 v}{\\partial \\xi^2},\\quad v(0,\\tau) = v(1,\\tau) = 0,\\quad v(\\xi,0) = \\frac{\\xi(1-\\xi)}{2}",
+     "pass": true,
+     "details": {
+      "S51 pde on v = theta_s - theta_test vs S25 on theta_test": [
+       [
+        true,
+        "equal up to overall sign"
+       ],
+       [
+        true,
+        "equal up to overall sign"
+       ]
+      ],
+      "v = theta_s - theta": true,
+      "data expected (S26, S43)": {
+       "(0, tau)": "0",
+       "(1, tau)": "0",
+       "(xi, 0)": "xi*(1 - xi)/2"
+      },
+      "data stated": {
+       "(0, tau)": "0",
+       "(1, tau)": "0",
+       "(xi, 0)": "xi*(1 - xi)/2"
+      }
+     }
+    },
+    {
+     "check": "S52",
+     "claim": "\\int_0^1 \\xi\\sin(\\ell\\pi\\xi)\\,d\\xi = -\\frac{(-1)^\\ell}{\\ell\\pi},\\qquad \\int_0^1 \\xi^2\\sin(\\ell\\pi\\xi)\\,d\\xi = -\\frac{(-1)^\\ell}{\\ell\\pi} + \\frac{2((-1)^\\ell - 1)}{(\\ell\\pi)^3}",
+     "pass": true,
+     "details": {
+      "mismatches for ell = 1..10": [],
+      "symbolic difference (integer ell)": [
+       "0",
+       "0"
+      ]
+     }
+    },
+    {
+     "check": "S53",
+     "claim": "\\beta_\\ell \\equiv 2\\int_0^1 \\theta_s(\\xi)\\sin(\\ell\\pi\\xi)\\,d\\xi = \\frac{2(1-(-1)^\\ell)}{(\\ell\\pi)^3} = \\begin{cases} 4/(\\ell\\pi)^3 & \\ell \\text{ odd} \\\\ 0 & \\ell \\text{ even} \\end{cases}",
+     "pass": true,
+     "details": {
+      "my beta_ell": "2*(1 - (-1)**ell)/(pi**3*ell**3)",
+      "cases parsed": [
+       "4/(pi**3*ell**3)",
+       "0"
+      ],
+      "mismatches for ell = 1..12": []
+     }
+    },
+    {
+     "check": "S54",
+     "claim": "v(\\xi,\\tau) = \\sum_{\\ell \\text{ odd}} \\frac{4}{(\\ell\\pi)^3}\\sin(\\ell\\pi\\xi)\\exp(-\\ell^2\\pi^2\\tau),\\qquad \\theta = \\theta_s - v",
+     "pass": true,
+     "details": {
+      "term residual in S51 pde": "0",
+      "term end values": [
+       "0",
+       "0"
+      ],
+      "max |v(xi,0) - theta_s| (partial sum)": 6.804915177356652e-10,
+      "max |theta_series - theta_FD| at tau=0.01,0.05,0.2,1": [
+       3.150466583098921e-08,
+       4.704636900193515e-08,
+       4.550196866515144e-08,
+       3.1249545122034005e-08
+      ],
+      "max |theta_series - my series|": [
+       2.7755575615628914e-17,
+       2.7755575615628914e-17,
+       1.3877787807814457e-17,
+       0.0
+      ],
+      "tolerances": "1e-6 (IC), 2e-5 (FD h=1/800), 1e-9"
+     }
+    },
+    {
+     "check": "S55",
+     "claim": "\\frac{\\partial \\theta}{\\partial \\tau}(\\xi,\\tau) = \\sum_{\\ell \\text{ odd}} \\frac{4}{\\ell\\pi}\\sin(\\ell\\pi\\xi)\\exp(-\\ell^2\\pi^2\\tau) \\quad (\\tau>0)",
+     "pass": true,
+     "details": {
+      "-(d/dtau S54 term) - S55 term": "0",
+      "lhs is d theta/d tau": true,
+      "max |S55 - my theta_tau| at tau=0.01,0.1,0.5": [
+       4.440892098500626e-16,
+       1.1102230246251565e-16,
+       1.734723475976807e-18
+      ],
+      "max |S55 - FD time difference| at tau=0.1": 2.0842038200852286e-07
+     }
+    },
+    {
+     "check": "S56",
+     "claim": "0<\\tau\\le 0.1:\\quad \\max_\\xi \\frac{\\partial \\theta}{\\partial \\tau} \\ge \\frac{\\partial \\theta}{\\partial \\tau}(1/2,\\tau) \\ge g(\\tau) \\ge 0.474",
+     "pass": true,
+     "details": {
+      "tau range": [
+       0.0,
+       0.1
+      ],
+      "min over range of g (mine)": 0.4744874603748496,
+      "stated bound": 0.474,
+      "g in symbols table equals mine": true,
+      "tau_g mine": 0.013914087181483818,
+      "tau_g as stated": true,
+      "first/last row [max_xi theta_t, theta_t(1/2), g, bound]": [
+       [
+        1.000000000000002,
+        1.0,
+        0.8513235632771048,
+        0.474
+       ],
+       [
+        0.47448746037974915,
+        0.47448746037974915,
+        0.4744874603748496,
+        0.474
+       ]
+      ]
+     }
+    },
+    {
+     "check": "S57",
+     "claim": "\\tau>0:\\ \\max_\\xi\\left|\\frac{\\partial \\theta}{\\partial \\tau}\\right| \\le \\frac{4}{\\pi}\\exp(-\\pi^2\\tau)\\Big(1 + \\frac{\\exp(-8\\pi^2\\tau)}{3(1-\\exp(-8\\pi^2\\tau))}\\Big),\\ \\ \\max_\\xi|\\theta-\\theta_s| \\le \\frac{4}{\\pi^3}\\exp(-\\pi^2\\tau)\\Big(1 + \\frac{\\exp(-8\\pi^2\\tau)}{27(1-\\exp(-8\\pi^2\\tau))}\\Big);\\quad \\tau\\ge 1:\\ \\max_\\xi\\left|\\frac{\\partial \\theta}{\\partial \\tau}\\right| \\le 6.59\\times 10^{-5},\\ \\max_\\xi|\\theta-\\theta_s| \\le 6.68\\times 10^{-6}",
+     "pass": true,
+     "details": {
+      "bounds": [
+       {
+        "bound": "4*(1 + exp(-8*pi**2*tau)/(3 - 3*exp(-8*pi**2*tau)))*exp(-pi**2*tau)/pi",
+        "max actual/bound on [0.002, 3]": 1.0000000000000002,
+        "bound decreasing on [1, 10]": true,
+        "bound at tau=1": 6.585600605439407e-05
+       },
+       {
+        "bound": "4*(1 + exp(-8*pi**2*tau)/(27 - 27*exp(-8*pi**2*tau)))*exp(-pi**2*tau)/pi**3",
+        "max actual/bound on [0.002, 3]": 1.0000000000000002,
+        "bound decreasing on [1, 10]": true,
+        "bound at tau=1": 6.6726084833881705e-06
+       }
+      ],
+      "tau>=1 numbers": [
+       {
+        "claim": "max | frac { d_ theta } { d_ tau } | <= 6.59 * 10 ^ { - 5 }",
+        "tau range": [
+         1.0,
+         Infinity
+        ],
+        "worst over range": 6.585600605439407e-05,
+        "holds": true
+       },
+       {
+        "claim": "max | theta - theta_s | <= 6.68 * 10 ^ { - 6 }",
+        "tau range": [
+         1.0,
+         Infinity
+        ],
+        "worst over range": 6.6726084833881705e-06,
+        "holds": true
+       },
+       {
+        "number": 6.59e-05,
+        "bound at tau=1": 6.585600605439403e-05,
+        "within 1% and >= bound": true
+       },
+       {
+        "number": 6.68e-06,
+        "bound at tau=1": 6.672608483388165e-06,
+        "within 1% and >= bound": true
+       }
+      ]
+     }
+    },
+    {
+     "check": "S32",
+     "claim": "0<\\tau\\le 0.1:\\ \\max_\\xi\\partial_\\tau\\theta \\ge 0.47,\\ \\max_\\xi|\\partial_\\xi^2\\theta| \\ge 1,\\ \\text{source} = 1 \\ \\Rightarrow\\ \\text{no term is negligible};\\quad \\tau\\ge 1:\\ \\max_\\xi|\\partial_\\tau\\theta| \\le 6.6\\times 10^{-5},\\ \\max_\\xi|\\theta-\\theta_s| \\le 6.7\\times 10^{-6} \\ \\Rightarrow\\ \\text{near steady: conduction balances the source}",
+     "pass": true,
+     "details": {
+      "claims": [
+       {
+        "claim": "max d_tau theta >= 0.47",
+        "tau range": [
+         0.0,
+         0.1
+        ],
+        "worst over range": 0.47448746037974915,
+        "holds": true
+       },
+       {
+        "claim": "max | d_xi ^ 2 theta | >= 1",
+        "tau range": [
+         0.0,
+         0.1
+        ],
+        "worst over range": 1.0,
+        "holds": true
+       },
+       {
+        "claim": "max | d_tau theta | <= 6.6 * 10 ^ { - 5 }",
+        "tau range": [
+         1.0,
+         Infinity
+        ],
+        "worst over range": 6.585600605439407e-05,
+        "holds": true
+       },
+       {
+        "claim": "max | theta - theta_s | <= 6.7 * 10 ^ { - 6 }",
+        "tau range": [
+         1.0,
+         Infinity
+        ],
+        "worst over range": 6.6726084833881705e-06,
+        "holds": true
+       }
+      ],
+      "S25 coefficients (storage, conduction, source)": [
+       "1",
+       "1",
+       "1"
+      ],
+      "S29 coefficients at Q from S31": [
+       "1",
+       "1",
+       "1"
+      ],
+      "theta_xixi(0, tau)": [
+       -1.0,
+       -1.0,
+       -1.0
+      ]
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_steady_flux.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "S39",
+     "claim": "F_0 = -j(0,t) = k\\,\\frac{\\partial T}{\\partial x}(0,t),\\qquad F_L = j(L,t) = -k\\,\\frac{\\partial T}{\\partial x}(L,t)",
+     "pass": true,
+     "details": {
+      "j n with n(0)=-1, n(L)=+1 on test T": {
+       "F_0": "k*sin(t)",
+       "F_L": "-k*(3*L**2 + (3*L*cos(3*L + t) + sin(3*L + t))*exp(t))*exp(-t)"
+      },
+      "each stated member matches": [
+       [
+        "F_0",
+        "-j(0, t)",
+        true
+       ],
+       [
+        "F_0",
+        "k*Subs(Derivative(T(x, t), x), x, 0)",
+        true
+       ],
+       [
+        "F_L",
+        "j(L, t)",
+        true
+       ],
+       [
+        "F_L",
+        "-k*Subs(Derivative(T(x, t), x), x, L)",
+        true
+       ]
+      ]
+     }
+    },
+    {
+     "check": "S41",
+     "claim": "\\theta_s''(\\xi) = -1,\\qquad \\theta_s(0) = \\theta_s(1) = 0",
+     "pass": true,
+     "details": {
+      "S25 with theta_tau = 0": "-Derivative(theta_s(xi), (xi, 2)) - 1",
+      "S41": "Derivative(theta_s(xi), (xi, 2)) + 1",
+      "compare": "equal up to overall sign",
+      "S26 end values": {
+       "0": "0",
+       "1": "0"
+      },
+      "S41 end values": {
+       "0": "0",
+       "1": "0"
+      }
+     }
+    },
+    {
+     "check": "S42",
+     "claim": "\\theta_s(\\xi) = -\\frac{\\xi^2}{2} + c_1\\,\\xi + c_0",
+     "pass": true,
+     "details": {
+      "S42 satisfies S41 ODE": true,
+      "free constants": [
+       "c_0",
+       "c_1"
+      ],
+      "dsolve": "C1 + C2*xi - xi**2/2",
+      "same two-parameter family": true
+     }
+    },
+    {
+     "check": "S43",
+     "claim": "\\theta_s(\\xi) = \\frac{\\xi(1-\\xi)}{2},\\qquad \\max_\\xi \\theta_s = \\theta_s(1/2) = \\frac18",
+     "pass": true,
+     "details": {
+      "my steady solution": "-xi**2/2 + xi/2",
+      "stated": "xi*(1 - xi)/2",
+      "argmax": [
+       "1/2"
+      ],
+      "max": [
+       "1/8"
+      ],
+      "stated chain evaluated": [
+       "1/8",
+       "1/8"
+      ],
+      "stated argmax matches": true
+     }
+    },
+    {
+     "check": "S44",
+     "claim": "T_s(x) = T_0 + \\frac{q\\,x\\,(L-x)}{2k}",
+     "pass": true,
+     "details": {
+      "back-substitution - stated": "0",
+      "steady S15 residual": "0",
+      "end values - T0": [
+       "0",
+       "0"
+      ],
+      "q = 0 gives T0 (S37)": true
+     }
+    },
+    {
+     "check": "S45",
+     "claim": "F_0 = F_L = \\frac{qL}{2},\\qquad F_0 + F_L = qL = \\int_0^L q\\,dx",
+     "pass": true,
+     "details": {
+      "F0, FL from S39 on S44": [
+       "L*q/2",
+       "L*q/2"
+      ],
+      "relations": [
+       [
+        "F_0 = F_L = frac { q L } { 2 }",
+        [
+         "L*q/2",
+         "L*q/2",
+         "L*q/2"
+        ],
+        true
+       ],
+       [
+        "F_0 + F_L = q L = int q d x",
+        [
+         "L*q",
+         "L*q",
+         "L*q"
+        ],
+        true
+       ]
+      ],
+      "F0 + FL - int q": "0"
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_strong_form.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "S9",
+     "claim": "\\frac{d}{dt}\\int_a^b e\\,dx = \\int_a^b \\frac{\\partial e}{\\partial t}\\,dx",
+     "pass": true,
+     "details": {
+      "parsed": "frac { d } { d t } int e d x = int frac { d_ e } { d_ t } d x",
+      "lhs-rhs on tests": [
+       "0",
+       "0"
+      ]
+     }
+    },
+    {
+     "check": "S10",
+     "claim": "j(a,t)-j(b,t) = -\\int_a^b \\frac{\\partial j}{\\partial x}\\,dx",
+     "pass": true,
+     "details": {
+      "parsed": "j ( a , t ) - j ( b , t ) = - int frac { d_ j } { d_ x } d x",
+      "lhs-rhs on tests": [
+       "0",
+       "0"
+      ]
+     }
+    },
+    {
+     "check": "S11",
+     "claim": "\\int_a^b \\left(\\frac{\\partial e}{\\partial t} + \\frac{\\partial j}{\\partial x} - q\\right) dx = 0 \\quad \\text{for every } 0\\le a<b\\le L",
+     "pass": true,
+     "details": {
+      "(S2 residual) -/+ (S11 residual) on tests": [
+       "0",
+       "0"
+      ],
+      "sum form": [
+       "-a**4*t - 2*a**2*t + 2*a*q + b**4*t + 2*b**2*t - 2*b*q - t*sin(2*a + t) + t*sin(2*b + t) + 4*exp(a - 2*t) - 4*exp(b - 2*t) - cos(2*a + t) + cos(2*b + t)",
+       "Piecewise((-2*a**4 - 3*a**2*t**2 + 2*a*q - 2*a*cos(a*t)/t + 2*b**4 + 3*b**2*t**2 - 2*b*q + 2*b*cos(b*t)/t + 2*exp(-b)*sin(t) - 2*exp(-a)*sin(t) + 2*sin(a*t)/t**2 - 2*sin(b*t)/t**2, (t > 0) | (t < 0)), (-2*a**4 - 3*a**2*t**2 + 2*a*q + 2*b**4 + 3*b**2*t**2 - 2*b*q + 2*exp(-b)*sin(t) - 2*exp(-a)*sin(t)..."
+      ]
+     }
+    },
+    {
+     "check": "S12",
+     "claim": "\\frac{\\partial e}{\\partial t} + \\frac{\\partial j}{\\partial x} = q \\quad \\text{in } (0,L)\\times(0,\\infty)",
+     "pass": true,
+     "details": {
+      "S11 integrand": "-q + Derivative(e(x, t), t) + Derivative(j(x, t), x)",
+      "S12 residual": "-q + Derivative(e(x, t), t) + Derivative(j(x, t), x)",
+      "compare": "equal"
+     }
+    },
+    {
+     "check": "S13",
+     "claim": "\\rho c_p \\frac{\\partial T}{\\partial t} + \\frac{\\partial j}{\\partial x} = q",
+     "pass": true,
+     "details": {
+      "e from S3": "c_p*rho*(-T_ref + T(x, t))",
+      "S12 with S3": "c_p*rho*Derivative(T(x, t), t) - q + Derivative(j(x, t), x)",
+      "S13": "c_p*rho*Derivative(T(x, t), t) - q + Derivative(j(x, t), x)",
+      "compare": "equal"
+     }
+    },
+    {
+     "check": "S14",
+     "claim": "\\frac{\\partial j}{\\partial x} = -k\\,\\frac{\\partial^2 T}{\\partial x^2}",
+     "pass": true,
+     "details": {
+      "d/dx of S4 right side": "-k*Derivative(T(x, t), (x, 2))",
+      "S14 right side": "-k*Derivative(T(x, t), (x, 2))",
+      "compare": "equal"
+     }
+    },
+    {
+     "check": "S15",
+     "claim": "\\rho c_p \\frac{\\partial T}{\\partial t} = k\\,\\frac{\\partial^2 T}{\\partial x^2} + q \\quad \\text{in } (0,L)\\times(0,\\infty)",
+     "pass": true,
+     "details": {
+      "S13 with S14": "c_p*rho*Derivative(T(x, t), t) - k*Derivative(T(x, t), (x, 2)) - q",
+      "S15 residual": "c_p*rho*Derivative(T(x, t), t) - k*Derivative(T(x, t), (x, 2)) - q",
+      "compare": "equal"
+     }
+    },
+    {
+     "check": "S16",
+     "claim": "\\kappa \\equiv \\frac{k}{\\rho c_p} > 0",
+     "pass": true,
+     "details": {
+      "kappa definition": "k/(c_p*rho)",
+      "positive with k, rho, c_p > 0 (S1)": true,
+      "states > 0": true,
+      "kappa*rho*c_p == k (makes S17 = S15/(rho c_p))": true
+     }
+    },
+    {
+     "check": "S17",
+     "claim": "\\frac{\\partial T}{\\partial t} = \\kappa\\,\\frac{\\partial^2 T}{\\partial x^2} + \\frac{q}{\\rho c_p}",
+     "pass": true,
+     "details": {
+      "S15/(rho c_p)": "Derivative(T(x, t), t) - k*Derivative(T(x, t), (x, 2))/(c_p*rho) - q/(c_p*rho)",
+      "S17 with kappa from S16": "Derivative(T(x, t), t) - k*Derivative(T(x, t), (x, 2))/(c_p*rho) - q/(c_p*rho)",
+      "compare": "equal"
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_uniqueness.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "S33",
+     "claim": "w \\equiv T_1 - T_2:\\quad \\frac{\\partial w}{\\partial t} = \\kappa\\frac{\\partial^2 w}{\\partial x^2},\\quad w(0,t)=w(L,t)=0,\\quad w(x,0)=0",
+     "pass": true,
+     "details": {
+      "S17(T1) - S17(T2) vs S33 pde on w = T1 - T2": "equal",
+      "q cancels": true,
+      "data points from S7": [
+       "(0, t)",
+       "(L, t)",
+       "(x, 0)"
+      ],
+      "stated w data": {
+       "(0, t)": "0",
+       "(L, t)": "0",
+       "(x, 0)": "0"
+      },
+      "w = T1 - T2": true
+     }
+    },
+    {
+     "check": "S34",
+     "claim": "\\frac{dE}{dt} = \\kappa\\int_0^L w\\,\\frac{\\partial^2 w}{\\partial x^2}\\,dx,\\qquad E(t) \\equiv \\frac12\\int_0^L w^2\\,dx",
+     "pass": true,
+     "details": {
+      "dE/dt from E def with S33": "Integral(2*kappa*w(x, t)*Derivative(w(x, t), (x, 2)), (x, 0, L))/2",
+      "stated rhs": "kappa*Integral(w(x, t)*Derivative(w(x, t), (x, 2)), (x, 0, L))",
+      "difference on tests": [
+       "0",
+       "0"
+      ]
+     }
+    },
+    {
+     "check": "S35",
+     "claim": "\\frac{dE}{dt} = -\\kappa\\int_0^L \\left(\\frac{\\partial w}{\\partial x}\\right)^2 dx \\le 0",
+     "pass": true,
+     "details": {
+      "S34 rhs - S35 rhs on fields with w = 0 at the ends": [
+       "0",
+       "0"
+      ],
+      "S35 rhs at t = 1/2 (must be <= 0)": [
+       -1.92,
+       -1.012532171455899
+      ],
+      "control: difference when w != 0 at the ends (boundary term)": "3/5"
+     }
+    },
+    {
+     "check": "S36",
+     "claim": "T_1 \\equiv T_2 \\quad \\text{(the classical solution of S17 with S7 is unique in the class S6)}",
+     "pass": true,
+     "details": {
+      "S33 gives w(x,0) = 0": true,
+      "E(0) from S34 definition": "0",
+      "E > 0 for nonzero test w (E is a positive multiple of int w^2)": [
+       1.3333333333333333,
+       7.4268939850077755,
+       3.2
+      ],
+      "S35 states dE/dt <= 0": true,
+      "concludes T_1 = T_2": true
+     }
+    },
+    {
+     "check": "S37",
+     "claim": "q = 0 \\ \\Rightarrow\\ T(x,t) \\equiv T_0",
+     "pass": true,
+     "details": {
+      "q": "0",
+      "T": "T_0",
+      "S17 residual": "0",
+      "S7 satisfied": true
+     }
+    },
+    {
+     "check": "S48",
+     "claim": "\\text{for every } \\tau_1>0:\\quad \\theta_{min}(\\tau_1) \\equiv \\min_{[0,1]\\times[0,\\tau_1]}\\theta = \\theta(\\xi_*,\\tau_*) \\text{ for some } (\\xi_*,\\tau_*) \\in [0,1]\\times[0,\\tau_1]",
+     "pass": true,
+     "details": {
+      "S48 names a point where the min is attained": true,
+      "S6 gives continuity on the closed set [0,L]x[0,inf)": true,
+      "FD min of theta on [0,1]x[0,0.2]": 0.0
+     }
+    },
+    {
+     "check": "S49",
+     "claim": "\\theta_{min}(\\tau_1) < 0 \\ \\Rightarrow\\ 0<\\xi_*<1,\\ 0<\\tau_*\\le\\tau_1,\\ \\frac{\\partial^2 \\theta}{\\partial \\xi^2}(\\xi_*,\\tau_*) \\ge 0,\\ \\frac{\\partial \\theta}{\\partial \\tau}(\\xi_*,\\tau_*) \\le 0",
+     "pass": true,
+     "details": {
+      "(theta_xixi, theta_tau, claim_xx holds, claim_tau holds) at known minima": [
+       [
+        2.0,
+        -0.3,
+        true,
+        true
+       ],
+       [
+        6.0,
+        0.0,
+        true,
+        true
+       ],
+       [
+        9.869604401089358,
+        0.0,
+        true,
+        true
+       ]
+      ],
+      "location claims (0<xi*<1, 0<tau*<=tau1)": true,
+      "S26 data are all 0": true
+     }
+    },
+    {
+     "check": "S50",
+     "claim": "\\theta(\\xi,\\tau) \\ge 0 \\quad \\text{on } [0,1]\\times[0,\\infty) \\quad \\text{(maximum principle, minimum form)}",
+     "pass": true,
+     "details": {
+      "S25 source c (needs > 0)": "1",
+      "S25 diffusion coefficient (needs > 0)": "1",
+      "claimed": "theta ( xi , tau ) >= 0",
+      "FD min, max of theta on tau in [0.001, 2]": [
+       0.0,
+       0.12499861997448933
+      ]
+     }
+    },
+    {
+     "check": "S38",
+     "claim": "\\theta(\\xi,\\tau) \\text{ is the same function for every } q\\ne 0;\\quad T - T_0 = \\Delta T_q\\,\\theta \\text{ has the sign of } q \\text{ wherever } \\theta \\ne 0",
+     "pass": true,
+     "details": {
+      "parameters in S25": [],
+      "parameters in S26": [],
+      "DeltaT_q/q > 0 (k, L > 0)": true,
+      "T - T0 = DeltaT_q theta": true,
+      "FD min theta": 0.0,
+      "claims \"sign of q\"": true
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m3_units.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "units_S1",
+     "claim": "every term of S1 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "0 < x < L",
+       "meter"
+      ],
+      [
+       "t > 0",
+       "second"
+      ],
+      [
+       "k > 0",
+       "kilogram * meter / kelvin / second ** 3"
+      ],
+      [
+       "rho > 0",
+       "kilogram / meter ** 3"
+      ],
+      [
+       "c_p > 0",
+       "meter ** 2 / kelvin / second ** 2"
+      ],
+      [
+       "L > 0",
+       "meter"
+      ]
+     ]
+    },
+    {
+     "check": "units_S2",
+     "claim": "every term of S2 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d } { d t } int e d x = j ( a , t ) - j ( b , t ) + int q d x",
+       "kilogram / second ** 3"
+      ],
+      [
+       "0 <= a < b <= L",
+       "meter"
+      ]
+     ]
+    },
+    {
+     "check": "units_S3",
+     "claim": "every term of S3 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "e = rho c_p ( T - T_ref )",
+       "kilogram / meter / second ** 2"
+      ]
+     ]
+    },
+    {
+     "check": "units_S4",
+     "claim": "every term of S4 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "j = - k frac { d_ T } { d_ x }",
+       "kilogram / second ** 3"
+      ]
+     ]
+    },
+    {
+     "check": "units_S6",
+     "claim": "every term of S6 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "t > 0",
+       "second"
+      ]
+     ]
+    },
+    {
+     "check": "units_S7",
+     "claim": "every term of S7 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "T ( 0 , t ) = T ( L , t ) = T_0",
+       "kelvin"
+      ],
+      [
+       "T ( x , 0 ) = T_0",
+       "kelvin"
+      ],
+      [
+       "T_0 > 0",
+       "kelvin"
+      ]
+     ]
+    },
+    {
+     "check": "units_S8",
+     "claim": "every term of S8 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "psi = 1",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S9",
+     "claim": "every term of S9 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d } { d t } int e d x = int frac { d_ e } { d_ t } d x",
+       "kilogram / second ** 3"
+      ]
+     ]
+    },
+    {
+     "check": "units_S10",
+     "claim": "every term of S10 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "j ( a , t ) - j ( b , t ) = - int frac { d_ j } { d_ x } d x",
+       "kilogram / second ** 3"
+      ]
+     ]
+    },
+    {
+     "check": "units_S11",
+     "claim": "every term of S11 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "int ( frac { d_ e } { d_ t } + frac { d_ j } { d_ x } - q ) d x = 0",
+       "kilogram / second ** 3"
+      ],
+      [
+       "0 <= a < b <= L",
+       "meter"
+      ]
+     ]
+    },
+    {
+     "check": "units_S12",
+     "claim": "every term of S12 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d_ e } { d_ t } + frac { d_ j } { d_ x } = q",
+       "kilogram / meter / second ** 3"
+      ]
+     ]
+    },
+    {
+     "check": "units_S13",
+     "claim": "every term of S13 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "rho c_p frac { d_ T } { d_ t } + frac { d_ j } { d_ x } = q",
+       "kilogram / meter / second ** 3"
+      ]
+     ]
+    },
+    {
+     "check": "units_S14",
+     "claim": "every term of S14 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d_ j } { d_ x } = - k frac { d_ ^ 2 T } { d_ x ^ 2 }",
+       "kilogram / meter / second ** 3"
+      ]
+     ]
+    },
+    {
+     "check": "units_S15",
+     "claim": "every term of S15 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "rho c_p frac { d_ T } { d_ t } = k frac { d_ ^ 2 T } { d_ x ^ 2 } + q",
+       "kilogram / meter / second ** 3"
+      ]
+     ]
+    },
+    {
+     "check": "units_S16",
+     "claim": "every term of S16 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "kappa = frac { k } { rho c_p } > 0",
+       "meter ** 2 / second"
+      ]
+     ]
+    },
+    {
+     "check": "units_S17",
+     "claim": "every term of S17 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d_ T } { d_ t } = kappa frac { d_ ^ 2 T } { d_ x ^ 2 } + frac { q } { rho c_p }",
+       "kelvin / second"
+      ]
+     ]
+    },
+    {
+     "check": "units_S20",
+     "claim": "every term of S20 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "DeltaT_q = frac { q L ^ 2 } { k }",
+       "kelvin"
+      ],
+      [
+       "x_c = L",
+       "meter"
+      ],
+      [
+       "t_c = frac { L ^ 2 } { kappa }",
+       "second"
+      ],
+      [
+       "xi = frac { x } { L }",
+       "dimensionless"
+      ],
+      [
+       "tau = frac { kappa t } { L ^ 2 }",
+       "dimensionless"
+      ],
+      [
+       "T = T_0 + DeltaT_q theta ( xi , tau )",
+       "kelvin"
+      ]
+     ]
+    },
+    {
+     "check": "units_S21",
+     "claim": "every term of S21 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d_ T } { d_ t } = frac { kappa DeltaT_q } { L ^ 2 } frac { d_ theta } { d_ tau }",
+       "kelvin / second"
+      ]
+     ]
+    },
+    {
+     "check": "units_S22",
+     "claim": "every term of S22 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d_ T } { d_ x } = frac { DeltaT_q } { L } frac { d_ theta } { d_ xi }",
+       "kelvin / meter"
+      ],
+      [
+       "frac { d_ ^ 2 T } { d_ x ^ 2 } = frac { DeltaT_q } { L ^ 2 } frac { d_ ^ 2 theta } { d_ xi ^ 2 }",
+       "kelvin / meter ** 2"
+      ]
+     ]
+    },
+    {
+     "check": "units_S23",
+     "claim": "every term of S23 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { kappa DeltaT_q } { L ^ 2 } frac { d_ theta } { d_ tau } = kappa frac { DeltaT_q } { L ^ 2 } frac { d_ ^ 2 theta } { d_ xi ^ 2 } + frac { q } { rho c_p }",
+       "kelvin / second"
+      ]
+     ]
+    },
+    {
+     "check": "units_S24",
+     "claim": "every term of S24 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d_ theta } { d_ tau } = frac { d_ ^ 2 theta } { d_ xi ^ 2 } + frac { q L ^ 2 } { rho c_p kappa DeltaT_q }",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S25",
+     "claim": "every term of S25 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d_ theta } { d_ tau } = frac { d_ ^ 2 theta } { d_ xi ^ 2 } + 1",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S26",
+     "claim": "every term of S26 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "theta ( 0 , tau ) = theta ( 1 , tau ) = 0",
+       "dimensionless"
+      ],
+      [
+       "theta ( xi , 0 ) = 0",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S27",
+     "claim": "every term of S27 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "T = T_0 theta ' ( xi , tau )",
+       "kelvin"
+      ],
+      [
+       "Q = frac { q L ^ 2 } { k T_0 }",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S28",
+     "claim": "every term of S28 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { kappa T_0 } { L ^ 2 } frac { d_ theta ' } { d_ tau } = kappa frac { T_0 } { L ^ 2 } frac { d_ ^ 2 theta ' } { d_ xi ^ 2 } + frac { q } { rho c_p }",
+       "kelvin / second"
+      ]
+     ]
+    },
+    {
+     "check": "units_S29",
+     "claim": "every term of S29 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d_ theta ' } { d_ tau } = frac { d_ ^ 2 theta ' } { d_ xi ^ 2 } + Q",
+       "dimensionless"
+      ],
+      [
+       "theta ' ( 0 , tau ) = theta ' ( 1 , tau ) = 1",
+       "dimensionless"
+      ],
+      [
+       "theta ' ( xi , 0 ) = 1",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S30",
+     "claim": "every term of S30 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "Q = frac { DeltaT_q } { T_0 }",
+       "dimensionless"
+      ],
+      [
+       "theta ' = 1 + Q theta",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S33",
+     "claim": "every term of S33 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "w = T_1 - T_2",
+       "kelvin"
+      ],
+      [
+       "frac { d_ w } { d_ t } = kappa frac { d_ ^ 2 w } { d_ x ^ 2 }",
+       "kelvin / second"
+      ],
+      [
+       "w ( 0 , t ) = w ( L , t ) = 0",
+       "kelvin"
+      ],
+      [
+       "w ( x , 0 ) = 0",
+       "kelvin"
+      ]
+     ]
+    },
+    {
+     "check": "units_S34",
+     "claim": "every term of S34 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d E } { d t } = kappa int w frac { d_ ^ 2 w } { d_ x ^ 2 } d x",
+       "kelvin ** 2 * meter / second"
+      ],
+      [
+       "E ( t ) = frac { 1 } { 2 } int w ^ 2 d x",
+       "kelvin ** 2 * meter"
+      ]
+     ]
+    },
+    {
+     "check": "units_S35",
+     "claim": "every term of S35 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d E } { d t } = - kappa int ( frac { d_ w } { d_ x } ) ^ 2 d x <= 0",
+       "kelvin ** 2 * meter / second"
+      ]
+     ]
+    },
+    {
+     "check": "units_S36",
+     "claim": "every term of S36 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "T_1 = T_2",
+       "kelvin"
+      ]
+     ]
+    },
+    {
+     "check": "units_S37",
+     "claim": "every term of S37 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "q = 0",
+       "kilogram / meter / second ** 3"
+      ],
+      [
+       "T ( x , t ) = T_0",
+       "kelvin"
+      ]
+     ]
+    },
+    {
+     "check": "units_S48",
+     "claim": "every term of S48 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "tau_1 > 0",
+       "dimensionless"
+      ],
+      [
+       "theta_min ( tau_1 ) = min theta = theta ( xi_star , tau_star )",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S49",
+     "claim": "every term of S49 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "theta_min ( tau_1 ) < 0",
+       "dimensionless"
+      ],
+      [
+       "0 < xi_star < 1",
+       "dimensionless"
+      ],
+      [
+       "0 < tau_star <= tau_1",
+       "dimensionless"
+      ],
+      [
+       "frac { d_ ^ 2 theta } { d_ xi ^ 2 } ( xi_star , tau_star ) >= 0",
+       "dimensionless"
+      ],
+      [
+       "frac { d_ theta } { d_ tau } ( xi_star , tau_star ) <= 0",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S50",
+     "claim": "every term of S50 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "theta ( xi , tau ) >= 0",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S38",
+     "claim": "every term of S38 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "q != 0",
+       "kilogram / meter / second ** 3"
+      ],
+      [
+       "T - T_0 = DeltaT_q theta",
+       "kelvin"
+      ],
+      [
+       "theta != 0",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S39",
+     "claim": "every term of S39 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "F_0 = - j ( 0 , t ) = k frac { d_ T } { d_ x } ( 0 , t )",
+       "kilogram / second ** 3"
+      ],
+      [
+       "F_L = j ( L , t ) = - k frac { d_ T } { d_ x } ( L , t )",
+       "kilogram / second ** 3"
+      ]
+     ]
+    },
+    {
+     "check": "units_S41",
+     "claim": "every term of S41 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "theta_s ' ' ( xi ) = - 1",
+       "dimensionless"
+      ],
+      [
+       "theta_s ( 0 ) = theta_s ( 1 ) = 0",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S42",
+     "claim": "every term of S42 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "theta_s ( xi ) = - frac { xi ^ 2 } { 2 } + c_1 xi + c_0",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S43",
+     "claim": "every term of S43 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "theta_s ( xi ) = frac { xi ( 1 - xi ) } { 2 }",
+       "dimensionless"
+      ],
+      [
+       "max theta_s = theta_s ( 1 / 2 ) = frac { 1 } { 8 }",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S44",
+     "claim": "every term of S44 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "T_s ( x ) = T_0 + frac { q x ( L - x ) } { 2 k }",
+       "kelvin"
+      ]
+     ]
+    },
+    {
+     "check": "units_S45",
+     "claim": "every term of S45 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "F_0 = F_L = frac { q L } { 2 }",
+       "kilogram / second ** 3"
+      ],
+      [
+       "F_0 + F_L = q L = int q d x",
+       "kilogram / second ** 3"
+      ]
+     ]
+    },
+    {
+     "check": "units_S51",
+     "claim": "every term of S51 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "v = theta_s - theta",
+       "dimensionless"
+      ],
+      [
+       "frac { d_ v } { d_ tau } = frac { d_ ^ 2 v } { d_ xi ^ 2 }",
+       "dimensionless"
+      ],
+      [
+       "v ( 0 , tau ) = v ( 1 , tau ) = 0",
+       "dimensionless"
+      ],
+      [
+       "v ( xi , 0 ) = frac { xi ( 1 - xi ) } { 2 }",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S52",
+     "claim": "every term of S52 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "int xi sin ( ell pi xi ) d xi = - frac { ( - 1 ) ^ ell } { ell pi }",
+       "dimensionless"
+      ],
+      [
+       "int xi ^ 2 sin ( ell pi xi ) d xi = - frac { ( - 1 ) ^ ell } { ell pi } + frac { 2 ( ( - 1 ) ^ ell - 1 ) } { ( ell pi ) ^ 3 }",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S53",
+     "claim": "every term of S53 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "beta_ell = 2 int theta_s ( xi ) sin ( ell pi xi ) d xi = frac { 2 ( 1 - ( - 1 ) ^ ell ) } { ( ell pi ) ^ 3 }",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S54",
+     "claim": "every term of S54 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "v ( xi , tau ) = sumodd frac { 4 } { ( ell pi ) ^ 3 } sin ( ell pi xi ) exp ( - ell ^ 2 pi ^ 2 tau )",
+       "dimensionless"
+      ],
+      [
+       "theta = theta_s - v",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S55",
+     "claim": "every term of S55 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "frac { d_ theta } { d_ tau } ( xi , tau ) = sumodd frac { 4 } { ell pi } sin ( ell pi xi ) exp ( - ell ^ 2 pi ^ 2 tau )",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S56",
+     "claim": "every term of S56 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "0 < tau <= 0.1",
+       "dimensionless"
+      ],
+      [
+       "max frac { d_ theta } { d_ tau } >= frac { d_ theta } { d_ tau } ( 1 / 2 , tau ) >= g ( tau ) >= 0.474",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S57",
+     "claim": "every term of S57 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "tau > 0",
+       "dimensionless"
+      ],
+      [
+       "max | frac { d_ theta } { d_ tau } | <= frac { 4 } { pi } exp ( - pi ^ 2 tau ) ( 1 + frac { exp ( - 8 pi ^ 2 tau ) } { 3 ( 1 - exp ( - 8 pi ^ 2 tau ) ) } )",
+       "dimensionless"
+      ],
+      [
+       "max | theta - theta_s | <= frac { 4 } { pi ^ 3 } exp ( - pi ^ 2 tau ) ( 1 + frac { exp ( - 8 pi ^ 2 tau ) } { 27 ( 1 - exp ( - 8 pi ^ 2 tau ) ) } )",
+       "dimensionless"
+      ],
+      [
+       "tau >= 1",
+       "dimensionless"
+      ],
+      [
+       "max | frac { d_ theta } { d_ tau } | <= 6.59 * 10 ^ { - 5 }",
+       "dimensionless"
+      ],
+      [
+       "max | theta - theta_s | <= 6.68 * 10 ^ { - 6 }",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S32",
+     "claim": "every term of S32 has the same units",
+     "pass": true,
+     "details": [
+      [
+       "0 < tau <= 0.1",
+       "dimensionless"
+      ],
+      [
+       "max d_tau theta >= 0.47",
+       "dimensionless"
+      ],
+      [
+       "max | d_xi ^ 2 theta | >= 1",
+       "dimensionless"
+      ],
+      [
+       "tau >= 1",
+       "dimensionless"
+      ],
+      [
+       "max | d_tau theta | <= 6.6 * 10 ^ { - 5 }",
+       "dimensionless"
+      ],
+      [
+       "max | theta - theta_s | <= 6.7 * 10 ^ { - 6 }",
+       "dimensionless"
+      ]
+     ]
+    },
+    {
+     "check": "units_S19_S31",
+     "claim": "the units stated in S19 and S31 match the symbols table",
+     "pass": true,
+     "details": {
+      "S19:L": {
+       "stated": "meter",
+       "table": "meter",
+       "match": true
+      },
+      "S19:k": {
+       "stated": "watt / kelvin / meter",
+       "table": "watt / kelvin / meter",
+       "match": true
+      },
+      "S19:rho": {
+       "stated": "kilogram / meter ** 3",
+       "table": "kilogram / meter ** 3",
+       "match": true
+      },
+      "S19:c_p": {
+       "stated": "joule / kelvin / kilogram",
+       "table": "joule / kelvin / kilogram",
+       "match": true
+      },
+      "S19:q": {
+       "stated": "watt / meter ** 3",
+       "table": "watt / meter ** 3",
+       "match": true
+      },
+      "S19:T_0": {
+       "stated": "kelvin",
+       "table": "kelvin",
+       "match": true
+      },
+      "S31:kappa": {
+       "stated": "meter ** 2 / second",
+       "table": "meter ** 2 / second",
+       "match": true
+      },
+      "S31:t_c": {
+       "stated": "second",
+       "table": "second",
+       "match": true
+      },
+      "S31:DeltaT_q": {
+       "stated": "kelvin",
+       "table": "kelvin",
+       "match": true
+      },
+      "S31:Q": {
+       "stated": "dimensionless",
+       "table": "dimensionless",
+       "match": true
+      }
+     }
+    }
+   ],
+   "stderr": ""
+  }
+ ],
+ "verifier_summary": "I reran all ten m3 check scripts against ledger revision 3, and every derived step S9-S57 was checked by at least one script that ran. Every check passes: 118 claims, no failures, so there are no findings this round. The two failures from try 2 (premises missing from S12, S21 and S22, and nothing stating that T_ref is constant) are fixed in the ledger. Before rerunning, I tightened the T_ref check so the symbols table no longer counts; only an assumption that S13 cites does. I also added three planted-error cases for the try-3 changes, and all 59 planted errors are caught. The toy has no water, so the conservation check covers energy instead; the \u03c8 \u2261 1 comparison with src/assembly.c line 183 differs only by the source term q.",
+ "planted": [
+  {
+   "plant": "sign",
+   "applied": true,
+   "step": "S11",
+   "caught": true
+  },
+  {
+   "plant": "factor",
+   "applied": true,
+   "step": "S14",
+   "caught": true
+  },
+  {
+   "plant": "exponent",
+   "applied": true,
+   "step": "S14",
+   "caught": true
+  }
+ ]
+}

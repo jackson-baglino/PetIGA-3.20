@@ -1,0 +1,34 @@
+{
+ "id": "heat-5",
+ "claim": "q > 0: 1 <= theta' <= 1 + Q/8 at every node and sampled step (D4), and theta' is nondecreasing in time at every node",
+ "runner": "python",
+ "project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8_foegeh/wt/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 5.0
+ },
+ "started": "20261116-194450",
+ "draft": false,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 0,
+ "timed_out": false,
+ "check": {
+  "check": "heat-5",
+  "claim": "q > 0: 1 <= theta' <= 1 + Q/8 at every node and sampled step, and theta' nondecreasing in time",
+  "pass": true,
+  "details": {
+   "n_claims": 9,
+   "failed": []
+  },
+  "exit": 0
+ },
+ "pass": true,
+ "wall_seconds": 0.7
+}

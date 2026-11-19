@@ -1,0 +1,17 @@
+{"check": "heat-10", "used": {"project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8_foegeh/wt/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-10", "used": {"module_file": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8_foegeh/wt/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-10", "claim": "oracle: C1 eps = 1e-4 gives dtau_max = 4.27e-4 (spec)", "pass": true, "details": {"dtau_max": 0.0004270724593777281}}
+{"check": "heat-10", "claim": "C1 eps=1e-4 N=64 t_end=1: dt = M4-8", "pass": true, "details": {"got": 0.0004269854824935952, "expected": 0.0004269854824935952, "n_steps": 2342}}
+{"check": "heat-10", "claim": "C1 eps=1e-4 N=64 t_end=1: t_end/dt is an integer", "pass": true, "details": {"ratio": 2342.0}}
+{"check": "heat-10", "claim": "C1 eps=1e-4 N=64 t_end=1: solve() accepts the returned dt", "pass": true, "details": {}}
+{"check": "heat-10", "claim": "C1 eps=5e-5 N=32 t_end=0.5: dt = M4-8", "pass": true, "details": {"got": 0.00021358393848782572, "expected": 0.00021358393848782572, "n_steps": 2341}}
+{"check": "heat-10", "claim": "C1 eps=5e-5 N=32 t_end=0.5: t_end/dt is an integer", "pass": true, "details": {"ratio": 2341.0}}
+{"check": "heat-10", "claim": "P eps=1e-4 N=64 t_end=1: dt = M4-8", "pass": true, "details": {"got": 0.017543859649122806, "expected": 0.01754385964912281, "n_steps": 57}}
+{"check": "heat-10", "claim": "P eps=1e-4 N=64 t_end=1: t_end/dt is an integer", "pass": true, "details": {"ratio": 57.0}}
+{"check": "heat-10", "claim": "P eps=1e-4 N=64 t_end=1: solve() accepts the returned dt", "pass": true, "details": {}}
+{"check": "heat-10", "claim": "P q=-11: dt = M4-8", "pass": true, "details": {"got": 0.017543859649122806, "expected": 0.01754385964912281, "n_steps": 57}}
+{"check": "heat-10", "claim": "P q=-11: t_end/dt is an integer", "pass": true, "details": {"ratio": 57.0}}
+{"check": "heat-10", "claim": "P q=0: dt = M4-8", "pass": true, "details": {"got": 1.0, "expected": 1.0, "n_steps": 1}}
+{"check": "heat-10", "claim": "P q=0: t_end/dt is an integer", "pass": true, "details": {"ratio": 1.0}}
+{"check": "heat-10", "claim": "q = 0 gives dt = t_end (one step)", "pass": true, "details": {"got": 1.0}}
+{"check": "heat-10", "claim": "dt_for_tolerance(eps, n, t_end, params) returns the dt of rule M4-8", "pass": true, "details": {"n_claims": 14, "failed": []}}

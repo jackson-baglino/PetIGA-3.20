@@ -1,0 +1,150 @@
+{"check": "infra-3", "used": {"project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_uk5dcnm5/wt/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "infra-3", "used": {"module_file": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_uk5dcnm5/wt/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "infra-3", "claim": "C1 n=5 shift=0: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1 n=5 shift=0: central difference, group full", "pass": true, "details": {"rel_err": 3.0106565269024405e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=0: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 5.882498963744741e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=0: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 2.6605312529568223e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=0: central difference, group dF/dU", "pass": true, "details": {"rel_err": 3.0106565269024405e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=0: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 1.8266178554634146e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=10: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1 n=5 shift=10: central difference, group full", "pass": true, "details": {"rel_err": 1.1675846609912481e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=10: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 5.565120802127691e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=10: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 1.6758759625941586e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=10: central difference, group dF/dU", "pass": true, "details": {"rel_err": 1.4529946538076984e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=10: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 1.3859348820387453e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=1000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1 n=5 shift=1000: central difference, group full", "pass": true, "details": {"rel_err": 4.815200579747045e-15, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=1000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 6.441414011081479e-15, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=1000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 6.5652513699503164e-15, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=1000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 1.4411656962415298e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=1000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 1.8565248540410643e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=100000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1 n=5 shift=100000: central difference, group full", "pass": true, "details": {"rel_err": 1.464726469188257e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=100000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 1.7069053308894257e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=100000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 1.4205604597478022e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=100000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 1.8338967852370558e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=5 shift=100000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 1.862754187589839e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=0: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1 n=16 shift=0: central difference, group full", "pass": true, "details": {"rel_err": 1.103538002716251e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=0: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 5.4285489997075105e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=0: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 1.1566039061063209e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=0: central difference, group dF/dU", "pass": true, "details": {"rel_err": 1.103538002716251e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=0: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 7.50984986337439e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=10: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1 n=16 shift=10: central difference, group full", "pass": true, "details": {"rel_err": 6.362342286057615e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=10: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 1.4820003984724417e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=10: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 6.634040849896779e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=10: central difference, group dF/dU", "pass": true, "details": {"rel_err": 6.614833433067026e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=10: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 5.546065376240126e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=1000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1 n=16 shift=1000: central difference, group full", "pass": true, "details": {"rel_err": 3.663753075343792e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=1000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 2.2355130523800777e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=1000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 4.161838642754917e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=1000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 1.0737973129932706e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=1000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 5.9293581555087275e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=100000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1 n=16 shift=100000: central difference, group full", "pass": true, "details": {"rel_err": 5.16028131433482e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=100000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 7.630216073478928e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=100000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 5.603797203353523e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=100000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 8.314815117021058e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1 n=16 shift=100000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 4.8097234878642776e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=0: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "P n=5 shift=0: central difference, group full", "pass": true, "details": {"rel_err": 1.2466432235539808e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=0: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 1.197084614100102e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=0: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 2.3808346671834235e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=0: central difference, group dF/dU", "pass": true, "details": {"rel_err": 1.2466432235539808e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=0: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 5.533193779638803e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=10: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "P n=5 shift=10: central difference, group full", "pass": true, "details": {"rel_err": 1.2979796107330277e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=10: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 1.5168419919538949e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=10: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 1.387988764876792e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=10: central difference, group dF/dU", "pass": true, "details": {"rel_err": 1.5922076149682956e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=10: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 1.054501183233844e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=1000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "P n=5 shift=1000: central difference, group full", "pass": true, "details": {"rel_err": 4.729765836537862e-15, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=1000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 6.0883849384218e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=1000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 3.4509728790950847e-15, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=1000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 1.0814376832261028e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=1000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 7.422259238690537e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=100000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "P n=5 shift=100000: central difference, group full", "pass": true, "details": {"rel_err": 2.349888159781985e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=100000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 2.389524844455771e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=100000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 2.62125296320569e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=100000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 3.813085052148211e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=5 shift=100000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 7.241710653795688e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=0: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "P n=16 shift=0: central difference, group full", "pass": true, "details": {"rel_err": 9.146423216967765e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=0: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 7.709943316145378e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=0: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 9.332936129145251e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=0: central difference, group dF/dU", "pass": true, "details": {"rel_err": 9.146423216967765e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=0: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 5.2948627923527115e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=10: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "P n=16 shift=10: central difference, group full", "pass": true, "details": {"rel_err": 9.465002265743092e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=10: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 9.422603883884789e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=10: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 9.470760829019703e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=10: central difference, group dF/dU", "pass": true, "details": {"rel_err": 9.753480556859976e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=10: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 4.8917365682458865e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=1000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "P n=16 shift=1000: central difference, group full", "pass": true, "details": {"rel_err": 2.51811293215356e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=1000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 4.3029863768498594e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=1000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 2.5467867442301603e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=1000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 5.6660538392831444e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=1000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 6.930973161866618e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=100000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "P n=16 shift=100000: central difference, group full", "pass": true, "details": {"rel_err": 4.2603706211554583e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=100000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 7.602039664243394e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=100000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 5.044481074343291e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=100000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 6.495487221457546e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "P n=16 shift=100000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 4.895592124234647e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=0: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=0: central difference, group full", "pass": true, "details": {"rel_err": 9.207321862052321e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=0: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 1.229511522397562e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=0: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 7.781736821897246e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=0: central difference, group dF/dU", "pass": true, "details": {"rel_err": 9.207321862052321e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=0: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 1.7435322525851973e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=10: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=10: central difference, group full", "pass": true, "details": {"rel_err": 3.440990853434593e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=10: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 1.2649392001981402e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=10: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 3.510877554261334e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=10: central difference, group dF/dU", "pass": true, "details": {"rel_err": 4.509394391164011e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=10: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 1.5040125861979158e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=1000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=1000: central difference, group full", "pass": true, "details": {"rel_err": 3.75507344939648e-15, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=1000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 3.54258811701957e-15, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=1000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 4.618527588039974e-15, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=1000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 6.578542813698005e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=1000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 1.4121051176351032e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=100000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=100000: central difference, group full", "pass": true, "details": {"rel_err": 1.9231031298197316e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=100000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 2.210745145367127e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=100000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 1.8816951019039185e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=100000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 3.517085789484232e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=5 shift=100000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 1.032629285562527e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=0: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=0: central difference, group full", "pass": true, "details": {"rel_err": 6.150301749818595e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=0: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 3.290865950607527e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=0: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 5.943917169923293e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=0: central difference, group dF/dU", "pass": true, "details": {"rel_err": 6.150301749818595e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=0: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 7.1732358450144595e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=10: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=10: central difference, group full", "pass": true, "details": {"rel_err": 8.802101439821674e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=10: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 3.1348107160242476e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=10: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 9.244128994654253e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=10: central difference, group dF/dU", "pass": true, "details": {"rel_err": 8.945032967665248e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=10: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 5.8438120018017135e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=1000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=1000: central difference, group full", "pass": true, "details": {"rel_err": 2.5684549698247617e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=1000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 2.4769198285385387e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=1000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 2.878484098370265e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=1000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 8.484308105496542e-14, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=1000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 6.80909808448959e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=100000: entries diag = shift + 2/h^2, off = -1/h^2", "pass": true, "details": {"rel_err_diag": 0.0, "rel_err_off": 0.0}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=100000: central difference, group full", "pass": true, "details": {"rel_err": 6.300863491331254e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=100000: central difference, group full_boundary_rows", "pass": true, "details": {"rel_err": 9.037861916396452e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=100000: central difference, group full_interior_rows", "pass": true, "details": {"rel_err": 6.283682266918264e-16, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=100000: central difference, group dF/dU", "pass": true, "details": {"rel_err": 1.0339143674050652e-13, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1+mms n=16 shift=100000: central difference, group dF/dUdot", "pass": true, "details": {"rel_err": 5.736375389608342e-12, "tol": 1e-08}}
+{"check": "infra-3", "claim": "C1: module check_jacobian(16, params) reports pass", "pass": true, "details": {"report": {"block": "theta'/theta'", "n": 16, "eps": 1e-06, "seed": 0, "rtol": 1e-06, "shifts": {"0.0": {"relerr": {"full/all": 5.39120226906682e-11, "full/boundary": 8.364677455241364e-11, "full/interior": 5.39120226906682e-11, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 0.0, "dFdUdot/boundary": 0.0, "dFdUdot/interior": 0.0}, "pass": true}, "10.0": {"relerr": {"full/all": 5.485556901673878e-11, "full/boundary": 8.411142384556913e-11, "full/interior": 5.485556901673878e-11, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 3.770911344206467e-10, "dFdUdot/boundary": 3.1178379502004303e-10, "dFdUdot/interior": 3.770911344206467e-10}, "pass": true}, "1000.0": {"relerr": {"full/all": 2.1138296460909993e-11, "full/boundary": 5.3370981834046745e-11, "full/interior": 2.1138296460909993e-11, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 4.512258027121531e-12, "dFdUdot/boundary": 1.5634115369856792e-12, "dFdUdot/interior": 4.512258027121531e-12}, "pass": true}, "100000.0": {"relerr": {"full/all": 3.453736114194962e-13, "full/boundary": 6.634596969429127e-13, "full/interior": 3.453736114194962e-13, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 4.027450115007688e-14, "dFdUdot/boundary": 2.6232179795731023e-14, "dFdUdot/interior": 4.027450115007688e-14}, "pass": true}}, "pass": true}}}
+{"check": "infra-3", "claim": "P: module check_jacobian(16, params) reports pass", "pass": true, "details": {"report": {"block": "theta'/theta'", "n": 16, "eps": 1e-06, "seed": 0, "rtol": 1e-06, "shifts": {"0.0": {"relerr": {"full/all": 5.39120226906682e-11, "full/boundary": 8.364677455241364e-11, "full/interior": 5.39120226906682e-11, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 0.0, "dFdUdot/boundary": 0.0, "dFdUdot/interior": 0.0}, "pass": true}, "10.0": {"relerr": {"full/all": 5.485556901673878e-11, "full/boundary": 8.411142384556913e-11, "full/interior": 5.485556901673878e-11, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 3.770911344206467e-10, "dFdUdot/boundary": 3.1178379502004303e-10, "dFdUdot/interior": 3.770911344206467e-10}, "pass": true}, "1000.0": {"relerr": {"full/all": 2.1194036494612696e-11, "full/boundary": 5.3370981834046745e-11, "full/interior": 2.1194036494612696e-11, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 4.512258027121531e-12, "dFdUdot/boundary": 1.5634115369856792e-12, "dFdUdot/interior": 4.512258027121531e-12}, "pass": true}, "100000.0": {"relerr": {"full/all": 3.453736114194962e-13, "full/boundary": 6.634596969429127e-13, "full/interior": 3.453736114194962e-13, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 4.027450115007688e-14, "dFdUdot/boundary": 2.6232179795731023e-14, "dFdUdot/interior": 4.027450115007688e-14}, "pass": true}}, "pass": true}}}
+{"check": "infra-3", "claim": "C1+mms: module check_jacobian(16, params) reports pass", "pass": true, "details": {"report": {"block": "theta'/theta'", "n": 16, "eps": 1e-06, "seed": 0, "rtol": 1e-06, "shifts": {"0.0": {"relerr": {"full/all": 5.39120226906682e-11, "full/boundary": 8.364677455241364e-11, "full/interior": 5.39120226906682e-11, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 0.0, "dFdUdot/boundary": 0.0, "dFdUdot/interior": 0.0}, "pass": true}, "10.0": {"relerr": {"full/all": 5.485556901673878e-11, "full/boundary": 8.411142384556913e-11, "full/interior": 5.485556901673878e-11, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 3.770911344206467e-10, "dFdUdot/boundary": 2.9029804850901575e-10, "dFdUdot/interior": 3.770911344206467e-10}, "pass": true}, "1000.0": {"relerr": {"full/all": 2.1138296460909993e-11, "full/boundary": 5.3370981834046745e-11, "full/interior": 2.1138296460909993e-11, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 4.512258027121531e-12, "dFdUdot/boundary": 3.410522777977136e-12, "dFdUdot/interior": 4.512258027121531e-12}, "pass": true}, "100000.0": {"relerr": {"full/all": 3.453736114194962e-13, "full/boundary": 6.634596969428772e-13, "full/interior": 3.453736114194962e-13, "dFdU/all": 5.39120226906682e-11, "dFdU/boundary": 8.364677455241364e-11, "dFdU/interior": 5.39120226906682e-11, "dFdUdot/all": 4.0947344844708234e-14, "dFdUdot/boundary": 6.450537555909019e-14, "dFdUdot/interior": 4.027450115007688e-14}, "pass": true}}, "pass": true}}}
+{"check": "infra-3", "claim": "jacobian_tridiag = shift*dF/dUdot + dF/dU of residual() at shifts 0, 10, 1e3, 1e5; check_jacobian passes", "pass": true, "details": {"n_claims": 147, "failed": []}}

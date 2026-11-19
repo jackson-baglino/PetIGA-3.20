@@ -1,0 +1,68 @@
+[
+ {
+  "gate": "G:Scope",
+  "stage": "M1",
+  "time": "2026-11-16T14:17:14-08:00",
+  "decision": "DEV TOY DRY RUN, approved by the main session for plumbing only (not a user decision). C1: (a) unit case. C2: allow any real q, test q > 0. Notation table approved for the toy."
+ },
+ {
+  "gate": "G:Selection",
+  "stage": "M2",
+  "time": "2026-11-16T14:21:08-08:00",
+  "decision": "DEV TOY DRY RUN, approved by the main session for plumbing only. (a) FD with backward Euler; reference N=64, dtau=1e-3, tau_end=1; V1: (c) both the tau_end comparison and a direct steady solve; C1 and C2 stand for the toy.",
+  "model_name": "heat1d-fd-be"
+ },
+ {
+  "gate": "G:Derivation",
+  "stage": "M3",
+  "time": "2026-11-16T18:28:21-08:00",
+  "action": "reopen",
+  "decision": "DEV TOY DRY RUN (main session, plumbing only). Try 3: fix the verifier's two remaining failures in checks/results_M3.json: add S5 to S12's premises and S6 to S21's and S22's; state T_ref constant in time as an assumption (or in S1) and cite it in S13. D-b: (a) accept S6 as broadened. D-c: (a) leave the upper bound theta <= 1/8 out. Bring derivation.md up to date (S48-S57 coverage, S32 wording). Run your scratch scripts; do not do arithmetic by hand."
+ },
+ {
+  "gate": "G:Derivation",
+  "stage": "M3",
+  "time": "2026-11-16T18:46:32-08:00",
+  "decision": "DEV TOY DRY RUN, main session, plumbing only. D-e: (a) pass. D-f: (a) keep S21, S22 on S28. D-d: M4/M5 tolerances on the tau_end vs S44 comparison must be looser than 1e-5 in theta, or use the direct steady solve. C1, C2, D-b(a), D-c(a) stand for the toy."
+ },
+ {
+  "gate": "G:Discretization",
+  "stage": "M4",
+  "time": "2026-11-16T19:22:30-08:00",
+  "decision": "DEV TOY DRY RUN, main session, plumbing only. 1: (a) symbols stay in the spec table. 2: (a) raise ValueError. 3: (a) accept the solver settings, guard constant c = 1e3. D-d stands.",
+  "spec_sha256": "7897ee5ca069e548e74162f9906635ac7a7b918dba582ab40456b4c97d6e64a7"
+ },
+ {
+  "gate": "G:Test lock",
+  "stage": "M5",
+  "time": "2026-11-16T19:37:53-08:00",
+  "decision": "DEV TOY DRY RUN, main session, plumbing only. 1: (a) approve INTERFACE.md signatures. 2: (b) lock now; calibration before lock recorded in BACKLOG.md as a design item for the real run. 3: (a) accept all tolerances. 4: (a) accept sampling.",
+  "tests_lock": {
+   "tests.json": "763000b9d3c3236f4b5c69cc2af20e9c54db1e6a99ee1a2e567ec07c79b3a973",
+   "test_infra_1.py": "92472e84dad8d3ed0ffbc1418793964a9d7810c7ae6f043b26570f20a3f7eaf1",
+   "test_infra_2.py": "8e6102b7d3eb492c002f888c877bb101738b76949ff51463c33ae9291771bab9",
+   "test_infra_3.py": "710dd19935c2f1906965f832884b162883aef79d1180715c02a40dac680f93c3",
+   "test_infra_4.py": "f96a4720f69d716a5290b292ae449c5ac094205ae406901f01cdf875dc2d9181",
+   "test_heat_1.py": "c675d15ba9bebf52432568ceedbbd3940ca124ed4dd3832f898d1076a338489b",
+   "test_heat_2.py": "ea222039fbef82e30c6dd7c2f28d9957755eda7c7f6381478381a935532b8400",
+   "test_heat_3.py": "7aea83eb257edd101dd366e27446443c2ff6d605010687e13d4087a1d1e1f2b2",
+   "test_heat_4.py": "59604eafa3158d73577f8f4e5df8af4ad9a977610cd2f21f74e2a66c489b4a88",
+   "test_heat_5.py": "4f0347a328516a016165029cf3c85ec5e199fae7616c42a6fe04f1124ed13f02",
+   "test_heat_6.py": "60dc0dc2f13628f692c9711dcd750b7b122b7de59848b689a4edfc6b3758407e",
+   "test_heat_7.py": "93f0430042a5fb20c538e12ebf92c08e826dd8bc5481ec41ee39d94b92fa3e9c",
+   "test_heat_8.py": "b3a3fa0c04bf25dad1816e72eb7d461a8def9f8e72fedca2829c75fbc417826a",
+   "test_heat_9.py": "3056b3099a507712fff874c39ddb4ad2216f425cc472a86d5d29bd2060e1710a",
+   "test_heat_10.py": "2a5b01fd77651c4784c00ca85ed4dd182921699ba3c2c39769c1ebe0d33a4bae",
+   "test_heat_11.py": "54792fcd0d57c861facd317fc7c600baf671fedab414bb079e2620258263686a",
+   "test_heat_12.py": "d2fc640426ae863892fa3cabdb8864d00e456285ed2ffba57c542076d04ae3fc",
+   "test_heat_13.py": "750737a8e45e64b671bfbe424a0704b5eb6f0565bfdc6108e6b0f3ce712d6d80",
+   "test_heat_14.py": "708b152a19730a727a7bc88da133bd9593aa642e1ed582c9c9a2d694ba0a868c"
+  }
+ },
+ {
+  "time": "2026-11-19T10:00:01-08:00",
+  "stage": "M7",
+  "decision": "close run",
+  "note": "closed 2026-11-19 by the user: the line design was replaced on 2026-11-17 (one agent at a time, doc 28/29)"
+ }
+]

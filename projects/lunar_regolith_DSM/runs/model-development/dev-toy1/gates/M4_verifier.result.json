@@ -1,0 +1,26 @@
+{
+ "status": "done",
+ "outputs": [
+  "checks/m4_common.py",
+  "checks/m4_weak_strong.py",
+  "checks/m4_jacobian.py",
+  "checks/m4_mms.py",
+  "checks/m4_scales.py"
+ ],
+ "evidence": [
+  "Final foreground runs: all four scripts exit 0. m4_weak_strong.py passed 11 of 11, m4_jacobian.py 6 of 6, m4_mms.py 8 of 8, m4_scales.py 7 of 7. Every script takes --spec and --ledger and prints the sha256 of each input (spec 7897ee5c..., ledger 13a85b39...).",
+  "The killed background task b4sekq7sx was the first, slow symbolic version of m4_weak_strong.py. It was replaced by the numerical-quadrature version, which ran in the foreground and passed 11 of 11. It was not restarted.",
+  "W1: M4-1 with f = 0 minus S29 is 0, and the end and initial data are equal. W2: weak form minus integral(strong residual times w) minus [theta'_xi w] is at most 2e-15 for 5 test functions in H^1_0 at 2 points. Flipping the sign of Q gives a difference of 0.277, so the check would catch it.",
+  "W4-W9: Galerkin row minus M4-3 is 0. BE applied to M4-3 minus M4-4 is 0. M4-5 minus M4-3 (with Udot = 0, f = 0) is 0, and the nodal parabola gives an exact residual of 0. M4-6b minus M4-4 is 0. Table T1..T5 minus M4-4 is 0 in interior rows and in rows 1 and N-1. W10: the dimensional row is (kT0/L^2) times M4-1, in W/m^3.",
+  "J1/J2: each Jacobian-table entry equals the derivative of its residual term (T1 gives shift on the diagonal; T2 gives -1/h^2, 2/h^2, -1/h^2; T3-T5 give 0), and dR/dU = shift dF/dUdot + dF/dU. J3: J v against the central difference is at most 1.1e-13 for the full J and at most 3.5e-11 for dF/dUdot, for N = 8 and 64 and shifts 0, 10, 1e3, 1e5, with MMS on and for the BE residual. A J with the shift dropped gives 1.0e-3 and one with an off-diagonal sign flipped gives 0.27; both fail. J4: J is a symmetric tridiagonal M-matrix with dominance margin equal to the shift, and its eigenvalues match (4/h^2) sin^2(l pi h/2). J5: the TSALPHA chain rule and the rho_inf = 0.5 values (5/6, 2/3, 2/3) are confirmed. J6: code_map.json agrees with the spec.",
+  "MM1-MM7: the closed form of f minus the computed source is 0. The strong form evaluated on the MMS solution is 0. The MMS solution matches the end and initial data, and both corner compatibility values are 0. The sample values recompute to 2e-16. mms_sources.py builds the same theta'_m. The dimensional source q_m is exact. MM8: my own solver gives 5.2340e-4 -> 1.3016e-4 in space (order 2.008), 7.5869e-4 -> 3.7746e-4 in time (order 1.007), and 4.3056e-5 at the reference case.",
+  "SC1-SC7: kappa, Q and dtau equal the ledger's S16, S27 and S20, and the reference values match M1 within 1 %. Pint confirms all units. Every scales-table entry recomputes within 1 %. The M4-8 rule follows from the mode-1 error expansion, with the maximum at tau = 1/lambda_1. eps = 2.3415e-4 corresponds to dtau = 1e-3. The BE error ratios are 0.982-0.997. The discrete floor at tau = 1 is 7.0172e-6. The end flux is exactly Q/2 at steady state, has O(h^2) error, and equals qL/2."
+ ],
+ "questions": [
+  "The spec says dropping the shift term gives a relative error of 9.6e-2 (spec.md line 210). That number depends on a random state and shift the spec does not give, so I did not recompute it. My own test with the shift dropped does fail, with a relative error of 1.0e-3. Should M5 fix the state and shift so the number can be checked?",
+  "The time-step rule M4-8 is a first-order estimate for the slowest mode only, as the spec itself says. I checked the derivation and the measured ratios, but it is not a proven bound. Do you accept it as an estimate for M5?",
+  "M5 needs a value for the post-solve guard constant c. The spec proposes 10^3 and leaves the choice to M5. What value do you want?",
+  "No instruction-like text was found in the files I read."
+ ],
+ "summary": "I wrote four M4 check scripts and a shared parser under checks/. Each one parses spec.md, ledger.json, code_map.json, mms_sources.py and m1_inputs.json from command-line arguments. All 32 claims pass, and every residual and Jacobian entry, including the shift term, is covered by a check that ran. When I planted errors in the weak form or the Jacobian, the checks failed as they should. The background job that was stopped was the slow first version of m4_weak_strong.py; I replaced it with a faster version, which passed 11 of 11, and did not restart the old job."
+}

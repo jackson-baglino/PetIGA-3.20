@@ -1,0 +1,34 @@
+{
+ "id": "heat-1",
+ "claim": "MMS spatial order 2 at fixed small dtau",
+ "runner": "python",
+ "project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_iqxc3o8d/wt/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 10.0
+ },
+ "started": "20261116-194419",
+ "draft": false,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 0,
+ "timed_out": false,
+ "check": {
+  "check": "heat-1",
+  "claim": "MMS: spatial order 2 at fixed small dtau (N = 16 -> 32, dtau = 1e-5, tau_end = 0.5)",
+  "pass": true,
+  "details": {
+   "n_claims": 5,
+   "failed": []
+  },
+  "exit": 0
+ },
+ "pass": true,
+ "wall_seconds": 8.6
+}

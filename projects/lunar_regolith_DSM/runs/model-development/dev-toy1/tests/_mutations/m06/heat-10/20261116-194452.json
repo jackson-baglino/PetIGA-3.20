@@ -1,0 +1,34 @@
+{
+ "id": "heat-10",
+ "claim": "verifier's addition: dt_for_tolerance(eps, n, t_end, params) returns the dt of rule M4-8, divides t_end into an integer number of steps, and solve() accepts it",
+ "runner": "python",
+ "project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8_foegeh/wt/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 5.0
+ },
+ "started": "20261116-194452",
+ "draft": false,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 0,
+ "timed_out": false,
+ "check": {
+  "check": "heat-10",
+  "claim": "dt_for_tolerance(eps, n, t_end, params) returns the dt of rule M4-8",
+  "pass": true,
+  "details": {
+   "n_claims": 14,
+   "failed": []
+  },
+  "exit": 0
+ },
+ "pass": true,
+ "wall_seconds": 0.5
+}

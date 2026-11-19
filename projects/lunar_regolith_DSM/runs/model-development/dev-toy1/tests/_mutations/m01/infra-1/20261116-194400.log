@@ -1,0 +1,14 @@
+{"check": "infra-1", "used": {"project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_uk5dcnm5/wt/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "infra-1", "used": {"module_file": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_uk5dcnm5/wt/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "infra-1", "claim": "C1: residual has n-1 = 15 rows", "pass": true, "details": {"shape": [15]}}
+{"check": "infra-1", "claim": "C1: option off equals T1+T2+T3+T4", "pass": true, "details": {"max_abs_err": 0.0, "tol": 9.304895678496293e-12, "Q": 1.0}}
+{"check": "infra-1", "claim": "C1: mms=None is bitwise equal to the key absent", "pass": true, "details": {}}
+{"check": "infra-1", "claim": "C1: option off does not depend on tau", "pass": true, "details": {}}
+{"check": "infra-1", "claim": "C1: residual does not modify its inputs", "pass": true, "details": {}}
+{"check": "infra-1", "claim": "P: residual has n-1 = 15 rows", "pass": true, "details": {"shape": [15]}}
+{"check": "infra-1", "claim": "P: option off equals T1+T2+T3+T4", "pass": true, "details": {"max_abs_err": 0.0, "tol": 1.1932527667033532e-11, "Q": 1.1282051282051282}}
+{"check": "infra-1", "claim": "P: mms=None is bitwise equal to the key absent", "pass": true, "details": {}}
+{"check": "infra-1", "claim": "P: option off does not depend on tau", "pass": true, "details": {}}
+{"check": "infra-1", "claim": "P: residual does not modify its inputs", "pass": true, "details": {}}
+{"check": "infra-1", "claim": "T3: rows 1 and N-1 carry -g/h^2 with g = 1, other rows 0", "pass": true, "details": {"row1": -256.0, "rowN1": -256.0, "expected": -256.0, "max_abs_err": 0.0}}
+{"check": "infra-1", "claim": "MMS option off: residual = T1 + T2 + T3 + T4 (M4-6); mms=None is bitwise the same as no 'mms' key", "pass": true, "details": {"n_claims": 11, "failed": []}}

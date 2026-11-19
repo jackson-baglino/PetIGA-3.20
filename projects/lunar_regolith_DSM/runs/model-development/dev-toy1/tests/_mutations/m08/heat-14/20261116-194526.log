@@ -1,0 +1,15 @@
+{"check": "heat-14", "used": {"project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8l62e5gl/wt/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-14", "used": {"module_file": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8l62e5gl/wt/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-14", "claim": "C1 K=0->1: balance", "pass": true, "details": {"lhs": 0.9348529308026987, "rhs": 0.9348529308026912, "F0": 0.03257353459865442, "F1": 0.03257353459865442}}
+{"check": "heat-14", "claim": "C1 K=1->2: balance", "pass": true, "details": {"lhs": 0.9041531614248921, "rhs": 0.9041531614248868, "F0": 0.04792341928755661, "F1": 0.04792341928755661}}
+{"check": "heat-14", "claim": "C1 K=10->11: balance", "pass": true, "details": {"lhs": 0.7656423738130363, "rhs": 0.7656423738130229, "F0": 0.11717881309348854, "F1": 0.11717881309348854}}
+{"check": "heat-14", "claim": "C1 K=100->101: balance", "pass": true, "details": {"lhs": 0.30055977043385795, "rhs": 0.30055977043386406, "F0": 0.34972011478306797, "F1": 0.34972011478306797}}
+{"check": "heat-14", "claim": "P K=0->1: balance", "pass": true, "details": {"lhs": 1.0547058706491876, "rhs": 1.0547058706491899, "F0": 0.036749628777969084, "F1": 0.036749628777969084}}
+{"check": "heat-14", "claim": "P K=1->2: balance", "pass": true, "details": {"lhs": 1.020070233402441, "rhs": 1.020070233402453, "F0": 0.05406744740133754, "F1": 0.05406744740133754}}
+{"check": "heat-14", "claim": "P K=10->11: balance", "pass": true, "details": {"lhs": 0.8638016525070077, "rhs": 0.8638016525070105, "F0": 0.1322017378490589, "F1": 0.1322017378490589}}
+{"check": "heat-14", "claim": "P K=100->101: balance", "pass": true, "details": {"lhs": 0.33909307433562663, "rhs": 0.33909307433562536, "F0": 0.3945560269347514, "F1": 0.3945560269347514}}
+{"check": "heat-14", "claim": "C1+mms K=0->1: balance", "pass": true, "details": {"lhs": 0.579660402959651, "rhs": 0.5796604029596373, "F0": 0.0031393736106264305, "F1": 0.0031393736106264314}}
+{"check": "heat-14", "claim": "C1+mms K=1->2: balance", "pass": true, "details": {"lhs": 0.5793293847427966, "rhs": 0.5793293847428292, "F0": 0.00627709967617862, "F1": 0.00627709967617862}}
+{"check": "heat-14", "claim": "C1+mms K=10->11: balance", "pass": true, "details": {"lhs": 0.5759010721294207, "rhs": 0.5759010721294133, "F0": 0.034432606490709, "F1": 0.034432606490709}}
+{"check": "heat-14", "claim": "C1+mms K=100->101: balance", "pass": true, "details": {"lhs": 0.4987709560191379, "rhs": 0.4987709560191433, "F0": 0.29892540536891016, "F1": 0.29892540536891016}}
+{"check": "heat-14", "claim": "discrete global heat balance: sum h dU/dtau = Q + trapezoid(f) - F'_0 - F'_1 at every sampled step", "pass": true, "details": {"n_claims": 12, "failed": []}}

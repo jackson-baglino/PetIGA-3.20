@@ -1,0 +1,34 @@
+{
+ "id": "heat-12",
+ "claim": "verifier's addition: solve(n, dt, t_end, params) equals K backward-Euler steps of M4-4 computed with a dense solver (forcing at tau^{n+1}, Dirichlet data in rows 1 and N-1)",
+ "runner": "python",
+ "project": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM",
+ "caps": {
+  "ranks": 1,
+  "wall_minutes": 2.0
+ },
+ "started": "20261116-194355",
+ "draft": false,
+ "limits": {
+  "max_ranks": 8,
+  "dofs_per_rank": [
+   20000,
+   100000
+  ],
+  "max_wall_min": 30
+ },
+ "exit": 0,
+ "timed_out": false,
+ "check": {
+  "check": "heat-12",
+  "claim": "solve(n, dt, t_end, params) equals K backward-Euler steps of M4-4 computed with a dense solver",
+  "pass": true,
+  "details": {
+   "n_claims": 4,
+   "failed": []
+  },
+  "exit": 0
+ },
+ "pass": true,
+ "wall_seconds": 0.2
+}

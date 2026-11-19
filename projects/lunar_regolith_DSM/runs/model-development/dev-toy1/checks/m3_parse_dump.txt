@@ -1,0 +1,116 @@
+S1 | 0 < x < L | ['0', 'x', 'L'] ['<', '<'] None
+S1 | t > 0 | ['t', '0'] ['>'] None
+S1 | k > 0 | ['k', '0'] ['>'] None
+S1 | rho > 0 | ['rho', '0'] ['>'] None
+S1 | c_p > 0 | ['c_p', '0'] ['>'] None
+S1 | L > 0 | ['L', '0'] ['>'] None
+S2 | frac { d } { d t } int e d x = j ( a , t ) - j ( b , t ) + int q d x | ['Derivative(Integral(e(x, t), (x, a, b)), t)', 'j(a, t) - j(b, t) + Integral(q, (x, a, b))'] ['='] None
+S2 | 0 <= a < b <= L | ['0', 'a', 'b', 'L'] ['<=', '<', '<='] None
+S3 | e = rho c_p ( T - T_ref ) | ['e(x, t)', 'c_p*rho*(-T_ref + T(x, t))'] ['='] None
+S4 | j = - k frac { d_ T } { d_ x } | ['j(x, t)', '-k*Derivative(T(x, t), x)'] ['='] None
+S6 | t > 0 | ['t', '0'] ['>'] None
+S7 | T ( 0 , t ) = T ( L , t ) = T_0 | ['T(0, t)', 'T(L, t)', 'T_0'] ['=', '='] None
+S7 | T ( x , 0 ) = T_0 | ['T(x, 0)', 'T_0'] ['='] None
+S7 | T_0 > 0 | ['T_0', '0'] ['>'] None
+S8 | psi = 1 | ['psi', '1'] ['='] None
+S9 | frac { d } { d t } int e d x = int frac { d_ e } { d_ t } d x | ['Derivative(Integral(e(x, t), (x, a, b)), t)', 'Integral(Derivative(e(x, t), t), (x, a, b))'] ['='] None
+S10 | j ( a , t ) - j ( b , t ) = - int frac { d_ j } { d_ x } d x | ['j(a, t) - j(b, t)', '-Integral(Derivative(j(x, t), x), (x, a, b))'] ['='] None
+S11 | int ( frac { d_ e } { d_ t } + frac { d_ j } { d_ x } - q ) d x = 0 | ['Integral(-q + Derivative(e(x, t), t) + Derivative(j(x, t), x), (x, a, b))', '0'] ['='] None
+S11 | 0 <= a < b <= L | ['0', 'a', 'b', 'L'] ['<=', '<', '<='] None
+S12 | frac { d_ e } { d_ t } + frac { d_ j } { d_ x } = q | ['Derivative(e(x, t), t) + Derivative(j(x, t), x)', 'q'] ['='] None
+S13 | rho c_p frac { d_ T } { d_ t } + frac { d_ j } { d_ x } = q | ['c_p*rho*Derivative(T(x, t), t) + Derivative(j(x, t), x)', 'q'] ['='] None
+S14 | frac { d_ j } { d_ x } = - k frac { d_ ^ 2 T } { d_ x ^ 2 } | ['Derivative(j(x, t), x)', '-k*Derivative(T(x, t), (x, 2))'] ['='] None
+S15 | rho c_p frac { d_ T } { d_ t } = k frac { d_ ^ 2 T } { d_ x ^ 2 } + q | ['c_p*rho*Derivative(T(x, t), t)', 'k*Derivative(T(x, t), (x, 2)) + q'] ['='] None
+S16 | kappa = frac { k } { rho c_p } > 0 | ['kappa', 'k/(c_p*rho)', '0'] ['=', '>'] None
+S17 | frac { d_ T } { d_ t } = kappa frac { d_ ^ 2 T } { d_ x ^ 2 } + frac { q } { rho c_p } | ['Derivative(T(x, t), t)', 'kappa*Derivative(T(x, t), (x, 2)) + q/(c_p*rho)'] ['='] None
+S18 | \left.\text{S15}\right|_{\psi\equiv 1} = \text{S15} \quad \text{(the reduction i | [] [] tokenize: unexpected character '_'
+S19 | L = 1 | ['L', '1'] ['='] None
+S19 | k = 1 | ['k', '1'] ['='] None
+S19 | rho = 1 | ['rho', '1'] ['='] None
+S19 | c_p = 1 | ['c_p', '1'] ['='] None
+S19 | q = 1 | ['q', '1'] ['='] None
+S19 | T_0 = 1 | ['T_0', '1'] ['='] None
+S20 | DeltaT_q = frac { q L ^ 2 } { k } | ['DeltaT_q', 'L**2*q/k'] ['='] None
+S20 | x_c = L | ['x_c', 'L'] ['='] None
+S20 | t_c = frac { L ^ 2 } { kappa } | ['t_c', 'L**2/kappa'] ['='] None
+S20 | xi = frac { x } { L } | ['xi', 'x/L'] ['='] None
+S20 | tau = frac { kappa t } { L ^ 2 } | ['tau', 'kappa*t/L**2'] ['='] None
+S20 | T = T_0 + DeltaT_q theta ( xi , tau ) | ['T(x, t)', 'DeltaT_q*theta(xi, tau) + T_0'] ['='] None
+S21 | frac { d_ T } { d_ t } = frac { kappa DeltaT_q } { L ^ 2 } frac { d_ theta } { d_ tau } | ['Derivative(T(x, t), t)', 'DeltaT_q*kappa*Derivative(theta(xi, tau), tau)/L**2'] ['='] None
+S22 | frac { d_ T } { d_ x } = frac { DeltaT_q } { L } frac { d_ theta } { d_ xi } | ['Derivative(T(x, t), x)', 'DeltaT_q*Derivative(theta(xi, tau), xi)/L'] ['='] None
+S22 | frac { d_ ^ 2 T } { d_ x ^ 2 } = frac { DeltaT_q } { L ^ 2 } frac { d_ ^ 2 theta } { d_ xi ^ 2 } | ['Derivative(T(x, t), (x, 2))', 'DeltaT_q*Derivative(theta(xi, tau), (xi, 2))/L**2'] ['='] None
+S23 | frac { kappa DeltaT_q } { L ^ 2 } frac { d_ theta } { d_ tau } = kappa frac { DeltaT_q } { L ^ 2 } frac { d_ ^ 2 theta } { d_ xi ^ 2 } + frac { q } { rho c_p } | ['DeltaT_q*kappa*Derivative(theta(xi, tau), tau)/L**2', 'DeltaT_q*kappa*Derivative(theta(xi, tau), (xi, 2))/L**2 + q/(c_p*rho)'] ['='] None
+S24 | frac { d_ theta } { d_ tau } = frac { d_ ^ 2 theta } { d_ xi ^ 2 } + frac { q L ^ 2 } { rho c_p kappa DeltaT_q } | ['Derivative(theta(xi, tau), tau)', 'Derivative(theta(xi, tau), (xi, 2)) + L**2*q/(DeltaT_q*c_p*kappa*rho)'] ['='] None
+S25 | frac { d_ theta } { d_ tau } = frac { d_ ^ 2 theta } { d_ xi ^ 2 } + 1 | ['Derivative(theta(xi, tau), tau)', 'Derivative(theta(xi, tau), (xi, 2)) + 1'] ['='] None
+S26 | theta ( 0 , tau ) = theta ( 1 , tau ) = 0 | ['theta(0, tau)', 'theta(1, tau)', '0'] ['=', '='] None
+S26 | theta ( xi , 0 ) = 0 | ['theta(xi, 0)', '0'] ['='] None
+S27 | T = T_0 theta ' ( xi , tau ) | ['T(x, t)', 'T_0*thetap(xi, tau)'] ['='] None
+S27 | Q = frac { q L ^ 2 } { k T_0 } | ['Q', 'L**2*q/(T_0*k)'] ['='] None
+S28 | frac { kappa T_0 } { L ^ 2 } frac { d_ theta ' } { d_ tau } = kappa frac { T_0 } { L ^ 2 } frac { d_ ^ 2 theta ' } { d_ xi ^ 2 } + frac { q } { rho c_p } | ['T_0*kappa*Derivative(thetap(xi, tau), tau)/L**2', 'q/(c_p*rho) + T_0*kappa*Derivative(thetap(xi, tau), (xi, 2))/L**2'] ['='] None
+S29 | frac { d_ theta ' } { d_ tau } = frac { d_ ^ 2 theta ' } { d_ xi ^ 2 } + Q | ['Derivative(thetap(xi, tau), tau)', 'Q + Derivative(thetap(xi, tau), (xi, 2))'] ['='] None
+S29 | theta ' ( 0 , tau ) = theta ' ( 1 , tau ) = 1 | ['thetap(0, tau)', 'thetap(1, tau)', '1'] ['=', '='] None
+S29 | theta ' ( xi , 0 ) = 1 | ['thetap(xi, 0)', '1'] ['='] None
+S30 | Q = frac { DeltaT_q } { T_0 } | ['Q', 'DeltaT_q/T_0'] ['='] None
+S30 | theta ' = 1 + Q theta | ['thetap(xi, tau)', 'Q*theta(xi, tau) + 1'] ['='] None
+S31 | kappa = 1 | ['kappa', '1'] ['='] None
+S31 | t_c = 1 | ['t_c', '1'] ['='] None
+S31 | DeltaT_q = 1 | ['DeltaT_q', '1'] ['='] None
+S31 | Q = 1 | ['Q', '1'] ['='] None
+S33 | w = T_1 - T_2 | ['w(x, t)', 'T_1(x, t) - T_2(x, t)'] ['='] None
+S33 | frac { d_ w } { d_ t } = kappa frac { d_ ^ 2 w } { d_ x ^ 2 } | ['Derivative(w(x, t), t)', 'kappa*Derivative(w(x, t), (x, 2))'] ['='] None
+S33 | w ( 0 , t ) = w ( L , t ) = 0 | ['w(0, t)', 'w(L, t)', '0'] ['=', '='] None
+S33 | w ( x , 0 ) = 0 | ['w(x, 0)', '0'] ['='] None
+S34 | frac { d E } { d t } = kappa int w frac { d_ ^ 2 w } { d_ x ^ 2 } d x | ['Derivative(E(t), t)', 'kappa*Integral(w(x, t)*Derivative(w(x, t), (x, 2)), (x, 0, L))'] ['='] None
+S34 | E ( t ) = frac { 1 } { 2 } int w ^ 2 d x | ['E(t)', 'Integral(w(x, t)**2, (x, 0, L))/2'] ['='] None
+S35 | frac { d E } { d t } = - kappa int ( frac { d_ w } { d_ x } ) ^ 2 d x <= 0 | ['Derivative(E(t), t)', '-kappa*Integral(Derivative(w(x, t), x)**2, (x, 0, L))', '0'] ['=', '<='] None
+S36 | T_1 = T_2 | ['T_1(x, t)', 'T_2(x, t)'] ['='] None
+S37 | q = 0 | ['q', '0'] ['='] None
+S37 | T ( x , t ) = T_0 | ['T(x, t)', 'T_0'] ['='] None
+S48 | tau_1 > 0 | ['tau_1', '0'] ['>'] None
+S48 | theta_min ( tau_1 ) = min theta = theta ( xi_star , tau_star ) | ['tau_1*theta_min', 'Min_[0,1]times[0,tau_1](theta(xi, tau))', 'theta(xi_star, tau_star)'] ['=', '='] None
+S49 | theta_min ( tau_1 ) < 0 | ['tau_1*theta_min', '0'] ['<'] None
+S49 | 0 < xi_star < 1 | ['0', 'xi_star', '1'] ['<', '<'] None
+S49 | 0 < tau_star <= tau_1 | ['0', 'tau_star', 'tau_1'] ['<', '<='] None
+S49 | frac { d_ ^ 2 theta } { d_ xi ^ 2 } ( xi_star , tau_star ) >= 0 | ['Subs(Derivative(theta(xi, tau_star), (xi, 2)), xi, xi_star)', '0'] ['>='] None
+S49 | frac { d_ theta } { d_ tau } ( xi_star , tau_star ) <= 0 | ['Subs(Derivative(theta(xi_star, tau), tau), tau, tau_star)', '0'] ['<='] None
+S50 | theta ( xi , tau ) >= 0 | ['theta(xi, tau)', '0'] ['>='] None
+S38 | q != 0 | ['q', '0'] ['!='] None
+S38 | T - T_0 = DeltaT_q theta | ['-T_0 + T(x, t)', 'DeltaT_q*theta(xi, tau)'] ['='] None
+S38 | theta != 0 | ['theta(xi, tau)', '0'] ['!='] None
+S39 | F_0 = - j ( 0 , t ) = k frac { d_ T } { d_ x } ( 0 , t ) | ['F_0', '-j(0, t)', 'k*Subs(Derivative(T(x, t), x), x, 0)'] ['=', '='] None
+S39 | F_L = j ( L , t ) = - k frac { d_ T } { d_ x } ( L , t ) | ['F_L', 'j(L, t)', '-k*Subs(Derivative(T(x, t), x), x, L)'] ['=', '='] None
+S41 | theta_s ' ' ( xi ) = - 1 | ['Derivative(theta_s(xi), (xi, 2))', '-1'] ['='] None
+S41 | theta_s ( 0 ) = theta_s ( 1 ) = 0 | ['theta_s(0)', 'theta_s(1)', '0'] ['=', '='] None
+S42 | theta_s ( xi ) = - frac { xi ^ 2 } { 2 } + c_1 xi + c_0 | ['theta_s(xi)', 'c_0 + c_1*xi - xi**2/2'] ['='] None
+S43 | theta_s ( xi ) = frac { xi ( 1 - xi ) } { 2 } | ['theta_s(xi)', 'xi*(1 - xi)/2'] ['='] None
+S43 | max theta_s = theta_s ( 1 / 2 ) = frac { 1 } { 8 } | ['Max_xi(theta_s(xi))', 'theta_s(1/2)', '1/8'] ['=', '='] None
+S44 | T_s ( x ) = T_0 + frac { q x ( L - x ) } { 2 k } | ['T_s(x)', 'T_0 + q*x*(L - x)/(2*k)'] ['='] None
+S45 | F_0 = F_L = frac { q L } { 2 } | ['F_0', 'F_L', 'L*q/2'] ['=', '='] None
+S45 | F_0 + F_L = q L = int q d x | ['F_0 + F_L', 'L*q', 'Integral(q, (x, 0, L))'] ['=', '='] None
+S51 | v = theta_s - theta | ['v(xi, tau)', '-theta(xi, tau) + theta_s(xi)'] ['='] None
+S51 | frac { d_ v } { d_ tau } = frac { d_ ^ 2 v } { d_ xi ^ 2 } | ['Derivative(v(xi, tau), tau)', 'Derivative(v(xi, tau), (xi, 2))'] ['='] None
+S51 | v ( 0 , tau ) = v ( 1 , tau ) = 0 | ['v(0, tau)', 'v(1, tau)', '0'] ['=', '='] None
+S51 | v ( xi , 0 ) = frac { xi ( 1 - xi ) } { 2 } | ['v(xi, 0)', 'xi*(1 - xi)/2'] ['='] None
+S52 | int xi sin ( ell pi xi ) d xi = - frac { ( - 1 ) ^ ell } { ell pi } | ['Integral(xi*sin(pi*ell*xi), (xi, 0, 1))', '-(-1)**ell/(pi*ell)'] ['='] None
+S52 | int xi ^ 2 sin ( ell pi xi ) d xi = - frac { ( - 1 ) ^ ell } { ell pi } + frac { 2 ( ( - 1 ) ^ ell - 1 ) } { ( ell pi ) ^ 3 } | ['Integral(xi**2*sin(pi*ell*xi), (xi, 0, 1))', '-(-1)**ell/(pi*ell) + (2*(-1)**ell - 2)/(pi**3*ell**3)'] ['='] None
+S53 | beta_ell = 2 int theta_s ( xi ) sin ( ell pi xi ) d xi = frac { 2 ( 1 - ( - 1 ) ^ ell ) } { ( ell pi ) ^ 3 } | ['beta_ell', '2*Integral(theta_s(xi)*sin(pi*ell*xi), (xi, 0, 1))', '(2 - 2*(-1)**ell)/(pi**3*ell**3)'] ['=', '='] None
+S54 | v ( xi , tau ) = sumodd frac { 4 } { ( ell pi ) ^ 3 } sin ( ell pi xi ) exp ( - ell ^ 2 pi ^ 2 tau ) | ['v(xi, tau)', 'Sum(4*exp(-pi**2*tau*(2*r + 1)**2)*sin(pi*xi*(2*r + 1))/(pi**3*(2*r + 1)**3), (r, 0, oo))'] ['='] None
+S54 | theta = theta_s - v | ['theta(xi, tau)', 'theta_s(xi) - v(xi, tau)'] ['='] None
+S55 | frac { d_ theta } { d_ tau } ( xi , tau ) = sumodd frac { 4 } { ell pi } sin ( ell pi xi ) exp ( - ell ^ 2 pi ^ 2 tau ) | ['Derivative(theta(xi, tau), tau)', 'Sum(4*exp(-pi**2*tau*(2*r + 1)**2)*sin(pi*xi*(2*r + 1))/(pi*(2*r + 1)), (r, 0, oo))'] ['='] None
+S56 | 0 < tau <= 0.1 | ['0', 'tau', '1/10'] ['<', '<='] None
+S56 | max frac { d_ theta } { d_ tau } >= frac { d_ theta } { d_ tau } ( 1 / 2 , tau ) >= g ( tau ) >= 0.474 | ['Max_xi(Derivative(theta(xi, tau), tau))', 'Derivative(theta(1/2, tau), tau)', 'g(tau)', '237/500'] ['>=', '>=', '>='] None
+S57 | tau > 0 | ['tau', '0'] ['>'] None
+S57 | max | frac { d_ theta } { d_ tau } | <= frac { 4 } { pi } exp ( - pi ^ 2 tau ) ( 1 + frac { exp ( - 8 pi ^ 2 tau ) } { 3 ( 1 - exp ( - 8 pi ^ 2 tau ) ) } ) | ['Max_xi(Abs(Derivative(theta(xi, tau), tau)))', '4*(1 + exp(-8*pi**2*tau)/(3 - 3*exp(-8*pi**2*tau)))*exp(-pi**2*tau)/pi'] ['<='] None
+S57 | max | theta - theta_s | <= frac { 4 } { pi ^ 3 } exp ( - pi ^ 2 tau ) ( 1 + frac { exp ( - 8 pi ^ 2 tau ) } { 27 ( 1 - exp ( - 8 pi ^ 2 tau ) ) } ) | ['Max_xi(Abs(theta(xi, tau) - theta_s(xi)))', '4*(1 + exp(-8*pi**2*tau)/(27 - 27*exp(-8*pi**2*tau)))*exp(-pi**2*tau)/pi**3'] ['<='] None
+S57 | tau >= 1 | ['tau', '1'] ['>='] None
+S57 | max | frac { d_ theta } { d_ tau } | <= 6.59 * 10 ^ { - 5 } | ['Max_xi(Abs(Derivative(theta(xi, tau), tau)))', '659/10000000'] ['<='] None
+S57 | max | theta - theta_s | <= 6.68 * 10 ^ { - 6 } | ['Max_xi(Abs(theta(xi, tau) - theta_s(xi)))', '167/25000000'] ['<='] None
+S32 | 0 < tau <= 0.1 | ['0', 'tau', '1/10'] ['<', '<='] None
+S32 | max d_tau theta >= 0.47 | ['Max_xi(Derivative(theta(xi, tau), tau))', '47/100'] ['>='] None
+S32 | max | d_xi ^ 2 theta | >= 1 | ['Max_xi(Abs(Derivative(theta(xi, tau), (xi, 2))))', '1'] ['>='] None
+S32 | = 1 | [] [] ParseError: unexpected token ('op', '=')
+S32 | tau >= 1 | ['tau', '1'] ['>='] None
+S32 | max | d_tau theta | <= 6.6 * 10 ^ { - 5 } | ['Max_xi(Abs(Derivative(theta(xi, tau), tau)))', '33/500000'] ['<='] None
+S32 | max | theta - theta_s | <= 6.7 * 10 ^ { - 6 } | ['Max_xi(Abs(theta(xi, tau) - theta_s(xi)))', '67/10000000'] ['<='] None
+S47 | = | [] [] ParseError: unexpected token ('op', '=')
+S47 | = 0 | [] [] ParseError: unexpected token ('op', '=')

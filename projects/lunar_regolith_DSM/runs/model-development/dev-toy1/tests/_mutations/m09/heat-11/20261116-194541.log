@@ -1,0 +1,10 @@
+{"check": "heat-11", "used": {"project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_55i3duwn/wt/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-11", "used": {"module_file": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_55i3duwn/wt/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-11", "claim": "C1 dt=0.3 t_end=1: raises ValueError", "pass": true, "details": {"message": "t_end/dt = 3.3333333333333335 is not an integer to within 1e-10 relative"}}
+{"check": "heat-11", "claim": "C1 dt=0.4 t_end=1: raises ValueError", "pass": true, "details": {"message": "t_end/dt = 2.5 is not an integer to within 1e-10 relative"}}
+{"check": "heat-11", "claim": "C1 dt=0.1 t_end=1+1e-7: raises ValueError", "pass": true, "details": {"message": "t_end/dt = 10.000000999999999 is not an integer to within 1e-10 relative"}}
+{"check": "heat-11", "claim": "P t_end=2.5 dt: raises ValueError", "pass": true, "details": {"message": "t_end/dt = 2.5 is not an integer to within 1e-10 relative"}}
+{"check": "heat-11", "claim": "C1 dt=0.25 t_end=1: runs and returns N+1 nodes", "pass": true, "details": {}}
+{"check": "heat-11", "claim": "C1 dt=0.1 t_end=1+1e-13: runs and returns N+1 nodes", "pass": true, "details": {}}
+{"check": "heat-11", "claim": "P t_end=3 dt: runs and returns N+1 nodes", "pass": true, "details": {}}
+{"check": "heat-11", "claim": "solve raises ValueError iff t_end/dt is not an integer within 1e-10 relative", "pass": true, "details": {"n_claims": 7, "failed": []}}

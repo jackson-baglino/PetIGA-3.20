@@ -1,0 +1,22 @@
+[
+  {"term": "T1 storage (U_j - U_j^n)/dtau (residual)", "row": "theta' rows j = 1..N-1", "where": "toy/heat1d.py: residual", "option": "none (always on; omitted with shift = 0 in solve_steady)", "layer": "heat"},
+  {"term": "T2 conduction, unknown neighbours -(U_{j-1} - 2U_j + U_{j+1})/h^2 (residual)", "row": "theta' rows j = 1..N-1", "where": "toy/heat1d.py: residual", "option": "none (always on)", "layer": "heat"},
+  {"term": "T3 conduction, Dirichlet data -g_L/h^2 (row 1) and -g_R/h^2 (row N-1), g_L = g_R = 1 (residual)", "row": "theta' rows 1 and N-1", "where": "toy/heat1d.py: residual", "option": "none (always on)", "layer": "heat"},
+  {"term": "T4 source -Q, Q = q L^2/(k T_0) (residual)", "row": "theta' rows j = 1..N-1", "where": "toy/heat1d.py: residual", "option": "none (always on)", "layer": "heat"},
+  {"term": "T5 MMS forcing -f(xi_j, tau^{n+1}), f from M4-9 (residual)", "row": "theta' rows j = 1..N-1", "where": "toy/heat1d.py: residual (formula in toy/heat1d.py: mms_forcing)", "option": "params['mms'] = {'A': .., 'B': ..}; default None = code path skipped", "layer": "infra"},
+  {"term": "J from T1: diagonal shift = 1/dtau (0 for steady); dF/dUdot = I", "row": "theta'/theta' block, diagonal", "where": "toy/heat1d.py: jacobian_tridiag", "option": "none (always on)", "layer": "heat"},
+  {"term": "J from T2: diagonal +2/h^2, sub- and super-diagonal -1/h^2", "row": "theta'/theta' block, three diagonals", "where": "toy/heat1d.py: jacobian_tridiag", "option": "none (always on)", "layer": "heat"},
+  {"term": "J from T3: no entry (g_L, g_R are data, not unknowns)", "row": "theta' rows 1 and N-1", "where": "toy/heat1d.py: jacobian_tridiag (nothing to add; stated so a reviewer can check)", "option": "none", "layer": "heat"},
+  {"term": "J from T4: zero (Q constant)", "row": "theta' rows j = 1..N-1", "where": "toy/heat1d.py: jacobian_tridiag (nothing to add)", "option": "none", "layer": "heat"},
+  {"term": "J from T5: zero (f depends on xi and tau only)", "row": "theta' rows j = 1..N-1", "where": "toy/heat1d.py: jacobian_tridiag (nothing to add)", "option": "params['mms']", "layer": "infra"},
+  {"term": "full-Jacobian test: J v vs [F(U+eps v, Udot+shift eps v) - F(U-eps v, Udot-shift eps v)]/(2 eps), split dF/dU and dF/dUdot, boundary-adjacent vs interior rows, shifts 0, 1e1, 1e3, 1e5", "row": "theta'/theta' block (the only block)", "where": "toy/heat1d.py: check_jacobian", "option": "explicit call check_jacobian(...); no effect on solve", "layer": "infra"},
+  {"term": "MMS exact solution theta'_m (M4-9), for tests", "row": "all nodes", "where": "toy/heat1d.py: mms_exact", "option": "params['mms']", "layer": "infra"},
+  {"term": "initial condition U_j^0 = 1 (S7 via S27)", "row": "theta' rows j = 1..N-1", "where": "toy/heat1d.py: solve", "option": "none", "layer": "heat"},
+  {"term": "scales: kappa = k/(rho c_p), Q = q L^2/(k T_0), dtau = kappa dt/L^2, residual factor k T_0/L^2", "row": "all", "where": "toy/heat1d.py: _scales", "option": "none", "layer": "heat"},
+  {"term": "BE step: one Newton step U^{n+1} = U^n - J^{-1} R(U^n), then guard on ||R(U^{n+1})||_inf", "row": "theta' rows j = 1..N-1", "where": "toy/heat1d.py: step_be", "option": "none", "layer": "heat"},
+  {"term": "tridiagonal solve (Thomas, no pivoting)", "row": "theta'/theta' block", "where": "toy/heat1d.py: thomas_solve", "option": "none", "layer": "heat"},
+  {"term": "direct steady solve (M4-5): residual and J with shift = 0, f = 0", "row": "theta' rows j = 1..N-1", "where": "toy/heat1d.py: solve_steady", "option": "none (separate function, V1 (c))", "layer": "heat"},
+  {"term": "time loop, integer step count check, output x_j = L j h and T_j = T_0 U_j at j = 0..N", "row": "all nodes", "where": "toy/heat1d.py: solve", "option": "none", "layer": "heat"},
+  {"term": "half-cell end fluxes F'_0, F'_L; dimensional (k T_0/L) F'", "row": "end nodes 0 and N (output only)", "where": "toy/heat1d.py: end_fluxes", "option": "none", "layer": "heat"},
+  {"term": "dt rule M4-8: dtau_max = 2e eps/(|Q| b_1 lambda_1), n_steps = ceil(tau_end/dtau_max), dt = (tau_end/n_steps) L^2/kappa", "row": "none (helper)", "where": "toy/heat1d.py: dt_for_tolerance", "option": "none (helper; solve takes dt from the caller)", "layer": "heat"}
+]

@@ -1,0 +1,56 @@
+2026-11-16T14:12:47-08:00  init run dev-toy1 (problem toy, dev) at b983e763
+2026-11-16T14:12:50-08:00  M1:Scope starts
+2026-11-16T14:16:25-08:00  M1: verifier checks all pass (4 scripts)
+2026-11-16T14:16:55-08:00  M1 done; waiting for you at G:Scope (runs/model-development/dev-toy1/gates/G:Scope.md)
+2026-11-16T14:17:14-08:00  user approved G:Scope: DEV TOY DRY RUN, approved by the main session for plumbing only (not a user decision). C1: (a) unit case. C2: allow any 
+2026-11-16T14:17:14-08:00  M2:Selection starts
+2026-11-16T14:20:52-08:00  M2 done; waiting for you at G:Selection (runs/model-development/dev-toy1/gates/G:Selection.md)
+2026-11-16T14:21:08-08:00  user approved G:Selection: DEV TOY DRY RUN, approved by the main session for plumbing only. (a) FD with backward Euler; reference N=64, dtau=1e-3, 
+2026-11-16T14:21:14-08:00  M3:Derivation starts
+2026-11-16T14:54:55-08:00  M3: verifier checks have failures (10 scripts)
+2026-11-16T14:55:53-08:00  M3 done; waiting for you at G:Derivation (runs/model-development/dev-toy1/gates/G:Derivation.md)
+2026-11-16T14:56:08-08:00  user reopened M3: DEV TOY DRY RUN (main session, plumbing only). Fix the verifier's failures 1-6 listed in gates/G:Derivation.md and check
+2026-11-16T14:56:08-08:00  M3:Derivation starts
+2026-11-16T15:33:28-08:00  M3: verifier checks have failures (12 scripts)
+2026-11-16T15:34:21-08:00  M3 done; waiting for you at G:Derivation (runs/model-development/dev-toy1/gates/G:Derivation.md)
+2026-11-16T18:28:21-08:00  user reopened M3: DEV TOY DRY RUN (main session, plumbing only). Try 3: fix the verifier's two remaining failures in checks/results_M3.jso
+2026-11-16T18:28:21-08:00  M3:Derivation starts
+2026-11-16T18:45:04-08:00  M3: verifier checks all pass (12 scripts)
+2026-11-16T18:45:56-08:00  M3 done; waiting for you at G:Derivation (runs/model-development/dev-toy1/gates/G:Derivation.md)
+2026-11-16T18:46:32-08:00  user approved G:Derivation: DEV TOY DRY RUN, main session, plumbing only. D-e: (a) pass. D-f: (a) keep S21, S22 on S28. D-d: M4/M5 tolerances on the
+2026-11-16T18:46:33-08:00  M4:Discretization starts
+2026-11-16T19:21:29-08:00  M4: verifier checks all pass (5 scripts)
+2026-11-16T19:22:15-08:00  M4 done; waiting for you at G:Discretization (runs/model-development/dev-toy1/gates/G:Discretization.md)
+2026-11-16T19:22:30-08:00  user approved G:Discretization: DEV TOY DRY RUN, main session, plumbing only. 1: (a) symbols stay in the spec table. 2: (a) raise ValueError. 3: (a) acc
+2026-11-16T19:22:30-08:00  M5:Test lock starts
+2026-11-16T19:22:33-08:00  worktree /Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1 on feat/md-dev-dev-toy1
+2026-11-16T19:37:36-08:00  M5 done; waiting for you at G:Test lock (runs/model-development/dev-toy1/gates/G:Test lock.md)
+2026-11-16T19:37:56-08:00  user approved G:Test lock: DEV TOY DRY RUN, main session, plumbing only. 1: (a) approve INTERFACE.md signatures. 2: (b) lock now; calibration befor
+2026-11-16T19:37:56-08:00  M6:Implementation starts
+2026-11-16T19:40:17-08:00    test infra-1: pass
+2026-11-16T19:40:17-08:00    test infra-2: pass
+2026-11-16T19:40:18-08:00    test infra-3: pass
+2026-11-16T19:40:18-08:00    test infra-4: pass
+2026-11-16T19:40:18-08:00  M6: layer infra done
+2026-11-16T19:43:52-08:00    test heat-1: pass
+2026-11-16T19:43:52-08:00    test heat-2: pass
+2026-11-16T19:43:52-08:00    test heat-3: pass
+2026-11-16T19:43:53-08:00    test heat-4: pass
+2026-11-16T19:43:53-08:00    test heat-5: pass
+2026-11-16T19:43:54-08:00    test heat-6: pass
+2026-11-16T19:43:54-08:00    test heat-7: pass
+2026-11-16T19:43:54-08:00    test heat-8: pass
+2026-11-16T19:43:54-08:00    test heat-9: pass
+2026-11-16T19:43:55-08:00    test heat-10: pass
+2026-11-16T19:43:55-08:00    test heat-11: pass
+2026-11-16T19:43:55-08:00    test heat-12: pass
+2026-11-16T19:43:56-08:00    test heat-13: pass
+2026-11-16T19:43:56-08:00    test heat-14: pass
+2026-11-16T19:43:56-08:00    test infra-1: pass
+2026-11-16T19:43:57-08:00    test infra-2: pass
+2026-11-16T19:43:57-08:00    test infra-3: pass
+2026-11-16T19:43:57-08:00    test infra-4: pass
+2026-11-16T19:43:57-08:00  M6: layer heat done
+2026-11-16T19:43:57-08:00  M7:Mutation starts
+2026-11-16T19:45:56-08:00  M7: M7: 4 of 10 planted bugs caught
+2026-11-19T10:00:01-08:00 run closed: closed 2026-11-19 by the user: the line design was replaced on 2026-11-17 (one agent at a time, doc 28/29)

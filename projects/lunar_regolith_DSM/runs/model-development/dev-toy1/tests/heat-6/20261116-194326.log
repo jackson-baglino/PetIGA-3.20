@@ -1,0 +1,9 @@
+{"check": "heat-6", "used": {"project": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-6", "used": {"module_file": "/Users/jacksonbaglino/PetIGA-3.20/.claude/worktrees/md-dev-toy1/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-6", "claim": "C1 n=64: F'_0 = F'_1 = Q/2", "pass": true, "details": {"F0": 0.5, "F1": 0.5, "Q_half": 0.5, "rel_err": 0.0}}
+{"check": "heat-6", "claim": "C1 n=64: (k T0/L) F' = qL/2", "pass": true, "details": {"flux_W_m2": [0.5, 0.5], "qL_half": 0.5}}
+{"check": "heat-6", "claim": "P n=64: F'_0 = F'_1 = Q/2", "pass": true, "details": {"F0": 0.5641025641025553, "F1": 0.5641025641025553, "Q_half": 0.5641025641025641, "rel_err": 1.5548168813045944e-14}}
+{"check": "heat-6", "claim": "P n=64: (k T0/L) F' = qL/2", "pass": true, "details": {"flux_W_m2": [10.99999999999983, 10.99999999999983], "qL_half": 11.0}}
+{"check": "heat-6", "claim": "P n=7: F'_0 = F'_1 = Q/2", "pass": true, "details": {"F0": 0.5641025641025641, "F1": 0.5641025641025641, "Q_half": 0.5641025641025641, "rel_err": 0.0}}
+{"check": "heat-6", "claim": "P n=7: (k T0/L) F' = qL/2", "pass": true, "details": {"flux_W_m2": [11.0, 11.0], "qL_half": 11.0}}
+{"check": "heat-6", "claim": "steady half-cell end fluxes F'_0 = F'_1 = Q/2, dimensional (k T0/L) F' = qL/2", "pass": true, "details": {"n_claims": 6, "failed": []}}

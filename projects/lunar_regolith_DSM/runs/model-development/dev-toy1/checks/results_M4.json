@@ -1,0 +1,1065 @@
+{
+ "stage": "M4",
+ "time": "2026-11-16T19:21:29-08:00",
+ "all_pass": true,
+ "scripts": [
+  {
+   "script": "m4_common.py",
+   "exit": 0,
+   "claims": [],
+   "stderr": ""
+  },
+  {
+   "script": "m4_jacobian.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "J1_term_by_term",
+     "claim": "each Jacobian-table entry of T1..T5 is the derivative of the residual-table term, with shift = 1/dtau; only T1 has a dF/dUdot entry, equal to 1",
+     "pass": true,
+     "details": {
+      "failures": [],
+      "entries": {
+       "T1": {
+        "m": {
+         "computed": "0",
+         "table": "0"
+        },
+        "c": {
+         "computed": "shift",
+         "table": "shift"
+        },
+        "p": {
+         "computed": "0",
+         "table": "0"
+        }
+       },
+       "T2": {
+        "m": {
+         "computed": "-1/h**2",
+         "table": "-1/h**2"
+        },
+        "c": {
+         "computed": "2/h**2",
+         "table": "2/h**2"
+        },
+        "p": {
+         "computed": "-1/h**2",
+         "table": "-1/h**2"
+        }
+       },
+       "T3": {
+        "m": {
+         "computed": "0",
+         "table": "0"
+        },
+        "c": {
+         "computed": "0",
+         "table": "0"
+        },
+        "p": {
+         "computed": "0",
+         "table": "0"
+        }
+       },
+       "T4": {
+        "m": {
+         "computed": "0",
+         "table": "0"
+        },
+        "c": {
+         "computed": "0",
+         "table": "0"
+        },
+        "p": {
+         "computed": "0",
+         "table": "0"
+        }
+       },
+       "T5": {
+        "m": {
+         "computed": "0",
+         "table": "0"
+        },
+        "c": {
+         "computed": "0",
+         "table": "0"
+        },
+        "p": {
+         "computed": "0",
+         "table": "0"
+        }
+       }
+      },
+      "dF_j/dUdot_j (from M4-6)": "1"
+     }
+    },
+    {
+     "check": "J2_matrix",
+     "claim": "dR_j/dU^{n+1} of M4-6b equals shift dF/dUdot + dF/dU, the table sum, and the stated diagonal shift + 2/h^2 and off-diagonals -1/h^2, in interior and boundary rows",
+     "pass": true,
+     "details": {
+      "dR/dU (m,c,p)": {
+       "m": "-1/h**2",
+       "c": "shift + 2/h**2",
+       "p": "-1/h**2"
+      },
+      "shift dF/dUdot + dF/dU": {
+       "m": "-1/h**2",
+       "c": "shift + 2/h**2",
+       "p": "-1/h**2"
+      },
+      "sum of table rows": {
+       "m": "-1/h**2",
+       "c": "shift + 2/h**2",
+       "p": "-1/h**2"
+      },
+      "spec diagonal / off-diagonal": [
+       "shift + 2/h**2",
+       "-1/h**2"
+      ],
+      "row 1 (c, p)": [
+       "shift + 2/h**2",
+       "-1/h**2"
+      ],
+      "row N-1 (m, c)": [
+       "-1/h**2",
+       "shift + 2/h**2"
+      ]
+     }
+    },
+    {
+     "check": "J3_full_jacobian_numeric",
+     "claim": "J v equals the central difference of F along (v, shift v) for shifts 0, 10, 1e3, 1e5 in every group, with MMS on, and for the BE residual; mutated J fail",
+     "pass": true,
+     "details": {
+      "failures": [],
+      "tolerance": 1e-08,
+      "worst relative errors": {
+       "N=8 shift=0": {
+        "full": 1.0707257596179714e-13,
+        "dF/dU": 1.0707257596179714e-13,
+        "dF/dUdot": 8.48500819127263e-13,
+        "boundary rows": 1.469849940408966e-13,
+        "interior rows": 1.0923187621364875e-13
+       },
+       "N=8 shift=10": {
+        "full": 1.0317660985442538e-13,
+        "dF/dU": 1.0707257596179714e-13,
+        "dF/dUdot": 8.48500819127263e-13,
+        "boundary rows": 1.388883782494181e-13,
+        "interior rows": 1.0111643291334299e-13
+       },
+       "N=8 shift=1000": {
+        "full": 1.5541825191584503e-14,
+        "dF/dU": 1.0707257596179714e-13,
+        "dF/dUdot": 8.48500819127263e-13,
+        "boundary rows": 1.931541150167555e-14,
+        "interior rows": 1.478115094115011e-14
+       },
+       "N=8 shift=100000": {
+        "full": 2.0482591502789024e-16,
+        "dF/dU": 1.0707257596179714e-13,
+        "dF/dUdot": 8.48500819127263e-13,
+        "boundary rows": 1.9255846856053868e-16,
+        "interior rows": 2.1064796034400072e-16
+       },
+       "N=8 shift=1e3 MMS on": {
+        "full": 1.5465442703517817e-14,
+        "dF/dU": 1.0707257596179714e-13,
+        "dF/dUdot": 8.48500819127263e-13,
+        "boundary rows": 1.931541150167555e-14,
+        "interior rows": 1.4686684207939755e-14
+       },
+       "N=8 BE dR/dU1, dtau=1e-3": 4.13731943689802e-14,
+       "N=64 shift=0": {
+        "full": 5.036272918822692e-14,
+        "dF/dU": 5.036272918822692e-14,
+        "dF/dUdot": 3.458657324738541e-11,
+        "boundary rows": 1.1213879070192853e-13,
+        "interior rows": 4.989976598893356e-14
+       },
+       "N=64 shift=10": {
+        "full": 5.057448518242789e-14,
+        "dF/dU": 5.036272918822692e-14,
+        "dF/dUdot": 3.458657324738541e-11,
+        "boundary rows": 1.1161373454765447e-13,
+        "interior rows": 5.000657763619367e-14
+       },
+       "N=64 shift=1000": {
+        "full": 4.6306717533825846e-14,
+        "dF/dU": 5.036272918822692e-14,
+        "dF/dUdot": 3.458657324738541e-11,
+        "boundary rows": 1.0517686911305865e-13,
+        "interior rows": 4.585786594980989e-14
+       },
+       "N=64 shift=100000": {
+        "full": 5.382005746107165e-15,
+        "dF/dU": 5.036272918822692e-14,
+        "dF/dUdot": 3.458657324738541e-11,
+        "boundary rows": 1.1704240693964115e-14,
+        "interior rows": 5.287485250058033e-15
+       },
+       "N=64 shift=1e3 MMS on": {
+        "full": 4.6276495000102974e-14,
+        "dF/dU": 5.0148065960987396e-14,
+        "dF/dUdot": 3.4586736547694174e-11,
+        "boundary rows": 1.0517686911305865e-13,
+        "interior rows": 4.5664741650843224e-14
+       },
+       "N=64 BE dR/dU1, dtau=1e-3": 5.907204441327424e-14
+      },
+      "sensitivity (full rel. error of mutated J, must be large)": {
+       "drop_shift": 0.0010455598991453033,
+       "flip_offdiag": 0.27109031760661095
+      }
+     }
+    },
+    {
+     "check": "J4_matrix_properties",
+     "claim": "J is symmetric tridiagonal, a nonsingular M-matrix with dominance margin >= shift, and -D_h has eigenvalues (4/h^2) sin^2(l pi h/2)",
+     "pass": true,
+     "details": {
+      "failures": [],
+      "N=8 shift=0": {
+       "symmetric": true,
+       "tridiagonal": true,
+       "M-matrix": true,
+       "min dominance margin": 0.0
+      },
+      "N=8 shift=10": {
+       "symmetric": true,
+       "tridiagonal": true,
+       "M-matrix": true,
+       "min dominance margin": 10.0
+      },
+      "N=8 shift=1000": {
+       "symmetric": true,
+       "tridiagonal": true,
+       "M-matrix": true,
+       "min dominance margin": 1000.0
+      },
+      "N=8 eig rel err": 3.6462697263051325e-15,
+      "N=64 shift=0": {
+       "symmetric": true,
+       "tridiagonal": true,
+       "M-matrix": true,
+       "min dominance margin": 0.0
+      },
+      "N=64 shift=10": {
+       "symmetric": true,
+       "tridiagonal": true,
+       "M-matrix": true,
+       "min dominance margin": 10.0
+      },
+      "N=64 shift=1000": {
+       "symmetric": true,
+       "tridiagonal": true,
+       "M-matrix": true,
+       "min dominance margin": 1000.0
+      },
+      "N=64 eig rel err": 4.46446430476008e-14
+     }
+    },
+    {
+     "check": "J5_tsalpha",
+     "claim": "shift_V = alpha_m/(alpha_f gamma dt) is the derivative of the 1/alpha_f-scaled residual; rho_inf = 0.5 gives (5/6, 2/3, 2/3); alpha = gamma = 1 is BE with shift 1/dt",
+     "pass": true,
+     "details": {
+      "d/dX1 (1/af) F(Xa,Va) - (F_U + shift_V F_V)": "0",
+      "dXa/dX1": "alpha_f",
+      "dVa/dX1": "alpha_m/(Delta_t*gamma)",
+      "rho_inf=0.5: (am, af, gamma) computed": [
+       "5/6",
+       "2/3",
+       "2/3"
+      ],
+      "spec values": [
+       "5/6",
+       "2/3",
+       "2/3"
+      ],
+      "BE shift": "1/Delta_t"
+     }
+    },
+    {
+     "check": "J6_code_map",
+     "claim": "code_map.json lists T1..T5 and their Jacobian rows as the spec does",
+     "pass": true,
+     "details": {
+      "failures": [],
+      "J rows": [
+       "J from T1: diagonal shift = 1/dtau (0 for steady); dF/dUdot = I",
+       "J from T2: diagonal +2/h^2, sub- and super-diagonal -1/h^2",
+       "J from T3: no entry (g_L, g_R are data, not unknowns)",
+       "J from T4: zero (Q constant)",
+       "J from T5: zero (f depends on xi and tau only)"
+      ]
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m4_mms.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "MM1_source_closed_form",
+     "claim": "the closed form of f in M4-9 equals d_tau th_m - d_xi^2 th_m - Q",
+     "pass": true,
+     "details": {
+      "theta'_m": "A*(1 - exp(-tau))*sin(pi*xi) + B*xi*(1 - xi)*sin(2*pi*tau) + 1",
+      "f closed form": "A*(pi**2*(1 - exp(-tau)) + exp(-tau))*sin(pi*xi) + 2*pi*B*xi*(1 - xi)*cos(2*pi*tau) + 2*B*sin(2*pi*tau) - Q",
+      "closed form - computed": "0",
+      "middle (definition) - computed": "0"
+     }
+    },
+    {
+     "check": "MM2_strong_form",
+     "claim": "theta'_m with the M4-9 source satisfies the strong form M4-1",
+     "pass": true,
+     "details": {
+      "M4-1 residual on (theta'_m, f)": "0"
+     }
+    },
+    {
+     "check": "MM3_data_and_corners",
+     "claim": "theta'_m meets S29's end and initial data and is corner compatible",
+     "pass": true,
+     "details": {
+      "theta'_m - S29 data": {
+       "left": "0",
+       "right": "0",
+       "init": "0"
+      },
+      "corner d_xi^2 th + Q + f at (0,0),(1,0)": [
+       "0",
+       "0"
+      ]
+     }
+    },
+    {
+     "check": "MM4_trivial_case",
+     "claim": "A = B = 0 gives f = -Q",
+     "pass": true,
+     "details": {
+      "f(A=B=0)": "-Q",
+      "claimed": "-Q"
+     }
+    },
+    {
+     "check": "MM5_samples",
+     "claim": "the sample table of theta'_m and f recomputes to 1e-12",
+     "pass": true,
+     "details": {
+      "parameters": {
+       "A": 0.5,
+       "B": 0.25,
+       "Q": 1.0
+      },
+      "rows (computed, spec)": [
+       {
+        "(xi,tau)": [
+         "0.5",
+         "0.1"
+        ],
+        "theta'_m": [
+         1.0843178692503,
+         1.0843178692503
+        ],
+        "f": [
+         0.5336200848195805,
+         0.5336200848195806
+        ]
+       },
+       {
+        "(xi,tau)": [
+         "0.25",
+         "0.5"
+        ],
+        "theta'_m": [
+         1.139112419353097,
+         1.139112419353097
+        ],
+        "f": [
+         0.2929012062596488,
+         0.292901206259649
+        ]
+       }
+      ],
+      "failing": []
+     }
+    },
+    {
+     "check": "MM6_script_matches_spec",
+     "claim": "mms_sources.py builds the same theta'_m and the same f definition",
+     "pass": true,
+     "details": {
+      "mms_sources theta_m": "A*(1 - exp(-tau))*sin(pi*xi) + B*xi*(1 - xi)*sin(2*pi*tau) + 1",
+      "minus spec theta'_m": "0",
+      "f defined as d_tau - d_xi^2 - Q": true
+     }
+    },
+    {
+     "check": "MM7_dimensional_source",
+     "claim": "q_m = (k T0/L^2) f(x/L, kappa t/L^2) makes T0 theta'_m a solution of the dimensional equation",
+     "pass": true,
+     "details": {
+      "factor": "T_0*k/L**2",
+      "rho c_p T_t - k T_xx - q - q_m": "0"
+     }
+    },
+    {
+     "check": "MM8_discrete_orders",
+     "claim": "an independent BE/FD solve of the MMS problem gives the stated errors (1 %) and orders 2 in h and 1 in dtau",
+     "pass": true,
+     "details": {
+      "failures": [],
+      "computed vs spec": {
+       "space e1": [
+        0.000523396051219871,
+        0.0005234
+       ],
+       "space e2": [
+        0.0001301607519930137,
+        0.00013016
+       ],
+       "time e1": [
+        0.0007586865378690355,
+        0.00075869
+       ],
+       "time e2": [
+        0.00037746003500260805,
+        0.00037746
+       ],
+       "reference": [
+        4.3056139106489866e-05,
+        4.3056e-05
+       ]
+      },
+      "space order": 2.0076085487641313,
+      "time order": 1.007180037000853,
+      "tau_end": 0.5
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m4_scales.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "SC1_groups_vs_ledger_and_M1",
+     "claim": "kappa = k/(rho c_p), Q = q L^2/(k T0), dtau = kappa dt/L^2 match S16, S27, S20 and give M1's reference values",
+     "pass": true,
+     "details": {
+      "kappa, Q, dtau (spec)": [
+       "k/(cp*rho)",
+       "L**2*q/(T0*k)",
+       "dt*kappa/L**2"
+      ],
+      "spec - ledger": [
+       "0",
+       "0",
+       "0"
+      ],
+      "values (computed, M1)": {
+       "kappa": [
+        1.0,
+        1.0
+       ],
+       "Q": [
+        1.0,
+        1.0
+       ],
+       "t_c": [
+        1.0,
+        1.0
+       ],
+       "t_c spec vs M1": [
+        1.0,
+        1.0
+       ],
+       "t_slow spec vs M1": [
+        0.101321,
+        0.1013
+       ],
+       "end flux (k T0/L)(Q/2) vs M1": [
+        0.5,
+        0.5
+       ],
+       "peak Q/8 vs M1": [
+        0.125,
+        0.125
+       ]
+      },
+      "failures": []
+     }
+    },
+    {
+     "check": "SC2_units",
+     "claim": "Q and dtau are dimensionless, dt is a time, k T0/L^2 is W m^-3 and (k T0/L) F' is W m^-2",
+     "pass": true,
+     "details": {
+      "Q": true,
+      "dtau": true,
+      "dt": true,
+      "kT0/L^2": true,
+      "kT0/L * F'": true,
+      "spec unit text found": true
+     }
+    },
+    {
+     "check": "SC3_scale_table",
+     "claim": "every entry of the a-priori scales table (and 2/lambda_max) recomputes within 1 %",
+     "pass": true,
+     "details": {
+      "N": 64,
+      "computed vs spec": {
+       "t_c": [
+        1.0,
+        1.0
+       ],
+       "slow continuous": [
+        0.10132118364233778,
+        0.101321
+       ],
+       "lambda_1": [
+        9.86762276722776,
+        9.867623
+       ],
+       "pi^2": [
+        9.869604401089358,
+        9.869604
+       ],
+       "mesh time": [
+        0.000244140625,
+        0.000244141
+       ],
+       "lambda_max": [
+        16374.132377232772,
+        16374.13
+       ],
+       "1/lambda_max": [
+        6.107193816207561e-05,
+        6.10719e-05
+       ],
+       "stiffness ratio": [
+        1659.3796462927587,
+        1659.0
+       ],
+       "explicit limit": [
+        0.00012214387632415122,
+        0.000122
+       ]
+      },
+      "failures": []
+     }
+    },
+    {
+     "check": "SC4_dt_rule",
+     "claim": "M4-8 follows from the mode-1 BE error expansion, its maximum at tau = 1/lambda_1, lambda_1 and b_1 = beta_1; the reference eps <-> dtau values recompute",
+     "pass": true,
+     "details": {
+      "lambda_1 - (4/h^2)sin^2(pi h/2)|h=1/N": "0",
+      "b_1 - S53 beta_1": "0",
+      "expansion ratio - 1": "dtau*lambda**2*tau/2",
+      "argmax tau": [
+       "1/lambda"
+      ],
+      "max error": "2*dtau*lambda*exp(-1)/pi**3",
+      "dtau_max derived": "E*pi**3*epsilon/(2*Qa*lambda)",
+      "spec": "E*pi**3*epsilon/(2*Qa*lambda)",
+      "derived - spec": "0",
+      "n_steps/dtau/dt/tau_end ok": [
+       true,
+       true
+      ],
+      "Q = 0 branch stated": true,
+      "numbers (computed, spec)": {
+       "eps for dtau=1e-3": [
+        0.00023415230320799986,
+        0.00023415
+       ],
+       "percent of 1/8": [
+        0.1873218425663999,
+        0.19
+       ],
+       "dtau_max for eps=1e-4": [
+        0.00042707245937772815,
+        0.000427
+       ]
+      },
+      "failures": [],
+      "BE amplification in (0,1)": true
+     }
+    },
+    {
+     "check": "SC5_be_error_ratio",
+     "claim": "the BE-only error maxima are 0.982..0.997 of the mode-1 prediction and sit near tau = 1/lambda_1",
+     "pass": true,
+     "details": {
+      "per dtau": [
+       {
+        "dtau": 0.004,
+        "ratio": 0.9823866039690827,
+        "spec": 0.982,
+        "tau at max": 0.10400000000000001
+       },
+       {
+        "dtau": 0.002,
+        "ratio": 0.9906018160705781,
+        "spec": 0.991,
+        "tau at max": 0.10200000000000001
+       },
+       {
+        "dtau": 0.001,
+        "ratio": 0.9947939966836463,
+        "spec": 0.995,
+        "tau at max": 0.10200000000000001
+       },
+       {
+        "dtau": 0.0005,
+        "ratio": 0.9969019258043492,
+        "spec": 0.997,
+        "tau at max": 0.10250000000000001
+       }
+      ],
+      "failures": [],
+      "spec tau range": [
+       0.102,
+       0.104
+      ]
+     }
+    },
+    {
+     "check": "SC6_discrete_floor",
+     "claim": "fully discrete max|theta - theta_s| at tau = 1 is 7.0172e-6 (1 %), above the continuous 6.67e-6, margin 1.4x to 1e-5",
+     "pass": true,
+     "details": {
+      "computed max|theta-theta_s|": 7.017166761977278e-06,
+      "spec": "7.0172e-6",
+      "continuous mode-1 value": 6.6726084833881705e-06,
+      "margin 1e-5/e": 1.425076578511044,
+      "spec margin": "1.4"
+     }
+    },
+    {
+     "check": "SC7_end_flux",
+     "claim": "the half-cell flux F'_0 approximates d_xi theta'(0) to O(h^2), equals Q/2 on the steady nodal values, and (k T0/L)(Q/2) = qL/2 = S45",
+     "pass": true,
+     "details": {
+      "F'_0 (spec)": "h*(Q + f0)/2 + (-U0 + U1)/h - h*(U0 - U0p)/(2*dtau)",
+      "on steady nodal values": "Q/2",
+      "|F'_0 - d_xi theta'(0)| at h = .1,.05,.025": [
+       0.030187125301682993,
+       0.007574834023341914,
+       0.0018954653253580034
+      ],
+      "observed orders": [
+       1.9946471942753232,
+       1.9986622123410487
+      ],
+      "(kT0/L)(Q/2) - qL/2": "0",
+      "S45 - qL/2": "0"
+     }
+    }
+   ],
+   "stderr": ""
+  },
+  {
+   "script": "m4_weak_strong.py",
+   "exit": 0,
+   "claims": [
+    {
+     "check": "W1_m41_vs_S29",
+     "claim": "M4-1 with f = 0 equals S29 term by term, with the same end and initial data",
+     "pass": true,
+     "details": {
+      "M4-1 residual": "-Q - f(xi, tau) + Derivative(thetap(xi, tau), tau) - Derivative(thetap(xi, tau), (xi, 2))",
+      "S29 residual": "-Q + Derivative(thetap(xi, tau), tau) - Derivative(thetap(xi, tau), (xi, 2))",
+      "difference with f=0": "0",
+      "forcing term (must be -f)": "-f(xi, tau)",
+      "M4-1 data": {
+       "left": "1",
+       "right": "1",
+       "init": "1"
+      },
+      "S29 data": {
+       "left": "1",
+       "right": "1",
+       "init": "1"
+      }
+     }
+    },
+    {
+     "check": "W2_weak_to_strong",
+     "claim": "integrating M4-2 by parts gives the M4-1 residual times w, with no boundary term left for w in H^1_0",
+     "pass": true,
+     "details": {
+      "failing w": [],
+      "sensitivity (flipped Q) difference": 0.2766666666666666,
+      "per w": [
+       {
+        "w": "xi*(1 - xi)",
+        "point": {
+         "a1": 0.7,
+         "a2": -1.3,
+         "a3": 0.45,
+         "a4": 2.1,
+         "Q": 0.83,
+         "tau": 0.37
+        },
+        "weak - int(strong*w) - [th_xi w]": -6.173376639319347e-17,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "xi*(1 - xi)",
+        "point": {
+         "a1": -0.2,
+         "a2": 0.9,
+         "a3": -1.7,
+         "a4": 0.3,
+         "Q": -1.6,
+         "tau": 1.9
+        },
+        "weak - int(strong*w) - [th_xi w]": -5.20826472291753e-16,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "xi**2*(1 - xi)",
+        "point": {
+         "a1": 0.7,
+         "a2": -1.3,
+         "a3": 0.45,
+         "a4": 2.1,
+         "Q": 0.83,
+         "tau": 0.37
+        },
+        "weak - int(strong*w) - [th_xi w]": -2.4165176744575592e-17,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "xi**2*(1 - xi)",
+        "point": {
+         "a1": -0.2,
+         "a2": 0.9,
+         "a3": -1.7,
+         "a4": 0.3,
+         "Q": -1.6,
+         "tau": 1.9
+        },
+        "weak - int(strong*w) - [th_xi w]": -3.134549837313025e-16,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "sin(pi*xi)",
+        "point": {
+         "a1": 0.7,
+         "a2": -1.3,
+         "a3": 0.45,
+         "a4": 2.1,
+         "Q": 0.83,
+         "tau": 0.37
+        },
+        "weak - int(strong*w) - [th_xi w]": -2.36120244079333e-16,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "sin(pi*xi)",
+        "point": {
+         "a1": -0.2,
+         "a2": 0.9,
+         "a3": -1.7,
+         "a4": 0.3,
+         "Q": -1.6,
+         "tau": 1.9
+        },
+        "weak - int(strong*w) - [th_xi w]": -1.9895482303748782e-15,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "(xi + 1)*sin(2*pi*xi)",
+        "point": {
+         "a1": 0.7,
+         "a2": -1.3,
+         "a3": 0.45,
+         "a4": 2.1,
+         "Q": 0.83,
+         "tau": 0.37
+        },
+        "weak - int(strong*w) - [th_xi w]": -1.403645642410777e-16,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "(xi + 1)*sin(2*pi*xi)",
+        "point": {
+         "a1": -0.2,
+         "a2": 0.9,
+         "a3": -1.7,
+         "a4": 0.3,
+         "Q": -1.6,
+         "tau": 1.9
+        },
+        "weak - int(strong*w) - [th_xi w]": 2.013681560946594e-15,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "xi*(1 - xi)*exp(xi)",
+        "point": {
+         "a1": 0.7,
+         "a2": -1.3,
+         "a3": 0.45,
+         "a4": 2.1,
+         "Q": 0.83,
+         "tau": 0.37
+        },
+        "weak - int(strong*w) - [th_xi w]": -9.304810209415626e-17,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "xi*(1 - xi)*exp(xi)",
+        "point": {
+         "a1": -0.2,
+         "a2": 0.9,
+         "a3": -1.7,
+         "a4": 0.3,
+         "Q": -1.6,
+         "tau": 1.9
+        },
+        "weak - int(strong*w) - [th_xi w]": -9.693580218940164e-16,
+        "w in H10": true,
+        "boundary term": 0.0
+       },
+       {
+        "w": "1",
+        "point": {
+         "a1": 0.7,
+         "a2": -1.3,
+         "a3": 0.45,
+         "a4": 2.1,
+         "Q": 0.83,
+         "tau": 0.37
+        },
+        "weak - int(strong*w) - [th_xi w]": -3.644018438242174e-16,
+        "w in H10": false,
+        "boundary term": 0.11802861665996171
+       },
+       {
+        "w": "1",
+        "point": {
+         "a1": -0.2,
+         "a2": 0.9,
+         "a3": -1.7,
+         "a4": 0.3,
+         "Q": -1.6,
+         "tau": 1.9
+        },
+        "weak - int(strong*w) - [th_xi w]": -3.1223335036414795e-15,
+        "w in H10": false,
+        "boundary term": -22.160882269724446
+       },
+       {
+        "w": "xi",
+        "point": {
+         "a1": 0.7,
+         "a2": -1.3,
+         "a3": 0.45,
+         "a4": 2.1,
+         "Q": 0.83,
+         "tau": 0.37
+        },
+        "weak - int(strong*w) - [th_xi w]": -1.2459422586831354e-16,
+        "w in H10": false,
+        "boundary term": 0.9317011139397182
+       },
+       {
+        "w": "xi",
+        "point": {
+         "a1": -0.2,
+         "a2": 0.9,
+         "a3": -1.7,
+         "a4": 0.3,
+         "Q": -1.6,
+         "tau": 1.9
+        },
+        "weak - int(strong*w) - [th_xi w]": -2.0957012638834292e-15,
+        "w in H10": false,
+        "boundary term": -23.354687478088568
+       },
+       {
+        "w": "exp(xi)",
+        "point": {
+         "a1": 0.7,
+         "a2": -1.3,
+         "a3": 0.45,
+         "a4": 2.1,
+         "Q": 0.83,
+         "tau": 0.37
+        },
+        "weak - int(strong*w) - [th_xi w]": -5.281950565397946e-16,
+        "w in H10": false,
+        "boundary term": 1.71895371029763
+       },
+       {
+        "w": "exp(xi)",
+        "point": {
+         "a1": -0.2,
+         "a2": 0.9,
+         "a3": -1.7,
+         "a4": 0.3,
+         "Q": -1.6,
+         "tau": 1.9
+        },
+        "weak - int(strong*w) - [th_xi w]": -6.26832504385108e-15,
+        "w in H10": false,
+        "boundary term": -62.29081737266404
+       }
+      ],
+      "note": "difference must be exactly the integration-by-parts bracket; for w in H10 the bracket is 0, so weak form == int(M4-1 residual * w) and, w being arbitrary, the strong form is recovered; no boundary integral is left"
+     }
+    },
+    {
+     "check": "W2b_essential_bc",
+     "claim": "the weak form's essential condition theta' - 1 in H^1_0 is S29's Dirichlet data and no natural condition is stated",
+     "pass": true,
+     "details": {
+      "lift": "1",
+      "S29 end data": {
+       "left": "1",
+       "right": "1",
+       "init": "1"
+      },
+      "text says no natural term": true
+     }
+    },
+    {
+     "check": "W3_ibp_identity",
+     "claim": "the stated identity -int th'' w = int th' w' - [th' w] holds",
+     "pass": true,
+     "details": {
+      "signs (lhs, bracket)": [
+       -1,
+       -1
+      ],
+      "failing w": []
+     }
+    },
+    {
+     "check": "W4_galerkin_to_fd",
+     "claim": "P1 Galerkin with lumped mass and nodal load, divided by h, is the M4-3 row; stated stiffness 2/h, -1/h and lumped mass h are right",
+     "pass": true,
+     "details": {
+      "Galerkin row / h": "(2*U_c - U_m - U_p + h**2*(-Q + Udot_c - f(xi_c, tau)))/h**2",
+      "M4-3 row": "-Q + 2*U_c/h**2 - U_m/h**2 - U_p/h**2 + Udot_c - f(xi_c, tau)",
+      "difference": "0",
+      "index letters": [
+       "i"
+      ],
+      "K_ii, K_i,i-1, K_i,i+1": [
+       "-(-h + xi_c)/h**2 + (h + xi_c)/h**2",
+       "-xi_c/h**2 + (-h + xi_c)/h**2",
+       "xi_c/h**2 - (h + xi_c)/h**2"
+      ],
+      "row-sum mass": "xi_c**2/h + xi_c*(h - xi_c)/h - xi_c*(h + xi_c)/h - (-h + xi_c)**2/(2*h) - (-h + xi_c)*(h - xi_c)/h + (h + xi_c)**2/(2*h)",
+      "text stiffness": [
+       "2/h",
+       "-1/h"
+      ],
+      "text mass": "h"
+     }
+    },
+    {
+     "check": "W5_consistency",
+     "claim": "D_h u = u'' + O(h^2) with the stated h^2/24 bracket; exact on quadratics",
+     "pass": true,
+     "details": {
+      "D_h u - u'' (to h^2)": "h**2*Derivative(u(x0), (x0, 4))/12",
+      "claimed (h^2/24)*2 u''''": "h**2*Derivative(u(x0), (x0, 4))/12",
+      "D_h on quadratic minus u''": "0"
+     }
+    },
+    {
+     "check": "W6_backward_euler",
+     "claim": "M4-4 is M4-3 with Udot -> (U^{n+1}-U^n)/dtau and all else at tau^{n+1}",
+     "pass": true,
+     "details": {
+      "BE(M4-3)": "-Q + 2*Unew_c/h**2 - Unew_m/h**2 - Unew_p/h**2 - f(xi_c, taunew) + (Unew_c - Uold_c)/dtau",
+      "M4-4": "-Q + 2*Unew_c/h**2 + Unew_c/dtau - Unew_m/h**2 - Unew_p/h**2 - Uold_c/dtau - f(xi_c, taunew)",
+      "difference": "0"
+     }
+    },
+    {
+     "check": "W7_steady_rows",
+     "claim": "M4-5 is M4-3 with Udot = 0, f = 0, and U_j = 1 + Q xi_j(1-xi_j)/2 solves it exactly with U_0 = U_N = 1",
+     "pass": true,
+     "details": {
+      "M4-5 minus M4-3(Udot=0,f=0)": "0",
+      "M4-5 on claimed nodal values": "0",
+      "claimed U_j": "Q*xi_j*(1 - xi_j)/2 + 1",
+      "end values minus 1": [
+       "0",
+       "0"
+      ]
+     }
+    },
+    {
+     "check": "W8_residual_def",
+     "claim": "M4-6 equals the M4-3 row and R_j of M4-6b equals the M4-4 row",
+     "pass": true,
+     "details": {
+      "M4-6 minus M4-3": "0",
+      "M4-6b args": [
+       "taunew",
+       "Unew",
+       "(Unew - Uold)/dtau"
+      ],
+      "R_j minus M4-4": "0"
+     }
+    },
+    {
+     "check": "W9_term_table",
+     "claim": "the residual table T1..T5 adds up to the M4-4 row in interior rows and in rows 1, N-1 with the Dirichlet data",
+     "pass": true,
+     "details": {
+      "T1..T5": [
+       "(U_c - Uold_c)/dtau",
+       "(2*U_c - U_m - U_p)/h**2",
+       "-g_L/h**2",
+       "-g_R/h**2",
+       "-Q",
+       "-fj"
+      ],
+      "interior: table - M4-4": "0",
+      "row 1: table - M4-4(U_0=g_L)": "0",
+      "row N-1: table - M4-4(U_N=g_R)": "0"
+     }
+    },
+    {
+     "check": "W10_units",
+     "claim": "(k T0/L^2) times M4-1 is the dimensional row rho c_p T_t - k T_xx - q - q_m, in W m^-3",
+     "pass": true,
+     "details": {
+      "factor": "T_0*k/L**2",
+      "dimensional row - factor*M4-1": "0",
+      "units k T0/L^2": "watt / meter ** 3",
+      "units rho c_p kappa T0/L^2": "watt / meter ** 3"
+     }
+    }
+   ],
+   "stderr": ""
+  }
+ ],
+ "verifier_summary": "I wrote four M4 check scripts and a shared parser under checks/. Each one parses spec.md, ledger.json, code_map.json, mms_sources.py and m1_inputs.json from command-line arguments. All 32 claims pass, and every residual and Jacobian entry, including the shift term, is covered by a check that ran. When I planted errors in the weak form or the Jacobian, the checks failed as they should. The background job that was stopped was the slow first version of m4_weak_strong.py; I replaced it with a faster version, which passed 11 of 11, and did not restart the old job."
+}

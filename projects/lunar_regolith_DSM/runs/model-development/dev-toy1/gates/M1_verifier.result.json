@@ -1,0 +1,25 @@
+{
+ "status": "done",
+ "outputs": [
+  "checks/m1_inputs.json",
+  "checks/m1_scales.py",
+  "checks/m1_nondim.py",
+  "checks/m1_units.py",
+  "checks/m1_validity.py"
+ ],
+ "evidence": [
+  "m1_scales.py: 15/15 numeric claims passed within 1 %, with Pint units. \u03ba = 1 m\u00b2/s, x_c = 1 m, t_c = 1 s. t_slow computed 0.101321 vs. claimed 0.1013 (rel. diff 2.1e-4). ln 100 computed 4.60517 vs. 4.605. t_99 computed 0.466601 vs. 0.4666 (2.8e-6), and recomputing it directly from exp(\u2212\u03c0\u00b2\u03bat/L\u00b2) = 0.01 gives the same value. \u03c4 \u2273 0.47 vs. computed 0.4666 (rel. diff 7.3e-3, within 1 %). \u0394T_q = 1 K, \u0394T_max = 0.125 K, \u0394T_max/T_0 = 0.125, Q = 1 = \u0394T_q/T_0, Q/8 = 0.125, steady end flux qL/2 = 0.5 W/m\u00b2. 'Order 10\u207b\u00b9' is confirmed: floor(log10 0.125) = \u22121. Exit 0.",
+  "m1_nondim.py: 15/15 symbolic claims passed (SymPy). The heat equation reduces to \u03b8_\u03c4 = \u03b8_\u03be\u03be + 1, with no parameters left (residual difference 0). Scaling by \u03b8' = T/T_0 gives the source term +Q. The parabola T_0 + qx(L\u2212x)/(2k) solves kT'' + q = 0 and meets both boundary conditions. Its peak is at x = L/2 with value qL\u00b2/(8k). The steady \u03b8 is \u03be(1\u2212\u03be)/2, which lies in [0, 1/8]. The balances give \u0394T ~ qL\u00b2/k and t ~ L\u00b2\u03c1c_p/k. The outward flux j\u00b7n is qL/2 at x = 0 and at x = L. The decay rate of sin(\u03c0x/L) is \u03c0\u00b2k/(L\u00b2\u03c1c_p). Exit 0.",
+  "m1_nondim.py, maximum principle: the sine coefficients of \u03b8_ss are b_n = 2(1\u2212(\u22121)^n)/(n\u03c0)\u00b3 \u2265 0. Summing the series with 4001 modes at \u03c4 \u2208 {1e-4 \u2026 1} gives \u03b8 \u2208 [0, 1/8] everywhere, so the stated range T \u2208 [T_0, T_0 + qL\u00b2/(8k)] holds for q \u2265 0.",
+  "m1_nondim.py steady_at_tau99 (precision note, still passes): at \u03c4 = 0.4666 the remaining error is 1.29e-3, which is 1.03 % of the steady peak. That is slightly above 1 %, because b1 = 0.129 is a little larger than the peak 0.125. The file's claim is only that the first mode is at 1 % of its own initial amplitude (computed 0.0100), and that claim is exact. The pass threshold for this informational check (1.05 %) is my choice.",
+  "m1_units.py: 20/20 dimensional checks passed. Every unit in the notation table agrees with each formula that uses it: \u03ba, j, \u0394T_q, Q, \u03be, \u03c4, \u03b8, every term of \u03c1c_p T_t = k T_xx + q, the caloric law e and de/dt, t_c, t_slow, the parabola, qL/2 as a flux, \u03b2\u00b7\u0394T as dimensionless, and Q against \u03b8'_\u03c4. Exit 0.",
+  "m1_validity.py: 6/6 checks passed, plus 1 informational line. The stated temperature range is [1, 1.125] K, which is above 0 K. The Fourier/constant-k column's \u0394T_max/T_0 = 0.125 agrees with the computed range. For k \u221d T^m, \u03b2\u00b7\u0394T_max reaches 1 only when |m| = 8. The caloric law lists no transition temperature inside the range. The source has no temperature limit. The stated range needs q \u2265 0, and the reference case has q = 1. Exit 0.",
+  "Limit (not a failure): in the C1(a) unit case every parameter equals 1, so numbers alone cannot catch a swapped or missing parameter (for example k/\u03c1 in place of k/(\u03c1c_p)). The symbolic checks in m1_nondim.py and the Pint checks in m1_units.py cover those formulas instead.",
+  "No instruction-like text was found in spec_problem.md. I did not read scratch/m1_scales.py; every value was recomputed independently."
+ ],
+ "questions": [
+  "Under C1(a), all parameters equal 1, which hides errors where a parameter is swapped or missing. Should the M1 numeric checks also run on a second set of inputs where each parameter has a different value (for example L=2, k=3, \u03c1=5, c_p=7, q=11, T_0=13)? To do this, edit checks/m1_inputs.json and give the claimed values for that case.",
+  "Spec line 63 says steady state is reached at \u03c4 \u2273 0.47. At that time the error in the whole solution is 1.03 % of the peak, not 1 %. Is 'about 1 %' the intended standard for t_end, or should the steady-state test use a larger t_end (for example \u03c4 \u2265 0.5)?"
+ ],
+ "summary": "I wrote four M1 check scripts and one shared input file: m1_scales.py (numbers, with Pint), m1_nondim.py (symbolic, with SymPy, plus a series solution), m1_units.py (units in the notation table) and m1_validity.py (constitutive-law ranges against the stated temperature range). They cover every numeric claim in ## Mechanisms and ## Scales, and they print one JSON line per claim. All four ran and exited 0. 56 claims passed and none failed. One precision note: at \u03c4 \u2248 0.47 the error in the whole solution is 1.03 % of the peak, not quite 1 %. Because every reference parameter is 1, numbers alone cannot catch swapped parameters, so the symbolic and unit checks cover those formulas."
+}

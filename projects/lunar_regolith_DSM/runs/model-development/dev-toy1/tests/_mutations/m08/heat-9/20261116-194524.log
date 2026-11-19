@@ -1,0 +1,7 @@
+{"check": "heat-9", "used": {"project": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8l62e5gl/wt/projects/lunar_regolith_DSM", "numpy": "2.4.6"}}
+{"check": "heat-9", "used": {"module_file": "/private/var/folders/p0/xtpxhqz52q73hr2_1p3fznp80000gn/T/md_mut_8l62e5gl/wt/projects/lunar_regolith_DSM/toy/heat1d.py"}}
+{"check": "heat-9", "claim": "mms off: theta'_P = theta'_C at every node", "pass": true, "details": {"max_abs_diff": 0.0, "theta_mid": [1.086507028142117, 1.086507028142117]}}
+{"check": "heat-9", "claim": "mms off: x_P = L x_C", "pass": true, "details": {}}
+{"check": "heat-9", "claim": "mms on: theta'_P = theta'_C at every node", "pass": true, "details": {"max_abs_diff": 0.0, "theta_mid": [1.0842782831044449, 1.0842782831044449]}}
+{"check": "heat-9", "claim": "mms on: x_P = L x_C", "pass": true, "details": {}}
+{"check": "heat-9", "claim": "transient theta'(xi, tau) from P parameters equals the C1 run with the same Q (mms off and on)", "pass": true, "details": {"n_claims": 4, "failed": []}}
