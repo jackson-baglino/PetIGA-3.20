@@ -2,6 +2,43 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-11-17 to 2026-11-19: beth-mathematician built; blind rederivation T04–T07; D1 residual; Lab Report 3 submitted
+
+- Session: 4f8c37ed-617a-4f5b-bc89-7897ae2cdf54
+- Done:
+  - Agents rebuilt one at a time (doc 28, doc 29 §9). `beth-mathematician` built on `scripts/agentkit/`
+    (launcher, guard and Stop hooks, sandbox, drift gate, PROVENANCE.md hash chain); red-team PASS; T01–T03,
+    T91 honeypot and T92 injection PASS.
+  - Blind rederivation of the current model, T04 heat, T05 vapor, T06 free energy, T07 phase field: all PASS with
+    key-free graders (`tasks/_shared/blind.py`); planted-error tests catch 23 of 24 (the T05 exchange counted
+    twice is the known blind spot, test held by the user).
+  - `derivation.md` is now rendered from structured steps (`render_derivation.py`, with a lint); user-approved.
+  - `--no-tools` single-prompt baseline. On T04–T07 it also passed 4/4; the agent's measured advantage is
+    step-level evidence (20 of 25 steps carry a run check, the baseline 0).
+  - Tutorial: `workflows/model-development/agents/beth-mathematician/tutorial/run_tutorial.sh` (live or
+    `--replay`); runs in `runs/model-development/beth-mathematician/tutorial_20261118-172653/`.
+  - D1 residual and Jacobian from the derived equations (`src/assembly_derived.c`, `-residual_model derived`) on
+    `feat/derived-residual` (not merged; the merge is the user's call). Equal to A1 to 1.8e-16 at matched options;
+    Jacobian 1.7e-8; sintering-pair phi differs by 1.1e-6. Notes in `studies/derived_model/README.md`.
+  - Lab Report 3 (docx, pdf, pptx) built from facts.py / build_report.py in the course folder and submitted
+    2026-11-18. Pushed origin main 0b13db67; course main c79eac9d plus feat/derived-residual.
+- Remaining (the plan for Lab Report 4, Sun 29 Nov, is §E1 of the report):
+  1. T08: nondimensionalize the coupled system (also settles the held T05 test, doc 30 §1).
+  2. T09: thin-interface (sharp-interface) limit; decides the T07 coupling question (three T07 runs gave a
+     variational coupling with constant M, with M(T), and a free alpha as in the code).
+  3. The same agent writes code: design to approve (keep `beth-mathematician` or a new name), graded by compile,
+     FD Jacobian, residual identity with A1 (D1 is the reference) and a manufactured solution.
+  4. Library as a tool (`scripts/model_development/library_search.py`), quotes checked by script.
+  5. Symbol registry (doc 29 §9 "Symbol registry"), then the diffuse-domain derivation in small graded tasks.
+  - User decisions open: the T05 held test; adopting the mixture heat capacity (doc 30 §5); removing the clamps
+    (smooth floors); the temperature-gradient comparison (on hold).
+  - Doc 29 §9 items 2 and 4–8 (housekeeping) still open.
+  - `runs/model-development/dev-toy1/` (old run_md.py toy line, waiting at M7) and other untracked files listed in
+    git status: not from this work; left as they are.
+- Bottlenecks:
+  - The user's review time per derivation; graders need care to avoid false FAILs (two grader faults this session).
+  - Word scripting needs a file-access prompt; PDFs now come from Chrome with MathML.
+
 ## 2026-11-15: TA feedback; plan to stop B1 and build the diffuse-domain model
 
 - Session: bd0b31b7-3240-4887-9a00-1fe467db9be6
