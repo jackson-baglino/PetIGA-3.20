@@ -1,0 +1,41 @@
+# Files for the critique of the model line, 2026-11-19 (build_bundle.py). Order: rules and goals, the record,
+# the approved design, the plans, the agent as built, its harness, its tasks and graders, one run, the code
+# comparison, then reference documents.
+CLAUDE.md
+project/PILLARS.md
+project/LOG.md:1-77
+workflows/model-development/WORKFLOW.md
+workflows/model-development/BACKLOG.md
+docs/planning/25_model_line_plan.md
+docs/planning/27_sympy_source_of_truth.md
+docs/planning/28_agent_anatomy.html
+docs/planning/29_agent_system_conventions.md
+docs/planning/30_rederivation_review.md
+docs/planning/31_T08_nondimensionalize_proposal.md
+workflows/model-development/agents/beth-mathematician.md
+workflows/model-development/agents/beth-mathematician/README.md
+workflows/model-development/agents/beth-mathematician/settings.json
+workflows/model-development/agents/beth-mathematician/guard.json
+workflows/model-development/agents/beth-mathematician/env.allow
+workflows/model-development/agents/beth-mathematician/tests/enforcers.json
+workflows/model-development/agents/beth-mathematician/schemas/task.schema.json
+workflows/model-development/agents/beth-mathematician/schemas/result.schema.json
+scripts/agentkit/base_settings.json
+scripts/agentkit/launch.py
+scripts/agentkit/guard.py
+scripts/agentkit/stop_check.py
+scripts/agentkit/provenance.py
+scripts/agentkit/render_derivation.py
+scripts/agentkit/redteam_probes.py
+workflows/model-development/agents/beth-mathematician/tasks/_shared/blind.py
+workflows/model-development/agents/beth-mathematician/tasks/T05_vapor_balance/task.json
+workflows/model-development/agents/beth-mathematician/tasks/T05_vapor_balance/grade.py
+workflows/model-development/agents/beth-mathematician/tests/test_grade_T05.py
+workflows/model-development/agents/beth-mathematician/tasks/T07_phase_field/task.json
+workflows/model-development/agents/beth-mathematician/tasks/T07_phase_field/grade.py
+workflows/model-development/agents/beth-mathematician/tutorial/README.md
+runs/model-development/beth-mathematician/20261118-173013_T07_phase_field/PROVENANCE.md
+runs/model-development/beth-mathematician/20261118-173013_T07_phase_field/grade.json
+git:feat/derived-residual:studies/derived_model/README.md
+docs/scaling_analysis/scaling_analysis.tex
+docs/material_parameters.md
