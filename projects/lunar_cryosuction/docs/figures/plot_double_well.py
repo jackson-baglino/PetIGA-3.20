@@ -1,13 +1,12 @@
 """Plot the double-well potential F^duo(phi_i) / gamma_ia for the AGU 2026 talk.
 
-The slide (AGU 2026 deck, slide 6) writes the well as
+The slide (AGU 2026 deck, slide 6) and the solver (src/assembly.c,
+DoubleWellDeriv) use the half normalized well
 
-    F^duo(phi) = gamma_ia * phi_i^2 * (1 - phi_i)^2,
+    F^duo(phi_i) = (1/2) * gamma_ia * phi_i^2 * (1 - phi_i)^2,
 
-so the plot shows F^duo / gamma_ia = A * phi^2 (1 - phi)^2 with A = 1 by
-default. The solver (src/assembly.c, DoubleWellDeriv) uses the half
-normalized well, A = 1/2; pass --prefactor 0.5 to plot that one instead.
-The shape is the same; only the barrier height changes (A/16).
+so the plot shows F^duo / gamma_ia = A * phi^2 (1 - phi)^2 with A = 1/2 by
+default. The barrier at phi_i = 1/2 is A/16 (1/32 for A = 1/2).
 
 The figure is drawn at the size it occupies on the slide (--width, --height
 in inches), so every font size below is the size the audience sees. Colors
@@ -21,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from fractions import Fraction
 from pathlib import Path
 
 import matplotlib
@@ -49,8 +49,8 @@ def main() -> None:
     ap.add_argument("--out", type=Path, required=True, help="output PNG path")
     ap.add_argument("--width", type=float, default=4.12, help="placed width [in]")
     ap.add_argument("--height", type=float, default=2.89, help="placed height [in]")
-    ap.add_argument("--prefactor", type=float, default=1.0,
-                    help="A in F/gamma = A phi^2 (1-phi)^2 (slide: 1, solver: 0.5)")
+    ap.add_argument("--prefactor", type=float, default=0.5,
+                    help="A in F/gamma = A phi^2 (1-phi)^2 (slide and solver: 0.5)")
     ap.add_argument("--font", type=Path, default=DEFAULT_FONT, help="text font file")
     ap.add_argument("--dpi", type=int, default=400)
     args = ap.parse_args()
@@ -88,7 +88,6 @@ def main() -> None:
     fig.patch.set_alpha(0.0)
     ax.set_facecolor("none")
 
-    ax.axhline(barrier, color=MUTED, lw=1.2, ls=(0, (4, 3)), zorder=1)
     ax.plot(phi, F, color=CRIMSON, lw=3.0, zorder=3, solid_capstyle="round")
     ax.plot([0.0, 1.0], [0.0, 0.0], "o", ms=9, color=CRIMSON,
             mec="white", mew=1.5, zorder=4)
@@ -98,7 +97,8 @@ def main() -> None:
     ax.set_xlim(phi[0], phi[-1])
     ax.set_ylim(-0.08 * 1.6 * barrier, 1.6 * barrier)
     ax.set_xticks([0.0, 0.5, 1.0], ["0\nair", "0.5", "1\nice"])
-    frac = "1/16" if A == 1.0 else f"{A:g}/16"
+    fb = Fraction(A).limit_denominator(1000) / 16
+    frac = f"{fb.numerator}/{fb.denominator}" if fb.numerator != fb.denominator else "1"
     ax.set_yticks([0.0, barrier], ["0", f"${frac}$"])
     ax.set_xlabel(r"$\phi_i$", color=INK, labelpad=2)
     ax.set_ylabel(r"$F^{\mathrm{duo}}/\gamma_{ia}$", color=INK, labelpad=4)
