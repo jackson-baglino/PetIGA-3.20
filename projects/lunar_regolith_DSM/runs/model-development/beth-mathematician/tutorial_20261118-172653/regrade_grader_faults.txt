@@ -1,0 +1,4 @@
+             task       mode    verdict   regraded    seconds      turns  tool_calls  checks_passed  checks_total  format_problems
+  T06_free_energy      agent       FAIL       PASS       64.4          8          6          1          2          0   failed: form
+  T04_heat_latent      agent       FAIL       PASS       78.3          5          3          0          0          6   failed: symbol 'h_v' has a typical value of 0
+  T07_phase_field      agent       FAIL       PASS       89.8          5          3          0          0          5   failed: symbol 'R' has a typical value of 0
