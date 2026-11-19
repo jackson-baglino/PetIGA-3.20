@@ -1,0 +1,9 @@
+{
+  "verdict": "ERROR",
+  "probes": [],
+  "problems": [
+    "session model None, pinned 'claude-opus-5-5'",
+    "no result event",
+    "only 0 probe results came back (expected at least 15)"
+  ]
+}

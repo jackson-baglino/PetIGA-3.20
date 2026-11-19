@@ -1,0 +1,204 @@
+{
+  "status": "done",
+  "result_expr": "Derivative(phi(x, y, z, t), t) + M*(6*gamma/eps*phi(x, y, z, t)*(1 - phi(x, y, z, t))*(1 - 2*phi(x, y, z, t)) - 6*gamma*eps*(Derivative(phi(x, y, z, t), (x, 2)) + Derivative(phi(x, y, z, t), (y, 2)) + Derivative(phi(x, y, z, t), (z, 2)))) - alpha*30*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2*(rho_v(x, y, z, t) - rho_vs(T(x, y, z, t)))",
+  "result_latex": "R = \\partial_t\\phi + M\\left[\\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi) - 6\\gamma\\varepsilon\\left(\\partial_{xx}\\phi+\\partial_{yy}\\phi+\\partial_{zz}\\phi\\right)\\right] - 30\\,\\alpha\\,\\phi^2(1-\\phi)^2\\left(\\rho_v-\\rho_{vs}(T)\\right) = 0",
+  "symbols": [
+    {
+      "name": "M",
+      "latex": "M",
+      "meaning": "interface mobility (Allen-Cahn kinetic coefficient): how fast $\\phi$ relaxes down the gradient of $F$; with it a curved interface moves at $v_n=-6\\gamma\\varepsilon M\\kappa$",
+      "units": "m^3 J^-1 s^-1",
+      "typical": 1e-06
+    },
+    {
+      "name": "alpha",
+      "latex": "\\alpha",
+      "meaning": "deposition/sublimation rate coefficient; a flat interface advances into the gas at $v_n = 6\\varepsilon\\alpha(\\rho_v-\\rho_{vs})$, so $6\\varepsilon\\alpha = k/\\rho_i$ with $k$ a kinetic mass-transfer velocity (Hertz-Knudsen: $k=a_s\\sqrt{k_BT/2\\pi m}$) and $\\rho_i$ the ice density",
+      "units": "m^3 kg^-1 s^-1",
+      "typical": 1000
+    },
+    {
+      "name": "p(phi)",
+      "latex": "p(\\phi)",
+      "meaning": "interface-localizing function $30\\phi^2(1-\\phi)^2$, zero in bulk ice and gas, $\\int_0^1 p\\,d\\phi = 1$",
+      "units": "1",
+      "typical": 1
+    },
+    {
+      "name": "mu(phi)",
+      "latex": "\\mu",
+      "meaning": "variational derivative $\\delta F/\\delta\\phi$",
+      "units": "J m^-3",
+      "typical": 1000
+    },
+    {
+      "name": "phi_0(n)",
+      "latex": "\\phi_0(n)",
+      "meaning": "equilibrium flat-interface profile along the normal coordinate $n$",
+      "units": "1",
+      "typical": 0.5
+    },
+    {
+      "name": "n",
+      "latex": "n",
+      "meaning": "coordinate normal to a flat interface, pointing into the ice",
+      "units": "m",
+      "typical": 1e-06
+    },
+    {
+      "name": "v_n",
+      "latex": "v_n",
+      "meaning": "normal velocity of the interface, positive when ice grows",
+      "units": "m s^-1",
+      "typical": 1e-09
+    },
+    {
+      "name": "kappa",
+      "latex": "\\kappa",
+      "meaning": "sum of principal curvatures of the interface (positive for a convex ice grain)",
+      "units": "m^-1",
+      "typical": 10000
+    },
+    {
+      "name": "Delta",
+      "latex": "\\Delta",
+      "meaning": "supersaturation $\\rho_v-\\rho_{vs}(T)$",
+      "units": "kg m^-3",
+      "typical": 1e-08
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "title": "Variational derivative of F",
+      "why": "The interface relaxes down the gradient of $F$, so we need $\\delta F/\\delta\\phi$. The Euler-Lagrange operator applied to the integrand gives it; the boundary term is dropped with no-flux (natural) boundary conditions.",
+      "from": [
+        "given"
+      ],
+      "operation": "Euler-Lagrange derivative of the integrand of F",
+      "latex": "\\mu=\\frac{\\delta F}{\\delta\\phi}=\\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi)-6\\gamma\\varepsilon\\nabla^2\\phi",
+      "check": {
+        "function": "check_s1",
+        "printed": "S1 dF/dphi matches: True"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Relaxation part (Allen-Cahn)",
+      "why": "$\\phi$ is not conserved (ice turns into vapor), so the simplest relaxation that always lowers $F$ is the non-conserved gradient flow, with a positive mobility $M$. Then $dF/dt=-\\int M\\mu^2\\,dV\\le 0$.",
+      "from": [
+        "S1",
+        "A3"
+      ],
+      "operation": "postulate linear non-conserved gradient flow",
+      "latex": "\\partial_t\\phi\\big|_{\\rm relax}=-M\\mu",
+      "check": {
+        "function": "",
+        "printed": "Constitutive choice; units checked in check_units: M*gam/eps -> 1/s."
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Phase-change source term",
+      "why": "Deposition must raise $\\phi$ where $\\rho_v>\\rho_{vs}(T)$ and lower it where $\\rho_v<\\rho_{vs}$, to linear order in the departure. With no nucleation the source must vanish in pure gas and pure ice, so we multiply by $p(\\phi)=30\\phi^2(1-\\phi)^2$, which is zero at $\\phi=0,1$ with zero slope there (bulk phases stay fixed points) and is normalized to $\\int_0^1p\\,d\\phi=1$.",
+      "from": [
+        "A4",
+        "A5",
+        "A6"
+      ],
+      "operation": "postulate linear driving term localized to the interface",
+      "latex": "\\partial_t\\phi\\big|_{\\rm phase}=\\alpha\\,p(\\phi)\\left(\\rho_v-\\rho_{vs}(T)\\right),\\quad p(\\phi)=30\\phi^2(1-\\phi)^2",
+      "check": {
+        "function": "check_s3",
+        "printed": "S3 p(0), p(1): 0 0  integral 0..1: 1"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Evolution equation",
+      "why": "The two mechanisms act in parallel, so their rates add. Moving everything to one side gives the residual $R$.",
+      "from": [
+        "S2",
+        "S3"
+      ],
+      "operation": "add S2 and S3, substitute S1, move to left side",
+      "latex": "R=\\partial_t\\phi+M\\left[\\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi)-6\\gamma\\varepsilon\\nabla^2\\phi\\right]-30\\alpha\\phi^2(1-\\phi)^2(\\rho_v-\\rho_{vs}(T))=0",
+      "check": {
+        "function": "check_units",
+        "printed": "every term has units 1/second"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Flat equilibrium profile is consistent with A2",
+      "why": "To read off what $M$ and $\\alpha$ mean, we need the flat profile with $\\mu=0$. The logistic profile solves it, has 10-90% width $2\\ln 9\\,\\varepsilon$ and energy $\\gamma$ per area, as A2 states.",
+      "from": [
+        "S1",
+        "A2"
+      ],
+      "operation": "solve mu=0 in 1D, integrate",
+      "latex": "\\phi_0(n)=\\frac{1}{1+e^{-n/\\varepsilon}},\\quad \\int_{-\\infty}^{\\infty}(\\phi_0')^2dn=\\frac{1}{6\\varepsilon}",
+      "check": {
+        "function": "check_s5",
+        "printed": "profile solves dF/dphi=0: True; 10-90 width: 4*epsilon*log(3); energy per area: gamma; int phi0_n^2 dn: 1/(6*epsilon)"
+      }
+    },
+    {
+      "id": "S6",
+      "title": "Meaning of the coefficients",
+      "why": "Put a front $\\phi=\\phi_0(n+v_nt)$ into S4, multiply by $\\phi_0'$ and integrate across the interface; the $\\mu$ term vanishes for the flat profile, and the Laplacian term gives the usual Allen-Cahn curvature law. This shows that $\\alpha$ sets the deposition speed and $M$ sets the curvature-driven (Gibbs-Thomson-like) motion.",
+      "from": [
+        "S4",
+        "S5"
+      ],
+      "operation": "solvability: multiply by phi_0' and integrate over n",
+      "latex": "v_n=6\\varepsilon\\alpha\\,(\\rho_v-\\rho_{vs}(T))-6\\gamma\\varepsilon M\\kappa",
+      "check": {
+        "function": "check_s6",
+        "printed": "S6 V = [6*Delta*alpha*epsilon]; diffusion coefficient on laplacian: 6*M*epsilon*gamma"
+      }
+    }
+  ],
+  "assumptions_used": [
+    "A1 (given): $\\rho_v$ and $T$ are known, smooth fields.",
+    "A2 (given): the flat interface described by $F$ has energy $\\gamma$ per unit area and a 10-90 % width of $2\\ln 9\\,\\varepsilon$.",
+    "A3: Near equilibrium, the interface relaxes by linear, non-conserved (Allen-Cahn) gradient flow $\\partial_t\\phi=-M\\,\\delta F/\\delta\\phi$ with a positive scalar mobility $M$ (isotropic, taken constant).",
+    "A4: The growth rate depends linearly on the supersaturation $\\rho_v-\\rho_{vs}(T)$ (linear kinetics, as in Hertz-Knudsen), with a constant positive coefficient $\\alpha$.",
+    "A5: No nucleation: the source is multiplied by $p(\\phi)=30\\phi^2(1-\\phi)^2$, which is zero in bulk ice and gas, so ice changes only at the existing interface. Any other localized $p$ with $\\int_0^1 p\\,d\\phi=1$ would give the same sharp-interface limit.",
+    "A6: Relaxation and phase change act in parallel, so their rates add."
+  ],
+  "neglected": [
+    {
+      "effect": "Anisotropy of ice surface energy and kinetics (faceting)",
+      "why": "Taken as isotropic: $\\gamma$, $M$ and $\\alpha$ are scalars. This is acceptable for rounded pore-scale grains; anisotropy would add orientation-dependent factors."
+    },
+    {
+      "effect": "Temperature dependence of $M$ and $\\alpha$",
+      "why": "Kept constant for simplicity. Their Arrhenius or $\\sqrt{T}$ variation can be restored by writing $M(T)$ and $\\alpha(T)$ without changing the form of the equation."
+    },
+    {
+      "effect": "Nonlinear kinetics in large supersaturation",
+      "why": "The pore vapor is close to saturation ($|\\rho_v-\\rho_{vs}|/\\rho_{vs}\\ll1$), so the linear term is the leading order and the dropped terms are $O((\\Delta/\\rho_{vs})^2)$."
+    },
+    {
+      "effect": "Curvature dependence of the saturation density (explicit Gibbs-Thomson term in $\\rho_{vs}$)",
+      "why": "It is represented by the $M$-term ($v_n\\propto-\\kappa$). Matching $6\\gamma\\varepsilon M=6\\varepsilon\\alpha\\rho_{vs}\\gamma/(\\rho_i R_vT)\\cdot$(molar factors) would make it quantitative; that choice is left to the calibration of $M$. The size is $\\rho_{vs}\\gamma/(\\rho_iR_vT\\,r)\\sim10^{-4}\\rho_{vs}$ for $r\\sim1\\,\\mu$m."
+    },
+    {
+      "effect": "Mechanical stress, elasticity and grain motion of ice and regolith",
+      "why": "The regolith grains and ice are treated as rigid; stresses are outside this model."
+    },
+    {
+      "effect": "Thermal noise / fluctuations",
+      "why": "Deterministic model; noise is needed only for nucleation, which is excluded."
+    },
+    {
+      "effect": "Wetting of regolith grains by ice (contact angle at grain walls)",
+      "why": "Boundary conditions at the grain surfaces are taken as natural (no-flux), as needed to drop the boundary term in S1; a wetting energy would add a surface term."
+    }
+  ],
+  "questions": [
+    "The interface function $p(\\phi)=30\\phi^2(1-\\phi)^2$ is my choice. Any localized $p$ with $\\int_0^1p\\,d\\phi=1$ gives the same sharp-interface speed. If your model uses a different one, such as $\\phi^2(1-\\phi)^2$ without the 30, $\\alpha$ has to be rescaled to match.",
+    "Should $M$ be tied to $\\alpha$ through the Gibbs-Thomson relation, so that curvature-driven sublimation agrees with the Kelvin equation? Or should it stay a free parameter?"
+  ]
+}

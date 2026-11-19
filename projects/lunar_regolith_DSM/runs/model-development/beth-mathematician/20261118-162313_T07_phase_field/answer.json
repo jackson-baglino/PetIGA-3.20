@@ -1,0 +1,236 @@
+{
+  "status": "done",
+  "result_expr": "Derivative(phi(x, y, z, t), t) + M(T(x, y, z, t))*(6*gamma/eps*phi(x, y, z, t)*(1 - phi(x, y, z, t))*(1 - 2*phi(x, y, z, t)) - 6*gamma*eps*(Derivative(phi(x, y, z, t), (x, 2)) + Derivative(phi(x, y, z, t), (y, 2)) + Derivative(phi(x, y, z, t), (z, 2))) - 30*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2*rho_i*R_v*T(x, y, z, t)*(rho_v(x, y, z, t) - rho_vs(T(x, y, z, t)))/rho_vs(T(x, y, z, t)))",
+  "result_latex": "R = \\partial_t\\phi + M(T)\\left[\\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi) - 6\\gamma\\varepsilon\\left(\\partial_{xx}\\phi+\\partial_{yy}\\phi+\\partial_{zz}\\phi\\right) - 30\\,\\phi^2(1-\\phi)^2\\,\\rho_i R_v T\\,\\frac{\\rho_v-\\rho_{vs}(T)}{\\rho_{vs}(T)}\\right] = 0",
+  "symbols": [
+    {
+      "name": "M(T)",
+      "latex": "M(T)",
+      "meaning": "Allen-Cahn mobility of the phase field. It sets how fast the interface relaxes and moves. Through $v_n = 6\\varepsilon M\\Delta g$ it is tied to the attachment kinetics; matching the Hertz-Knudsen law gives $M = \\alpha_c\\,\\rho_{vs}\\sqrt{R_vT/2\\pi}/(6\\varepsilon\\rho_i^2R_vT)$",
+      "units": "m^3 J^-1 s^-1",
+      "typical": 1e-09
+    },
+    {
+      "name": "rho_i",
+      "latex": "\\rho_i",
+      "meaning": "density of ice, taken as constant",
+      "units": "kg m^-3",
+      "typical": 920
+    },
+    {
+      "name": "R_v",
+      "latex": "R_v",
+      "meaning": "specific gas constant of water vapor",
+      "units": "J kg^-1 K^-1",
+      "typical": 461.5
+    },
+    {
+      "name": "h(phi)",
+      "latex": "h(\\phi)",
+      "meaning": "interpolation function $\\phi^3(10-15\\phi+6\\phi^2)$, going from 0 in the gas to 1 in the ice",
+      "units": "1",
+      "typical": 0.5
+    },
+    {
+      "name": "Delta_g",
+      "latex": "\\Delta g",
+      "meaning": "bulk driving force for deposition: the drop in free energy per unit volume of ice formed from vapor at density $\\rho_v$",
+      "units": "J m^-3",
+      "typical": 1000
+    },
+    {
+      "name": "G",
+      "latex": "G[\\phi]",
+      "meaning": "total free energy, including the bulk drive",
+      "units": "J",
+      "typical": 1e-12
+    },
+    {
+      "name": "v_n",
+      "latex": "v_n",
+      "meaning": "normal velocity of a flat interface, positive toward the gas (growth)",
+      "units": "m s^-1",
+      "typical": 1e-09
+    },
+    {
+      "name": "phi_0(X)",
+      "latex": "\\phi_0(X)",
+      "meaning": "1D equilibrium profile across a flat interface, with normal coordinate $X$",
+      "units": "1",
+      "typical": 0.5
+    },
+    {
+      "name": "X",
+      "latex": "X",
+      "meaning": "coordinate normal to a flat interface",
+      "units": "m",
+      "typical": 1e-06
+    },
+    {
+      "name": "alpha_c",
+      "latex": "\\alpha_c",
+      "meaning": "deposition (sticking) coefficient in the Hertz-Knudsen law",
+      "units": "1",
+      "typical": 0.5
+    },
+    {
+      "name": "R",
+      "latex": "R",
+      "meaning": "residual of the phase-field equation",
+      "units": "s^-1",
+      "typical": 0
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "title": "Variational derivative of F",
+      "why": "Allen-Cahn relaxation is driven by $\\delta F/\\delta\\phi$, so we compute it first from the given functional. The Euler-Lagrange operator gives the derivative of the double well minus 6$\\gamma\\varepsilon$ times the Laplacian.",
+      "from": [
+        "given"
+      ],
+      "operation": "Euler-Lagrange variation of F, then integration by parts with no boundary flux",
+      "latex": "\\frac{\\delta F}{\\delta\\phi} = \\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi) - 6\\gamma\\varepsilon\\left(\\partial_{xx}\\phi+\\partial_{yy}\\phi+\\partial_{zz}\\phi\\right)",
+      "check": {
+        "function": "check_s1",
+        "printed": "S1 dF/dphi residual: 0"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Interpolation function for the bulk drive",
+      "why": "The bulk drive must change the free-energy difference between ice and gas without shifting the minima at $\\phi=0,1$, and its derivative must vanish in pure gas. That is the no-nucleation requirement. The standard choice $h$ has $h(0)=0$, $h(1)=1$ and $h'(0)=h'(1)=0$.",
+      "from": [
+        "given"
+      ],
+      "operation": "definition and differentiation",
+      "latex": "h(\\phi)=\\phi^3(10-15\\phi+6\\phi^2),\\qquad h'(\\phi)=30\\phi^2(1-\\phi)^2",
+      "check": {
+        "function": "check_s2",
+        "printed": "S2 h' - 30 p^2(1-p)^2: 0  h(0), h(1): 0 1  h'(0),h'(1): 0 0"
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Bulk driving force from the vapor supersaturation",
+      "why": "Moving mass $\\rho_i$ per unit volume from an ideal vapor at $\\rho_v$ into ice in equilibrium with $\\rho_{vs}(T)$ releases $\\rho_i R_v T\\ln(\\rho_v/\\rho_{vs})$ per unit volume. We linearize the logarithm, dropping terms of order $(\\rho_v/\\rho_{vs}-1)^2$, because the allowed operations have no log and pore supersaturations are small.",
+      "from": [
+        "A3",
+        "A4"
+      ],
+      "operation": "ideal-gas chemical potential difference, then a first-order Taylor expansion of ln about 1",
+      "latex": "\\Delta g = \\rho_i R_v T\\ln\\frac{\\rho_v}{\\rho_{vs}(T)} \\approx \\rho_i R_v T\\,\\frac{\\rho_v-\\rho_{vs}(T)}{\\rho_{vs}(T)}",
+      "check": {
+        "function": "check_units",
+        "printed": "units M rho_i R_v T (rho_v-rho_vs)/rho_vs 1 / second (so Delta g has units of J m^-3)"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Total free energy and Allen-Cahn relaxation",
+      "why": "Ice ($\\phi=1$) is favored by $\\Delta g$ when the vapor is supersaturated, so the total energy is $G = F - \\int\\Delta g\\,h(\\phi)\\,dV$. $\\phi$ is not conserved because mass leaves through the vapor field, so it relaxes by the non-conserved gradient flow with mobility $M$. We hold $\\Delta g$ fixed in the variation because $\\rho_v$ and $T$ are given fields.",
+      "from": [
+        "S1",
+        "S2",
+        "S3",
+        "A1",
+        "A2",
+        "A5"
+      ],
+      "operation": "non-conserved gradient flow, with S1 and S2 substituted",
+      "latex": "\\partial_t\\phi = -M(T)\\frac{\\delta G}{\\delta\\phi} = -M(T)\\left[\\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi) - 6\\gamma\\varepsilon\\nabla^2\\phi - 30\\phi^2(1-\\phi)^2\\Delta g\\right]",
+      "check": {
+        "function": "check_units",
+        "printed": "each term has units 1 / second"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Equilibrium profile reproduces gamma and the width",
+      "why": "This checks that the interface part matches the stated assumption. With $\\Delta g=0$, the flat profile $\\phi_0$ solves $\\delta F/\\delta\\phi=0$, its energy per unit area is $\\gamma$, and its 10-90 % width is $4\\varepsilon\\ln 3 = 2\\varepsilon\\ln 9$.",
+      "from": [
+        "S1",
+        "A6"
+      ],
+      "operation": "substitute the tanh profile and integrate over X",
+      "latex": "\\phi_0=\\tfrac12\\left[1+\\tanh\\tfrac{X}{2\\varepsilon}\\right],\\quad \\int_{-\\infty}^{\\infty}(\\phi_0')^2dX=\\frac{1}{6\\varepsilon}",
+      "check": {
+        "function": "check_s5",
+        "printed": "S5 profile ODE residual: 0  int phi0^2 = 1/(6*eps)  energy = gamma  10-90 width = 4*eps*log(3)"
+      }
+    },
+    {
+      "id": "S6",
+      "title": "Meaning of M: the interface velocity",
+      "why": "Multiply the 1D traveling-wave form of S4 by $\\phi_0'$ and integrate across the interface. This gives the normal velocity $v_n = 6\\varepsilon M\\Delta g$ for a flat interface. Matching it to the Hertz-Knudsen deposition velocity $v_n=(\\alpha_c/\\rho_i)\\sqrt{R_vT/2\\pi}\\,(\\rho_v-\\rho_{vs})$ fixes $M(T)$, as given in the symbols list.",
+      "from": [
+        "S4",
+        "S5"
+      ],
+      "operation": "multiply by phi_0' and integrate over X (solvability condition)",
+      "latex": "v_n\\int(\\phi_0')^2dX = M\\Delta g\\int h'(\\phi_0)\\phi_0'\\,dX \\;\\Rightarrow\\; v_n = 6\\varepsilon M\\Delta g",
+      "check": {
+        "function": "check_s6",
+        "printed": "S6 int h'(phi0) phi0' dX = 1  => v = 6*Delta_g*M*eps"
+      }
+    },
+    {
+      "id": "S7",
+      "title": "Residual form in 3D Cartesian coordinates",
+      "why": "Substitute S3 into S4, write out the Laplacian in Cartesian coordinates, and move every term to one side. The result is $R$.",
+      "from": [
+        "S3",
+        "S4"
+      ],
+      "operation": "substitution of S3 into S4 and rearrangement",
+      "latex": "R = \\partial_t\\phi + M(T)\\left[\\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi) - 6\\gamma\\varepsilon(\\partial_{xx}\\phi+\\partial_{yy}\\phi+\\partial_{zz}\\phi) - 30\\phi^2(1-\\phi)^2\\rho_iR_vT\\frac{\\rho_v-\\rho_{vs}(T)}{\\rho_{vs}(T)}\\right]=0",
+      "check": {
+        "function": "check_units",
+        "printed": "dphi/dt, M gamma/eps, M gamma eps/m^2 and M rho_i R_v T (rho_v-rho_vs)/rho_vs all have units 1 / second"
+      }
+    }
+  ],
+  "assumptions_used": [
+    "A1: $\\rho_v(x,y,z,t)$ and $T(x,y,z,t)$ are known, smooth fields (given). In the variation of $G$ they are held fixed.",
+    "A2: $\\phi$ is a non-conserved order parameter. Ice mass is exchanged with the vapor field, which is a separate equation, so $\\phi$ follows a linear gradient (Allen-Cahn) flow with a scalar mobility $M(T)$ that does not depend on $\\phi$ or on the interface orientation.",
+    "A3: Water vapor is an ideal gas, and ice is incompressible with constant density $\\rho_i$.",
+    "A4: The supersaturation is small, so $\\ln(\\rho_v/\\rho_{vs}) \\approx (\\rho_v-\\rho_{vs})/\\rho_{vs}$.",
+    "A5: The drive enters through $h(\\phi)$ with $h'(0)=h'(1)=0$. It acts only where $0<\\phi<1$ (no nucleation), and it leaves the minima of the double well at 0 and 1.",
+    "A6: The flat interface described by $F$ has energy $\\gamma$ per unit area and a 10-90 % width of $2\\ln 9\\,\\varepsilon$ (given)."
+  ],
+  "neglected": [
+    {
+      "effect": "Nonlinear supersaturation terms in $\\ln(\\rho_v/\\rho_{vs})$",
+      "why": "They are of order $(\\rho_v/\\rho_{vs}-1)^2$, which is below about 1 % for supersaturations up to about 10 %."
+    },
+    {
+      "effect": "Anisotropy of $\\gamma$ and of the attachment kinetics (facets of ice)",
+      "why": "The work order gives a constant, isotropic $\\gamma$. Ice anisotropy at 200 K is a few percent in $\\gamma$; kinetic anisotropy is larger but is not resolved at pore scale."
+    },
+    {
+      "effect": "Gibbs-Thomson shift of $\\rho_{vs}$ written as an explicit term",
+      "why": "It is not left out: the curvature term comes out of $-6\\gamma\\varepsilon\\nabla^2\\phi$ in the sharp-interface limit, so adding it explicitly would count it twice."
+    },
+    {
+      "effect": "Latent heat release and the vapor sink at the interface",
+      "why": "These belong to the $T$ and $\\rho_v$ equations, which are separate tasks."
+    },
+    {
+      "effect": "Ice-grain (regolith) wetting, contact angle, and a third solid phase",
+      "why": "The work order treats the pore space as two phases only."
+    },
+    {
+      "effect": "Thermal noise and nucleation",
+      "why": "No nucleation is stated. The critical nucleus energy barrier is many $k_BT$ at small supersaturation."
+    },
+    {
+      "effect": "Elastic stress in the ice and flow or advection of the gas",
+      "why": "Stresses from sublimation are small compared with $\\Delta g$, and the pore gas is near rest at regolith pressures."
+    },
+    {
+      "effect": "Dependence of $M$ on $\\phi$",
+      "why": "A constant $M$ across the interface keeps the sharp-interface relation $v_n=6\\varepsilon M\\Delta g$ exact for a flat interface. A $\\phi$-dependent $M$ changes only the $O(\\varepsilon)$ corrections."
+    }
+  ],
+  "questions": []
+}

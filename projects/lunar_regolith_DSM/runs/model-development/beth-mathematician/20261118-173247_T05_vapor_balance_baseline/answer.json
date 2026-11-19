@@ -1,0 +1,153 @@
+{
+  "status": "done",
+  "result_expr": "Derivative((1 - phi(x, y, z, t))*rho_v(x, y, z, t), t) + rho_i*Derivative(phi(x, y, z, t), t) - Derivative((1 - phi(x, y, z, t))*D_v(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), x), x) - Derivative((1 - phi(x, y, z, t))*D_v(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), y), y) - Derivative((1 - phi(x, y, z, t))*D_v(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), z), z)",
+  "result_latex": "R = \\frac{\\partial}{\\partial t}\\left[(1-\\phi)\\rho_v\\right] + \\rho_i\\frac{\\partial \\phi}{\\partial t} - \\frac{\\partial}{\\partial x}\\left[(1-\\phi)D_v(T)\\frac{\\partial \\rho_v}{\\partial x}\\right] - \\frac{\\partial}{\\partial y}\\left[(1-\\phi)D_v(T)\\frac{\\partial \\rho_v}{\\partial y}\\right] - \\frac{\\partial}{\\partial z}\\left[(1-\\phi)D_v(T)\\frac{\\partial \\rho_v}{\\partial z}\\right] = 0",
+  "symbols": [
+    {
+      "name": "rho_i",
+      "latex": "\\rho_i",
+      "meaning": "density of ice (mass of ice per unit volume of ice), taken constant",
+      "units": "kg m^-3",
+      "typical": 917
+    },
+    {
+      "name": "D_v(T)",
+      "latex": "D_v(T)",
+      "meaning": "diffusivity of water vapor in the pore gas",
+      "units": "m^2 s^-1",
+      "typical": 2e-05
+    },
+    {
+      "name": "m_w",
+      "latex": "m_w",
+      "meaning": "water mass (ice plus vapor) per unit total volume",
+      "units": "kg m^-3",
+      "typical": 917
+    },
+    {
+      "name": "j_v",
+      "latex": "\\mathbf{j}_v",
+      "meaning": "vapor mass flux per unit total area",
+      "units": "kg m^-2 s^-1",
+      "typical": 1e-07
+    },
+    {
+      "name": "Omega",
+      "latex": "\\Omega",
+      "meaning": "fixed control volume in the pore space, with boundary \\partial\\Omega and outward normal \\mathbf{n}",
+      "units": "m^3",
+      "typical": 1e-12
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "title": "Water mass per unit volume",
+      "why": "Ice fills the fraction $\\phi$ of each small volume and gas fills $1-\\phi$. So the water mass per unit total volume is the ice mass plus the vapor mass held in the gas.",
+      "from": [
+        "given",
+        "A1",
+        "A2"
+      ],
+      "operation": "definition of mixture mass density from volume fractions",
+      "latex": "m_w = \\rho_i\\phi + (1-\\phi)\\rho_v",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; by hand, both terms are in kg m^-3"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Integral conservation of water",
+      "why": "Water is neither created nor destroyed (A5), so in a fixed control volume its mass changes only through flux across the boundary. Ice does not move (A2), so only vapor carries a flux.",
+      "from": [
+        "S1",
+        "A2",
+        "A5"
+      ],
+      "operation": "mass balance on a fixed control volume",
+      "latex": "\\frac{d}{dt}\\int_\\Omega \\left[\\rho_i\\phi + (1-\\phi)\\rho_v\\right]dV = -\\oint_{\\partial\\Omega}\\mathbf{j}_v\\cdot\\mathbf{n}\\,dS",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; by hand, both sides are in kg s^-1"
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Local conservation law",
+      "why": "The fields are smooth (A1), so the time derivative can move inside the integral and the divergence theorem turns the surface integral into a volume integral. Because $\\Omega$ is arbitrary, the integrand must vanish.",
+      "from": [
+        "S2",
+        "A1"
+      ],
+      "operation": "divergence theorem and arbitrariness of the control volume",
+      "latex": "\\frac{\\partial}{\\partial t}\\left[(1-\\phi)\\rho_v\\right] + \\rho_i\\frac{\\partial\\phi}{\\partial t} + \\nabla\\cdot\\mathbf{j}_v = 0",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; by hand, every term is in kg m^-3 s^-1. The constant $\\rho_i$ (A2) is pulled out of $\\partial_t(\\rho_i\\phi)$"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Fickian vapor flux in the gas fraction",
+      "why": "Vapor diffuses only through the gas, which fills the fraction $1-\\phi$ of each volume. With Fick's law in the gas (A3) and no net gas flow (A4), the flux per unit total area is the gas fraction times the Fickian flux.",
+      "from": [
+        "A3",
+        "A4"
+      ],
+      "operation": "constitutive law (Fick) weighted by gas fraction",
+      "latex": "\\mathbf{j}_v = -(1-\\phi)D_v(T)\\nabla\\rho_v",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; by hand, units are m^2 s^-1 times kg m^-4, which is kg m^-2 s^-1"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Vapor equation as R = 0",
+      "why": "Substituting S4 into S3 and writing the divergence in Cartesian components gives the residual. The term $\\rho_i\\partial_t\\phi$ is the exchange with ice: deposition ($\\partial_t\\phi>0$) removes vapor and sublimation adds it.",
+      "from": [
+        "S3",
+        "S4"
+      ],
+      "operation": "substitution of S4 into S3, Cartesian divergence",
+      "latex": "R = \\partial_t[(1-\\phi)\\rho_v] + \\rho_i\\partial_t\\phi - \\sum_{x_k\\in\\{x,y,z\\}}\\partial_{x_k}\\left[(1-\\phi)D_v(T)\\partial_{x_k}\\rho_v\\right] = 0",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; by hand, every term is in kg m^-3 s^-1"
+      }
+    }
+  ],
+  "assumptions_used": [
+    "A1: $\\phi(x,y,z,t)$ and $T(x,y,z,t)$ are known, smooth fields (given).",
+    "A2: Ice is a rigid, immobile solid with constant density $\\rho_i$ (no ice velocity, no thermal expansion).",
+    "A3: Vapor moves through the gas by Fickian diffusion with diffusivity $D_v(T)$. Any dependence on gas pressure is absorbed into $D_v$.",
+    "A4: The gas has no net bulk flow, so there is no advection term.",
+    "A5: No water enters or leaves except through the vapor flux, and there is no liquid water. Water mass is conserved."
+  ],
+  "neglected": [
+    {
+      "effect": "Advection of vapor by bulk gas flow (including the Stefan flow at the interface)",
+      "why": "The vapor is very dilute near 200 K (vapor pressure about 0.16 Pa, so $\\rho_v$ is about 1e-6 kg m^-3), so the Stefan velocity is about $D_v\\nabla\\rho_v/\\rho_{gas}$ and is negligible compared with diffusion. There is no imposed pressure gradient across the pores."
+    },
+    {
+      "effect": "Thermal diffusion (the Soret effect) and cross-diffusion",
+      "why": "The thermal diffusion factor for water in air is about 0.1 or less. Over pore-scale temperature differences of about 1 K at 200 K, it contributes a flux of order 1e-3 of the Fickian flux."
+    },
+    {
+      "effect": "Knudsen (rarefied-gas) transport",
+      "why": "This is valid only while the mean free path is smaller than the pore size. Under lunar near-vacuum it is not, and then $D_v$ must be replaced by a Knudsen diffusivity. The form of the equation stays the same."
+    },
+    {
+      "effect": "Variation of ice density with temperature, and ice motion",
+      "why": "The thermal expansion of ice is about 5e-5 per K, so changes in $\\rho_i$ are about 1e-4 of $\\rho_i$. Grains are assumed fixed."
+    },
+    {
+      "effect": "Liquid water and adsorbed water on regolith grains",
+      "why": "Near 200 K there is no liquid phase. Adsorption on the grain surfaces is outside the ice/gas model."
+    }
+  ],
+  "questions": [
+    "Should the vapor flux carry the gas-fraction weighting $(1-\\phi)$, as used here so that water mass is conserved exactly? The alternative is the common simplified form $\\partial_t\\rho_v = \\nabla\\cdot(D_v\\nabla\\rho_v) - \\rho_i\\partial_t\\phi$."
+  ]
+}

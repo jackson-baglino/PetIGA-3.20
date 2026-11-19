@@ -1,0 +1,6 @@
+{
+  "check": "T07_phase_field",
+  "pass": false,
+  "details": "symbol 'R' has a typical value of 0",
+  "exit": 1
+}

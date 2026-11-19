@@ -1,0 +1,70 @@
+{
+  "status": "done",
+  "result_expr": "Integral(rho*c*Derivative(T(x, t), t)*w(x), (x, 0, L)) + Integral(k(x)*Derivative(T(x, t), x)*Derivative(w(x), x), (x, 0, L)) - Integral(Q(x)*w(x), (x, 0, L)) - Subs(k(x)*Derivative(T(x, t), x)*w(x), x, L) + Subs(k(x)*Derivative(T(x, t), x)*w(x), x, 0)",
+  "steps": [
+    {
+      "id": "S1",
+      "statement": "rho*c*dT/dt = d/dx(k*dT/dx) + Q; every term is in W m^-3",
+      "from": [
+        "given"
+      ],
+      "operation": "given strong form, with a units check"
+    },
+    {
+      "id": "S2",
+      "statement": "rho*c*dT/dt - d/dx(k*dT/dx) - Q = 0",
+      "from": [
+        "S1"
+      ],
+      "operation": "move all terms to the left side"
+    },
+    {
+      "id": "S3",
+      "statement": "rho*c*dT/dt*w - d/dx(k*dT/dx)*w - Q*w = 0",
+      "from": [
+        "S2"
+      ],
+      "operation": "multiply by w(x)"
+    },
+    {
+      "id": "S4",
+      "statement": "Int_0^L rho*c*T_t*w dx - Int_0^L (k*T_x)_x*w dx - Int_0^L Q*w dx = 0; every term is in W m^-2",
+      "from": [
+        "S3"
+      ],
+      "operation": "integrate over (0, L)"
+    },
+    {
+      "id": "S5",
+      "statement": "Int_0^L (k*T_x)_x*w dx = [k*T_x*w]_0^L - Int_0^L k*T_x*w_x dx",
+      "from": [
+        "given"
+      ],
+      "operation": "integration by parts (product rule plus fundamental theorem of calculus, using smoothness)"
+    },
+    {
+      "id": "S6",
+      "statement": "Int_0^L rho*c*T_t*w dx - [k*T_x*w]_0^L + Int_0^L k*T_x*w_x dx - Int_0^L Q*w dx = 0",
+      "from": [
+        "S4",
+        "S5"
+      ],
+      "operation": "substitution of S5 into S4"
+    },
+    {
+      "id": "S7",
+      "statement": "R = Int_0^L rho*c*T_t*w dx + Int_0^L k*T_x*w_x dx - Int_0^L Q*w dx - (k*T_x*w)|_{x=L} + (k*T_x*w)|_{x=0} = 0",
+      "from": [
+        "S6"
+      ],
+      "operation": "expand the boundary bracket and collect terms"
+    }
+  ],
+  "assumptions_used": [
+    "rho and c are constant (from the work order)",
+    "T, w, k and Q are smooth on [0, L], so integration by parts is valid (from the work order)",
+    "w is not assumed to vanish at x = 0 or x = L, so both boundary flux terms are kept",
+    "Sign convention: R is the integral of (rho*c*T_t - (k*T_x)_x - Q)*w after integration by parts, so the storage term carries a plus sign"
+  ],
+  "questions": []
+}

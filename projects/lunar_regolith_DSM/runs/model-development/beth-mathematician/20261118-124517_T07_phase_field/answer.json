@@ -1,0 +1,135 @@
+{
+  "status": "done",
+  "result_expr": "Derivative(phi(x, y, z, t), t) + M(phi(x, y, z, t), T(x, y, z, t))*(6*gamma/eps*phi(x, y, z, t)*(1 - phi(x, y, z, t))*(1 - 2*phi(x, y, z, t)) - 6*gamma*eps*(Derivative(phi(x, y, z, t), (x, 2)) + Derivative(phi(x, y, z, t), (y, 2)) + Derivative(phi(x, y, z, t), (z, 2)))) - 30*M(phi(x, y, z, t), T(x, y, z, t))*rho_i*R_v*T(x, y, z, t)*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2*(rho_v(x, y, z, t) - rho_vs(T(x, y, z, t)))/rho_vs(T(x, y, z, t))",
+  "symbols": [
+    {
+      "name": "M(phi, T)",
+      "meaning": "Allen-Cahn mobility of the phase field. It sets the interface attachment kinetics: v_n = 6 eps M (driving force - gamma*curvature).",
+      "units": "m^3 J^-1 s^-1",
+      "typical": 5e-10
+    },
+    {
+      "name": "rho_i",
+      "meaning": "density of ice",
+      "units": "kg m^-3",
+      "typical": 917
+    },
+    {
+      "name": "R_v",
+      "meaning": "specific gas constant of water vapor, k_B/m_w",
+      "units": "J kg^-1 K^-1",
+      "typical": 461.5
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "statement": "dF/dphi = (6 gamma/eps) phi(1-phi)(1-2phi) - 6 gamma eps Laplacian(phi), in J m^-3",
+      "from": [
+        "given"
+      ],
+      "operation": "Euler-Lagrange variational derivative (the gradient term is integrated by parts; the boundary term vanishes). SymPy check gives a difference of 0."
+    },
+    {
+      "id": "S2",
+      "statement": "phi0 = (1 + tanh(X/(2 eps)))/2 solves dF/dphi = 0. Its interface energy is gamma, and its 10-90% width is 2 ln9 eps.",
+      "from": [
+        "S1"
+      ],
+      "operation": "1D equilibrium solution, checked with SymPy. This is consistent with the given assumption."
+    },
+    {
+      "id": "S3",
+      "statement": "Volumetric driving force dg = rho_i R_v T ln(rho_v/rho_vs(T)) \u2248 rho_i R_v T (rho_v - rho_vs)/rho_vs, in J m^-3",
+      "from": [
+        "given"
+      ],
+      "operation": "Chemical potential difference of an ideal vapor times the moles of ice per volume. Linearized; the dropped terms are O(sigma^2)."
+    },
+    {
+      "id": "S4",
+      "statement": "G = F - Integral(dg h(phi)), with h = phi^3(10 - 15phi + 6phi^2) and h' = 30 phi^2 (1-phi)^2, which vanishes at phi = 0 and phi = 1",
+      "from": [
+        "S3"
+      ],
+      "operation": "Tilt the double well with an interpolation function. h' = 0 in the bulk, so there is no nucleation. Checked with SymPy."
+    },
+    {
+      "id": "S5",
+      "statement": "d phi/dt = -M(phi, T) dG/dphi",
+      "from": [
+        "S4"
+      ],
+      "operation": "Non-conserved gradient-flow (Allen-Cahn) relaxation"
+    },
+    {
+      "id": "S6",
+      "statement": "d phi/dt = -M[(6gamma/eps) phi(1-phi)(1-2phi) - 6 gamma eps Laplacian(phi)] + 30 M rho_i R_v T phi^2(1-phi)^2 (rho_v - rho_vs)/rho_vs. Every term has units of s^-1.",
+      "from": [
+        "S1",
+        "S3",
+        "S4",
+        "S5"
+      ],
+      "operation": "Substitution, then a unit check with pint"
+    },
+    {
+      "id": "S7",
+      "statement": "R = d phi/dt + M[...] - 30 M rho_i R_v T phi^2 (1-phi)^2 (rho_v - rho_vs)/rho_vs = 0",
+      "from": [
+        "S6"
+      ],
+      "operation": "Move all terms to the left side"
+    },
+    {
+      "id": "S8",
+      "statement": "v_n = 6 eps M (dg - gamma K). For Hertz-Knudsen kinetics, M = alpha_c rho_vs sqrt(R_v T/2pi)/(6 eps rho_i^2 R_v T), about 5e-10 at 200 K and eps = 1 um.",
+      "from": [
+        "S2",
+        "S6"
+      ],
+      "operation": "Traveling-wave solvability: multiply by phi0' and integrate, using Integral(phi0'^2) = 1/(6 eps) (checked)"
+    }
+  ],
+  "assumptions_used": [
+    "rho_v and T are known smooth fields (given)",
+    "The flat interface has energy gamma and a 10-90% width of 2 ln9 eps (given; verified)",
+    "phi is non-conserved; the mass exchange with the vapor is handled by the vapor equation (separate task)",
+    "Water vapor is an ideal gas, and ice is incompressible with constant density rho_i",
+    "The driving force is linearized in the supersaturation (rho_v - rho_vs)/rho_vs",
+    "The interpolation function h(phi) = phi^3(10 - 15phi + 6phi^2) is chosen so that h'(0) = h'(1) = 0, which gives no nucleation and keeps the bulk phases at their equilibrium values",
+    "Interface kinetics are linear and isotropic, captured by a single mobility M(phi, T)",
+    "Natural (no-flux) boundary conditions for phi on the domain boundary"
+  ],
+  "neglected": [
+    {
+      "effect": "Nonlinear ln(rho_v/rho_vs) driving force",
+      "why": "The error is O(sigma^2). The supersaturation in regolith pores is usually |sigma| << 1."
+    },
+    {
+      "effect": "Anisotropy of the interface energy and kinetics (crystal facets)",
+      "why": "gamma and M are taken as constants or isotropic. Ice anisotropy is a few percent for gamma; including it would add orientation dependence."
+    },
+    {
+      "effect": "Contact with the regolith grains (wetting angle)",
+      "why": "Grains are not in the given F. It would enter as a boundary condition or a third phase in a separate task."
+    },
+    {
+      "effect": "Latent heat, and the vapor sink and source terms",
+      "why": "These belong in the T and rho_v equations (separate tasks). Here T and rho_v are given."
+    },
+    {
+      "effect": "Elastic strain and the density mismatch between ice and gas (advection)",
+      "why": "rho_v/rho_i is about 1e-9, so there is no flow induced by sublimation. Stresses are small in loose regolith."
+    },
+    {
+      "effect": "Thermal noise / nucleation",
+      "why": "Excluded by the task statement. h' vanishes in the bulk phases."
+    },
+    {
+      "effect": "Curvature correction to rho_vs inside rho_vs(T)",
+      "why": "It is already produced by the gamma*K term of the Allen-Cahn dynamics (Gibbs-Thomson), so adding it again would double-count it."
+    }
+  ],
+  "questions": []
+}

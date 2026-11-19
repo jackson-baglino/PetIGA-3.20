@@ -1,0 +1,110 @@
+{
+  "check": "T06_free_energy",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "f has units J / m ** 3 (needs an energy per volume)"
+      },
+      {
+        "check": "wells",
+        "pass": true,
+        "details": "minima at 0 and 1 with equal depths and a barrier between (3 draws)"
+      },
+      {
+        "check": "gradient",
+        "pass": true,
+        "details": "isotropic, quadratic and penalizing: kappa(p) |grad phi|^2 / 2 with kappa > 0 (3 draws)"
+      },
+      {
+        "check": "interface",
+        "pass": true,
+        "details": "the flat interface has energy gamma (3 draws); its 10-90 % width is 4.394 eps"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's f": "3*gamma/eps*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2 + 3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2)",
+      "implied by the current model (src/assembly.c:177-181)": "3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2) + 3*gamma*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2/eps",
+      "agent's symbols": [
+        {
+          "name": "W(phi)",
+          "latex": "W(\\phi)",
+          "meaning": "dimensionless double-well function, \\phi^2(1-\\phi)^2",
+          "units": "1",
+          "typical": 0.0625
+        },
+        {
+          "name": "A",
+          "latex": "A",
+          "meaning": "height coefficient of the double-well term (before fixing it)",
+          "units": "J m^-3",
+          "typical": 300000
+        },
+        {
+          "name": "K",
+          "latex": "K",
+          "meaning": "gradient-energy coefficient (before fixing it)",
+          "units": "J m^-1",
+          "typical": 6e-08
+        },
+        {
+          "name": "n",
+          "latex": "n",
+          "meaning": "coordinate normal to a flat interface",
+          "units": "m",
+          "typical": 1e-06
+        },
+        {
+          "name": "phi_0(n)",
+          "latex": "\\phi_0(n)",
+          "meaning": "equilibrium profile of a flat interface",
+          "units": "1",
+          "typical": 0.5
+        },
+        {
+          "name": "delta",
+          "latex": "\\delta",
+          "meaning": "interface width, defined as 1/\\phi_0'(0) (tangent at the midpoint)",
+          "units": "m",
+          "typical": 4e-06
+        },
+        {
+          "name": "F",
+          "latex": "F[\\phi]",
+          "meaning": "free energy functional",
+          "units": "J",
+          "typical": 1e-12
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Driving force (supersaturation / chemical potential tilt between phases)",
+          "why": "Excluded by the coexistence assumption; it would add a term like $\\Delta\\mu\\,p(\\phi)$ that breaks the symmetry of the wells."
+        },
+        {
+          "effect": "Anisotropy of the ice surface energy",
+          "why": "Not asked for; gamma is given as a constant. Ice anisotropy is a few percent."
+        },
+        {
+          "effect": "Regolith grains (solid wall, wetting / contact angle)",
+          "why": "The problem treats the pore space as ice plus gas only; a third phase or a wall energy would be needed."
+        },
+        {
+          "effect": "Vapor density and temperature fields and their coupling",
+          "why": "Uniform T and coexistence; these enter the evolution model, not this equilibrium functional."
+        },
+        {
+          "effect": "Elastic strain energy in ice, curvature-dependent (Gibbs-Thomson) corrections beyond the functional",
+          "why": "Elastic energy is small for unconstrained ice at pore scale; Gibbs-Thomson follows from this functional itself for curved interfaces."
+        },
+        {
+          "effect": "Higher-order gradient terms",
+          "why": "Corrections of order $(\\varepsilon/R)^2$ for interface curvature radius R much larger than $\\varepsilon$."
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

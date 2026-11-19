@@ -1,0 +1,1 @@
+{"time": "2026-11-18T11:41:37", "tool": "Bash", "input": {"command": "python scratch/probe_all.py", "description": "Run the probe script"}, "allowed": true, "reason": "command on the allow list"}

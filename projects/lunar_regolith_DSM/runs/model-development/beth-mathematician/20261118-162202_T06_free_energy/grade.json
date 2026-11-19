@@ -1,0 +1,121 @@
+{
+  "check": "T06_free_energy",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "f has units J / m ** 3 (needs an energy per volume)"
+      },
+      {
+        "check": "wells",
+        "pass": true,
+        "details": "minima at 0 and 1 with equal depths and a barrier between (3 draws)"
+      },
+      {
+        "check": "gradient",
+        "pass": true,
+        "details": "isotropic, quadratic and penalizing: kappa(p) |grad phi|^2 / 2 with kappa > 0 (3 draws)"
+      },
+      {
+        "check": "interface",
+        "pass": true,
+        "details": "the flat interface has energy gamma (3 draws); its 10-90 % width is 2.197 eps"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's f": "6*gamma/eps*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2 + 3*gamma*eps/2*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2)",
+      "implied by the current model (src/assembly.c:177-181)": "3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2) + 3*gamma*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2/eps",
+      "agent's symbols": [
+        {
+          "name": "W",
+          "latex": "W",
+          "meaning": "height coefficient of the double-well (bulk) term; fixed to 6 gamma/eps in S5",
+          "units": "J m^-3",
+          "typical": 600000
+        },
+        {
+          "name": "kappa",
+          "latex": "\\kappa",
+          "meaning": "gradient-energy coefficient; fixed to 3 gamma eps in S5",
+          "units": "J m^-1",
+          "typical": 1.5e-09
+        },
+        {
+          "name": "g",
+          "latex": "g(\\phi)",
+          "meaning": "dimensionless double-well function phi^2 (1-phi)^2",
+          "units": "1",
+          "typical": 0.0625
+        },
+        {
+          "name": "X",
+          "latex": "X",
+          "meaning": "coordinate normal to a flat interface, with X=0 at phi=1/2",
+          "units": "m",
+          "typical": 1e-08
+        },
+        {
+          "name": "ell",
+          "latex": "\\ell",
+          "meaning": "intrinsic decay length of the equilibrium profile, sqrt(kappa/(2W))",
+          "units": "m",
+          "typical": 5e-09
+        },
+        {
+          "name": "phi_0",
+          "latex": "\\phi_0(X)",
+          "meaning": "equilibrium profile across a flat interface",
+          "units": "1",
+          "typical": 0.5
+        },
+        {
+          "name": "sigma",
+          "latex": "\\sigma",
+          "meaning": "excess free energy per unit area of a flat equilibrium interface",
+          "units": "J m^-2",
+          "typical": 0.1
+        },
+        {
+          "name": "delta",
+          "latex": "\\delta",
+          "meaning": "interface width, defined as 1 / max |d phi_0/dX| (the distance over which the tangent at the midpoint rises from 0 to 1)",
+          "units": "m",
+          "typical": 2e-08
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Driving force for sublimation and deposition (tilting term, for example proportional to $(T-T_m)$ or vapor supersaturation, times $h(\\phi)$)",
+          "why": "The work order is at coexistence, so this term is zero by assumption A1."
+        },
+        {
+          "effect": "Anisotropy of the ice surface energy (hexagonal ice facets)",
+          "why": "Taken as isotropic (A2). The anisotropy of ice-vapor surface energy is a few percent, which is small compared with the geometric effects of pore confinement."
+        },
+        {
+          "effect": "Regolith grain surfaces: wetting and the ice-grain and gas-grain energies",
+          "why": "The work order treats the pore space as ice plus gas only. Contact angles would enter through boundary terms, not through $f$."
+        },
+        {
+          "effect": "Coupling to temperature and vapor density fields (latent heat, vapor diffusion)",
+          "why": "At constant uniform temperature and coexistence they do not change the equilibrium interface. They belong to the dynamics, not to this functional."
+        },
+        {
+          "effect": "Elastic strain energy in ice and density change on phase change",
+          "why": "Ice in open pores against low-pressure gas is nearly stress-free. Elastic energy in the bulk is much smaller than $\\gamma/\\varepsilon$ for nanometer-to-micron $\\varepsilon$."
+        },
+        {
+          "effect": "Curvature (Gibbs-Thomson) effects in the calibration",
+          "why": "Calibration uses a flat interface. Curved interfaces get corrections of relative order $\\varepsilon/R$, which are small when $\\varepsilon$ is much smaller than the pore radius $R$."
+        },
+        {
+          "effect": "Higher-order gradient terms (for example $(\\nabla^2\\phi)^2$)",
+          "why": "They are excluded by the deliverable. They are of relative order $(\\varepsilon/L)^2$ on scales $L\\gg\\varepsilon$."
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

@@ -1,0 +1,143 @@
+{
+  "check": "T07_phase_field",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "every term has units 1 / s"
+      },
+      {
+        "check": "bulk",
+        "pass": true,
+        "details": "pure gas and pure ice stay put above and below saturation (3 draws)"
+      },
+      {
+        "check": "growth",
+        "pass": true,
+        "details": "supersaturation deposits ice and undersaturation sublimates it (3 draws)"
+      },
+      {
+        "check": "relaxation",
+        "pass": true,
+        "details": "at saturation phi_t = -M dF/dphi with M > 0, so F decreases (3 draws, phi = 0.3 and 0.7)"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's terms by role": {
+        "rate": [
+          "Derivative(phi(x, y, z, t), t)"
+        ],
+        "relaxation": [
+          "-(6*eps*gamma*(Derivative(phi(x, y, z, t), (x, 2)) + Derivative(phi(x, y, z, t), (y, 2)) + Derivative(phi(x, y, z, t), (z, 2))) - 6*gamma*(1 - 2*phi(x, y, z, t))*(1 - phi(x, y, z, t))*phi(x, y, z, t)/eps)*M(T(x, y, z, t))"
+        ],
+        "driving force": [
+          "-30*(1 - phi(x, y, z, t))**2*(rho_v(x, y, z, t) - rho_vs(T(x, y, z, t)))*alpha(T(x, y, z, t))*phi(x, y, z, t)**2"
+        ],
+        "other": []
+      },
+      "current model (src/assembly.c:177-181)": {
+        "rate": [
+          "Derivative(phi(x, y, z, t), t)"
+        ],
+        "relaxation": [
+          "- 3*M*eps*(Derivative(phi(x, y, z, t), (x, 2)) + Derivative(phi(x, y, z, t), (y, 2)) + Derivative(phi(x, y, z, t), (z, 2))) + 3*M/eps*phi(x, y, z, t)*(1 - phi(x, y, z, t))*(1 - 2*phi(x, y, z, t))"
+        ],
+        "driving force": [
+          "-alpha/rho_i*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2*(rho_v(x, y, z, t) - rho_vs(T(x, y, z, t)))"
+        ],
+        "other": []
+      },
+      "agent's symbols": [
+        {
+          "name": "M(T)",
+          "latex": "M(T)",
+          "meaning": "Interface mobility. It sets how fast $\\phi$ relaxes toward a minimum of $F$, and so how fast curvature (Gibbs\u2013Thomson) moves the interface. A positive kinetic coefficient.",
+          "units": "m^3 J^-1 s^-1",
+          "typical": 4e-10
+        },
+        {
+          "name": "alpha(T)",
+          "latex": "\\alpha(T)",
+          "meaning": "Deposition and sublimation rate coefficient: the rate of change of $\\phi$ at the interface per unit vapor excess $\\rho_v-\\rho_{vs}$. It is related to the Hertz\u2013Knudsen kinetic velocity $\\beta$ by $\\alpha=\\beta/(6\\varepsilon\\rho_i)$.",
+          "units": "m^3 kg^-1 s^-1",
+          "typical": 20000
+        },
+        {
+          "name": "R",
+          "latex": "R",
+          "meaning": "Residual of the phase-field equation",
+          "units": "s^-1",
+          "typical": 1
+        },
+        {
+          "name": "beta",
+          "latex": "\\beta",
+          "meaning": "Kinetic velocity of the Hertz\u2013Knudsen law, $\\alpha_s\\sqrt{k_B T/(2\\pi m_w)}$, where $\\alpha_s$ is the sticking coefficient. Used only to interpret $\\alpha$.",
+          "units": "m s^-1",
+          "typical": 100
+        },
+        {
+          "name": "rho_i",
+          "latex": "\\rho_i",
+          "meaning": "Density of ice",
+          "units": "kg m^-3",
+          "typical": 920
+        },
+        {
+          "name": "v",
+          "latex": "v",
+          "meaning": "Normal speed of a planar front",
+          "units": "m s^-1",
+          "typical": 1e-06
+        },
+        {
+          "name": "phi0",
+          "latex": "\\phi_0(\\xi)",
+          "meaning": "Equilibrium profile of a flat interface",
+          "units": "1",
+          "typical": 0.5
+        },
+        {
+          "name": "xi",
+          "latex": "\\xi",
+          "meaning": "Coordinate normal to a flat interface",
+          "units": "m",
+          "typical": 1e-06
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Nonlinear dependence on supersaturation, for example $\\ln(\\rho_v/\\rho_{vs})$",
+          "why": "Supersaturations in the pores are small, $|\\rho_v/\\rho_{vs}-1|\\ll1$. The dropped terms are of order $(\\rho_v/\\rho_{vs}-1)^2$."
+        },
+        {
+          "effect": "Anisotropy of the ice surface energy and of the attachment kinetics",
+          "why": "$\\gamma$ is constant by the work order. Faceting at the pore scale is a secondary effect for the bulk transport of ice."
+        },
+        {
+          "effect": "Thermal noise (fluctuations)",
+          "why": "The interface width $\\varepsilon\\sim\\mu$m is much larger than the thermal length $\\sqrt{k_BT/\\gamma}\\sim0.2$ nm."
+        },
+        {
+          "effect": "Regolith grains as a third phase, including wetting by ice",
+          "why": "The work order describes only ice and gas in the pore space. Grains would enter as boundary conditions or as a fixed field."
+        },
+        {
+          "effect": "Latent heat and vapor mass exchange",
+          "why": "They couple $\\phi$ back to $T$ and $\\rho_v$. Those equations are separate tasks; here the fields are given."
+        },
+        {
+          "effect": "Elastic stress and mechanical motion of ice",
+          "why": "The ice is treated as rigid and fixed in place. Stresses are small compared with the vapor-driven changes."
+        },
+        {
+          "effect": "A thermodynamically consistent link between $M$ and $\\alpha$",
+          "why": "I kept them as separate coefficients. Thermodynamic consistency would require $\\alpha/M=\\rho_i k_BT/(m_w\\rho_{vs})$. This changes curvature effects only through the ratio $\\varepsilon/$(radius of curvature)."
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

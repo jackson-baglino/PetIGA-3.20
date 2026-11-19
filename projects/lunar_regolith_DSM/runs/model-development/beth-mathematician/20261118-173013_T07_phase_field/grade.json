@@ -1,0 +1,150 @@
+{
+  "check": "T07_phase_field",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "every term has units 1 / s"
+      },
+      {
+        "check": "bulk",
+        "pass": true,
+        "details": "pure gas and pure ice stay put above and below saturation (3 draws)"
+      },
+      {
+        "check": "growth",
+        "pass": true,
+        "details": "supersaturation deposits ice and undersaturation sublimates it (3 draws)"
+      },
+      {
+        "check": "relaxation",
+        "pass": true,
+        "details": "at saturation phi_t = -M dF/dphi with M > 0, so F decreases (3 draws, phi = 0.3 and 0.7)"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's terms by role": {
+        "rate": [
+          "Derivative(phi(x, y, z, t), t)"
+        ],
+        "relaxation": [
+          "M*(-6*eps*gamma*(Derivative(phi(x, y, z, t), (x, 2)) + Derivative(phi(x, y, z, t), (y, 2)) + Derivative(phi(x, y, z, t), (z, 2))) + 6*gamma*(1 - 2*phi(x, y, z, t))*(1 - phi(x, y, z, t))*phi(x, y, z, t)/eps)"
+        ],
+        "driving force": [
+          "-30*alpha*(1 - phi(x, y, z, t))**2*(rho_v(x, y, z, t) - rho_vs(T(x, y, z, t)))*phi(x, y, z, t)**2"
+        ],
+        "other": []
+      },
+      "current model (src/assembly.c:177-181)": {
+        "rate": [
+          "Derivative(phi(x, y, z, t), t)"
+        ],
+        "relaxation": [
+          "- 3*M*eps*(Derivative(phi(x, y, z, t), (x, 2)) + Derivative(phi(x, y, z, t), (y, 2)) + Derivative(phi(x, y, z, t), (z, 2))) + 3*M/eps*phi(x, y, z, t)*(1 - phi(x, y, z, t))*(1 - 2*phi(x, y, z, t))"
+        ],
+        "driving force": [
+          "-alpha/rho_i*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2*(rho_v(x, y, z, t) - rho_vs(T(x, y, z, t)))"
+        ],
+        "other": []
+      },
+      "agent's symbols": [
+        {
+          "name": "M",
+          "latex": "M",
+          "meaning": "interface mobility (Allen-Cahn kinetic coefficient): how fast $\\phi$ relaxes down the gradient of $F$; with it a curved interface moves at $v_n=-6\\gamma\\varepsilon M\\kappa$",
+          "units": "m^3 J^-1 s^-1",
+          "typical": 1e-06
+        },
+        {
+          "name": "alpha",
+          "latex": "\\alpha",
+          "meaning": "deposition/sublimation rate coefficient; a flat interface advances into the gas at $v_n = 6\\varepsilon\\alpha(\\rho_v-\\rho_{vs})$, so $6\\varepsilon\\alpha = k/\\rho_i$ with $k$ a kinetic mass-transfer velocity (Hertz-Knudsen: $k=a_s\\sqrt{k_BT/2\\pi m}$) and $\\rho_i$ the ice density",
+          "units": "m^3 kg^-1 s^-1",
+          "typical": 1000
+        },
+        {
+          "name": "p(phi)",
+          "latex": "p(\\phi)",
+          "meaning": "interface-localizing function $30\\phi^2(1-\\phi)^2$, zero in bulk ice and gas, $\\int_0^1 p\\,d\\phi = 1$",
+          "units": "1",
+          "typical": 1
+        },
+        {
+          "name": "mu(phi)",
+          "latex": "\\mu",
+          "meaning": "variational derivative $\\delta F/\\delta\\phi$",
+          "units": "J m^-3",
+          "typical": 1000
+        },
+        {
+          "name": "phi_0(n)",
+          "latex": "\\phi_0(n)",
+          "meaning": "equilibrium flat-interface profile along the normal coordinate $n$",
+          "units": "1",
+          "typical": 0.5
+        },
+        {
+          "name": "n",
+          "latex": "n",
+          "meaning": "coordinate normal to a flat interface, pointing into the ice",
+          "units": "m",
+          "typical": 1e-06
+        },
+        {
+          "name": "v_n",
+          "latex": "v_n",
+          "meaning": "normal velocity of the interface, positive when ice grows",
+          "units": "m s^-1",
+          "typical": 1e-09
+        },
+        {
+          "name": "kappa",
+          "latex": "\\kappa",
+          "meaning": "sum of principal curvatures of the interface (positive for a convex ice grain)",
+          "units": "m^-1",
+          "typical": 10000
+        },
+        {
+          "name": "Delta",
+          "latex": "\\Delta",
+          "meaning": "supersaturation $\\rho_v-\\rho_{vs}(T)$",
+          "units": "kg m^-3",
+          "typical": 1e-08
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Anisotropy of ice surface energy and kinetics (faceting)",
+          "why": "Taken as isotropic: $\\gamma$, $M$ and $\\alpha$ are scalars. This is acceptable for rounded pore-scale grains; anisotropy would add orientation-dependent factors."
+        },
+        {
+          "effect": "Temperature dependence of $M$ and $\\alpha$",
+          "why": "Kept constant for simplicity. Their Arrhenius or $\\sqrt{T}$ variation can be restored by writing $M(T)$ and $\\alpha(T)$ without changing the form of the equation."
+        },
+        {
+          "effect": "Nonlinear kinetics in large supersaturation",
+          "why": "The pore vapor is close to saturation ($|\\rho_v-\\rho_{vs}|/\\rho_{vs}\\ll1$), so the linear term is the leading order and the dropped terms are $O((\\Delta/\\rho_{vs})^2)$."
+        },
+        {
+          "effect": "Curvature dependence of the saturation density (explicit Gibbs-Thomson term in $\\rho_{vs}$)",
+          "why": "It is represented by the $M$-term ($v_n\\propto-\\kappa$). Matching $6\\gamma\\varepsilon M=6\\varepsilon\\alpha\\rho_{vs}\\gamma/(\\rho_i R_vT)\\cdot$(molar factors) would make it quantitative; that choice is left to the calibration of $M$. The size is $\\rho_{vs}\\gamma/(\\rho_iR_vT\\,r)\\sim10^{-4}\\rho_{vs}$ for $r\\sim1\\,\\mu$m."
+        },
+        {
+          "effect": "Mechanical stress, elasticity and grain motion of ice and regolith",
+          "why": "The regolith grains and ice are treated as rigid; stresses are outside this model."
+        },
+        {
+          "effect": "Thermal noise / fluctuations",
+          "why": "Deterministic model; noise is needed only for nucleation, which is excluded."
+        },
+        {
+          "effect": "Wetting of regolith grains by ice (contact angle at grain walls)",
+          "why": "Boundary conditions at the grain surfaces are taken as natural (no-flux), as needed to drop the boundary term in S1; a wetting energy would add a surface term."
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

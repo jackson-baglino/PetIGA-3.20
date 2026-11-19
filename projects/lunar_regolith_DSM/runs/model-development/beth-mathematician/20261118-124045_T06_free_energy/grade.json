@@ -1,0 +1,60 @@
+{
+  "check": "T06_free_energy",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "f has units J / m ** 3 (needs an energy per volume)"
+      },
+      {
+        "check": "wells",
+        "pass": true,
+        "details": "minima at 0 and 1 with equal depths and a barrier between (3 draws)"
+      },
+      {
+        "check": "gradient",
+        "pass": true,
+        "details": "isotropic, quadratic and penalizing: kappa(p) |grad phi|^2 / 2 with kappa > 0 (3 draws)"
+      },
+      {
+        "check": "interface",
+        "pass": true,
+        "details": "the flat interface has energy gamma (3 draws); its 10-90 % width is 4.394 eps"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's f": "3*gamma/eps*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2 + 3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2)",
+      "implied by the current model (src/assembly.c:177-181)": "3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2) + 3*gamma*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2/eps",
+      "agent's symbols": [],
+      "agent left out": [
+        {
+          "effect": "Bulk driving force (a tilt from supersaturation or undercooling)",
+          "why": "It is zero at coexistence by assumption."
+        },
+        {
+          "effect": "Coupling to vapor density and temperature",
+          "why": "Temperature is uniform and the vapor is at saturation, so these fields add no energy that depends on phi here. That coupling is handled in other tasks."
+        },
+        {
+          "effect": "Regolith grain phase and wetting energies between ice and grain or gas and grain",
+          "why": "The work order treats only the ice-gas pore space."
+        },
+        {
+          "effect": "Anisotropy of the ice surface energy",
+          "why": "Assumed isotropic. Ice anisotropy is a few percent at most for rough surfaces near 200 K."
+        },
+        {
+          "effect": "Elastic strain energy in the ice",
+          "why": "There is no stress model, and grains are assumed not to constrain the ice."
+        },
+        {
+          "effect": "Higher-gradient (second-derivative) terms",
+          "why": "The deliverable excludes them. They change the energy at relative order (eps/R)^2 for an interface with radius of curvature R much larger than eps."
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

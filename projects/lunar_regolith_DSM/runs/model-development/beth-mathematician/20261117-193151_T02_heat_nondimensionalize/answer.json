@@ -1,0 +1,62 @@
+{
+  "status": "done",
+  "result_expr": "Derivative(theta(xi, s), s) - Derivative(theta(xi, s), (xi, 2)) - Q0*L**2/(k0*DT)",
+  "steps": [
+    {
+      "id": "S1",
+      "statement": "rho*c*dT/dt = k0*d2T/dx2 + Q0. Every term has units of W m^-3.",
+      "from": [
+        "given"
+      ],
+      "operation": "given equation"
+    },
+    {
+      "id": "S2",
+      "statement": "dT/dt = (DT/tau)*dtheta/ds = (k0*DT/(rho*c*L**2))*dtheta/ds, where tau = rho*c*L**2/k0 [s]",
+      "from": [
+        "given"
+      ],
+      "operation": "chain rule in t, with s = t/tau and T0 constant"
+    },
+    {
+      "id": "S3",
+      "statement": "d2T/dx2 = (DT/L**2)*d2theta/dxi2",
+      "from": [
+        "given"
+      ],
+      "operation": "chain rule in x applied twice, with xi = x/L"
+    },
+    {
+      "id": "S4",
+      "statement": "(k0*DT/L**2)*dtheta/ds = (k0*DT/L**2)*d2theta/dxi2 + Q0. Units are W m^-3.",
+      "from": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "operation": "substitution of S2 and S3 into S1"
+    },
+    {
+      "id": "S5",
+      "statement": "dtheta/ds = d2theta/dxi2 + Q0*L**2/(k0*DT). Every term is dimensionless.",
+      "from": [
+        "S4"
+      ],
+      "operation": "divide by k0*DT/L**2 (positive)"
+    },
+    {
+      "id": "S6",
+      "statement": "R = dtheta/ds - d2theta/dxi2 - Q0*L**2/(k0*DT) = 0",
+      "from": [
+        "S5"
+      ],
+      "operation": "move all terms to the left side"
+    }
+  ],
+  "assumptions_used": [
+    "rho, c, k0 and Q0 are constant",
+    "L, k0, rho, c and DT are positive, so dividing by k0*DT/L**2 is allowed",
+    "T0 is constant"
+  ],
+  "questions": []
+}

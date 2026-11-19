@@ -1,0 +1,121 @@
+{
+  "check": "T05_vapor_balance",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "every term has units kg / m ** 3 / s"
+      },
+      {
+        "check": "equilibrium",
+        "pass": true,
+        "details": "R = 0 for uniform rho_v and T and a static phi (3 draws, 2 points)"
+      },
+      {
+        "check": "exchange",
+        "pass": true,
+        "details": "deposition consumes vapor at one ice-like density (draw 2: 1834 kg m^-3) for every phi and rho_v: water is conserved"
+      },
+      {
+        "check": "diffusion",
+        "pass": true,
+        "details": "a vapor peak decays (3 draws)"
+      },
+      {
+        "check": "conservation",
+        "pass": true,
+        "details": "transport integrates to zero over a period (3 draws): the flux is a divergence"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's terms by role": {
+        "storage": [
+          "Derivative(-phi(x, y, z, t)*rho_v(x, y, z, t) + rho_v(x, y, z, t), t)"
+        ],
+        "diffusion": [
+          "-Derivative(-D_v(T(x, y, z, t))*phi(x, y, z, t)*Derivative(rho_v(x, y, z, t), x) + D_v(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), x), x)",
+          "-Derivative(-D_v(T(x, y, z, t))*phi(x, y, z, t)*Derivative(rho_v(x, y, z, t), y) + D_v(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), y), y)",
+          "-Derivative(-D_v(T(x, y, z, t))*phi(x, y, z, t)*Derivative(rho_v(x, y, z, t), z) + D_v(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), z), z)"
+        ],
+        "phase change": [
+          "rho_i*Derivative(phi(x, y, z, t), t)"
+        ],
+        "other": []
+      },
+      "current model (src/assembly.c:188-191)": {
+        "storage": [
+          "(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), t)"
+        ],
+        "diffusion": [
+          "-(Derivative(D(T(x, y, z, t))*(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), x), x) + Derivative(D(T(x, y, z, t))*(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), y), y) + Derivative(D(T(x, y, z, t))*(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), z), z))"
+        ],
+        "phase change": [
+          "(rho_i - rho_v(x, y, z, t))*Derivative(phi(x, y, z, t), t)"
+        ],
+        "other": []
+      },
+      "agent's symbols": [
+        {
+          "name": "rho_i",
+          "latex": "\\rho_i",
+          "meaning": "density of ice (mass of ice per unit volume of ice), taken constant",
+          "units": "kg m^-3",
+          "typical": 917
+        },
+        {
+          "name": "D_v(T)",
+          "latex": "D_v(T)",
+          "meaning": "diffusivity of water vapor in the pore gas",
+          "units": "m^2 s^-1",
+          "typical": 2e-05
+        },
+        {
+          "name": "m_w",
+          "latex": "m_w",
+          "meaning": "water mass (ice plus vapor) per unit total volume",
+          "units": "kg m^-3",
+          "typical": 917
+        },
+        {
+          "name": "j_v",
+          "latex": "\\mathbf{j}_v",
+          "meaning": "vapor mass flux per unit total area",
+          "units": "kg m^-2 s^-1",
+          "typical": 1e-07
+        },
+        {
+          "name": "Omega",
+          "latex": "\\Omega",
+          "meaning": "fixed control volume in the pore space, with boundary \\partial\\Omega and outward normal \\mathbf{n}",
+          "units": "m^3",
+          "typical": 1e-12
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Advection of vapor by bulk gas flow (including the Stefan flow at the interface)",
+          "why": "The vapor is very dilute near 200 K (vapor pressure about 0.16 Pa, so $\\rho_v$ is about 1e-6 kg m^-3), so the Stefan velocity is about $D_v\\nabla\\rho_v/\\rho_{gas}$ and is negligible compared with diffusion. There is no imposed pressure gradient across the pores."
+        },
+        {
+          "effect": "Thermal diffusion (the Soret effect) and cross-diffusion",
+          "why": "The thermal diffusion factor for water in air is about 0.1 or less. Over pore-scale temperature differences of about 1 K at 200 K, it contributes a flux of order 1e-3 of the Fickian flux."
+        },
+        {
+          "effect": "Knudsen (rarefied-gas) transport",
+          "why": "This is valid only while the mean free path is smaller than the pore size. Under lunar near-vacuum it is not, and then $D_v$ must be replaced by a Knudsen diffusivity. The form of the equation stays the same."
+        },
+        {
+          "effect": "Variation of ice density with temperature, and ice motion",
+          "why": "The thermal expansion of ice is about 5e-5 per K, so changes in $\\rho_i$ are about 1e-4 of $\\rho_i$. Grains are assumed fixed."
+        },
+        {
+          "effect": "Liquid water and adsorbed water on regolith grains",
+          "why": "Near 200 K there is no liquid phase. Adsorption on the grain surfaces is outside the ice/gas model."
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

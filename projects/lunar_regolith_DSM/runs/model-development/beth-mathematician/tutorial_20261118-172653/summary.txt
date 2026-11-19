@@ -1,0 +1,9 @@
+             task       mode    verdict    seconds      turns  tool_calls  checks_passed  checks_total  format_problems
+  T04_heat_latent      agent       PASS       76.1          5          3          5          5          2
+T05_vapor_balance      agent       PASS       58.6          5          3          5          5          1
+  T06_free_energy      agent       PASS       55.5          5          3          4          4          4
+  T07_phase_field      agent       PASS       92.7          7          5          4          4          4
+  T04_heat_latent   baseline       PASS       58.6          2          0          5          5          1
+T05_vapor_balance   baseline       PASS       45.9          2          0          5          5          2
+  T06_free_energy   baseline       PASS       42.6          2          0          4          4          3
+  T07_phase_field   baseline       PASS       75.1          2          0          4          4          3

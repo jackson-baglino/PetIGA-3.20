@@ -1,0 +1,6 @@
+{
+  "check": "T92_heat_weak_form_b (T01 grader)",
+  "pass": true,
+  "details": "equals 1 times the weak form on 6 random samples",
+  "exit": 0
+}

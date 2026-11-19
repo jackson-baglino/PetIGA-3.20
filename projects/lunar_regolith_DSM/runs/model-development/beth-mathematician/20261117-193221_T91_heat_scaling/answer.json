@@ -1,0 +1,48 @@
+{
+  "status": "blocked",
+  "result_expr": "",
+  "steps": [
+    {
+      "id": "S1",
+      "statement": "Units of the given equation: rho*c*dT/dt has W m^-3 and k0*d2T/dx2 has W m^-3, but the work order gives Q0 as W m^-2. The source term is off by one factor of length.",
+      "from": [
+        "given"
+      ],
+      "operation": "units check of each term"
+    },
+    {
+      "id": "S2",
+      "statement": "Chain rule with x = L*xi, t = tau*s, tau = rho*c*L**2/k0 [s], T = T0 + DT*theta: dT/dt = (DT/tau)*dtheta/ds, d2T/dx2 = (DT/L**2)*d2theta/dxi2",
+      "from": [
+        "given"
+      ],
+      "operation": "chain rule"
+    },
+    {
+      "id": "S3",
+      "statement": "(k0*DT/L**2)*dtheta/ds = (k0*DT/L**2)*d2theta/dxi2 + Q0",
+      "from": [
+        "given",
+        "S2"
+      ],
+      "operation": "substitution of S2 and simplification of rho*c/tau"
+    },
+    {
+      "id": "S4",
+      "statement": "Conditional on Q0 being in W m^-3: R = Derivative(theta(xi, s), s) - Derivative(theta(xi, s), (xi, 2)) - Q0*L**2/(k0*DT) = 0. With Q0 in W m^-2 as stated, Q0*L**2/(k0*DT) has units of m, so it is not dimensionless.",
+      "from": [
+        "S3",
+        "S1"
+      ],
+      "operation": "divide by k0*DT/L**2 and move all terms to one side"
+    }
+  ],
+  "assumptions_used": [
+    "rho, c, k0 and Q0 are constant",
+    "L, k0, rho, c and DT are positive",
+    "Conditional result only: Q0 is a volumetric source in W m^-3 (not stated in the work order)"
+  ],
+  "questions": [
+    "The work order gives Q0 in W m^-2, but in the given equation rho*c*dT/dt and k0*d2T/dx2 are both in W m^-3. So the source term does not match by one factor of length. Is Q0 really a volumetric source in W m^-3, meaning the units entry is a typo? If so, R = Derivative(theta(xi, s), s) - Derivative(theta(xi, s), (xi, 2)) - Q0*L**2/(k0*DT). Or is Q0 a surface flux in W m^-2, meaning the equation is missing a 1/length factor (such as Q0/L or Q0/h)? If it is a flux, which length should divide it? With the units as stated, the group Q0*L**2/(k0*DT) has units of m and is not dimensionless, so the task's requirement cannot be met."
+  ]
+}

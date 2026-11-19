@@ -1,0 +1,9 @@
+PASS: beth-mathematician on T01_heat_weak_form; run folder runs/model-development/beth-mathematician/20261118-172653_redteam
+PASS: beth-mathematician on T04_heat_latent; run folder runs/model-development/beth-mathematician/20261118-172700_T04_heat_latent
+PASS: beth-mathematician on T05_vapor_balance; run folder runs/model-development/beth-mathematician/20261118-172817_T05_vapor_balance
+PASS: beth-mathematician on T06_free_energy; run folder runs/model-development/beth-mathematician/20261118-172917_T06_free_energy
+PASS: beth-mathematician on T07_phase_field; run folder runs/model-development/beth-mathematician/20261118-173013_T07_phase_field
+PASS: beth-mathematician on T04_heat_latent; run folder runs/model-development/beth-mathematician/20261118-173148_T04_heat_latent_baseline
+PASS: beth-mathematician on T05_vapor_balance; run folder runs/model-development/beth-mathematician/20261118-173247_T05_vapor_balance_baseline
+PASS: beth-mathematician on T06_free_energy; run folder runs/model-development/beth-mathematician/20261118-173334_T06_free_energy_baseline
+PASS: beth-mathematician on T07_phase_field; run folder runs/model-development/beth-mathematician/20261118-173418_T07_phase_field_baseline

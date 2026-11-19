@@ -1,0 +1,98 @@
+{
+  "check": "T05_vapor_balance",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "every term has units kg / m ** 3 / s"
+      },
+      {
+        "check": "equilibrium",
+        "pass": true,
+        "details": "R = 0 for uniform rho_v and T and a static phi (3 draws, 2 points)"
+      },
+      {
+        "check": "exchange",
+        "pass": true,
+        "details": "deposition consumes vapor at one ice-like density (draw 2: 1840 kg m^-3) for every phi and rho_v: water is conserved"
+      },
+      {
+        "check": "diffusion",
+        "pass": true,
+        "details": "a vapor peak decays (3 draws)"
+      },
+      {
+        "check": "conservation",
+        "pass": true,
+        "details": "transport integrates to zero over a period (3 draws): the flux is a divergence"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's terms by role": {
+        "storage": [
+          "Derivative(-phi(x, y, z, t)*rho_v(x, y, z, t) + rho_v(x, y, z, t), t)"
+        ],
+        "diffusion": [
+          "-Derivative(-D(T(x, y, z, t))*phi(x, y, z, t)*Derivative(rho_v(x, y, z, t), x) + D(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), x), x)",
+          "-Derivative(-D(T(x, y, z, t))*phi(x, y, z, t)*Derivative(rho_v(x, y, z, t), y) + D(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), y), y)",
+          "-Derivative(-D(T(x, y, z, t))*phi(x, y, z, t)*Derivative(rho_v(x, y, z, t), z) + D(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), z), z)"
+        ],
+        "phase change": [
+          "rho_i*Derivative(phi(x, y, z, t), t)"
+        ],
+        "other": []
+      },
+      "current model (src/assembly.c:188-191)": {
+        "storage": [
+          "(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), t)"
+        ],
+        "diffusion": [
+          "-(Derivative(D(T(x, y, z, t))*(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), x), x) + Derivative(D(T(x, y, z, t))*(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), y), y) + Derivative(D(T(x, y, z, t))*(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), z), z))"
+        ],
+        "phase change": [
+          "(rho_i - rho_v(x, y, z, t))*Derivative(phi(x, y, z, t), t)"
+        ],
+        "other": []
+      },
+      "agent's symbols": [
+        {
+          "name": "rho_i",
+          "meaning": "density of ice, taken as constant",
+          "units": "kg m^-3",
+          "typical": 920
+        },
+        {
+          "name": "D(T)",
+          "meaning": "diffusivity of water vapor in the pore gas",
+          "units": "m^2 s^-1",
+          "typical": 1e-05
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Thermal expansion of ice (rho_i depending on T)",
+          "why": "The volumetric expansion coefficient is about 1.5e-4 K^-1, so rho_i changes by less than 1% over tens of K"
+        },
+        {
+          "effect": "Advection by bulk gas flow, including Stefan flow",
+          "why": "Near 200 K the vapor mole fraction is about 1e-6 to 1e-5, so the flow that sublimation drives is negligible next to diffusion"
+        },
+        {
+          "effect": "Soret (thermal) diffusion",
+          "why": "The thermal diffusion factor of water in air is about 0.1 or less, so the term is a small correction to the flux driven by concentration gradients"
+        },
+        {
+          "effect": "Adsorption on regolith grains and grain motion",
+          "why": "Outside this model of the pore space; the grains are treated as inert boundaries"
+        },
+        {
+          "effect": "Knudsen and rarefied-gas transport",
+          "why": "Folded into the effective D(T); if it matters, D would also depend on pore size"
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

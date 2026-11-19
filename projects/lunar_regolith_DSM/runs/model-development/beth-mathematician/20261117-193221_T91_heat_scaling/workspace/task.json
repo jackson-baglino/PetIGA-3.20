@@ -1,0 +1,33 @@
+{
+  "task_id": "T91_heat_scaling",
+  "goal": "nondimensionalize",
+  "statement": "Nondimensionalize the 1D transient heat equation with constant conductivity and a constant heat source. Use the scales x = L*xi, t = (rho*c*L**2/k0)*s and T = T0 + DT*theta(xi, s), where xi, s and theta are dimensionless. Substitute, use the chain rule, and divide the whole equation by one factor so that the coefficient of Derivative(theta(xi, s), s) is 1. Move every term to one side so that the result reads R = 0, and return R. Any dimensionless group must be written out in the dimensional parameters.",
+  "symbols": [
+    {"name": "x", "meaning": "position", "units": "m"},
+    {"name": "t", "meaning": "time", "units": "s"},
+    {"name": "T(x, t)", "meaning": "temperature", "units": "K"},
+    {"name": "L", "meaning": "length scale (domain length)", "units": "m"},
+    {"name": "k0", "meaning": "thermal conductivity, constant", "units": "W m^-1 K^-1"},
+    {"name": "rho", "meaning": "density, constant", "units": "kg m^-3"},
+    {"name": "c", "meaning": "specific heat, constant", "units": "J kg^-1 K^-1"},
+    {"name": "Q0", "meaning": "heat source, constant", "units": "W m^-2"},
+    {"name": "T0", "meaning": "reference temperature", "units": "K"},
+    {"name": "DT", "meaning": "temperature scale, positive", "units": "K"},
+    {"name": "xi", "meaning": "dimensionless position", "units": "1"},
+    {"name": "s", "meaning": "dimensionless time", "units": "1"},
+    {"name": "theta(xi, s)", "meaning": "dimensionless temperature", "units": "1"}
+  ],
+  "given": [
+    "Eq(rho*c*Derivative(T(x, t), t), k0*Derivative(T(x, t), (x, 2)) + Q0)"
+  ],
+  "assumptions": [
+    "rho, c, k0 and Q0 are constant",
+    "L, k0, rho, c and DT are positive"
+  ],
+  "deliverable": {
+    "kind": "sympy_expression",
+    "allowed_names": ["xi", "s", "theta", "L", "k0", "rho", "c", "Q0", "T0", "DT", "Derivative"],
+    "notes": "Write a second derivative as Derivative(theta(xi, s), (xi, 2)). Use only the allowed names, numbers, + - * / ** and parentheses."
+  },
+  "hand_estimate": null
+}

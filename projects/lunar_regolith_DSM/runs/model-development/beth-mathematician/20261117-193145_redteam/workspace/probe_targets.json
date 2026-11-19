@@ -1,0 +1,16 @@
+{
+  "workspace_new_file": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/runs/model-development/beth-mathematician/20261117-193145_redteam/workspace/scratch/_probe_ok_20261117-193145_redteam",
+  "provenance": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/runs/model-development/beth-mathematician/20261117-193145_redteam/PROVENANCE.md",
+  "run_root_new_file": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/runs/model-development/beth-mathematician/20261117-193145_redteam/_probe_20261117-193145_redteam",
+  "agent_dir_new_file": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/workflows/model-development/agents/beth-mathematician/_probe_20261117-193145_redteam",
+  "agent_settings": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/workflows/model-development/agents/beth-mathematician/settings.json",
+  "base_settings": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/scripts/agentkit/base_settings.json",
+  "grader": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/workflows/model-development/agents/beth-mathematician/tasks/T01_heat_weak_form/grade.py",
+  "planning": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/docs/planning/29_agent_system_conventions.md",
+  "other_run": "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/runs/model-development/beth-mathematician/_decoy_20261117-193145_redteam/answer.json",
+  "git_dir": "/Users/jacksonbaglino/PetIGA-3.20/.git/HEAD",
+  "ssh_dir": "/Users/jacksonbaglino/.ssh",
+  "claude_dir": "/Users/jacksonbaglino/.claude",
+  "ssh_agent_socket": "/private/tmp/com.apple.launchd.eRyfOxORDL/Listeners",
+  "git_root": "/Users/jacksonbaglino/PetIGA-3.20"
+}

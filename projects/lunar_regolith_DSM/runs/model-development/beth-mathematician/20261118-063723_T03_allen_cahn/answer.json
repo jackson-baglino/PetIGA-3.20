@@ -1,0 +1,79 @@
+{
+  "status": "done",
+  "result_expr": "Derivative(phi(x, y, t), t) + M*(2*W*phi(x, y, t)*(1 - phi(x, y, t))*(1 - 2*phi(x, y, t)) - kappa*(Derivative(phi(x, y, t), (x, 2)) + Derivative(phi(x, y, t), (y, 2))))",
+  "steps": [
+    {
+      "id": "S1",
+      "statement": "F = \u222b_\u03a9 [kappa/2 (phi_x^2 + phi_y^2) + W phi^2 (1-phi)^2] dA; each integrand term is in J m^-3",
+      "from": [
+        "given"
+      ],
+      "operation": "restate the given functional and check units"
+    },
+    {
+      "id": "S2",
+      "statement": "\u03b4F = d/d\u03b5 F[phi+\u03b5 \u03b7]|_{\u03b5=0} = \u222b_\u03a9 [kappa (phi_x \u03b7_x + phi_y \u03b7_y) + f'(phi) \u03b7] dA, where f = W phi^2 (1-phi)^2",
+      "from": [
+        "S1"
+      ],
+      "operation": "first variation (Gateaux derivative)"
+    },
+    {
+      "id": "S3",
+      "statement": "f'(phi) = 2W phi (1-phi)^2 - 2W phi^2 (1-phi) = 2W phi (1-phi)(1-2 phi), in J m^-3",
+      "from": [
+        "S1"
+      ],
+      "operation": "chain rule and factoring"
+    },
+    {
+      "id": "S4",
+      "statement": "\u222b_\u03a9 kappa \u2207phi\u00b7\u2207\u03b7 dA = \u222e_\u2202\u03a9 kappa \u03b7 \u2207phi\u00b7n ds - \u222b_\u03a9 kappa \u03b7 (phi_xx + phi_yy) dA",
+      "from": [
+        "S2"
+      ],
+      "operation": "integration by parts (divergence theorem)"
+    },
+    {
+      "id": "S5",
+      "statement": "\u03b4F = \u222b_\u03a9 [2W phi (1-phi)(1-2phi) - kappa (phi_xx + phi_yy)] \u03b7 dA",
+      "from": [
+        "S2",
+        "S3",
+        "S4"
+      ],
+      "operation": "drop the boundary term because \u03b7 = 0 on \u2202\u03a9, then substitute S3 and S4"
+    },
+    {
+      "id": "S6",
+      "statement": "mu = \u03b4F/\u03b4phi = 2W phi (1-phi)(1-2phi) - kappa (phi_xx + phi_yy), in J m^-3",
+      "from": [
+        "S5"
+      ],
+      "operation": "identify mu from \u03b4F = \u222b mu \u03b7 dA for every admissible \u03b7"
+    },
+    {
+      "id": "S7",
+      "statement": "phi_t = -M mu; M mu has units m^3 J^-1 s^-1 \u00b7 J m^-3 = s^-1, matching phi_t",
+      "from": [
+        "given"
+      ],
+      "operation": "state the Allen-Cahn law and check units"
+    },
+    {
+      "id": "S8",
+      "statement": "R = phi_t + M [2W phi (1-phi)(1-2phi) - kappa (phi_xx + phi_yy)] = 0",
+      "from": [
+        "S6",
+        "S7"
+      ],
+      "operation": "add M mu to both sides and substitute S6"
+    }
+  ],
+  "assumptions_used": [
+    "kappa, W and M are constant and positive (so kappa comes out of the derivatives in S4)",
+    "phi is smooth on the closure of Omega (needed for the integration by parts in S4)",
+    "the variation of phi vanishes on the boundary of Omega (removes the boundary term in S5)"
+  ],
+  "questions": []
+}

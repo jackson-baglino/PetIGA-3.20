@@ -1,0 +1,75 @@
+{
+  "check": "T06_free_energy",
+  "pass": false,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "f has units J / m ** 3 (needs an energy per volume)"
+      },
+      {
+        "check": "form",
+        "pass": false,
+        "details": "f may not hold a declared function (W): at coexistence its coefficients are constants"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's f": "3*gamma/eps*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2 + 3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2)",
+      "implied by the current model (src/assembly.c:177-181)": "3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2) + 3*gamma*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2/eps",
+      "agent's symbols": [
+        {
+          "name": "H",
+          "meaning": "double-well barrier coefficient (intermediate; H = 3*gamma/eps)",
+          "units": "J m^-3",
+          "typical": 10000000
+        },
+        {
+          "name": "kappa",
+          "meaning": "gradient-energy coefficient (intermediate; kappa = 6*gamma*eps)",
+          "units": "J m^-1",
+          "typical": 6e-09
+        },
+        {
+          "name": "W(phi)",
+          "meaning": "double-well bulk energy density H*phi^2*(1-phi)^2",
+          "units": "J m^-3",
+          "typical": 600000
+        },
+        {
+          "name": "delta",
+          "meaning": "tanh length of the profile, sqrt(kappa/(2H)); set equal to eps",
+          "units": "m",
+          "typical": 1e-08
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Driving-force (tilt) term from undercooling or vapor supersaturation",
+          "why": "It is zero at coexistence by assumption."
+        },
+        {
+          "effect": "Crystalline anisotropy of the ice surface energy",
+          "why": "It is a few percent of gamma and is not required at coexistence."
+        },
+        {
+          "effect": "Wetting and contact with the regolith grains",
+          "why": "These are boundary or extra-phase terms, outside this two-phase bulk density."
+        },
+        {
+          "effect": "Elastic strain energy",
+          "why": "It is small compared with gamma/eps (about 1e7 J m^-3) for a free ice-gas interface."
+        },
+        {
+          "effect": "Thermal fluctuations",
+          "why": "kT/(gamma eps^2) is about 3e-4 for gamma = 0.1 J m^-2, eps = 10 nm, T = 200 K."
+        },
+        {
+          "effect": "Coupling to the vapor density and temperature fields",
+          "why": "These belong to the coupled transport model, not to the isothermal coexistence functional."
+        }
+      ]
+    }
+  },
+  "exit": 1
+}

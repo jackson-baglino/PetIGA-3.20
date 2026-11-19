@@ -1,0 +1,92 @@
+{
+  "check": "T06_free_energy",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "f has units J / m ** 3 (needs an energy per volume)"
+      },
+      {
+        "check": "wells",
+        "pass": true,
+        "details": "minima at 0 and 1 with equal depths and a barrier between (3 draws)"
+      },
+      {
+        "check": "gradient",
+        "pass": true,
+        "details": "isotropic, quadratic and penalizing: kappa(p) |grad phi|^2 / 2 with kappa > 0 (3 draws)"
+      },
+      {
+        "check": "interface",
+        "pass": true,
+        "details": "the flat interface has energy gamma (3 draws); its 10-90 % width is 4.394 eps"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's f": "3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2) + 3*gamma/eps*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2",
+      "implied by the current model (src/assembly.c:177-181)": "3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2) + 3*gamma*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2/eps",
+      "agent's symbols": [
+        {
+          "name": "kappa",
+          "latex": "\\kappa",
+          "meaning": "gradient-energy coefficient",
+          "units": "J m^-1",
+          "typical": 2e-10
+        },
+        {
+          "name": "W",
+          "latex": "W",
+          "meaning": "height scale of the double-well potential",
+          "units": "J m^-3",
+          "typical": 200000
+        },
+        {
+          "name": "xi",
+          "latex": "\\xi",
+          "meaning": "coordinate normal to a flat interface, with the interface at xi = 0",
+          "units": "m",
+          "typical": 1e-06
+        },
+        {
+          "name": "phi_0",
+          "latex": "\\phi_0(\\xi)",
+          "meaning": "equilibrium profile across a flat interface",
+          "units": "1",
+          "typical": 0.5
+        },
+        {
+          "name": "delta",
+          "latex": "\\delta",
+          "meaning": "interface width, defined as 1/|phi_0'(0)|",
+          "units": "m",
+          "typical": 4e-06
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Driving force (supersaturation or temperature offset)",
+          "why": "By A1 the system is at coexistence; this would add a tilt term such as $\\propto\\phi^2(3-2\\phi)$."
+        },
+        {
+          "effect": "Vapor density and heat fields",
+          "why": "They are not part of this functional at coexistence; they couple in only away from equilibrium."
+        },
+        {
+          "effect": "Anisotropy of the ice surface energy",
+          "why": "$\\gamma$ is taken to be constant, as stated."
+        },
+        {
+          "effect": "Contact with the regolith grains (wetting, grain surface energies)",
+          "why": "The pore space is treated as ice plus gas only; boundary terms would add surface integrals."
+        },
+        {
+          "effect": "Elastic strain and curvature (higher-gradient) terms",
+          "why": "These are higher order in $\\varepsilon$ over the feature size, and second derivatives are excluded by the work order."
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

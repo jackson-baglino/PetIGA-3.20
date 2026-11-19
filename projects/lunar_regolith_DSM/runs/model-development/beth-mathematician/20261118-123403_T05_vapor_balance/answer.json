@@ -1,0 +1,100 @@
+{
+  "status": "done",
+  "result_expr": "Derivative((1 - phi(x, y, z, t))*rho_v(x, y, z, t), t) + rho_i*Derivative(phi(x, y, z, t), t) - Derivative((1 - phi(x, y, z, t))*D(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), x), x) - Derivative((1 - phi(x, y, z, t))*D(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), y), y) - Derivative((1 - phi(x, y, z, t))*D(T(x, y, z, t))*Derivative(rho_v(x, y, z, t), z), z)",
+  "symbols": [
+    {
+      "name": "rho_i",
+      "meaning": "density of ice, taken as constant",
+      "units": "kg m^-3",
+      "typical": 920
+    },
+    {
+      "name": "D(T)",
+      "meaning": "diffusivity of water vapor in the pore gas",
+      "units": "m^2 s^-1",
+      "typical": 1e-05
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "statement": "Water mass per unit total volume: m = rho_i*phi + (1-phi)*rho_v [kg m^-3]",
+      "from": [
+        "given"
+      ],
+      "operation": "Volume-fraction weighting of the ice and gas phases"
+    },
+    {
+      "id": "S2",
+      "statement": "d/dt \u222b_V m dV = -\u222e J\u00b7n dA for any fixed V, so d_t m + div J = 0",
+      "from": [
+        "S1"
+      ],
+      "operation": "Conservation of water mass, then the divergence theorem with V arbitrary"
+    },
+    {
+      "id": "S3",
+      "statement": "J = -(1-phi) D(T) grad rho_v (ice is stationary; Fickian diffusion through the gas fraction only) [kg m^-2 s^-1]",
+      "from": [
+        "given"
+      ],
+      "operation": "Constitutive assumption"
+    },
+    {
+      "id": "S4",
+      "statement": "d_t[(1-phi) rho_v] + rho_i d_t phi - div[(1-phi) D(T) grad rho_v] = 0; rho_i d_t phi is the ice-vapor exchange term (checked with SymPy and pint in scratch/check.py)",
+      "from": [
+        "S1",
+        "S2",
+        "S3"
+      ],
+      "operation": "Substitute S1 and S3 into S2, with rho_i constant"
+    },
+    {
+      "id": "S5",
+      "statement": "Equivalent form: (1-phi) d_t rho_v + (rho_i - rho_v) d_t phi - div[(1-phi) D grad rho_v] = 0 (checked with SymPy)",
+      "from": [
+        "S4"
+      ],
+      "operation": "Product rule"
+    },
+    {
+      "id": "S6",
+      "statement": "R = d_t[(1-phi) rho_v] + rho_i d_t phi - sum over x, y, z of d_xi[(1-phi) D(T) d_xi rho_v] = 0",
+      "from": [
+        "S4"
+      ],
+      "operation": "Write the divergence in 3D Cartesian coordinates"
+    }
+  ],
+  "assumptions_used": [
+    "phi and T are known, smooth fields (given)",
+    "Ice is rigid and does not move; the ice density rho_i is constant (needed in S4)",
+    "Vapor moves only by Fickian diffusion through the gas fraction, so the flux is weighted by (1-phi); D may depend on T",
+    "No bulk gas flow, and no water sources or sinks other than ice-vapor phase change",
+    "Water mass is m = rho_i*phi + (1-phi)*rho_v (volume-fraction mixture)"
+  ],
+  "neglected": [
+    {
+      "effect": "Thermal expansion of ice (rho_i depending on T)",
+      "why": "The volumetric expansion coefficient is about 1.5e-4 K^-1, so rho_i changes by less than 1% over tens of K"
+    },
+    {
+      "effect": "Advection by bulk gas flow, including Stefan flow",
+      "why": "Near 200 K the vapor mole fraction is about 1e-6 to 1e-5, so the flow that sublimation drives is negligible next to diffusion"
+    },
+    {
+      "effect": "Soret (thermal) diffusion",
+      "why": "The thermal diffusion factor of water in air is about 0.1 or less, so the term is a small correction to the flux driven by concentration gradients"
+    },
+    {
+      "effect": "Adsorption on regolith grains and grain motion",
+      "why": "Outside this model of the pore space; the grains are treated as inert boundaries"
+    },
+    {
+      "effect": "Knudsen and rarefied-gas transport",
+      "why": "Folded into the effective D(T); if it matters, D would also depend on pore size"
+    }
+  ],
+  "questions": []
+}

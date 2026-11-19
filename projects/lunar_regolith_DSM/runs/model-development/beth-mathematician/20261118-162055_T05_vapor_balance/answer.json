@@ -1,0 +1,175 @@
+{
+  "status": "done",
+  "result_expr": "Derivative((1 - phi(x, y, z, t))*rho_v(x, y, z, t), t) + Derivative(phi(x, y, z, t)*rho_i(T(x, y, z, t)), t) - Derivative(D(phi(x, y, z, t), T(x, y, z, t))*Derivative(rho_v(x, y, z, t), x), x) - Derivative(D(phi(x, y, z, t), T(x, y, z, t))*Derivative(rho_v(x, y, z, t), y), y) - Derivative(D(phi(x, y, z, t), T(x, y, z, t))*Derivative(rho_v(x, y, z, t), z), z)",
+  "result_latex": "R = \\frac{\\partial}{\\partial t}\\big[(1-\\phi)\\rho_v\\big] + \\frac{\\partial}{\\partial t}\\big[\\phi\\,\\rho_i(T)\\big] - \\frac{\\partial}{\\partial x}\\Big(D(\\phi,T)\\frac{\\partial \\rho_v}{\\partial x}\\Big) - \\frac{\\partial}{\\partial y}\\Big(D(\\phi,T)\\frac{\\partial \\rho_v}{\\partial y}\\Big) - \\frac{\\partial}{\\partial z}\\Big(D(\\phi,T)\\frac{\\partial \\rho_v}{\\partial z}\\Big) = 0",
+  "symbols": [
+    {
+      "name": "rho_i(T)",
+      "latex": "\\rho_i(T)",
+      "meaning": "density of ice (mass of ice per unit volume of ice)",
+      "units": "kg m^-3",
+      "typical": 930
+    },
+    {
+      "name": "D(phi, T)",
+      "latex": "D(\\phi, T)",
+      "meaning": "effective diffusivity of water vapor through the pore gas, per unit total cross-section (includes the gas fraction, tortuosity and any Knudsen correction; tends to 0 in the ice)",
+      "units": "m^2 s^-1",
+      "typical": 0.0001
+    },
+    {
+      "name": "m_w",
+      "latex": "m_w",
+      "meaning": "total water mass (ice plus vapor) per unit total volume",
+      "units": "kg m^-3",
+      "typical": 1
+    },
+    {
+      "name": "j_v",
+      "latex": "\\mathbf{j}_v",
+      "meaning": "mass flux of water vapor per unit total area",
+      "units": "kg m^-2 s^-1",
+      "typical": 1e-06
+    },
+    {
+      "name": "Omega",
+      "latex": "\\Omega",
+      "meaning": "arbitrary fixed control volume with boundary $\\partial\\Omega$ and outward unit normal $\\mathbf{n}$",
+      "units": "m^3",
+      "typical": 1e-15
+    },
+    {
+      "name": "sigma",
+      "latex": "\\sigma",
+      "meaning": "mass rate of sublimation (ice to vapor) per unit total volume",
+      "units": "kg m^-3 s^-1",
+      "typical": 1e-06
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "title": "Water mass per unit volume",
+      "why": "Water is present as ice in the fraction $\\phi$ and as vapor in the gas fraction $1-\\phi$; $\\rho_v$ is per unit gas volume, so it is weighted by $1-\\phi$.",
+      "from": [
+        "given",
+        "A1",
+        "A2"
+      ],
+      "operation": "volume-fraction weighted sum",
+      "latex": "m_w = \\phi\\,\\rho_i(T) + (1-\\phi)\\,\\rho_v",
+      "check": {
+        "function": "check_s1",
+        "printed": "S1 phi=1: rho_i(T)  phi=0: rho_v"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Integral conservation of water",
+      "why": "Water is neither created nor destroyed; in a fixed control volume its mass changes only by the flux through the boundary. Ice does not move (A3), so only vapor carries water across $\\partial\\Omega$.",
+      "from": [
+        "S1",
+        "A3"
+      ],
+      "operation": "conservation of mass over a fixed control volume",
+      "latex": "\\frac{d}{dt}\\int_\\Omega m_w\\,dV = -\\oint_{\\partial\\Omega} \\mathbf{j}_v\\cdot\\mathbf{n}\\,dA",
+      "check": {
+        "function": "",
+        "printed": "Statement of the conservation principle; nothing to compute."
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Fickian vapor flux",
+      "why": "With no bulk gas flow (A4), vapor moves by diffusion down its density gradient; $D$ is an effective diffusivity per unit total area that depends on $\\phi$ and $T$ and vanishes in the ice.",
+      "from": [
+        "A4",
+        "A5"
+      ],
+      "operation": "constitutive law (Fick)",
+      "latex": "\\mathbf{j}_v = -D(\\phi,T)\\,\\nabla\\rho_v",
+      "check": {
+        "function": "check_units",
+        "printed": "d_x(D d_x rho_v) has units kilogram / meter ** 3 / second, the same as d_t((1-phi) rho_v)"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Local form",
+      "why": "The divergence theorem turns the surface integral into a volume integral; the volume is fixed and arbitrary and the fields are smooth (A1), so the integrand vanishes pointwise.",
+      "from": [
+        "S2",
+        "S3",
+        "A1"
+      ],
+      "operation": "divergence theorem, then arbitrary $\\Omega$",
+      "latex": "\\frac{\\partial}{\\partial t}\\big[(1-\\phi)\\rho_v\\big] + \\frac{\\partial}{\\partial t}\\big[\\phi\\rho_i(T)\\big] - \\nabla\\cdot\\big(D(\\phi,T)\\nabla\\rho_v\\big) = 0",
+      "check": {
+        "function": "check_s4",
+        "printed": "S4 int of div J = 0 (1D divergence-theorem test)"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Exchange term made explicit",
+      "why": "Splitting into a vapor balance and an ice balance shows the sublimation source $\\sigma = -\\partial_t(\\phi\\rho_i)$ that the ice loses and the vapor gains; with constant $\\rho_i$ this is $-\\rho_i\\partial_t\\phi$, and the vapor equation reads $(1-\\phi)\\partial_t\\rho_v + (\\rho_i-\\rho_v)\\partial_t\\phi - \\nabla\\cdot(D\\nabla\\rho_v)=0$.",
+      "from": [
+        "S4"
+      ],
+      "operation": "split into ice and vapor balances, define $\\sigma$",
+      "latex": "\\frac{\\partial}{\\partial t}\\big[(1-\\phi)\\rho_v\\big] - \\nabla\\cdot\\big(D\\nabla\\rho_v\\big) = \\sigma, \\qquad \\sigma = -\\frac{\\partial}{\\partial t}\\big[\\phi\\rho_i(T)\\big]",
+      "check": {
+        "function": "check_s5",
+        "printed": "S5 R(const rho_i) - familiar = 0"
+      }
+    },
+    {
+      "id": "S6",
+      "title": "Residual in 3D Cartesian coordinates",
+      "why": "Write the divergence and gradient of S4 component by component; R is the left side of S4.",
+      "from": [
+        "S4"
+      ],
+      "operation": "expand $\\nabla\\cdot(D\\nabla\\rho_v)$ in Cartesian components",
+      "latex": "R = \\partial_t\\big[(1-\\phi)\\rho_v\\big] + \\partial_t\\big[\\phi\\rho_i(T)\\big] - \\partial_x(D\\,\\partial_x\\rho_v) - \\partial_y(D\\,\\partial_y\\rho_v) - \\partial_z(D\\,\\partial_z\\rho_v) = 0",
+      "check": {
+        "function": "check_s5",
+        "printed": "S5 R expanded printed in full; every term has units kg m^-3 s^-1 (check_units)"
+      }
+    }
+  ],
+  "assumptions_used": [
+    "A1: $\\phi$ and $T$ are known, smooth fields (given).",
+    "A2: The pore space holds only ice and gas, so the volume fractions are $\\phi$ and $1-\\phi$; $\\rho_v$ is per unit gas volume and the ice density $\\rho_i(T)$ is per unit ice volume. Grains of regolith are excluded from the domain (or enter only through $D$).",
+    "A3: Ice is rigid and does not move; it gains or loses water only by deposition and sublimation.",
+    "A4: The gas has no bulk (advective or Stefan) flow; vapor moves only by diffusion.",
+    "A5: Vapor diffusion obeys Fick's law with an effective diffusivity $D(\\phi,T)$ per unit total area, which includes the gas fraction, tortuosity and any Knudsen correction and goes to zero in ice."
+  ],
+  "neglected": [
+    {
+      "effect": "Advection of vapor by bulk gas flow, including Stefan flow caused by sublimation",
+      "why": "Vapor is a trace species or the gas is rarefied; the Stefan velocity is about $\\sigma/\\rho_{gas}$ and gives a Peclet number $vL/D\\ll 1$ at pore scale ($L\\sim10^{-5}$ m)."
+    },
+    {
+      "effect": "Thermal diffusion (Soret effect)",
+      "why": "The Soret coefficient for water in air is about $10^{-3}$ K$^{-1}$ or smaller, so it is small next to the Fickian flux from the much steeper dependence of saturation density on $T$."
+    },
+    {
+      "effect": "Surface diffusion of adsorbed water on grains and ice",
+      "why": "Adsorbed mass on the grains is not part of the model; its flux is small next to gas-phase transport for pore sizes much larger than the adsorbed layer."
+    },
+    {
+      "effect": "Motion and creep of the ice",
+      "why": "Ice creep velocities at 200 K are many orders of magnitude slower than sublimation fronts."
+    },
+    {
+      "effect": "Temperature dependence of ice density",
+      "why": "Kept in the result through $\\rho_i(T)$; ice thermal expansion is about $1.5\\times10^{-4}$ K$^{-1}$, so setting $\\rho_i$ constant changes the result by under 0.1% per 10 K if a later task wants it."
+    },
+    {
+      "effect": "Water bound in or adsorbed on regolith grains",
+      "why": "Outside the ice-gas pore model by the statement."
+    }
+  ],
+  "questions": []
+}

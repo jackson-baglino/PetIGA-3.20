@@ -1,0 +1,210 @@
+{
+  "check": "T04_heat_latent",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "every term has units W / m ** 3"
+      },
+      {
+        "check": "equilibrium",
+        "pass": true,
+        "details": "R = 0 for uniform T and a static phi (3 draws, 2 points)"
+      },
+      {
+        "check": "latent sign",
+        "pass": true,
+        "details": "deposition warms and, by linearity, sublimation cools (3 draws)"
+      },
+      {
+        "check": "conduction",
+        "pass": true,
+        "details": "a hot spot cools at its peak (3 draws)"
+      },
+      {
+        "check": "conservation",
+        "pass": true,
+        "details": "conduction integrates to zero over a period (3 draws): it is the divergence of a flux"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's terms by role": {
+        "storage": [
+          "C(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), t)"
+        ],
+        "conduction": [
+          "-Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), x), x)",
+          "-Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), y), y)",
+          "-Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), z), z)"
+        ],
+        "phase change": [
+          "-rho_i*L(T(x, y, z, t))*Derivative(phi(x, y, z, t), t)"
+        ],
+        "other": []
+      },
+      "current model (src/assembly.c:183-185)": {
+        "storage": [
+          "rho(phi(x, y, z, t))*cp(phi(x, y, z, t))*Derivative(T(x, y, z, t), t)"
+        ],
+        "conduction": [
+          "-(Derivative(k(phi(x, y, z, t))*Derivative(T(x, y, z, t), x), x) + Derivative(k(phi(x, y, z, t))*Derivative(T(x, y, z, t), y), y) + Derivative(k(phi(x, y, z, t))*Derivative(T(x, y, z, t), z), z))"
+        ],
+        "phase change": [
+          "-rho_i*L*Derivative(phi(x, y, z, t), t)"
+        ],
+        "other": []
+      },
+      "agent's symbols": [
+        {
+          "name": "rho_i",
+          "latex": "\\rho_i",
+          "meaning": "density of ice (constant, A3)",
+          "units": "kg m^-3",
+          "typical": 920
+        },
+        {
+          "name": "rho_a",
+          "latex": "\\rho_a",
+          "meaning": "partial density of dry air in the gas",
+          "units": "kg m^-3",
+          "typical": 0.001
+        },
+        {
+          "name": "rho_v(x, y, z, t)",
+          "latex": "\\rho_v",
+          "meaning": "partial density of water vapor in the gas",
+          "units": "kg m^-3",
+          "typical": 1e-06
+        },
+        {
+          "name": "h_i(T)",
+          "latex": "h_i(T)",
+          "meaning": "specific enthalpy of ice",
+          "units": "J kg^-1",
+          "typical": -280000
+        },
+        {
+          "name": "h_a(T)",
+          "latex": "h_a(T)",
+          "meaning": "specific enthalpy of air",
+          "units": "J kg^-1",
+          "typical": 200000
+        },
+        {
+          "name": "h_v(T)",
+          "latex": "h_v(T)",
+          "meaning": "specific enthalpy of water vapor",
+          "units": "J kg^-1",
+          "typical": 2550000
+        },
+        {
+          "name": "c_i(T)",
+          "latex": "c_i(T)",
+          "meaning": "specific heat of ice, dh_i/dT",
+          "units": "J kg^-1 K^-1",
+          "typical": 1400
+        },
+        {
+          "name": "c_a(T)",
+          "latex": "c_a(T)",
+          "meaning": "specific heat of air at constant pressure, dh_a/dT",
+          "units": "J kg^-1 K^-1",
+          "typical": 1000
+        },
+        {
+          "name": "c_v(T)",
+          "latex": "c_v(T)",
+          "meaning": "specific heat of water vapor at constant pressure, dh_v/dT",
+          "units": "J kg^-1 K^-1",
+          "typical": 1850
+        },
+        {
+          "name": "L(T)",
+          "latex": "L(T)",
+          "meaning": "latent heat of sublimation, h_v - h_i",
+          "units": "J kg^-1",
+          "typical": 2830000
+        },
+        {
+          "name": "C(phi, T)",
+          "latex": "C(\\phi,T)",
+          "meaning": "effective volumetric heat capacity, \\phi\\rho_i c_i + (1-\\phi)(\\rho_a c_a + \\rho_v c_v)",
+          "units": "J m^-3 K^-1",
+          "typical": 1300000
+        },
+        {
+          "name": "k(phi, T)",
+          "latex": "k(\\phi,T)",
+          "meaning": "effective thermal conductivity of the ice-gas mixture",
+          "units": "W m^-1 K^-1",
+          "typical": 2
+        },
+        {
+          "name": "H",
+          "latex": "H",
+          "meaning": "enthalpy per unit volume of the mixture",
+          "units": "J m^-3",
+          "typical": -260000000
+        },
+        {
+          "name": "q",
+          "latex": "\\mathbf{q}",
+          "meaning": "conductive heat flux",
+          "units": "W m^-2",
+          "typical": 1
+        },
+        {
+          "name": "j_v",
+          "latex": "\\mathbf{j}_v",
+          "meaning": "mass flux of water vapor",
+          "units": "kg m^-2 s^-1",
+          "typical": 1e-07
+        },
+        {
+          "name": "j_a",
+          "latex": "\\mathbf{j}_a",
+          "meaning": "mass flux of air",
+          "units": "kg m^-2 s^-1",
+          "typical": 1e-08
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Advection of sensible heat by vapor and air fluxes",
+          "why": "P\u00e9clet number $|\\mathbf{j}|c\\ell/k \\approx 10^{-7}\\cdot1850\\cdot10^{-4}/0.02 \\approx 10^{-6}$."
+        },
+        {
+          "effect": "Pressure work and changes in total pressure",
+          "why": "Total pressure in the pore is nearly constant on the time scales of sublimation. $\\partial_t p$ is many orders of magnitude smaller than $C\\,\\partial_t T$."
+        },
+        {
+          "effect": "Kinetic energy and viscous dissipation of the gas",
+          "why": "Gas speeds are tiny (mm/s or less), so $\\rho u^2/2$ is negligible next to the enthalpies (about $10^6$ J/kg)."
+        },
+        {
+          "effect": "Thermal expansion of ice (temperature-dependent $\\rho_i$)",
+          "why": "The expansion coefficient is about $10^{-4}$ K$^{-1}$, so the extra terms are of relative order $10^{-4}\\,\\Delta T$."
+        },
+        {
+          "effect": "Interfacial (surface) energy and curvature (Gibbs-Thomson) correction to the latent heat",
+          "why": "$\\gamma/(\\rho_i L\\,r) \\approx 0.1/(920\\cdot2.8\\times10^6\\cdot10^{-6}) \\approx 4\\times10^{-5}$ for curvature radius $r \\approx 1\\,\\mu$m. The phase-field equation for $\\phi$ is a later task."
+        },
+        {
+          "effect": "Thermal radiation across pores",
+          "why": "Effective radiative conductivity $4\\sigma T^3\\ell \\approx 4\\cdot5.7\\times10^{-8}\\cdot8\\times10^6\\cdot10^{-4} \\approx 2\\times10^{-4}$ W/(m K), small next to the conductivity of ice (about 2-4 W/(m K)). It matters only in nearly empty, large pores."
+        },
+        {
+          "effect": "Dufour effect and Soret effect",
+          "why": "These cross effects are second order in dilute vapor diffusion."
+        },
+        {
+          "effect": "Heat exchange with the regolith grains",
+          "why": "The task restricts the domain to the pore space. The grains enter only through boundary conditions."
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

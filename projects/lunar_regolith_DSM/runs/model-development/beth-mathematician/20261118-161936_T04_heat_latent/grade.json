@@ -1,0 +1,6 @@
+{
+  "check": "T04_heat_latent",
+  "pass": false,
+  "details": "symbol 'h_v' has a typical value of 0",
+  "exit": 1
+}

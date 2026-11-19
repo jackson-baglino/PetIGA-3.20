@@ -1,0 +1,132 @@
+{
+  "check": "T05_vapor_balance",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "every term has units kg / m ** 3 / s"
+      },
+      {
+        "check": "equilibrium",
+        "pass": true,
+        "details": "R = 0 for uniform rho_v and T and a static phi (3 draws, 2 points)"
+      },
+      {
+        "check": "exchange",
+        "pass": true,
+        "details": "deposition consumes vapor at one ice-like density (draw 2: 1897.2 kg m^-3) for every phi and rho_v: water is conserved"
+      },
+      {
+        "check": "diffusion",
+        "pass": true,
+        "details": "a vapor peak decays (3 draws)"
+      },
+      {
+        "check": "conservation",
+        "pass": true,
+        "details": "transport integrates to zero over a period (3 draws): the flux is a divergence"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's terms by role": {
+        "storage": [
+          "Derivative(-phi(x, y, z, t)*rho_v(x, y, z, t) + rho_v(x, y, z, t), t)"
+        ],
+        "diffusion": [
+          "-Derivative(D(phi(x, y, z, t), T(x, y, z, t))*Derivative(rho_v(x, y, z, t), x), x)",
+          "-Derivative(D(phi(x, y, z, t), T(x, y, z, t))*Derivative(rho_v(x, y, z, t), y), y)",
+          "-Derivative(D(phi(x, y, z, t), T(x, y, z, t))*Derivative(rho_v(x, y, z, t), z), z)"
+        ],
+        "phase change": [
+          "Derivative(phi(x, y, z, t)*rho_i(T(x, y, z, t)), t)"
+        ],
+        "other": []
+      },
+      "current model (src/assembly.c:188-191)": {
+        "storage": [
+          "(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), t)"
+        ],
+        "diffusion": [
+          "-(Derivative(D(T(x, y, z, t))*(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), x), x) + Derivative(D(T(x, y, z, t))*(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), y), y) + Derivative(D(T(x, y, z, t))*(1 - phi(x, y, z, t))*Derivative(rho_v(x, y, z, t), z), z))"
+        ],
+        "phase change": [
+          "(rho_i - rho_v(x, y, z, t))*Derivative(phi(x, y, z, t), t)"
+        ],
+        "other": []
+      },
+      "agent's symbols": [
+        {
+          "name": "rho_i(T)",
+          "latex": "\\rho_i(T)",
+          "meaning": "density of ice (mass of ice per unit volume of ice)",
+          "units": "kg m^-3",
+          "typical": 930
+        },
+        {
+          "name": "D(phi, T)",
+          "latex": "D(\\phi, T)",
+          "meaning": "effective diffusivity of water vapor through the pore gas, per unit total cross-section (includes the gas fraction, tortuosity and any Knudsen correction; tends to 0 in the ice)",
+          "units": "m^2 s^-1",
+          "typical": 0.0001
+        },
+        {
+          "name": "m_w",
+          "latex": "m_w",
+          "meaning": "total water mass (ice plus vapor) per unit total volume",
+          "units": "kg m^-3",
+          "typical": 1
+        },
+        {
+          "name": "j_v",
+          "latex": "\\mathbf{j}_v",
+          "meaning": "mass flux of water vapor per unit total area",
+          "units": "kg m^-2 s^-1",
+          "typical": 1e-06
+        },
+        {
+          "name": "Omega",
+          "latex": "\\Omega",
+          "meaning": "arbitrary fixed control volume with boundary $\\partial\\Omega$ and outward unit normal $\\mathbf{n}$",
+          "units": "m^3",
+          "typical": 1e-15
+        },
+        {
+          "name": "sigma",
+          "latex": "\\sigma",
+          "meaning": "mass rate of sublimation (ice to vapor) per unit total volume",
+          "units": "kg m^-3 s^-1",
+          "typical": 1e-06
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Advection of vapor by bulk gas flow, including Stefan flow caused by sublimation",
+          "why": "Vapor is a trace species or the gas is rarefied; the Stefan velocity is about $\\sigma/\\rho_{gas}$ and gives a Peclet number $vL/D\\ll 1$ at pore scale ($L\\sim10^{-5}$ m)."
+        },
+        {
+          "effect": "Thermal diffusion (Soret effect)",
+          "why": "The Soret coefficient for water in air is about $10^{-3}$ K$^{-1}$ or smaller, so it is small next to the Fickian flux from the much steeper dependence of saturation density on $T$."
+        },
+        {
+          "effect": "Surface diffusion of adsorbed water on grains and ice",
+          "why": "Adsorbed mass on the grains is not part of the model; its flux is small next to gas-phase transport for pore sizes much larger than the adsorbed layer."
+        },
+        {
+          "effect": "Motion and creep of the ice",
+          "why": "Ice creep velocities at 200 K are many orders of magnitude slower than sublimation fronts."
+        },
+        {
+          "effect": "Temperature dependence of ice density",
+          "why": "Kept in the result through $\\rho_i(T)$; ice thermal expansion is about $1.5\\times10^{-4}$ K$^{-1}$, so setting $\\rho_i$ constant changes the result by under 0.1% per 10 K if a later task wants it."
+        },
+        {
+          "effect": "Water bound in or adsorbed on regolith grains",
+          "why": "Outside the ice-gas pore model by the statement."
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

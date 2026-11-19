@@ -1,0 +1,150 @@
+{
+  "status": "done",
+  "result_expr": "C(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), t) - Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), x), x) - Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), y), y) - Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), z), z) - rho_i*L(T(x, y, z, t))*Derivative(phi(x, y, z, t), t)",
+  "symbols": [
+    {
+      "name": "C(phi, T)",
+      "meaning": "effective volumetric heat capacity, phi*rho_i*c_i + (1-phi)*(rho_v*c_v + rho_a*c_a)",
+      "units": "J m^-3 K^-1",
+      "typical": 1500000
+    },
+    {
+      "name": "k(phi, T)",
+      "meaning": "effective thermal conductivity of the ice/gas mixture",
+      "units": "W m^-1 K^-1",
+      "typical": 2
+    },
+    {
+      "name": "rho_i",
+      "meaning": "density of ice (constant)",
+      "units": "kg m^-3",
+      "typical": 917
+    },
+    {
+      "name": "L(T)",
+      "meaning": "latent heat of sublimation per unit mass, h_v(T) - h_i(T)",
+      "units": "J kg^-1",
+      "typical": 2800000
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "statement": "H = phi*rho_i*h_i(T) + (1-phi)*rho_v*h_v(T) + (1-phi)*rho_a*h_a(T)  [J m^-3]",
+      "from": [
+        "given"
+      ],
+      "operation": "definition of the enthalpy density of the mixture"
+    },
+    {
+      "id": "S2",
+      "statement": "q = -k(phi,T)*grad T + h_v(T)*j  [W m^-2], where j is the diffusive vapor mass flux",
+      "from": [
+        "given"
+      ],
+      "operation": "constitutive flux: Fourier conduction plus enthalpy carried by vapor"
+    },
+    {
+      "id": "S3",
+      "statement": "dH/dt + div q = 0",
+      "from": [
+        "S1",
+        "S2"
+      ],
+      "operation": "energy conservation over a fixed control volume, then the divergence theorem"
+    },
+    {
+      "id": "S4",
+      "statement": "d/dt[phi*rho_i + (1-phi)*rho_v] + div j = 0",
+      "from": [
+        "given"
+      ],
+      "operation": "water mass conservation (ice plus vapor)"
+    },
+    {
+      "id": "S5",
+      "statement": "d/dt[(1-phi)*rho_a] = 0",
+      "from": [
+        "given"
+      ],
+      "operation": "air mass conservation with air at rest"
+    },
+    {
+      "id": "S6",
+      "statement": "dH/dt + div q - h_v*(S4) - h_a*(S5) = 0",
+      "from": [
+        "S3",
+        "S4",
+        "S5"
+      ],
+      "operation": "subtract h_v times S4 and h_a times S5 (both zero)"
+    },
+    {
+      "id": "S7",
+      "statement": "C dT/dt - div(k grad T) - rho_i*L dphi/dt + c_v j.grad T = 0, with C = phi rho_i c_i + (1-phi)(rho_v c_v + rho_a c_a) and L = h_v - h_i",
+      "from": [
+        "S6"
+      ],
+      "operation": "product and chain rule with c_k = dh_k/dT and rho_i constant; SymPy residual 0 (scratch/check.py)"
+    },
+    {
+      "id": "S8",
+      "statement": "C(phi,T) dT/dt - div(k(phi,T) grad T) - rho_i L(T) dphi/dt = 0",
+      "from": [
+        "S7"
+      ],
+      "operation": "drop vapor enthalpy transport (relative size about 2e-6)"
+    },
+    {
+      "id": "S9",
+      "statement": "R = C T_t - (k T_x)_x - (k T_y)_y - (k T_z)_z - rho_i L phi_t; every term is in W m^-3 (pint)",
+      "from": [
+        "S8"
+      ],
+      "operation": "expand the divergence in 3D Cartesian coordinates"
+    }
+  ],
+  "assumptions_used": [
+    "phi is known and smooth (given)",
+    "Ice is rigid, at rest, and has constant density rho_i (needed in S7)",
+    "Gas is at rest on average: vapor moves only by a diffusive flux j, and air has no net flux",
+    "Local thermal equilibrium: one temperature T for ice and gas",
+    "Low pressure: enthalpy is used in place of internal energy, and pressure work is neglected",
+    "Fourier conduction with an effective conductivity k(phi, T)"
+  ],
+  "neglected": [
+    {
+      "effect": "Enthalpy transport by vapor diffusion, c_v j . grad T",
+      "why": "Ratio to conduction is about c_v*D*rho_v/k ~ 1850*1e-3*1.7e-6/2 ~ 2e-6 near 200 K"
+    },
+    {
+      "effect": "Advection by bulk gas flow",
+      "why": "The gas is assumed to be at rest. The Peclet number is tiny at near-vacuum pore pressures."
+    },
+    {
+      "effect": "Pressure work and p/rho terms",
+      "why": "Vapor pressure is about 0.2 Pa near 200 K, so p/rho_v relative to L is about RT/(M L) ~ 0.03 for vapor. Its contribution is further weighted by rho_v/rho_i ~ 1e-9 in the energy content."
+    },
+    {
+      "effect": "Heat capacity of the gas phase inside C",
+      "why": "Kept in C for generality, but rho_v c_v / C is about 1.6e-9"
+    },
+    {
+      "effect": "Thermal radiation across pores",
+      "why": "Of order 4*sigma*T^3*d ~ 1e-5 W/m/K for 100 um pores at 200 K, small next to the ice conductivity of about 2 W/m/K"
+    },
+    {
+      "effect": "Interfacial (surface) energy and curvature (Gibbs-Thomson) corrections to L",
+      "why": "Of order gamma/(rho_i L r) ~ 0.1/(917*2.8e6*1e-6) ~ 4e-5 relative, for micron-scale curvature"
+    },
+    {
+      "effect": "Thermal expansion of ice (rho_i(T))",
+      "why": "Volumetric expansion coefficient is about 1e-4 per K, which is a small change over the temperature ranges considered"
+    },
+    {
+      "effect": "Kinetic energy and viscous dissipation",
+      "why": "Velocities are negligible"
+    }
+  ],
+  "questions": []
+}

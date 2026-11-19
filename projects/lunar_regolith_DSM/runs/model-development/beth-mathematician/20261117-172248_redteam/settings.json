@@ -1,0 +1,80 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(./**)",
+      "Edit(./**)",
+      "Bash(python scratch/*)"
+    ],
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.netrc)",
+      "Read(~/Library/Keychains/**)",
+      "Read(~/.claude/**)",
+      "Read(//Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/docs/planning/**)",
+      "Read(//Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/library/**)",
+      "Read(//Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/workflows/*/agents/**)",
+      "Read(//Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/.claude/**)",
+      "Read(//Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/scripts/agentkit/**)",
+      "Edit(**/PROVENANCE.md)",
+      "Edit(//**/PROVENANCE.md)",
+      "WebFetch",
+      "WebSearch",
+      "Agent",
+      "NotebookEdit",
+      "Skill"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Write|Edit|NotebookEdit|Glob|Grep|Bash|WebFetch|WebSearch|Agent|Skill|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/venv_workflows/bin/python\" \"/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/scripts/agentkit/guard.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/venv_workflows/bin/python\" \"/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/scripts/agentkit/stop_check.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": [
+        "~/.ssh",
+        "~/.aws",
+        "~/.gnupg",
+        "~/.config/gh",
+        "~/.netrc",
+        "~/Library/Keychains",
+        "~/.claude",
+        "~/Library/Mobile Documents",
+        "/Users/jacksonbaglino/PetIGA-3.20"
+      ],
+      "allowRead": [
+        "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/venv_workflows",
+        "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/runs/model-development/beth-mathematician/20261117-172248_redteam/workspace"
+      ]
+    },
+    "network": {
+      "allowedDomains": []
+    }
+  }
+}

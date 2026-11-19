@@ -132,6 +132,9 @@ This agent:
 - `workflows/model-development/agents/beth-mathematician/tests/test_grade_T06.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_grade_T07.py`
 - `workflows/model-development/agents/beth-mathematician/tests/test_key_checks.py`
+- `workflows/model-development/agents/beth-mathematician/tutorial/run_tutorial.sh`
+- `workflows/model-development/agents/beth-mathematician/tutorial/runs.txt`
+- `workflows/model-development/agents/beth-mathematician/tutorial/summarize.py`
 
 The harness, shared by every agentkit agent:
 

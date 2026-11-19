@@ -1,0 +1,197 @@
+{
+  "status": "done",
+  "result_expr": "Derivative(phi(x, y, z, t), t) - M(T(x, y, z, t))*(6*gamma*eps*(Derivative(phi(x, y, z, t), (x, 2)) + Derivative(phi(x, y, z, t), (y, 2)) + Derivative(phi(x, y, z, t), (z, 2))) - 6*gamma/eps*phi(x, y, z, t)*(1 - phi(x, y, z, t))*(1 - 2*phi(x, y, z, t))) - 30*alpha(T(x, y, z, t))*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2*(rho_v(x, y, z, t) - rho_vs(T(x, y, z, t)))",
+  "result_latex": "R = \\frac{\\partial \\phi}{\\partial t} - M(T)\\left[6\\gamma\\varepsilon\\left(\\frac{\\partial^2\\phi}{\\partial x^2}+\\frac{\\partial^2\\phi}{\\partial y^2}+\\frac{\\partial^2\\phi}{\\partial z^2}\\right) - \\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi)\\right] - 30\\,\\alpha(T)\\,\\phi^2(1-\\phi)^2\\left(\\rho_v-\\rho_{vs}(T)\\right) = 0",
+  "symbols": [
+    {
+      "name": "M(T)",
+      "latex": "M(T)",
+      "meaning": "Interface mobility. It sets how fast $\\phi$ relaxes toward a minimum of $F$, and so how fast curvature (Gibbs\u2013Thomson) moves the interface. A positive kinetic coefficient.",
+      "units": "m^3 J^-1 s^-1",
+      "typical": 4e-10
+    },
+    {
+      "name": "alpha(T)",
+      "latex": "\\alpha(T)",
+      "meaning": "Deposition and sublimation rate coefficient: the rate of change of $\\phi$ at the interface per unit vapor excess $\\rho_v-\\rho_{vs}$. It is related to the Hertz\u2013Knudsen kinetic velocity $\\beta$ by $\\alpha=\\beta/(6\\varepsilon\\rho_i)$.",
+      "units": "m^3 kg^-1 s^-1",
+      "typical": 20000
+    },
+    {
+      "name": "R",
+      "latex": "R",
+      "meaning": "Residual of the phase-field equation",
+      "units": "s^-1",
+      "typical": 1
+    },
+    {
+      "name": "beta",
+      "latex": "\\beta",
+      "meaning": "Kinetic velocity of the Hertz\u2013Knudsen law, $\\alpha_s\\sqrt{k_B T/(2\\pi m_w)}$, where $\\alpha_s$ is the sticking coefficient. Used only to interpret $\\alpha$.",
+      "units": "m s^-1",
+      "typical": 100
+    },
+    {
+      "name": "rho_i",
+      "latex": "\\rho_i",
+      "meaning": "Density of ice",
+      "units": "kg m^-3",
+      "typical": 920
+    },
+    {
+      "name": "v",
+      "latex": "v",
+      "meaning": "Normal speed of a planar front",
+      "units": "m s^-1",
+      "typical": 1e-06
+    },
+    {
+      "name": "phi0",
+      "latex": "\\phi_0(\\xi)",
+      "meaning": "Equilibrium profile of a flat interface",
+      "units": "1",
+      "typical": 0.5
+    },
+    {
+      "name": "xi",
+      "latex": "\\xi",
+      "meaning": "Coordinate normal to a flat interface",
+      "units": "m",
+      "typical": 1e-06
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "title": "Variational derivative of F",
+      "why": "The relaxation toward equilibrium is driven by $\\delta F/\\delta\\phi$. We differentiate the double-well density and integrate the gradient term by parts. Boundary terms are dropped (no-flux or periodic boundaries).",
+      "from": [
+        "given"
+      ],
+      "operation": "Euler\u2013Lagrange variation and integration by parts",
+      "latex": "\\frac{\\delta F}{\\delta\\phi} = \\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi) - 6\\gamma\\varepsilon\\nabla^2\\phi \\quad [\\mathrm{J\\,m^{-3}}]",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; checked by hand: d/dphi of phi^2(1-phi)^2 is 2 phi(1-phi)(1-2phi)"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Check of the flat-interface profile",
+      "why": "Setting $\\delta F/\\delta\\phi=0$ in 1D gives the flat profile. With this profile $F$ gives energy $\\gamma$ and a 10\u201390 % width of $2\\ln 9\\,\\varepsilon$, so assumption A2 holds for the given $F$.",
+      "from": [
+        "S1",
+        "A2"
+      ],
+      "operation": "solve the 1D equilibrium equation and integrate",
+      "latex": "\\phi_0=\\tfrac12\\left[1+\\tanh\\frac{\\xi}{2\\varepsilon}\\right],\\quad \\int(\\phi_0')^2d\\xi=\\frac{1}{6\\varepsilon},\\quad 2\\cdot 3\\gamma\\varepsilon\\cdot\\frac{1}{6\\varepsilon}=\\gamma,\\quad \\Delta\\xi_{10\\text{-}90}=4\\varepsilon\\,\\mathrm{artanh}(0.8)=2\\ln 9\\,\\varepsilon",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; by hand: the integral of sech^4 over the real line is 4/3, and artanh(0.8)=ln 3"
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Relaxation of the interface",
+      "why": "$\\phi$ is not conserved, because ice mass comes from the vapor. So the simplest dissipative dynamics is linear gradient flow (Allen\u2013Cahn) with a positive mobility $M(T)$.",
+      "from": [
+        "S1",
+        "A3"
+      ],
+      "operation": "linear non-conserved gradient flow",
+      "latex": "\\left.\\frac{\\partial\\phi}{\\partial t}\\right|_{\\mathrm{relax}} = -M(T)\\frac{\\delta F}{\\delta\\phi}",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; units by hand: [M][J m^-3] = s^-1"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Growth and sublimation source",
+      "why": "Ice deposits when $\\rho_v>\\rho_{vs}$ and sublimates when $\\rho_v<\\rho_{vs}$. To first order the source is linear in $\\rho_v-\\rho_{vs}$. The shape function $30\\phi^2(1-\\phi)^2$ vanishes in pure gas and pure ice, so there is no nucleation. It integrates to 1 across the interface and does not shift the stable states $\\phi=0$ and $\\phi=1$.",
+      "from": [
+        "A4",
+        "A5",
+        "A1"
+      ],
+      "operation": "constitutive choice for the source term",
+      "latex": "\\left.\\frac{\\partial\\phi}{\\partial t}\\right|_{\\mathrm{dep}} = 30\\,\\alpha(T)\\,\\phi^2(1-\\phi)^2\\left(\\rho_v-\\rho_{vs}(T)\\right)",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; units by hand: m^3 kg^-1 s^-1 times kg m^-3 = s^-1"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Combined equation",
+      "why": "Add S3 and S4 and write the Laplacian in Cartesian coordinates. Moving every term to one side gives the residual $R$.",
+      "from": [
+        "S3",
+        "S4",
+        "S1"
+      ],
+      "operation": "sum of S3 and S4, then substitution of S1",
+      "latex": "R = \\partial_t\\phi - M(T)\\left[6\\gamma\\varepsilon(\\phi_{xx}+\\phi_{yy}+\\phi_{zz}) - \\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi)\\right] - 30\\alpha(T)\\phi^2(1-\\phi)^2(\\rho_v-\\rho_{vs}(T)) = 0",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; every term has units of s^-1"
+      }
+    },
+    {
+      "id": "S6",
+      "title": "Physical meaning of alpha",
+      "why": "Put a planar front $\\phi_0(\\xi-vt)$ into S5, multiply by $\\phi_0'$ and integrate over $\\xi$. The $F$ terms vanish, and $\\int 30\\phi_0^2(1-\\phi_0)^2\\phi_0'\\,d\\xi=1$. This gives the front speed, which we match to the Hertz\u2013Knudsen law $v=\\beta(\\rho_v-\\rho_{vs})/\\rho_i$.",
+      "from": [
+        "S5",
+        "S2"
+      ],
+      "operation": "multiply by $\\phi_0'$ and integrate over $\\xi$",
+      "latex": "v = 6\\varepsilon\\,\\alpha(T)\\left(\\rho_v-\\rho_{vs}\\right) \\;\\Rightarrow\\; \\alpha(T)=\\frac{\\beta}{6\\varepsilon\\rho_i}",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; by hand: the S4 source integrates to alpha(rho_v-rho_vs), and the time derivative integrates to -v times 1/(6 eps)"
+      }
+    }
+  ],
+  "assumptions_used": [
+    "A1: $\\rho_v$ and $T$ are known, smooth fields (given).",
+    "A2: The flat interface of $F$ has energy $\\gamma$ per unit area and a 10\u201390 % width of $2\\ln 9\\,\\varepsilon$ (given; checked in S2).",
+    "A3: The dynamics of $\\phi$ is non-conserved, linear gradient flow with a scalar, isotropic mobility $M(T)>0$.",
+    "A4: The deposition rate is linear in the vapor excess $\\rho_v-\\rho_{vs}(T)$; this is first order in the supersaturation.",
+    "A5: Deposition and sublimation act only where ice meets gas. This is imposed with the shape function $30\\phi^2(1-\\phi)^2$, which vanishes at $\\phi=0$ and $\\phi=1$ and integrates to 1 across the interface."
+  ],
+  "neglected": [
+    {
+      "effect": "Nonlinear dependence on supersaturation, for example $\\ln(\\rho_v/\\rho_{vs})$",
+      "why": "Supersaturations in the pores are small, $|\\rho_v/\\rho_{vs}-1|\\ll1$. The dropped terms are of order $(\\rho_v/\\rho_{vs}-1)^2$."
+    },
+    {
+      "effect": "Anisotropy of the ice surface energy and of the attachment kinetics",
+      "why": "$\\gamma$ is constant by the work order. Faceting at the pore scale is a secondary effect for the bulk transport of ice."
+    },
+    {
+      "effect": "Thermal noise (fluctuations)",
+      "why": "The interface width $\\varepsilon\\sim\\mu$m is much larger than the thermal length $\\sqrt{k_BT/\\gamma}\\sim0.2$ nm."
+    },
+    {
+      "effect": "Regolith grains as a third phase, including wetting by ice",
+      "why": "The work order describes only ice and gas in the pore space. Grains would enter as boundary conditions or as a fixed field."
+    },
+    {
+      "effect": "Latent heat and vapor mass exchange",
+      "why": "They couple $\\phi$ back to $T$ and $\\rho_v$. Those equations are separate tasks; here the fields are given."
+    },
+    {
+      "effect": "Elastic stress and mechanical motion of ice",
+      "why": "The ice is treated as rigid and fixed in place. Stresses are small compared with the vapor-driven changes."
+    },
+    {
+      "effect": "A thermodynamically consistent link between $M$ and $\\alpha$",
+      "why": "I kept them as separate coefficients. Thermodynamic consistency would require $\\alpha/M=\\rho_i k_BT/(m_w\\rho_{vs})$. This changes curvature effects only through the ratio $\\varepsilon/$(radius of curvature)."
+    }
+  ],
+  "questions": [
+    "Do you want $M$ and $\\alpha$ tied by $\\alpha/M=\\rho_i k_B T/(m_w\\rho_{vs})$? This makes the curvature-driven kinetics consistent with the Gibbs\u2013Thomson effect and the Hertz\u2013Knudsen law. I kept them independent.",
+    "Should the driving force be written in the normalized form $(\\rho_v-\\rho_{vs})/\\rho_{vs}$? Then $\\alpha$ would be in s$^{-1}$; the physics does not change."
+  ]
+}

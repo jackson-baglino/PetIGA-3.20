@@ -1,0 +1,176 @@
+{
+  "status": "done",
+  "result_expr": "3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2) + 3*gamma/eps*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2",
+  "result_latex": "f = 3\\gamma\\varepsilon\\,|\\nabla\\phi|^2 + \\frac{3\\gamma}{\\varepsilon}\\,\\phi^2(1-\\phi)^2",
+  "symbols": [
+    {
+      "name": "kappa",
+      "latex": "\\kappa",
+      "meaning": "gradient-energy coefficient",
+      "units": "J m^-1",
+      "typical": 2e-10
+    },
+    {
+      "name": "W",
+      "latex": "W",
+      "meaning": "height scale of the double-well potential",
+      "units": "J m^-3",
+      "typical": 200000
+    },
+    {
+      "name": "xi",
+      "latex": "\\xi",
+      "meaning": "coordinate normal to a flat interface, with the interface at xi = 0",
+      "units": "m",
+      "typical": 1e-06
+    },
+    {
+      "name": "phi_0",
+      "latex": "\\phi_0(\\xi)",
+      "meaning": "equilibrium profile across a flat interface",
+      "units": "1",
+      "typical": 0.5
+    },
+    {
+      "name": "delta",
+      "latex": "\\delta",
+      "meaning": "interface width, defined as 1/|phi_0'(0)|",
+      "units": "m",
+      "typical": 4e-06
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "title": "Ansatz for the free energy density",
+      "why": "The density is a double well, which makes $\\phi=0$ and $\\phi=1$ the only stable uniform states. The wells have equal depth because the temperature is at coexistence (A1), so there is no tilt term. A gradient term penalizes sharp changes in $\\phi$, which gives the interface a finite width and a positive energy.",
+      "from": [
+        "A1",
+        "A2"
+      ],
+      "operation": "choose the Ginzburg-Landau form",
+      "latex": "f = \\frac{\\kappa}{2}|\\nabla\\phi|^2 + W\\,\\phi^2(1-\\phi)^2",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; units: $\\kappa|\\nabla\\phi|^2$ has J m^-1 m^-2 = J m^-3, and $W$ has J m^-3"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "First integral for a flat interface",
+      "why": "For a flat interface, $\\phi$ depends only on $\\xi$. The Euler-Lagrange equation $\\kappa\\phi''=W\\,d[\\phi^2(1-\\phi)^2]/d\\phi$ has a first integral. Its constant is zero because $\\phi'\\to0$ and the well term vanishes in both bulk phases.",
+      "from": [
+        "S1"
+      ],
+      "operation": "multiply the Euler-Lagrange equation by $\\phi'$ and integrate once in $\\xi$",
+      "latex": "\\frac{\\kappa}{2}\\phi_0'^2 = W\\,\\phi_0^2(1-\\phi_0)^2",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run"
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Equilibrium profile",
+      "why": "Take the root with ice at $\\xi\\to-\\infty$ and gas at $\\xi\\to+\\infty$, then separate variables.",
+      "from": [
+        "S2"
+      ],
+      "operation": "take the square root and integrate",
+      "latex": "\\phi_0(\\xi)=\\frac12\\left[1-\\tanh\\left(\\frac{\\xi}{2}\\sqrt{\\frac{2W}{\\kappa}}\\right)\\right]",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; by hand, $\\phi_0'=-\\sqrt{2W/\\kappa}\\,\\phi_0(1-\\phi_0)$ holds"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Interface energy",
+      "why": "The excess energy per unit area is the integral of $f$ across the interface. By S2 the two terms are equal, so it equals $\\int\\kappa\\phi_0'^2\\,d\\xi$. Changing the variable to $\\phi$ gives a closed form.",
+      "from": [
+        "S2",
+        "S3"
+      ],
+      "operation": "integrate over $\\xi$ and change the variable to $\\phi$",
+      "latex": "\\gamma=\\int_0^1\\sqrt{2W\\kappa}\\,\\phi(1-\\phi)\\,d\\phi=\\frac{\\sqrt{2W\\kappa}}{6}",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; $\\int_0^1\\phi(1-\\phi)d\\phi=1/6$"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Fix the length scale",
+      "why": "Define $\\varepsilon$ as the decay length of the profile's tails, $\\phi_0\\sim e^{-|\\xi|/\\varepsilon}$. This sets $\\sqrt{2W/\\kappa}=1/\\varepsilon$. The width is $\\delta=1/|\\phi_0'(0)|=4\\varepsilon$; the 10-90% width is $2\\ln 9\\,\\varepsilon$.",
+      "from": [
+        "S3"
+      ],
+      "operation": "definition of the width",
+      "latex": "\\sqrt{\\frac{2W}{\\kappa}}=\\frac{1}{\\varepsilon},\\qquad \\delta=\\frac{1}{|\\phi_0'(0)|}=4\\varepsilon",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; $\\phi_0'(0)=-1/(4\\varepsilon)$"
+      }
+    },
+    {
+      "id": "S6",
+      "title": "Solve for the coefficients",
+      "why": "Multiplying and dividing S4 and S5 gives $2W=6\\gamma/\\varepsilon$ and $2/\\kappa=1/(3\\gamma\\varepsilon)$.",
+      "from": [
+        "S4",
+        "S5"
+      ],
+      "operation": "solve two equations for $W$ and $\\kappa$",
+      "latex": "W=\\frac{3\\gamma}{\\varepsilon},\\qquad \\kappa=6\\gamma\\varepsilon",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; check: $\\sqrt{2\\cdot3\\gamma/\\varepsilon\\cdot6\\gamma\\varepsilon}/6=\\gamma$"
+      }
+    },
+    {
+      "id": "S7",
+      "title": "Free energy density",
+      "why": "Substitute S6 into S1.",
+      "from": [
+        "S1",
+        "S6"
+      ],
+      "operation": "substitution of S6",
+      "latex": "f = 3\\gamma\\varepsilon\\,|\\nabla\\phi|^2 + \\frac{3\\gamma}{\\varepsilon}\\,\\phi^2(1-\\phi)^2",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run; units: J m^-2 m m^-2 = J m^-3, and J m^-2 m^-1 = J m^-3"
+      }
+    }
+  ],
+  "assumptions_used": [
+    "A1: the temperature is uniform and constant, at phase coexistence, so the bulk ice and bulk gas free energies are equal and the double well is symmetric.",
+    "A2: the interface energy $\\gamma$ is isotropic, and the free energy is local, depending on $\\phi$ and $\\nabla\\phi$ only (square-gradient approximation).",
+    "A3: the width scale $\\varepsilon$ is defined by the tail decay $\\phi_0\\sim e^{-|\\xi|/\\varepsilon}$, which gives the reported width $\\delta=1/|\\phi_0'(0)|=4\\varepsilon$."
+  ],
+  "neglected": [
+    {
+      "effect": "Driving force (supersaturation or temperature offset)",
+      "why": "By A1 the system is at coexistence; this would add a tilt term such as $\\propto\\phi^2(3-2\\phi)$."
+    },
+    {
+      "effect": "Vapor density and heat fields",
+      "why": "They are not part of this functional at coexistence; they couple in only away from equilibrium."
+    },
+    {
+      "effect": "Anisotropy of the ice surface energy",
+      "why": "$\\gamma$ is taken to be constant, as stated."
+    },
+    {
+      "effect": "Contact with the regolith grains (wetting, grain surface energies)",
+      "why": "The pore space is treated as ice plus gas only; boundary terms would add surface integrals."
+    },
+    {
+      "effect": "Elastic strain and curvature (higher-gradient) terms",
+      "why": "These are higher order in $\\varepsilon$ over the feature size, and second derivatives are excluded by the work order."
+    }
+  ],
+  "questions": [
+    "The coefficients depend on how $\\varepsilon$ is tied to the width. I used the tail decay length, giving $\\tanh(\\xi/2\\varepsilon)$ and $\\delta=4\\varepsilon$. If the project uses $\\tanh(\\xi/\\varepsilon)$ instead, the result becomes $f=\\tfrac32\\gamma\\varepsilon|\\nabla\\phi|^2+\\tfrac{6\\gamma}{\\varepsilon}\\phi^2(1-\\phi)^2$. Please confirm the convention."
+  ]
+}

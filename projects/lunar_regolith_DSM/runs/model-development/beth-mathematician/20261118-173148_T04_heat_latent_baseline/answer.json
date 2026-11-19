@@ -1,0 +1,266 @@
+{
+  "status": "done",
+  "result_expr": "C(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), t) - Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), x), x) - Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), y), y) - Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), z), z) - rho_i*L(T(x, y, z, t))*Derivative(phi(x, y, z, t), t)",
+  "result_latex": "R = C(\\phi,T)\\,\\partial_t T - \\partial_x\\!\\left(k(\\phi,T)\\,\\partial_x T\\right) - \\partial_y\\!\\left(k(\\phi,T)\\,\\partial_y T\\right) - \\partial_z\\!\\left(k(\\phi,T)\\,\\partial_z T\\right) - \\rho_i L(T)\\,\\partial_t\\phi = 0",
+  "symbols": [
+    {
+      "name": "rho_i",
+      "latex": "\\rho_i",
+      "meaning": "density of ice (taken constant, see A4)",
+      "units": "kg m^-3",
+      "typical": 920
+    },
+    {
+      "name": "rho_v",
+      "latex": "\\rho_v",
+      "meaning": "mass concentration of water vapor in the gas",
+      "units": "kg m^-3",
+      "typical": 2e-06
+    },
+    {
+      "name": "h_i(T)",
+      "latex": "h_i(T)",
+      "meaning": "specific enthalpy of ice",
+      "units": "J kg^-1",
+      "typical": -300000
+    },
+    {
+      "name": "h_v(T)",
+      "latex": "h_v(T)",
+      "meaning": "specific enthalpy of water vapor",
+      "units": "J kg^-1",
+      "typical": 2500000
+    },
+    {
+      "name": "c_i(T)",
+      "latex": "c_i(T)",
+      "meaning": "specific heat of ice, dh_i/dT",
+      "units": "J kg^-1 K^-1",
+      "typical": 1400
+    },
+    {
+      "name": "c_v(T)",
+      "latex": "c_v(T)",
+      "meaning": "specific heat of water vapor at constant pressure, dh_v/dT",
+      "units": "J kg^-1 K^-1",
+      "typical": 1850
+    },
+    {
+      "name": "H",
+      "latex": "H",
+      "meaning": "enthalpy per unit volume of the ice-gas mixture",
+      "units": "J m^-3",
+      "typical": 1000000
+    },
+    {
+      "name": "q",
+      "latex": "\\mathbf q",
+      "meaning": "conductive heat flux",
+      "units": "W m^-2",
+      "typical": 10
+    },
+    {
+      "name": "J_v",
+      "latex": "\\mathbf J_v",
+      "meaning": "diffusive mass flux of water vapor",
+      "units": "kg m^-2 s^-1",
+      "typical": 1e-08
+    },
+    {
+      "name": "m_dot",
+      "latex": "\\dot m",
+      "meaning": "mass of vapor deposited as ice per unit volume and time (negative for sublimation)",
+      "units": "kg m^-3 s^-1",
+      "typical": 1e-06
+    },
+    {
+      "name": "k(phi, T)",
+      "latex": "k(\\phi,T)",
+      "meaning": "effective thermal conductivity of the ice-gas mixture",
+      "units": "W m^-1 K^-1",
+      "typical": 2.5
+    },
+    {
+      "name": "C(phi, T)",
+      "latex": "C(\\phi,T)",
+      "meaning": "volumetric heat capacity of the mixture, phi rho_i c_i + (1-phi) rho_v c_v (+ air if present)",
+      "units": "J m^-3 K^-1",
+      "typical": 1300000
+    },
+    {
+      "name": "L(T)",
+      "latex": "L(T)",
+      "meaning": "specific latent heat of sublimation, h_v - h_i",
+      "units": "J kg^-1",
+      "typical": 2840000
+    },
+    {
+      "name": "R",
+      "latex": "R",
+      "meaning": "residual of the energy equation",
+      "units": "W m^-3",
+      "typical": 1000
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "title": "Integral energy balance",
+      "why": "Conservation of energy for any fixed control volume $V$ in the pore space. Pressure is taken as uniform, so the stored energy is the enthalpy $H$. Energy enters through the conductive flux $\\mathbf q$ and the enthalpy carried by diffusing vapor, $h_v\\mathbf J_v$.",
+      "from": [
+        "A1",
+        "A2"
+      ],
+      "operation": "first law for a fixed control volume at constant pressure",
+      "latex": "\\frac{d}{dt}\\int_V H\\,dV = -\\oint_{\\partial V}\\left(\\mathbf q + h_v\\mathbf J_v\\right)\\cdot\\mathbf n\\,dA",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Local energy balance",
+      "why": "$V$ is arbitrary and the fields are smooth (A1), so applying the divergence theorem gives a pointwise equation.",
+      "from": [
+        "S1",
+        "A1"
+      ],
+      "operation": "divergence theorem, arbitrary V",
+      "latex": "\\partial_t H + \\nabla\\cdot\\left(\\mathbf q + h_v\\mathbf J_v\\right) = 0",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run"
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Mass balances of ice and vapor",
+      "why": "Ice is immobile and gains mass $\\dot m$ by deposition. The vapor loses the same mass. With constant ice density (A4), the ice balance links $\\dot m$ to $\\partial_t\\phi$.",
+      "from": [
+        "A3",
+        "A4"
+      ],
+      "operation": "mass conservation for each water phase",
+      "latex": "\\rho_i\\partial_t\\phi = \\dot m,\\qquad \\partial_t\\left[(1-\\phi)\\rho_v\\right] + \\nabla\\cdot\\mathbf J_v = -\\rho_i\\partial_t\\phi",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Mixture enthalpy",
+      "why": "The phase field sets the volume fractions, so the enthalpy per volume is the fraction-weighted sum of the ice and vapor enthalpies.",
+      "from": [
+        "A3"
+      ],
+      "operation": "definition of H",
+      "latex": "H = \\phi\\rho_i h_i(T) + (1-\\phi)\\rho_v h_v(T)",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Time derivative of H",
+      "why": "Product rule, using $dh_i/dT=c_i$ and $dh_v/dT=c_v$.",
+      "from": [
+        "S4",
+        "A4"
+      ],
+      "operation": "differentiate S4 in t (product and chain rule)",
+      "latex": "\\partial_t H = h_i\\rho_i\\partial_t\\phi + \\phi\\rho_i c_i\\partial_t T + h_v\\partial_t\\left[(1-\\phi)\\rho_v\\right] + (1-\\phi)\\rho_v c_v\\partial_t T",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run"
+      }
+    },
+    {
+      "id": "S6",
+      "title": "Eliminate vapor storage",
+      "why": "Substitute the vapor balance from S3 for $\\partial_t[(1-\\phi)\\rho_v]$, and expand $\\nabla\\cdot(h_v\\mathbf J_v)=h_v\\nabla\\cdot\\mathbf J_v + c_v\\mathbf J_v\\cdot\\nabla T$. The $h_v\\nabla\\cdot\\mathbf J_v$ terms cancel.",
+      "from": [
+        "S2",
+        "S3",
+        "S5"
+      ],
+      "operation": "substitution of S3 and S5 into S2",
+      "latex": "\\left[\\phi\\rho_i c_i + (1-\\phi)\\rho_v c_v\\right]\\partial_t T - (h_v-h_i)\\rho_i\\partial_t\\phi + c_v\\mathbf J_v\\cdot\\nabla T + \\nabla\\cdot\\mathbf q = 0",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run"
+      }
+    },
+    {
+      "id": "S7",
+      "title": "Fourier law, latent heat, neglect vapor enthalpy advection",
+      "why": "Introduce $\\mathbf q=-k(\\phi,T)\\nabla T$ (A5), $C(\\phi,T)=\\phi\\rho_i c_i+(1-\\phi)\\rho_v c_v$, and $L(T)=h_v-h_i$. Drop $c_v\\mathbf J_v\\cdot\\nabla T$: its ratio to conduction is about $10^{-8}$ or less (see neglected).",
+      "from": [
+        "S6",
+        "A5",
+        "A6"
+      ],
+      "operation": "substitution of constitutive law and definitions; drop small term",
+      "latex": "C(\\phi,T)\\,\\partial_t T = \\nabla\\cdot\\left(k(\\phi,T)\\nabla T\\right) + \\rho_i L(T)\\,\\partial_t\\phi",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run"
+      }
+    },
+    {
+      "id": "S8",
+      "title": "Residual in 3D Cartesian form",
+      "why": "Write the divergence in Cartesian components and move every term to one side. Units: every term is in W m^-3.",
+      "from": [
+        "S7"
+      ],
+      "operation": "expand divergence in x, y, z; collect as R",
+      "latex": "R = C\\,\\partial_t T - \\partial_x(k\\,\\partial_x T) - \\partial_y(k\\,\\partial_y T) - \\partial_z(k\\,\\partial_z T) - \\rho_i L\\,\\partial_t\\phi = 0",
+      "check": {
+        "function": "",
+        "printed": "no tools in this run (units by hand: J m^-3 K^-1 * K s^-1 = W m^-3; W m^-1 K^-1 * K m^-2 = W m^-3; kg m^-3 * J kg^-1 * s^-1 = W m^-3)"
+      }
+    }
+  ],
+  "assumptions_used": [
+    "A1: $\\phi(x,y,z,t)$ is a known, smooth field (given), and $T$ is smooth.",
+    "A2: The pressure is uniform and constant, and the system is at rest, so the energy content is the enthalpy. Pressure work, viscous dissipation and kinetic energy are dropped.",
+    "A3: The pore space holds only ice (fraction $\\phi$) and gas (fraction $1-\\phi$). Ice and gas share one local temperature $T$, and the ice is immobile.",
+    "A4: The ice density $\\rho_i$ is constant (needed in S3 to write $\\dot m=\\rho_i\\partial_t\\phi$).",
+    "A5: Heat conduction follows Fourier's law with an isotropic effective conductivity $k(\\phi,T)$.",
+    "A6: Enthalpy advection by vapor diffusion, $c_v\\mathbf J_v\\cdot\\nabla T$, is negligible compared with conduction."
+  ],
+  "neglected": [
+    {
+      "effect": "Enthalpy carried by vapor diffusion, $c_v\\mathbf J_v\\cdot\\nabla T$",
+      "why": "$\\mathbf J_v\\sim D\\nabla\\rho_v$ with $\\rho_v\\sim10^{-6}$ kg m^-3 near 200 K. The ratio to conduction is about $c_v D\\rho_v/(k\\ell)\\cdot\\ell \\sim 1850\\cdot10^{-4}\\cdot10^{-6}/2.5\\sim10^{-7}$, and its gradient factor makes it smaller still."
+    },
+    {
+      "effect": "Gas convection (bulk flow of the gas in the pores)",
+      "why": "The pores are small (tens of micrometers) and the pressures are low, so the Peclet number is far below 1."
+    },
+    {
+      "effect": "Pressure work and viscous dissipation",
+      "why": "Pressure changes are tiny compared with $\\rho c T$, and the flow is negligible."
+    },
+    {
+      "effect": "Radiative heat transfer across pores",
+      "why": "With pore size $d\\sim10^{-4}$ m, $4\\sigma T^3 d\\sim2\\times10^{-4}$ W m^-1 K^-1, much less than $k$ of ice ($\\sim2.5$)."
+    },
+    {
+      "effect": "Interfacial (surface) energy and Gibbs-Thomson change of $L$",
+      "why": "$\\gamma/(\\rho_i L r)\\sim0.1/(920\\cdot2.8\\times10^6\\cdot10^{-6})\\sim4\\times10^{-5}$ relative to the latent heat."
+    },
+    {
+      "effect": "Thermal expansion of ice (variable $\\rho_i$)",
+      "why": "The relative change is about $10^{-4}$ per 1 K, a negligible correction to $\\rho_i\\partial_t\\phi$."
+    },
+    {
+      "effect": "Non-equilibrium between ice and gas temperatures",
+      "why": "The thermal diffusion time across a pore, about $d^2/\\alpha\\sim10^{-8}/10^{-6}=10^{-2}$ s, is far shorter than sublimation time scales."
+    }
+  ],
+  "questions": []
+}

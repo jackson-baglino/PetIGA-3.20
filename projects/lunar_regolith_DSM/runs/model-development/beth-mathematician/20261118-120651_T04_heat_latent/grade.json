@@ -1,0 +1,122 @@
+{
+  "check": "T04_heat_latent",
+  "pass": true,
+  "details": {
+    "checks": [
+      {
+        "check": "units",
+        "pass": true,
+        "details": "every term has units W / m ** 3"
+      },
+      {
+        "check": "equilibrium",
+        "pass": true,
+        "details": "R = 0 for uniform T and a static phi (3 draws, 2 points)"
+      },
+      {
+        "check": "latent sign",
+        "pass": true,
+        "details": "deposition warms and, by linearity, sublimation cools (3 draws)"
+      },
+      {
+        "check": "conduction",
+        "pass": true,
+        "details": "a hot spot cools at its peak (3 draws)"
+      },
+      {
+        "check": "conservation",
+        "pass": true,
+        "details": "conduction integrates to zero over a period (3 draws): it is the divergence of a flux"
+      }
+    ],
+    "comparison (for the user)": {
+      "agent's terms by role": {
+        "storage": [
+          "C(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), t)"
+        ],
+        "conduction": [
+          "-Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), x), x)",
+          "-Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), y), y)",
+          "-Derivative(k(phi(x, y, z, t), T(x, y, z, t))*Derivative(T(x, y, z, t), z), z)"
+        ],
+        "phase change": [
+          "-rho_i*L(T(x, y, z, t))*Derivative(phi(x, y, z, t), t)"
+        ],
+        "other": []
+      },
+      "current model (src/assembly.c:173-175)": {
+        "storage": [
+          "rho(phi(x, y, z, t))*cp(phi(x, y, z, t))*Derivative(T(x, y, z, t), t)"
+        ],
+        "conduction": [
+          "-(Derivative(k(phi(x, y, z, t))*Derivative(T(x, y, z, t), x), x) + Derivative(k(phi(x, y, z, t))*Derivative(T(x, y, z, t), y), y) + Derivative(k(phi(x, y, z, t))*Derivative(T(x, y, z, t), z), z))"
+        ],
+        "phase change": [
+          "-rho_i*L*Derivative(phi(x, y, z, t), t)"
+        ],
+        "other": []
+      },
+      "agent's symbols": [
+        {
+          "name": "C(phi, T)",
+          "meaning": "effective volumetric heat capacity, phi*rho_i*c_i + (1-phi)*(rho_v*c_v + rho_a*c_a)",
+          "units": "J m^-3 K^-1",
+          "typical": 1500000
+        },
+        {
+          "name": "k(phi, T)",
+          "meaning": "effective thermal conductivity of the ice/gas mixture",
+          "units": "W m^-1 K^-1",
+          "typical": 2
+        },
+        {
+          "name": "rho_i",
+          "meaning": "density of ice (constant)",
+          "units": "kg m^-3",
+          "typical": 917
+        },
+        {
+          "name": "L(T)",
+          "meaning": "latent heat of sublimation per unit mass, h_v(T) - h_i(T)",
+          "units": "J kg^-1",
+          "typical": 2800000
+        }
+      ],
+      "agent left out": [
+        {
+          "effect": "Enthalpy transport by vapor diffusion, c_v j . grad T",
+          "why": "Ratio to conduction is about c_v*D*rho_v/k ~ 1850*1e-3*1.7e-6/2 ~ 2e-6 near 200 K"
+        },
+        {
+          "effect": "Advection by bulk gas flow",
+          "why": "The gas is assumed to be at rest. The Peclet number is tiny at near-vacuum pore pressures."
+        },
+        {
+          "effect": "Pressure work and p/rho terms",
+          "why": "Vapor pressure is about 0.2 Pa near 200 K, so p/rho_v relative to L is about RT/(M L) ~ 0.03 for vapor. Its contribution is further weighted by rho_v/rho_i ~ 1e-9 in the energy content."
+        },
+        {
+          "effect": "Heat capacity of the gas phase inside C",
+          "why": "Kept in C for generality, but rho_v c_v / C is about 1.6e-9"
+        },
+        {
+          "effect": "Thermal radiation across pores",
+          "why": "Of order 4*sigma*T^3*d ~ 1e-5 W/m/K for 100 um pores at 200 K, small next to the ice conductivity of about 2 W/m/K"
+        },
+        {
+          "effect": "Interfacial (surface) energy and curvature (Gibbs-Thomson) corrections to L",
+          "why": "Of order gamma/(rho_i L r) ~ 0.1/(917*2.8e6*1e-6) ~ 4e-5 relative, for micron-scale curvature"
+        },
+        {
+          "effect": "Thermal expansion of ice (rho_i(T))",
+          "why": "Volumetric expansion coefficient is about 1e-4 per K, which is a small change over the temperature ranges considered"
+        },
+        {
+          "effect": "Kinetic energy and viscous dissipation",
+          "why": "Velocities are negligible"
+        }
+      ]
+    }
+  },
+  "exit": 0
+}

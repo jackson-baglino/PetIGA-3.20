@@ -1,0 +1,134 @@
+{
+  "status": "done",
+  "result_expr": "3*gamma/eps*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2 + 3*gamma*eps*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2)",
+  "symbols": [
+    {
+      "name": "H",
+      "meaning": "double-well barrier coefficient (intermediate; H = 3*gamma/eps)",
+      "units": "J m^-3",
+      "typical": 10000000
+    },
+    {
+      "name": "kappa",
+      "meaning": "gradient-energy coefficient (intermediate; kappa = 6*gamma*eps)",
+      "units": "J m^-1",
+      "typical": 6e-09
+    },
+    {
+      "name": "W(phi)",
+      "meaning": "double-well bulk energy density H*phi^2*(1-phi)^2",
+      "units": "J m^-3",
+      "typical": 600000
+    },
+    {
+      "name": "delta",
+      "meaning": "tanh length of the profile, sqrt(kappa/(2H)); set equal to eps",
+      "units": "m",
+      "typical": 1e-08
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "statement": "F = \u222b f dV with f = W(phi) + (kappa/2)|grad phi|^2 and W = H phi^2 (1-phi)^2. The equal wells at 0 and 1 give stable bulk gas and ice at coexistence (no tilt term). The gradient term gives the interface a finite width and energy.",
+      "from": [
+        "given"
+      ],
+      "operation": "choice of the Ginzburg-Landau form"
+    },
+    {
+      "id": "S2",
+      "statement": "W(0)=W(1)=0, W'(0)=W'(1)=0, W''(0)=W''(1)=2H>0, W(1/2)=H/16. Checked with SymPy (check.py).",
+      "from": [
+        "S1"
+      ],
+      "operation": "differentiate W"
+    },
+    {
+      "id": "S3",
+      "statement": "Flat interface: kappa phi'' = W'(phi). Multiplying by phi' and integrating with far-field values gives (kappa/2) phi'^2 = W(phi).",
+      "from": [
+        "S1"
+      ],
+      "operation": "variation of F, then multiply by phi' and integrate in x"
+    },
+    {
+      "id": "S4",
+      "statement": "phi(x) = (1 + tanh(x/(2 delta)))/2 with delta = sqrt(kappa/(2H)). Both residuals are 0 in SymPy.",
+      "from": [
+        "S3"
+      ],
+      "operation": "solve the separable ODE"
+    },
+    {
+      "id": "S5",
+      "statement": "gamma = \u222b 2W dx = \u222b_0^1 sqrt(2 kappa W) dphi = sqrt(2 kappa H)/6. Checked with SymPy.",
+      "from": [
+        "S3",
+        "S4"
+      ],
+      "operation": "substitute the first integral, change variable x -> phi"
+    },
+    {
+      "id": "S6",
+      "statement": "Setting delta = eps and sqrt(2 kappa H)/6 = gamma gives H = 3 gamma/eps and kappa = 6 gamma eps. Solved with SymPy.",
+      "from": [
+        "S4",
+        "S5"
+      ],
+      "operation": "solve two equations for H and kappa"
+    },
+    {
+      "id": "S7",
+      "statement": "f = (3 gamma/eps) phi^2 (1-phi)^2 + 3 gamma eps |grad phi|^2. Integrating f across the profile phi = (1+tanh(x/(2 eps)))/2 gives exactly gamma (SymPy). Every term is in J m^-3 (pint).",
+      "from": [
+        "S1",
+        "S6"
+      ],
+      "operation": "substitution of S6 into S1"
+    },
+    {
+      "id": "S8",
+      "statement": "Width defined as 1/max|dphi/dx| = 4 eps (phi goes from 0.12 to 0.88 over it). The 10-90% width is 4 ln3 eps \u2248 4.39 eps.",
+      "from": [
+        "S4",
+        "S6"
+      ],
+      "operation": "evaluate slope at x=0"
+    }
+  ],
+  "assumptions_used": [
+    "Temperature is uniform, constant and at coexistence, so the two wells are equally deep (no tilt term).",
+    "The interface energy is isotropic: scalar gamma and scalar kappa.",
+    "gamma and eps are constant.",
+    "The interface width is defined as (jump in phi)/(maximum slope) = 4 eps, with the profile phi = (1 + tanh(x/(2 eps)))/2.",
+    "Double-well form phi^2 (1-phi)^2 (standard choice; other wells would change the numbers 3 and 3)."
+  ],
+  "neglected": [
+    {
+      "effect": "Driving-force (tilt) term from undercooling or vapor supersaturation",
+      "why": "It is zero at coexistence by assumption."
+    },
+    {
+      "effect": "Crystalline anisotropy of the ice surface energy",
+      "why": "It is a few percent of gamma and is not required at coexistence."
+    },
+    {
+      "effect": "Wetting and contact with the regolith grains",
+      "why": "These are boundary or extra-phase terms, outside this two-phase bulk density."
+    },
+    {
+      "effect": "Elastic strain energy",
+      "why": "It is small compared with gamma/eps (about 1e7 J m^-3) for a free ice-gas interface."
+    },
+    {
+      "effect": "Thermal fluctuations",
+      "why": "kT/(gamma eps^2) is about 3e-4 for gamma = 0.1 J m^-2, eps = 10 nm, T = 200 K."
+    },
+    {
+      "effect": "Coupling to the vapor density and temperature fields",
+      "why": "These belong to the coupled transport model, not to the isothermal coexistence functional."
+    }
+  ],
+  "questions": []
+}

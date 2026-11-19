@@ -1,0 +1,9 @@
+# Runs of the tutorial on 2026-11-18 (run_tutorial.sh live): T04-T07 with the agent, then the four baselines.
+runs/model-development/beth-mathematician/20261118-172700_T04_heat_latent
+runs/model-development/beth-mathematician/20261118-172817_T05_vapor_balance
+runs/model-development/beth-mathematician/20261118-172917_T06_free_energy
+runs/model-development/beth-mathematician/20261118-173013_T07_phase_field
+runs/model-development/beth-mathematician/20261118-173148_T04_heat_latent_baseline
+runs/model-development/beth-mathematician/20261118-173247_T05_vapor_balance_baseline
+runs/model-development/beth-mathematician/20261118-173334_T06_free_energy_baseline
+runs/model-development/beth-mathematician/20261118-173418_T07_phase_field_baseline

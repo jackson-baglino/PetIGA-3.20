@@ -1,0 +1,176 @@
+{
+  "status": "done",
+  "result_expr": "Derivative(phi(x, y, z, t), t) + M*(6*gamma/eps*phi(x, y, z, t)*(1 - phi(x, y, z, t))*(1 - 2*phi(x, y, z, t)) - 6*gamma*eps*(Derivative(phi(x, y, z, t), (x, 2)) + Derivative(phi(x, y, z, t), (y, 2)) + Derivative(phi(x, y, z, t), (z, 2)))) - alpha*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2*(rho_v(x, y, z, t) - rho_vs(T(x, y, z, t)))",
+  "result_latex": "R = \\partial_t\\phi + M\\left[\\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi) - 6\\gamma\\varepsilon\\left(\\partial_{xx}\\phi+\\partial_{yy}\\phi+\\partial_{zz}\\phi\\right)\\right] - \\alpha\\,\\phi^2(1-\\phi)^2\\left(\\rho_v-\\rho_{vs}(T)\\right) = 0",
+  "symbols": [
+    {
+      "name": "M",
+      "latex": "M",
+      "meaning": "Allen-Cahn interface mobility: how fast the diffuse interface relaxes toward the minimum of F (curvature-driven motion and profile restoration), taken constant",
+      "units": "m^3 J^-1 s^-1",
+      "typical": 1e-09
+    },
+    {
+      "name": "alpha",
+      "latex": "\\alpha",
+      "meaning": "deposition/sublimation kinetic coefficient: rate of change of the ice fraction per unit vapor-density excess at the interface; it absorbs 1/\\rho_i and the interface kinetics (sticking coefficient, molecular speed, 1/interface width), taken constant",
+      "units": "m^3 kg^-1 s^-1",
+      "typical": 100000
+    },
+    {
+      "name": "f",
+      "latex": "f(\\phi)",
+      "meaning": "bulk double-well density of F, f = 3\\gamma/\\varepsilon\\,\\phi^2(1-\\phi)^2",
+      "units": "J m^-3",
+      "typical": 0.1
+    },
+    {
+      "name": "mu",
+      "latex": "\\mu",
+      "meaning": "variational derivative \\delta F/\\delta\\phi (chemical potential of the phase field)",
+      "units": "J m^-3",
+      "typical": 0.1
+    },
+    {
+      "name": "g",
+      "latex": "g(\\phi)",
+      "meaning": "interface indicator weighting the source, g = \\phi^2(1-\\phi)^2",
+      "units": "1",
+      "typical": 0.06
+    },
+    {
+      "name": "phi0",
+      "latex": "\\phi_0(X)",
+      "meaning": "equilibrium flat-interface profile along the normal coordinate X",
+      "units": "1",
+      "typical": 0.5
+    },
+    {
+      "name": "X",
+      "latex": "X",
+      "meaning": "coordinate normal to a flat interface",
+      "units": "m",
+      "typical": 1e-07
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "title": "Derivative of the double well",
+      "why": "The variational derivative of $F$ needs $f'(\\phi)$ for the bulk part of the integrand.",
+      "from": [
+        "given"
+      ],
+      "operation": "differentiate $f=\\frac{3\\gamma}{\\varepsilon}\\phi^2(1-\\phi)^2$ with respect to $\\phi$",
+      "latex": "f'(\\phi) = \\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi)",
+      "check": {
+        "function": "check_s1",
+        "printed": "S1 df/dphi - 6g/e p(1-p)(1-2p) = 0"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Variational derivative of F",
+      "why": "Vary $\\phi$ in $F$, integrate the gradient term by parts (boundary term dropped for no-flux or periodic boundaries) to get the Euler-Lagrange derivative $\\mu$.",
+      "from": [
+        "S1",
+        "given"
+      ],
+      "operation": "first variation and integration by parts",
+      "latex": "\\mu = \\frac{\\delta F}{\\delta\\phi} = \\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi) - 6\\gamma\\varepsilon\\left(\\partial_{xx}\\phi+\\partial_{yy}\\phi+\\partial_{zz}\\phi\\right)",
+      "check": {
+        "function": "check_s2",
+        "printed": "S2 deltaF/deltaphi - target = 0"
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Equilibrium profile and no-nucleation weight",
+      "why": "The flat profile $\\phi_0=\\tfrac12[1+\\tanh(X/2\\varepsilon)]$ makes $\\mu=0$, so relaxation keeps the given interface structure. The phase-change source must vanish in pure ice and pure gas (no nucleation, A4), so it is weighted by $g(\\phi)=\\phi^2(1-\\phi)^2$, which vanishes with zero slope at $\\phi=0,1$.",
+      "from": [
+        "S2",
+        "A4"
+      ],
+      "operation": "substitution of the tanh profile; evaluation of $g$ and $g'$ at 0 and 1",
+      "latex": "\\mu[\\phi_0]=0,\\quad g(0)=g(1)=g'(0)=g'(1)=0",
+      "check": {
+        "function": "check_s3",
+        "printed": "S3 deltaF/deltaphi on tanh profile = 0; g(0), g(1), g'(0), g'(1) = [0, 0, 0, 0]"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Evolution law",
+      "why": "The non-conserved phase field relaxes down the gradient of $F$ (Allen-Cahn, A3) and is driven by the supersaturation $\\rho_v-\\rho_{vs}(T)$ at the interface (A5). Positive supersaturation gives $\\partial_t\\phi>0$ (deposition); with the source off, $dF/dt=-M\\int\\mu^2\\,dV\\le 0$.",
+      "from": [
+        "S2",
+        "S3",
+        "A3",
+        "A5"
+      ],
+      "operation": "add the gradient-flow term and the weighted source",
+      "latex": "\\partial_t\\phi = -M\\mu + \\alpha\\,g(\\phi)\\left(\\rho_v-\\rho_{vs}(T)\\right)",
+      "check": {
+        "function": "check_s4",
+        "printed": "S4 source sign at phi=1/2, rho_v-rho_vs=+1: 1"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Residual in 3D Cartesian form",
+      "why": "Substitute $\\mu$ from S2 and $g$ from S3 into S4 and move everything to one side. Every term has units of s$^{-1}$.",
+      "from": [
+        "S4",
+        "S2",
+        "S3"
+      ],
+      "operation": "substitution of S2 and S3 into S4",
+      "latex": "R = \\partial_t\\phi + M\\left[\\frac{6\\gamma}{\\varepsilon}\\phi(1-\\phi)(1-2\\phi) - 6\\gamma\\varepsilon\\nabla^2\\phi\\right] - \\alpha\\phi^2(1-\\phi)^2\\left(\\rho_v-\\rho_{vs}(T)\\right)=0",
+      "check": {
+        "function": "check_units",
+        "printed": "units phi_t 1/s; M*g/e 1/s; M*g*e/L^2 1/s; alpha*drho 1/s"
+      }
+    }
+  ],
+  "assumptions_used": [
+    "A1: $\\rho_v$ and $T$ are known, smooth fields (given).",
+    "A2: $F$ gives a flat interface with energy $\\gamma$ per area and 10-90% width $2\\ln 9\\,\\varepsilon$ (given).",
+    "A3: $\\phi$ is a non-conserved order parameter. Near coexistence it follows a linear gradient flow (Allen-Cahn) with a constant mobility $M$; boundaries are no-flux or periodic, so the boundary term from the integration by parts drops out.",
+    "A4: There is no nucleation, so the phase-change source vanishes where $\\phi=0$ or $\\phi=1$. It is localized at the interface by $g(\\phi)=\\phi^2(1-\\phi)^2$; this specific shape is a modeling choice.",
+    "A5: The growth rate is linear in the supersaturation $\\rho_v-\\rho_{vs}(T)$, with a constant kinetic coefficient $\\alpha$ that absorbs $1/\\rho_i$ and the attachment kinetics.",
+    "A6: The ice is rigid and at rest; there is no advection of $\\phi$."
+  ],
+  "neglected": [
+    {
+      "effect": "Gibbs-Thomson shift of $\\rho_{vs}$ with curvature",
+      "why": "The relaxation term $-M\\mu$ already produces curvature-driven motion. The explicit shift $\\rho_{vs}\\,2\\gamma v_m/(\\kappa_B T r)$ is about $10^{-2}$ for $r\\sim 0.1\\,\\mu$m and smaller for larger pores."
+    },
+    {
+      "effect": "Dependence of $M$ and $\\alpha$ on $T$ and $\\phi$",
+      "why": "Kept constant for simplicity. They can be promoted to $M(\\phi,T)$ and $\\alpha(\\phi,T)$ without changing the structure of the equation."
+    },
+    {
+      "effect": "Anisotropy of $\\gamma$ and of the attachment kinetics (facets)",
+      "why": "Ice basal and prismatic surface energies differ by only a few percent. The model is isotropic."
+    },
+    {
+      "effect": "Ice-grain (regolith) wetting and contact angle",
+      "why": "Grains are not part of this two-phase model; they would enter as boundary conditions or a third phase."
+    },
+    {
+      "effect": "Density change, mechanical stress and flow of ice",
+      "why": "Ice is rigid at about 200 K on the time scales of interest. Stress energy is small compared with $\\gamma/\\varepsilon$."
+    },
+    {
+      "effect": "Thermal noise in $\\phi$",
+      "why": "$\\kappa_B T$ is much smaller than $\\gamma\\varepsilon^2$ for $\\varepsilon$ above about 1 nm, so fluctuations are negligible."
+    },
+    {
+      "effect": "Coupling of the source to the vapor and heat equations (mass sink, latent heat)",
+      "why": "Not neglected physically. It belongs to the separate $\\rho_v$ and $T$ tasks, since here $\\rho_v$ and $T$ are given fields."
+    }
+  ],
+  "questions": [
+    "The interface weight $g(\\phi)=\\phi^2(1-\\phi)^2$ and the constant $M$, $\\alpha$ are my modeling choices (as in Moure & Fu-type ice models). If the reference model uses another weight, such as $\\phi(1-\\phi)$ or $30\\phi^2(1-\\phi)^2$, or a source divided explicitly by $\\rho_i$, the coefficient $\\alpha$ changes accordingly."
+  ]
+}

@@ -1,0 +1,206 @@
+{
+  "status": "done",
+  "result_expr": "6*gamma/eps*phi(x, y, z, t)**2*(1 - phi(x, y, z, t))**2 + 3*gamma*eps/2*(Derivative(phi(x, y, z, t), x)**2 + Derivative(phi(x, y, z, t), y)**2 + Derivative(phi(x, y, z, t), z)**2)",
+  "result_latex": "f(\\phi,\\nabla\\phi) = \\frac{6\\gamma}{\\varepsilon}\\,\\phi^2(1-\\phi)^2 + \\frac{3}{2}\\,\\gamma\\,\\varepsilon\\,|\\nabla\\phi|^2",
+  "symbols": [
+    {
+      "name": "W",
+      "latex": "W",
+      "meaning": "height coefficient of the double-well (bulk) term; fixed to 6 gamma/eps in S5",
+      "units": "J m^-3",
+      "typical": 600000
+    },
+    {
+      "name": "kappa",
+      "latex": "\\kappa",
+      "meaning": "gradient-energy coefficient; fixed to 3 gamma eps in S5",
+      "units": "J m^-1",
+      "typical": 1.5e-09
+    },
+    {
+      "name": "g",
+      "latex": "g(\\phi)",
+      "meaning": "dimensionless double-well function phi^2 (1-phi)^2",
+      "units": "1",
+      "typical": 0.0625
+    },
+    {
+      "name": "X",
+      "latex": "X",
+      "meaning": "coordinate normal to a flat interface, with X=0 at phi=1/2",
+      "units": "m",
+      "typical": 1e-08
+    },
+    {
+      "name": "ell",
+      "latex": "\\ell",
+      "meaning": "intrinsic decay length of the equilibrium profile, sqrt(kappa/(2W))",
+      "units": "m",
+      "typical": 5e-09
+    },
+    {
+      "name": "phi_0",
+      "latex": "\\phi_0(X)",
+      "meaning": "equilibrium profile across a flat interface",
+      "units": "1",
+      "typical": 0.5
+    },
+    {
+      "name": "sigma",
+      "latex": "\\sigma",
+      "meaning": "excess free energy per unit area of a flat equilibrium interface",
+      "units": "J m^-2",
+      "typical": 0.1
+    },
+    {
+      "name": "delta",
+      "latex": "\\delta",
+      "meaning": "interface width, defined as 1 / max |d phi_0/dX| (the distance over which the tangent at the midpoint rises from 0 to 1)",
+      "units": "m",
+      "typical": 2e-08
+    }
+  ],
+  "steps": [
+    {
+      "id": "S1",
+      "title": "Ansatz: double well plus gradient",
+      "why": "At coexistence the bulk energy must have two equal-depth minima at $\\phi=0$ (gas) and $\\phi=1$ (ice), so neither phase is favored; $g(\\phi)=\\phi^2(1-\\phi)^2$ is the lowest-order polynomial with this property and a barrier $g(1/2)=1/16$ between them. A gradient term penalizes sharp changes, so the interface gets a finite width and a positive energy; without it the interface would be infinitely sharp.",
+      "from": [
+        "A1",
+        "A2",
+        "A3"
+      ],
+      "operation": "choose the Ginzburg-Landau form with coefficients W and kappa still free",
+      "latex": "f = W\\,g(\\phi) + \\frac{\\kappa}{2}|\\nabla\\phi|^2,\\qquad g(\\phi)=\\phi^2(1-\\phi)^2",
+      "check": {
+        "function": "check_s1",
+        "printed": "roots of g': [0, 1/2, 1]; g(0)=g(1)=0; g''(0)=g''(1)=2; g(1/2)=1/16"
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Euler-Lagrange equation for a flat interface",
+      "why": "Equilibrium means $\\delta F/\\delta\\phi=0$. For a flat interface $\\phi$ depends only on the normal coordinate $X$, with $\\phi\\to0$ as $X\\to-\\infty$ and $\\phi\\to1$ as $X\\to+\\infty$.",
+      "from": [
+        "S1",
+        "A4"
+      ],
+      "operation": "take the variational derivative of F and restrict to phi = phi_0(X)",
+      "latex": "\\kappa\\,\\phi_0'' - W\\,g'(\\phi_0) = 0",
+      "check": {
+        "function": "check_s3",
+        "printed": "EL residual: 0 (for the profile of S3)"
+      }
+    },
+    {
+      "id": "S3",
+      "title": "First integral and profile",
+      "why": "Multiply S2 by $\\phi_0'$ and integrate once; the constant is zero because $\\phi_0'\\to0$ and $g\\to0$ in the bulk. This equipartition gives $\\phi_0'=\\sqrt{2W/\\kappa}\\,\\phi_0(1-\\phi_0)$, solved by a logistic profile with decay length $\\ell=\\sqrt{\\kappa/(2W)}$.",
+      "from": [
+        "S2"
+      ],
+      "operation": "multiply by phi_0', integrate over X, then separate variables",
+      "latex": "\\frac{\\kappa}{2}\\phi_0'^2 = W g(\\phi_0)\\;\\Rightarrow\\;\\phi_0(X)=\\frac{1}{1+e^{-X/\\ell}},\\quad \\ell=\\sqrt{\\frac{\\kappa}{2W}}",
+      "check": {
+        "function": "check_s3",
+        "printed": "first integral residual: 0; EL residual: 0"
+      }
+    },
+    {
+      "id": "S4",
+      "title": "Interface energy",
+      "why": "The excess energy per area is the integral of $f$ across the interface (the bulk value is 0). With equipartition the integrand is $\\kappa\\phi_0'^2$, and changing variables from $X$ to $\\phi$ gives a closed form.",
+      "from": [
+        "S3"
+      ],
+      "operation": "integrate f over X, substitute dX = dphi/phi_0'",
+      "latex": "\\sigma=\\int_{-\\infty}^{\\infty}\\kappa\\,\\phi_0'^2\\,dX=\\int_0^1\\sqrt{2W\\kappa}\\,\\phi(1-\\phi)\\,d\\phi=\\frac{\\sqrt{2W\\kappa}}{6}",
+      "check": {
+        "function": "check_s4",
+        "printed": "sigma = sqrt(2)*sqrt(W)*sqrt(kappa)/6; numeric sigma 0.577350269189626 equals formula 0.577350269189626 for W=3, kappa=2"
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Fix the coefficients",
+      "why": "Require $\\sigma=\\gamma$ and choose $\\ell=\\varepsilon/2$, so that the profile is $\\phi_0=\\tfrac12[1+\\tanh(X/\\varepsilon)]$. Solving the two equations gives $W$ and $\\kappa$ in terms of $\\gamma$ and $\\varepsilon$.",
+      "from": [
+        "S3",
+        "S4"
+      ],
+      "operation": "solve sigma = gamma, ell = eps/2 for W and kappa",
+      "latex": "W=\\frac{6\\gamma}{\\varepsilon},\\qquad \\kappa=3\\gamma\\varepsilon",
+      "check": {
+        "function": "check_s5",
+        "printed": "solution: [{W: 6*gamma/epsilon, kappa: 3*epsilon*gamma}]"
+      }
+    },
+    {
+      "id": "S6",
+      "title": "Width and direct energy check",
+      "why": "With these coefficients the tanh profile solves S2, and its energy integral is exactly $\\gamma$. Defining the width as $\\delta=1/\\max|\\phi_0'|$ gives $\\delta=2\\varepsilon$; the 10%-90% width is $2\\ln 3\\,\\varepsilon\\approx2.20\\,\\varepsilon$.",
+      "from": [
+        "S5"
+      ],
+      "operation": "substitute S5 into S2 and S4",
+      "latex": "\\phi_0=\\tfrac12\\left[1+\\tanh\\frac{X}{\\varepsilon}\\right],\\quad \\delta=\\frac{1}{\\max|\\phi_0'|}=2\\varepsilon,\\quad \\sigma=\\gamma",
+      "check": {
+        "function": "check_s6",
+        "printed": "EL residual tanh profile: 0; 1/max slope = 2*epsilon; 10-90 width = 2*epsilon*log(3) = 2.197 eps; sigma direct = gamma"
+      }
+    },
+    {
+      "id": "S7",
+      "title": "Free energy density",
+      "why": "Substitute S5 into S1. Both terms have units J m$^{-3}$.",
+      "from": [
+        "S1",
+        "S5"
+      ],
+      "operation": "substitution of S5",
+      "latex": "f=\\frac{6\\gamma}{\\varepsilon}\\phi^2(1-\\phi)^2+\\frac{3}{2}\\gamma\\varepsilon|\\nabla\\phi|^2",
+      "check": {
+        "function": "check_units",
+        "printed": "bulk term: kg m^-1 s^-2; gradient term: kg m^-1 s^-2; same: True"
+      }
+    }
+  ],
+  "assumptions_used": [
+    "A1: The temperature is uniform and constant, at phase coexistence (given), so the bulk free energies of ice and gas are equal and the well has two minima of equal depth; the common bulk value is set to zero.",
+    "A2: The interface energy $\\gamma$ is isotropic, so the gradient coefficient is a scalar constant.",
+    "A3: The free energy is local and depends only on $\\phi$ and $\\nabla\\phi$ (square-gradient, Ginzburg-Landau form); the double well is the quartic $\\phi^2(1-\\phi)^2$.",
+    "A4: For calibration we use a flat, one-dimensional interface at equilibrium, far from walls, with $\\phi\\to0$ and $\\phi\\to1$ on the two sides.",
+    "A5: Width convention: $\\delta=1/\\max|d\\phi_0/dX|=2\\varepsilon$, where the profile is $\\tfrac12[1+\\tanh(X/\\varepsilon)]$."
+  ],
+  "neglected": [
+    {
+      "effect": "Driving force for sublimation and deposition (tilting term, for example proportional to $(T-T_m)$ or vapor supersaturation, times $h(\\phi)$)",
+      "why": "The work order is at coexistence, so this term is zero by assumption A1."
+    },
+    {
+      "effect": "Anisotropy of the ice surface energy (hexagonal ice facets)",
+      "why": "Taken as isotropic (A2). The anisotropy of ice-vapor surface energy is a few percent, which is small compared with the geometric effects of pore confinement."
+    },
+    {
+      "effect": "Regolith grain surfaces: wetting and the ice-grain and gas-grain energies",
+      "why": "The work order treats the pore space as ice plus gas only. Contact angles would enter through boundary terms, not through $f$."
+    },
+    {
+      "effect": "Coupling to temperature and vapor density fields (latent heat, vapor diffusion)",
+      "why": "At constant uniform temperature and coexistence they do not change the equilibrium interface. They belong to the dynamics, not to this functional."
+    },
+    {
+      "effect": "Elastic strain energy in ice and density change on phase change",
+      "why": "Ice in open pores against low-pressure gas is nearly stress-free. Elastic energy in the bulk is much smaller than $\\gamma/\\varepsilon$ for nanometer-to-micron $\\varepsilon$."
+    },
+    {
+      "effect": "Curvature (Gibbs-Thomson) effects in the calibration",
+      "why": "Calibration uses a flat interface. Curved interfaces get corrections of relative order $\\varepsilon/R$, which are small when $\\varepsilon$ is much smaller than the pore radius $R$."
+    },
+    {
+      "effect": "Higher-order gradient terms (for example $(\\nabla^2\\phi)^2$)",
+      "why": "They are excluded by the deliverable. They are of relative order $(\\varepsilon/L)^2$ on scales $L\\gg\\varepsilon$."
+    }
+  ],
+  "questions": []
+}

@@ -1,0 +1,6 @@
+{
+  "check": "T01_heat_weak_form",
+  "pass": true,
+  "details": "equals 1 times the weak form on 6 random samples",
+  "exit": 0
+}

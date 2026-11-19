@@ -1,0 +1,6 @@
+{
+  "check": "T02_heat_nondimensionalize",
+  "pass": true,
+  "details": "equals 1 times the reference on 6 random samples",
+  "exit": 0
+}
