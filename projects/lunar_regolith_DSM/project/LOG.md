@@ -33,8 +33,8 @@ Newest first. One entry per session: done, remaining, bottlenecks.
   - User decisions open: the T05 held test; adopting the mixture heat capacity (doc 30 §5); removing the clamps
     (smooth floors); the temperature-gradient comparison (on hold).
   - Doc 29 §9 items 2 and 4–8 (housekeeping) still open.
-  - `runs/model-development/dev-toy1/` (old run_md.py toy line, waiting at M7) and other untracked files listed in
-    git status: not from this work; left as they are.
+  - Housekeeping done 2026-11-19 (user): committed calib-dev to calib-dev5 records (page files deleted), dev-toy1
+    (closed: M7 and M9 skipped), docs 19-22, doc 26 (superseded by doc 29) and the model-development BACKLOG.
 - Bottlenecks:
   - The user's review time per derivation; graders need care to avoid false FAILs (two grader faults this session).
   - Word scripting needs a file-access prompt; PDFs now come from Chrome with MathML.
