@@ -34,13 +34,15 @@ LIMITS
 Usage:
     python3 postprocess/vapor_movie.py --dir <run>                 # -> <run>/plots/vapor_movie.mp4
     python3 postprocess/vapor_movie.py --dir <run> --tracers       # -> <run>/plots/vapor_movie_tracers.mp4
-Options: --save, --fps, --subframes, --n-particles, --dmax, --grid, --sigma-lim, --every, --seed, --dpi.
+Options: --save, --fps, --subframes, --n-particles, --dmax, --grid, --sigma-lim, --every, --max-seconds, --seed, --dpi.
+Every movie is at most --max-seconds long (default 15 s).
 Also writes <movie>_first.png (use as the PowerPoint poster frame) and <movie>_mid.png.
 """
 
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import re
 import shutil
@@ -154,6 +156,10 @@ def main():
     ap.add_argument("--sigma-lim", type=float, default=None,
                     help="color limit for |sigma| (default: 99.5th percentile of |sigma| in the air over the run)")
     ap.add_argument("--every", type=int, default=1, help="use every Nth snapshot")
+    ap.add_argument("--max-seconds", type=float, default=15.0,
+                    help="longest movie in seconds (default 15; 0 = no limit). Widens --every so the frame rate "
+                         "stays at or below 30 fps (60 with tracers), raises --fps as needed, and checks again "
+                         "before encoding")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--dpi", type=int, default=160,
                     help="frame resolution (default 160: a 10 in wide frame is 1600 px; use ~320 for full-resolution vtkOut)")
@@ -162,10 +168,22 @@ def main():
     run = os.path.abspath(a.dir)
     if shutil.which("ffmpeg") is None:
         sys.exit("vapor_movie: ffmpeg not on PATH")
-    steps = snapshots(run)[:: a.every]
+    all_steps = snapshots(run)
     rho_air = float(opt_float(read_opts(run), "-rho_air", RHO_AIR_DEFAULT) or RHO_AIR_DEFAULT)
     sub = a.subframes if a.tracers else 1
     fps = a.fps or (10.0 * sub)
+    every = max(a.every, 1)
+    if a.max_seconds > 0:
+        fps_cap = 30.0 * sub                                      # widen the stride before raising fps past this
+        every = max(every, math.ceil(len(all_steps) * sub / (a.max_seconds * fps_cap)))
+        n_frames = math.ceil(len(all_steps) / every) * sub
+        need = n_frames / a.max_seconds
+        if fps < need:
+            fps = float(math.ceil(need))
+        if every != a.every or fps != (a.fps or 10.0 * sub):
+            print(f"  --max-seconds {a.max_seconds:g}: every {every}, {n_frames} frames at {fps:g} fps "
+                  f"({n_frames / fps:.2f} s)")
+    steps = all_steps[::every]
     out = a.save or os.path.join(run, "plots", "vapor_movie_tracers.mp4" if a.tracers else "vapor_movie.mp4")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     rng = np.random.default_rng(a.seed)
@@ -332,6 +350,9 @@ def main():
                 fig.savefig(os.path.join(tmp, f"f{k:05d}.png"), facecolor="white", bbox_inches="tight", pad_inches=0.08)
                 plt.close(fig)
                 k += 1
+        if a.max_seconds > 0 and k / fps > a.max_seconds:          # last guard: frames actually written
+            fps = float(math.ceil(k / a.max_seconds))
+            print(f"  --max-seconds: {k} frames, fps raised to {fps:g}")
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps),
                         "-i", os.path.join(tmp, "f%05d.png"),
                         "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2:color=white", "-c:v", "libx264", "-pix_fmt", "yuv420p",
