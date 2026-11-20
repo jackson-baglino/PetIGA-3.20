@@ -769,7 +769,7 @@ def _sol_files(run_dir):
     return sorted(f for f in os.listdir(run_dir) if re.fullmatch(r"sol_\d+\.dat", f))
 
 
-def iter_snapshots(run_dirs, source: str = "auto", n_per_elem: int = 2, every: int = 1):
+def iter_snapshots(run_dirs, source: str = "auto", n_per_elem: int = 2, every: int = 1, steps=None):
     """Yield Snapshot objects in time order over one run or a restart chain.
 
     run_dirs: a folder or a list of folders (legs of a restart chain). A step
@@ -777,6 +777,7 @@ def iter_snapshots(run_dirs, source: str = "auto", n_per_elem: int = 2, every: i
     unknown (no outp.txt row and no SSA_evo.dat row) are skipped with a note on
     stderr, because a velocity built on a guessed time is wrong silently.
     every: keep every n-th snapshot (1 = all).
+    steps: if given, only these step numbers (applied before `every`).
     """
     import sys
     if isinstance(run_dirs, (str, os.PathLike)):
@@ -813,6 +814,9 @@ def iter_snapshots(run_dirs, source: str = "auto", n_per_elem: int = 2, every: i
             continue
         rows.append((t, st, src, path, rd))
     rows.sort()
+    if steps is not None:
+        keep = {int(x) for x in steps}
+        rows = [r for r in rows if r[1] in keep]
     rows = rows[::max(1, int(every))] if every > 1 else rows
     cache = {}
     for t, st, src, path, rd in rows:
