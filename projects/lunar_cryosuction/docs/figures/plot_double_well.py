@@ -1,12 +1,15 @@
 """Plot the double-well potential F^duo(phi_i) / gamma_ia for the AGU 2026 talk.
 
-The slide (AGU 2026 deck, slide 6) and the solver (src/assembly.c,
-DoubleWellDeriv) use the half normalized well
+The slide (AGU 2026 deck, slide 5) writes the well in the calibrated
+physical form of docs/contact_angle/contact_angle.tex (eq. 1),
 
-    F^duo(phi_i) = (1/2) * gamma_ia * phi_i^2 * (1 - phi_i)^2,
+    F^duo(phi_i) = gamma_ia * phi_i^2 * (1 - phi_i)^2,
 
-so the plot shows F^duo / gamma_ia = A * phi^2 (1 - phi)^2 with A = 1/2 by
-default. The barrier at phi_i = 1/2 is A/16 (1/32 for A = 1/2).
+with gradient term 3 eps gamma_ia |grad phi_i|^2, so the ice-vapor interface
+carries energy gamma_ia. The plot shows F^duo / gamma_ia = A phi^2 (1 - phi)^2
+with A = 1 by default; the barrier at phi_i = 1/2 is A/16. (The solver's
+DoubleWellDeriv uses the half well because its mobility M = 2 gamma_ia L
+absorbs the factor; --prefactor 0.5 plots that scaled form.)
 
 The figure is drawn at the size it occupies on the slide (--width, --height
 in inches), so every font size below is the size the audience sees. Colors
@@ -48,8 +51,8 @@ def main() -> None:
     ap.add_argument("--out", type=Path, required=True, help="output PNG path")
     ap.add_argument("--width", type=float, default=4.12, help="placed width [in]")
     ap.add_argument("--height", type=float, default=2.89, help="placed height [in]")
-    ap.add_argument("--prefactor", type=float, default=0.5,
-                    help="A in F/gamma = A phi^2 (1-phi)^2 (slide and solver: 0.5)")
+    ap.add_argument("--prefactor", type=float, default=1.0,
+                    help="A in F/gamma = A phi^2 (1-phi)^2 (slide: 1; solver's scaled form: 0.5)")
     ap.add_argument("--font", type=Path, default=DEFAULT_FONT, help="text font file")
     ap.add_argument("--dpi", type=int, default=400)
     args = ap.parse_args()
