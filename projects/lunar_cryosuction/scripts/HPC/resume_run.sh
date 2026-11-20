@@ -23,9 +23,11 @@
 # --dry-run prints what would be done and stops before changing anything,
 # building or submitting.
 #
-# The job gets the same name and the same rank count as the first leg
-# (TARGET_DOFS_PER_CORE as given, default from scripts/lib/alloc.sh); a SLURM
-# job ID cannot be reused, so the new leg has a new one.
+# The job gets the same name, log files and rank count as the first leg
+# (TARGET_DOFS_PER_CORE as given, default from scripts/lib/alloc.sh). A SLURM
+# job ID cannot be reused, so the new leg has a new one; its output is appended
+# to output_files/<batch>/<run ID>.out|.err after a "===== LEG job <id>" line,
+# and runs.tsv in the batch folder gets a row for the leg.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,7 +35,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 RUN_SCRIPT="$SCRIPT_DIR/run_cryosuction.sh"
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 
-[[ $# -ge 1 ]] || { sed -n '2,28p' "$0"; exit 1; }
+[[ $# -ge 1 ]] || { sed -n '2,30p' "$0"; exit 1; }
 run_dir="$(cd "$1" && pwd)"; shift
 sbatch_extra=(); t_final_days=""; dry=0
 while [[ $# -gt 0 ]]; do
@@ -121,15 +123,39 @@ tpn=$nprocs; (( tpn > MAX_TASKS_PER_NODE )) && tpn=$MAX_TASKS_PER_NODE
 nnodes=$(( (nprocs + tpn - 1) / tpn ))
 echo "Allocation : DoFs=$total_dofs nprocs=$nprocs nodes=$nnodes tasks/node=$tpn"
 
+# --- logs: same files as the first leg -------------------------------------
+# output_files/<batch folder name>/<label>.out|.err, appended (submit_batch.sh).
+# The label is the run ID from the batch's runs.tsv; batches submitted before
+# runs.tsv existed fall back to <geom>__<exp>.
+batch_dir="$(dirname "$run_dir")"
+runs_tsv="$batch_dir/runs.tsv"
+label=""
+[[ -f "$runs_tsv" ]] && label=$(awk -F'\t' -v f="$base" 'NR>1 && $5==f {print $1; exit}' "$runs_tsv")
+label="${label:-${geom}__${exp}}"
+log_dir="$PROJECT_ROOT/output_files/$(basename "$batch_dir")"
+leg=1; [[ -f "$runs_tsv" ]] && leg=$(( $(awk -F'\t' -v f="$base" 'NR>1 && $5==f' "$runs_tsv" | wc -l) + 1 ))
+(( leg < 2 )) && leg=2      # a run being resumed has had at least one leg
+echo "Logs       : $log_dir/${label}.out|.err (appended; leg $leg)"
+
 # --- build on the submission host, then submit ------------------------------
 [[ $dry -eq 0 ]] || { echo "(dry run: nothing changed, built or submitted)"; exit 0; }
+mkdir -p "$log_dir"
 cd "$PROJECT_ROOT"
 make all || { echo "❌ Build failed."; exit 1; }
-sbatch --job-name="${geom}__${exp}" \
+jid=$(sbatch --parsable \
+       --job-name="$label" \
+       --output="$log_dir/${label}.out" \
+       --error="$log_dir/${label}.err" \
+       --open-mode=append \
        --nodes="$nnodes" \
        --ntasks="$nprocs" \
        --ntasks-per-node="$tpn" \
        --mem-per-cpu="$(mem_per_cpu "$total_dofs" "$nprocs")" \
-       --export=ALL,SKIP_COMPILE=1,RESUME_DIR="$run_dir" \
+       --export=ALL,SKIP_COMPILE=1,RESUME_DIR="$run_dir",LOG_OUT="$log_dir/${label}.out",LOG_ERR="$log_dir/${label}.err" \
        "${sbatch_extra[@]}" \
-       "$RUN_SCRIPT" "$geom" "$exp" "resume"
+       "$RUN_SCRIPT" "$geom" "$exp" "resume")
+jid="${jid%%;*}"
+echo "Submitted job $jid (leg $leg)"
+[[ -f "$runs_tsv" ]] || printf 'run_id\tjob_id\tleg\tsubmitted\trun_folder\n' > "$runs_tsv"
+printf '%s\t%s\t%s\t%s\t%s\n' "$label" "$jid" "$leg" "$(date '+%Y-%m-%d %H:%M:%S')" "$base" >> "$runs_tsv"
+cp -f "$runs_tsv" "$log_dir/runs.tsv"

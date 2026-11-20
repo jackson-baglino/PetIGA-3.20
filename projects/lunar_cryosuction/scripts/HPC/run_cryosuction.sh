@@ -40,6 +40,15 @@ archive_slurm_logs() {
     [[ -n "${folder:-}" && -d "${folder:-}" ]] || return $rc
     [[ -n "${SLURM_JOB_ID:-}" ]]               || return $rc
 
+    # Per-run logs (submit_batch.sh / resume_run.sh set LOG_OUT and LOG_ERR): one
+    # file per run, appended by every leg, copied whole as slurm.out / slurm.err.
+    if [[ -n "${LOG_OUT:-}" ]]; then
+        [[ -f "$LOG_OUT" ]] && cp -f "$LOG_OUT" "$folder/slurm.out" 2>/dev/null
+        [[ -f "${LOG_ERR:-}" ]] && cp -f "$LOG_ERR" "$folder/slurm.err" 2>/dev/null
+        echo "📋 SLURM logs copied to $folder (slurm.out, slurm.err)"
+        return $rc
+    fi
+
     local src_dir="${SLURM_SUBMIT_DIR:-$PWD}/output_files"
     local stem="${SLURM_JOB_NAME:-slurm}"
     local copied=0
@@ -51,6 +60,14 @@ archive_slurm_logs() {
     return $rc
 }
 trap archive_slurm_logs EXIT
+
+# One header line per leg in both logs. With per-run logs opened in append mode
+# (submit_batch.sh, resume_run.sh) every leg of a run writes to the same file;
+# scripts/HPC/job_status.sh reads only the text after the last header.
+if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+    _leg_hdr="===== LEG job ${SLURM_JOB_ID} start $(date '+%Y-%m-%d %H:%M:%S') ${RESUME_DIR:+resume} ====="
+    echo "$_leg_hdr"; echo "$_leg_hdr" >&2
+fi
 
 ###############################################################################
 # Input arguments

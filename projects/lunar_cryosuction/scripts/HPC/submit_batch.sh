@@ -97,6 +97,7 @@ done
 
 # Build the list of tests
 TESTS=()
+TEST_IDS=()   # run ID of TESTS[i] from the tests file ("" if none)
 if [[ -n "$tests_arg" ]]; then
     IFS=',' read -ra TESTS <<< "$tests_arg"
     # Trim leading/trailing whitespace from each entry (so `--tests "a, b,c"`
@@ -117,6 +118,16 @@ elif [[ -n "$tests_file" ]]; then
     # commas so the file format is forgiving (e.g. accidentally indented
     # heredocs, copy-pasted backslash continuations, quoted EOF markers).
     while IFS= read -r line; do
+        # Run ID: a trailing comment that is one token ("geom:exp   # 5P-1")
+        # names the job, its log files and its runs.tsv row. Prose comments
+        # (with spaces) are ignored; without an ID the label is geom__exp.
+        rid=""
+        if [[ "$line" == *:*#* ]]; then
+            rid="${line#*#}"
+            rid="${rid#"${rid%%[![:space:]]*}"}"; rid="${rid%"${rid##*[![:space:]]}"}"
+            rid="${rid%$'\r'}"
+            [[ "$rid" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ ]] || rid=""
+        fi
         line="${line%%#*}"                          # strip # comments
         line="${line%$'\r'}"                        # strip CR (Windows line endings)
         line="${line#"${line%%[![:space:]]*}"}"     # strip leading whitespace
@@ -129,6 +140,7 @@ elif [[ -n "$tests_file" ]]; then
         [[ -z "$line" ]] && continue
         [[ "$line" != *:* ]] && continue
         TESTS+=("$line")
+        TEST_IDS+=("$rid")
     done < "$tests_file"
 else
     echo "❌ Must supply --tests \"g1:e1,g2:e2,...\" or --tests-file <file>"
@@ -191,6 +203,27 @@ else
     BATCH_PARENT="$PROJECT_ROOT/scratch/$batch_name"
 fi
 mkdir -p "$BATCH_PARENT"
+
+# SLURM logs: output_files/<batch folder name>/<run ID>.out|.err, opened in append
+# mode so a resumed leg (resume_run.sh) writes to the same files. runs.tsv in the
+# batch folder (copied next to the logs) maps run ID -> job ID -> run folder, one
+# row per leg. SLURM does not create the log directory, so make it here.
+LOG_DIR="$PROJECT_ROOT/output_files/$(basename "$BATCH_PARENT")"
+mkdir -p "$LOG_DIR"
+RUNS_TSV="$BATCH_PARENT/runs.tsv"
+[[ -f "$RUNS_TSV" ]] || printf 'run_id\tjob_id\tleg\tsubmitted\trun_folder\n' > "$RUNS_TSV"
+# Labels must be unique within the batch, or two runs would append to one log.
+_labels=$( for i in "${!TESTS[@]}"; do t="${TESTS[$i]}"; echo "${TEST_IDS[$i]:-${t%%:*}__${t##*:}}"; done
+           tail -n +2 "$RUNS_TSV" | cut -f1 | sort -u )
+_dups=$(printf '%s\n' "$_labels" | sort | uniq -d)
+if [[ -n "$_dups" ]]; then
+    echo "❌ Run labels repeat in this batch (tests file or existing runs.tsv); not submitting anything:"
+    printf '   %s\n' $_dups
+    if [[ -z "$into_dir" ]]; then          # new batch: undo the two empty folders made above
+        rm -f "$RUNS_TSV"; rmdir "$LOG_DIR" "$BATCH_PARENT" 2>/dev/null || true
+    fi
+    exit 1
+fi
 
 echo "============================================================"
 echo "  Lunar regolith DSM batch submission"
@@ -281,7 +314,7 @@ compute_alloc() {
 N_SUBMITTED=0
 N_SKIPPED=0
 submit_one() {
-    local spec="$1"
+    local spec="$1" rid="${2:-}"
     local geom="${spec%%:*}"
     local exp="${spec##*:}"
     if [[ "$geom" == "$exp" || -z "$geom" || -z "$exp" ]]; then
@@ -304,29 +337,38 @@ submit_one() {
         return
     fi
 
-    local job_name="${geom}__${exp}"
+    local job_name="${rid:-${geom}__${exp}}"
     local nprocs nnodes tasks_per_node total_dofs
     read -r nprocs nnodes tasks_per_node total_dofs < <(compute_alloc "$geom_file")
 
     printf "→ %-45s DoFs=%-8d nprocs=%-3d nodes=%-2d tasks/node=%d\n" \
         "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node"
 
-    sbatch --job-name="$job_name" \
+    local jid
+    jid=$(sbatch --parsable \
+           --job-name="$job_name" \
+           --output="$LOG_DIR/${job_name}.out" \
+           --error="$LOG_DIR/${job_name}.err" \
+           --open-mode=append \
            --nodes="$nnodes" \
            --ntasks="$nprocs" \
            --ntasks-per-node="$tasks_per_node" \
            --mem-per-cpu="$(mem_per_cpu "$total_dofs" "$nprocs")" \
-           --export=ALL,SKIP_COMPILE=1,BATCH_OUT_DIR="$BATCH_PARENT" \
+           --export=ALL,SKIP_COMPILE=1,BATCH_OUT_DIR="$BATCH_PARENT",LOG_OUT="$LOG_DIR/${job_name}.out",LOG_ERR="$LOG_DIR/${job_name}.err" \
            "${sbatch_extra[@]}" \
-           "$RUN_SCRIPT" "$geom" "$exp" "$tag" "${extra_opts[@]}"
+           "$RUN_SCRIPT" "$geom" "$exp" "$tag" "${extra_opts[@]}") || { echo "❌ sbatch failed for $spec"; ((N_SKIPPED++)) || true; return; }
+    jid="${jid%%;*}"
+    echo "   Submitted job $jid  log: $LOG_DIR/${job_name}.out"
+    printf '%s\t%s\t1\t%s\t%s\n' "$job_name" "$jid" "$(date '+%Y-%m-%d %H:%M:%S')" "${geom}__${exp}" >> "$RUNS_TSV"
+    cp -f "$RUNS_TSV" "$LOG_DIR/runs.tsv"
     ((N_SUBMITTED++)) || true
 }
 
 # ---------------------------------------------------------------------------
 # Fan out
 # ---------------------------------------------------------------------------
-for spec in "${TESTS[@]}"; do
-    submit_one "$spec"
+for i in "${!TESTS[@]}"; do
+    submit_one "${TESTS[$i]}" "${TEST_IDS[$i]:-}"
 done
 
 echo ""
@@ -335,7 +377,8 @@ echo "  Parsed     : ${#TESTS[@]} test specs"
 echo "  Submitted  : $N_SUBMITTED jobs to SLURM"
 echo "  Skipped    : $N_SKIPPED (file-not-found or malformed)"
 echo "  Parent dir : $BATCH_PARENT"
-echo "  Check with: squeue -u \$USER"
+echo "  Logs       : $LOG_DIR/<run ID>.out|.err (index: runs.tsv)"
+echo "  Check with: squeue -u \$USER   or   ./scripts/HPC/job_status.sh $LOG_DIR"
 echo "  Once all jobs are done, download the parent dir, then run:"
 echo "    bash $BATCH_PARENT/run_batch_postprocess.sh"
 echo "============================================================"

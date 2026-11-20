@@ -100,6 +100,25 @@ On the HPC, `scripts/HPC/submit_cryosuction.sh` submits one run.
 `scripts/HPC/submit_batch.sh --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs`
 submits a batch to `<out-root>/lunar_cryosuction/`.
 
+Names and logs of a batch (since 2026-11-20):
+
+| What | Name | Example |
+|---|---|---|
+| batch folder | `batch_<date>__<time>_<tag>`, tag = simulation type | `batch_2026-11-17__15.03.48_type5` |
+| run folder | `<geometry>__<experiment>` (the two opts files that made it) | `t5_cell400x150um_wt40um_…__t5_T-20_iso_…_300d_ac1e-2` |
+| run ID | RUNS.md ID, a one-token comment after the tests-file line (`geom:exp   # 5P-1`) | `5P-1`, `7SP-10-4` |
+| SLURM job name | run ID (`geom__exp` when the line has none) | `5P-1` in `squeue` |
+| SLURM logs | `output_files/<batch folder>/<run ID>.out` and `.err` | `output_files/batch_…_type5/5P-1.out` |
+| index | `runs.tsv` in the batch folder and next to the logs: run ID, job ID, leg, date, run folder | one row per leg |
+
+Logs are opened in append mode: `scripts/HPC/resume_run.sh` writes the next leg
+into the same two files after a `===== LEG job <id>` line, and copies them into
+the run folder as `slurm.out` / `slurm.err`. `scripts/HPC/job_status.sh
+output_files/<batch>` reports each run's latest leg. Run IDs must be unique in
+a batch (`submit_batch.sh` refuses repeats). Logs written before this layout:
+`scripts/HPC/sort_output_files.sh [--apply]` moves them into batch folders (dry
+run by default; nothing is deleted).
+
 ## Tests and checks
 
 ```bash
